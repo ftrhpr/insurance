@@ -79,7 +79,18 @@ $user = getCurrentUser();
     <script>
         // Standalone page: load data immediately
         document.addEventListener('DOMContentLoaded', function() {
-            loadData();
+            console.log('[Dashboard] DOMContentLoaded - checking functions...');
+            console.log('[Dashboard] loadData:', typeof window.loadData);
+            console.log('[Dashboard] renderTable:', typeof window.renderTable);
+            console.log('[Dashboard] showToast:', typeof window.showToast);
+            
+            // Ensure all scripts are loaded before calling loadData
+            if (typeof window.loadData === 'function') {
+                loadData();
+            } else {
+                console.error('[Dashboard] loadData is not defined!');
+            }
+            
             if (window.lucide) lucide.createIcons();
         });
         

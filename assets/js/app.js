@@ -5,7 +5,15 @@
 
 // Note: USER_ROLE, USER_NAME, CAN_EDIT are injected by index-modular.php
 // Auto-detect correct API path based on current location
-const API_URL = window.location.pathname.includes('/pages/') ? '../api.php' : 'api.php';
+const API_URL = (() => {
+    const path = window.location.pathname;
+    // If we're in /pages/ subdirectory, go up one level
+    if (path.includes('/pages/')) {
+        return '../api.php';
+    }
+    // If we're at root or any other location, use relative path
+    return 'api.php';
+})();
 const MANAGER_PHONE = "511144486";
 
 // Global state
@@ -84,6 +92,9 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
     };
     if (body) opts.body = JSON.stringify(body);
     
+    // Debug: Log the API URL being used
+    console.log(`[API] Calling: ${API_URL}?action=${action} (Method: ${method})`);
+    
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
             const controller = new AbortController();
@@ -97,6 +108,14 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
             clearTimeout(timeoutId);
             
             if (!res.ok) {
+                // Special handling for 404
+                if (res.status === 404) {
+                    console.error(`[API] 404 Not Found: ${API_URL}?action=${action}`);
+                    console.error(`[API] Current page: ${window.location.pathname}`);
+                    console.error(`[API] Full URL attempted: ${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)}${API_URL}`);
+                    throw new Error(`API endpoint not found (404). Check if ${API_URL} exists at the correct location.`);
+                }
+                
                 let errorData = {};
                 const resClone = res.clone(); // Clone only when needed
                 try {
@@ -104,7 +123,12 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
                 } catch (e) {
                     // If JSON parsing fails, read text from original response
                     const errorText = await res.text();
-                    errorData = { error: errorText || `HTTP ${res.status}` };
+                    // Don't display full HTML error pages
+                    if (errorText.includes('<!DOCTYPE') || errorText.includes('<html')) {
+                        errorData = { error: `Server returned HTML instead of JSON (HTTP ${res.status})` };
+                    } else {
+                        errorData = { error: errorText || `HTTP ${res.status}` };
+                    }
                 }
                 
                 // Retry on server errors (503)
@@ -162,17 +186,33 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
 
 // Load transfers data
 window.loadData = async function() {
+    console.log('[loadData] Starting data load...');
     try {
         const data = await fetchAPI('get_transfers', 'GET');
         transfers = data.transfers || data || [];
+        console.log('[loadData] Loaded', transfers.length, 'transfers');
         
         // Call renderTable if it exists (for dashboard)
+        // Use setTimeout to ensure DOM and other scripts are ready
         if (typeof window.renderTable === 'function') {
-            window.renderTable();
+            console.log('[loadData] Calling renderTable...');
+            setTimeout(() => {
+                try {
+                    window.renderTable();
+                } catch (renderErr) {
+                    console.error('[loadData] Error calling renderTable:', renderErr);
+                }
+            }, 0);
+        } else {
+            console.log('[loadData] renderTable not available (not on dashboard page)');
         }
     } catch (err) {
-        console.error('Error loading transfers:', err);
-        showToast('Load Error', err.message, 'error');
+        console.error('[loadData] Error loading transfers:', err);
+        if (typeof window.showToast === 'function') {
+            showToast('Load Error', err.message, 'error');
+        } else {
+            console.error('[loadData] showToast not available yet, error:', err.message);
+        }
     }
 };
 
@@ -265,18 +305,7 @@ window.showToast = function(title, message = '', type = 'info') {
     }, 5000);
 }
 
-// Load initial data
-window.loadData = async function() {
-    try {
-        const data = await fetchAPI('get_transfers', 'GET');
-        transfers = data.transfers || [];
-        renderTable();
-        loadVehicles();
-    } catch (err) {
-        console.error('Failed to load data:', err);
-        showToast('Error', 'Failed to load transfers', 'error');
-    }
-};
+// Note: loadData is defined earlier in the file (line ~188) - DO NOT DUPLICATE
 
 // User Menu Toggle (used in header)
 window.toggleUserMenu = function() {
