@@ -1,42 +1,9 @@
 <?php
 // Error handling configuration for API
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors in API responses
+ini_set('display_errors', 1); // Temporarily enabled for debugging
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error_log');
-
-// Custom error handler for API
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    $error_types = [
-        E_ERROR => 'ERROR',
-        E_WARNING => 'WARNING',
-        E_NOTICE => 'NOTICE',
-        E_USER_ERROR => 'USER_ERROR',
-        E_USER_WARNING => 'USER_WARNING',
-        E_USER_NOTICE => 'USER_NOTICE'
-    ];
-    $type = $error_types[$errno] ?? 'UNKNOWN';
-    error_log("API [$type] $errstr in $errfile on line $errline");
-    
-    // For API, don't output anything, just log
-    return true;
-});
-
-// Custom exception handler for API
-set_exception_handler(function($exception) {
-    error_log('API Uncaught Exception: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ' on line ' . $exception->getLine());
-    error_log('Stack trace: ' . $exception->getTraceAsString());
-    
-    // Return JSON error response
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode([
-        'error' => 'Internal server error',
-        'message' => 'An unexpected error occurred. Please try again.',
-        'retry' => true
-    ]);
-    exit;
-});
 
 session_start();
 
@@ -681,8 +648,13 @@ try {
         ]);
     }
 
+} catch (PDOException $e) {
+    error_log('API Database Error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Database error occurred', 'message' => $e->getMessage()]);
 } catch (Exception $e) {
-    http_response_code(400);
-    echo json_encode(['error' => $e->getMessage()]);
+    error_log('API General Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+    http_response_code(500);
+    echo json_encode(['error' => 'Server error', 'message' => $e->getMessage()]);
 }
 ?>
