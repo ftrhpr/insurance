@@ -1269,16 +1269,21 @@
                         replyBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="check" class="w-3 h-3"></i> Confirmed</span>`;
                     } else if (t.user_response === 'Reschedule Requested') {
                         let rescheduleInfo = '';
+                        let quickAcceptBtn = '';
                         if (t.rescheduleDate) {
                             const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
                             const dateStr = reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                             rescheduleInfo = `<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ${dateStr}</div>`;
+                            quickAcceptBtn = `<button onclick="event.stopPropagation(); window.quickAcceptReschedule(${t.id})" class="mt-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition-all active:scale-95 shadow-sm">
+                                <i data-lucide="check" class="w-3 h-3"></i> Accept
+                            </button>`;
                         }
-                        replyBadge = `<div class="flex flex-col items-start">
+                        replyBadge = `<div class="flex flex-col items-start gap-1">
                             <span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
                                 <i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request
                             </span>
                             ${rescheduleInfo}
+                            ${quickAcceptBtn}
                         </div>`;
                     }
 
@@ -1566,6 +1571,38 @@
                     <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${n.authorName}</span></div>
                 </div>`).join('');
             document.getElementById('notes-list').innerHTML = noteHTML;
+        };
+
+        window.quickAcceptReschedule = async (id) => {
+            const t = transfers.find(i => i.id == id);
+            if (!t || !t.rescheduleDate) return;
+
+            const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+            const dateStr = reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            
+            if (!confirm(`Accept reschedule request for ${t.name} (${t.plate})?\n\nNew appointment: ${dateStr}\n\nCustomer will receive SMS confirmation.`)) {
+                return;
+            }
+
+            try {
+                showToast("Processing...", "Accepting reschedule request", "info");
+                
+                const rescheduleDateTime = t.rescheduleDate.replace(' ', 'T');
+                await fetchAPI(`accept_reschedule&id=${id}`, 'POST', {
+                    service_date: rescheduleDateTime
+                });
+
+                t.serviceDate = rescheduleDateTime;
+                t.userResponse = 'Confirmed';
+                t.rescheduleDate = null;
+                t.rescheduleComment = null;
+                
+                showToast("Reschedule Accepted", `Appointment updated and SMS sent to ${t.name}`, "success");
+                loadData();
+            } catch(e) {
+                console.error('Quick accept reschedule error:', e);
+                showToast("Error", "Failed to accept reschedule request", "error");
+            }
         };
 
         window.acceptReschedule = async () => {
