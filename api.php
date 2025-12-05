@@ -210,11 +210,58 @@ try {
         jsonResponse(['status' => 'success']);
     }
 
+    // --- ACCEPT RESCHEDULE REQUEST ---
+    if ($action === 'accept_reschedule' && $method === 'POST') {
+        $data = getJsonInput();
+        $id = $_GET['id'] ?? 0;
+        $serviceDate = $data['service_date'] ?? null;
+
+        if ($id && $serviceDate) {
+            // Update service date and clear reschedule request, mark as confirmed
+            $pdo->prepare("UPDATE transfers SET service_date = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
+                ->execute([$serviceDate, $id]);
+
+            // Get transfer details for SMS
+            $stmt = $pdo->prepare("SELECT name, plate, phone, amount FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+            $tr = $stmt->fetch();
+
+            if ($tr && $tr['phone']) {
+                // Send confirmation SMS
+                $formattedDate = date('M d, Y H:i', strtotime($serviceDate));
+                $smsText = "Hello {$tr['name']}, your reschedule request has been approved! New appointment: {$formattedDate}. Ref: {$tr['plate']}. - OTOMOTORS";
+                
+                $api_key = "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+                $to = $tr['phone'];
+                @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText));
+            }
+
+            jsonResponse(['status' => 'success', 'message' => 'Reschedule accepted and SMS sent']);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid parameters']);
+        }
+    }
+
+    // --- DECLINE RESCHEDULE REQUEST ---
+    if ($action === 'decline_reschedule' && $method === 'POST') {
+        $id = $_GET['id'] ?? 0;
+
+        if ($id) {
+            // Clear reschedule data and reset to pending
+            $pdo->prepare("UPDATE transfers SET reschedule_date = NULL, reschedule_comment = NULL, user_response = 'Pending' WHERE id = ?")
+                ->execute([$id]);
+
+            jsonResponse(['status' => 'success', 'message' => 'Reschedule request declined']);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
+        }
+    }
+
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
-        // Includes review columns
-        $stmt = $pdo->query("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment FROM transfers ORDER BY created_at DESC");
+        // Includes review columns and reschedule data
+        $stmt = $pdo->query("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers ORDER BY created_at DESC");
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
             $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');

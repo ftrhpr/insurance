@@ -655,19 +655,33 @@
                         </div>
 
                         <!-- Reschedule Request Preview -->
-                        <div id="modal-reschedule-section" class="hidden bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 overflow-hidden shadow-sm p-4">
-                            <div class="flex items-center gap-2 mb-3">
-                                <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-600"></i>
-                                <label class="text-xs font-bold text-purple-700 uppercase tracking-wider">Reschedule Request</label>
-                            </div>
-                            <div class="space-y-2">
+                        <div id="modal-reschedule-section" class="hidden bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 overflow-hidden shadow-sm">
+                            <div class="flex items-center justify-between mb-3 px-4 pt-4">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-xs text-purple-600 font-semibold">Requested Date:</span>
-                                    <span id="modal-reschedule-date" class="text-sm font-bold text-slate-800"></span>
+                                    <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-600"></i>
+                                    <label class="text-xs font-bold text-purple-700 uppercase tracking-wider">Reschedule Request</label>
                                 </div>
-                                <div class="bg-white/60 p-3 rounded-lg">
+                                <span id="reschedule-status-badge" class="text-[10px] bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-bold">Pending</span>
+                            </div>
+                            <div class="space-y-3 px-4 pb-4">
+                                <div class="bg-white/80 p-3 rounded-lg border border-purple-100">
+                                    <span class="text-xs text-purple-600 font-semibold block mb-1">Requested Date:</span>
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="calendar" class="w-4 h-4 text-purple-500"></i>
+                                        <span id="modal-reschedule-date" class="text-sm font-bold text-slate-800"></span>
+                                    </div>
+                                </div>
+                                <div class="bg-white/80 p-3 rounded-lg border border-purple-100">
                                     <span class="text-xs text-purple-600 font-semibold block mb-1">Customer Comment:</span>
                                     <p id="modal-reschedule-comment" class="text-sm text-slate-600 italic leading-relaxed"></p>
+                                </div>
+                                <div id="reschedule-actions" class="flex gap-2 pt-2">
+                                    <button onclick="window.acceptReschedule()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-semibold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+                                        <i data-lucide="check" class="w-4 h-4"></i> Accept & Update
+                                    </button>
+                                    <button onclick="window.declineReschedule()" class="flex-1 bg-white hover:bg-red-50 text-red-600 border-2 border-red-200 py-2.5 px-4 rounded-lg font-semibold text-sm transition-all active:scale-95">
+                                        Decline
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1541,6 +1555,61 @@
                     <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${n.authorName}</span></div>
                 </div>`).join('');
             document.getElementById('notes-list').innerHTML = noteHTML;
+        };
+
+        window.acceptReschedule = async () => {
+            const t = transfers.find(i => i.id == window.currentEditingId);
+            if (!t || !t.rescheduleDate) return;
+
+            if (!confirm(`Accept reschedule request and update appointment to ${new Date(t.rescheduleDate.replace(' ', 'T')).toLocaleString()}?`)) {
+                return;
+            }
+
+            try {
+                // Update service date to the requested date
+                const rescheduleDateTime = t.rescheduleDate.replace(' ', 'T');
+                document.getElementById('input-service-date').value = rescheduleDateTime;
+                
+                // Call API to accept reschedule
+                await fetchAPI(`accept_reschedule&id=${window.currentEditingId}`, 'POST', {
+                    service_date: rescheduleDateTime
+                });
+
+                // Update local data
+                t.serviceDate = rescheduleDateTime;
+                t.userResponse = 'Confirmed';
+                
+                showToast("Reschedule Accepted", "Appointment updated and SMS sent to customer", "success");
+                window.closeModal();
+                loadData();
+            } catch(e) {
+                console.error('Accept reschedule error:', e);
+                showToast("Error", "Failed to accept reschedule request", "error");
+            }
+        };
+
+        window.declineReschedule = async () => {
+            if (!confirm('Decline this reschedule request? The customer will need to be contacted manually.')) {
+                return;
+            }
+
+            try {
+                await fetchAPI(`decline_reschedule&id=${window.currentEditingId}`, 'POST', {});
+                
+                const t = transfers.find(i => i.id == window.currentEditingId);
+                if (t) {
+                    t.rescheduleDate = null;
+                    t.rescheduleComment = null;
+                    t.userResponse = 'Pending';
+                }
+                
+                showToast("Request Declined", "Reschedule request removed", "info");
+                window.closeModal();
+                loadData();
+            } catch(e) {
+                console.error('Decline reschedule error:', e);
+                showToast("Error", "Failed to decline request", "error");
+            }
         };
 
         window.deleteRecord = async (id) => {
