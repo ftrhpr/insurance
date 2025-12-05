@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FCM Debugger</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        .log { border-left: 2px solid #333; padding-left: 10px; margin: 5px 0; }
+        .error { color: #ff5555; }
+        .success { color: #55ff55; font-weight: bold; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #333; color: white; border: 1px solid #555; margin-right: 10px; }
+        #test-area { margin-top: 20px; padding-top: 20px; border-top: 1px dashed #555; display: none; }
+    </style>
+    <!-- Firebase Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+</head>
+<body>
+    <h1>FCM Diagnostic Tool</h1>
+    <p>Click the button below to trace the registration process step-by-step.</p>
+    <button onclick="startDebug()">1. Start Debugging</button>
+    
+    <div id="test-area">
+        <h3>Step 2: Test Delivery</h3>
+        <p>If registration above passed, click this to force a notification:</p>
+        <button onclick="sendTestNotification()">2. Send Test Notification</button>
+    </div>
+
+    <div id="console" style="margin-top:20px;"></div>
+
+    <script>
+        // --- CONFIGURATION START ---
+        
+ // 1. PASTE YOUR FIREBASE CONFIG HERE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRvdcvgMsOiVzeUQdSMYZFQ1GKkHZUWYI",
+  authDomain: "otm-portal-312a5.firebaseapp.com",
+  projectId: "otm-portal-312a5",
+  storageBucket: "otm-portal-312a5.firebasestorage.app",
+  messagingSenderId: "917547807534",
+  appId: "1:917547807534:web:9021c744b7b0f62b4e80bf"
+        };
+
+        // 2. PASTE YOUR VAPID KEY HERE (Must start with 'B')
+        const vapidKey = "BPmaDT11APIDJCEoLFGA7ZoUCmc2IM9wxsNPJsy4984GaZNhBEEJa1VG6C65t1oCMTtUPVSudeivYsAmINDGc-w"; 
+        // --- CONFIGURATION END ---
+
+        let generatedToken = null;
+
+        function log(msg, type = 'normal') {
+            const el = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = 'log ' + type;
+            line.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            el.appendChild(line);
+        }
+
+        async function startDebug() {
+            document.getElementById('console').innerHTML = '';
+            document.getElementById('test-area').style.display = 'none';
+            log("Starting diagnostics...", "normal");
+
+            // 1. Validate Configs
+            if (firebaseConfig.apiKey.includes("PASTE")) {
+                return log("❌ STOP: You forgot to paste your Firebase Config in the code (Lines 35-42)!", "error");
+            }
+
+            if (vapidKey.includes("PASTE") || vapidKey.length < 50) {
+                return log("❌ STOP: Invalid VAPID Key detected (Line 46). It must be the long string starting with 'B...'", "error");
+            }
+
+            // 2. Initialize Firebase
+            try {
+                firebase.initializeApp(firebaseConfig);
+                log("✅ Firebase Initialized", "success");
+                
+                // Listen for foreground messages
+                const messaging = firebase.messaging();
+                messaging.onMessage((payload) => {
+                    console.log('Message received. ', payload);
+                    log(`🔔 NOTIFICATION RECEIVED! Title: "${payload.notification.title}"`, "success");
+                    alert("Notification Received!\n\n" + payload.notification.title + "\n" + payload.notification.body);
+                });
+
+            } catch (e) {
+                return log("❌ Firebase Init Failed: " + e.message, "error");
+            }
+
+            const messaging = firebase.messaging();
+
+            // 3. Check Service Worker File
+            try {
+                const swReq = await fetch('firebase-messaging-sw.js');
+                if (swReq.status === 200) {
+                    log("✅ firebase-messaging-sw.js found (HTTP 200)", "success");
+                } else {
+                    return log(`❌ firebase-messaging-sw.js missing! Server returned HTTP ${swReq.status}. Upload this file to your root folder.`, "error");
+                }
+            } catch (e) {
+                return log("❌ Could not check Service Worker: " + e.message, "error");
+            }
+
+            // 4. Request Permission
+            log("Requesting Notification Permission...", "normal");
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    log("✅ Permission Granted", "success");
+                } else {
+                    return log("❌ Permission Denied. Please reset browser permissions for this site (Click the lock icon in address bar).", "error");
+                }
+            } catch (e) {
+                return log("❌ Permission Error: " + e.message, "error");
+            }
+
+            // 5. Get Token
+            log("Attempting to generate Device Token (VAPID)...", "normal");
+            try {
+                // Register SW explicitly to catch errors
+                const reg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+                log("✅ Service Worker Registered", "success");
+
+                generatedToken = await messaging.getToken({ vapidKey: vapidKey, serviceWorkerRegistration: reg });
+                
+                if (generatedToken) {
+                    log("✅ Token Generated: " + generatedToken.substring(0, 15) + "...", "success");
+                } else {
+                    return log("❌ Token is empty. Check VAPID key matches Firebase Console.", "error");
+                }
+            } catch (e) {
+                console.error(e);
+                return log("❌ Token Generation Failed: " + e.message + " (Check Console for details)", "error");
+            }
+
+            // 6. Send to Backend
+            log("Sending token to api.php...", "normal");
+            try {
+                const response = await fetch('api.php?action=register_token', {
+                    method: 'POST',
+                    body: JSON.stringify({ token: generatedToken })
+                });
+                
+                const text = await response.text();
+                // log("Server Response Raw: " + text);
+
+                const json = JSON.parse(text);
+                if (json.status === 'registered') {
+                    log("✅ SUCCESS! Token saved to database.", "success");
+                    document.getElementById('test-area').style.display = 'block';
+                } else if (json.error) {
+                    log("❌ Database Error: " + json.error, "error");
+                    if (json.error.includes("Base table or view not found")) {
+                        log("💡 HINT: You forgot to create the 'manager_tokens' table in MySQL.", "error");
+                    }
+                } else {
+                    log("❌ Unknown Server Error", "error");
+                }
+            } catch (e) {
+                return log("❌ API Connection Failed: " + e.message, "error");
+            }
+        }
+
+        async function sendTestNotification() {
+            log("Attempting to send test broadcast via api.php...", "normal");
+            try {
+                const response = await fetch('api.php?action=send_broadcast', {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        title: 'Test From Debugger', 
+                        body: 'If you see this, notifications are working!' 
+                    })
+                });
+                const res = await response.json();
+                if(res.status === 'sent') {
+                    log("✅ Backend sent request to Google. Waiting for arrival...", "success");
+                } else {
+                    log("❌ Backend Error: " + JSON.stringify(res), "error");
+                }
+            } catch(e) {
+                log("❌ Fetch Error: " + e.message, "error");
+            }
+        }
+    </script>
+</body>
+</html>

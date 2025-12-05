@@ -1,0 +1,107 @@
+<?php
+/**
+ * OTOMOTORS Database Repair Tool
+ * Checks and fixes all required tables and columns.
+ */
+
+header('Content-Type: text/plain');
+
+// --- CONFIGURATION (Matches api.php) ---
+$db_host = 'localhost';
+$db_name = 'otoexpre_userdb';     
+$db_user = 'otoexpre_userdb';     
+$db_pass = 'p52DSsthB}=0AeZ#';     
+
+try {
+    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    echo "Connected to database successfully.\n\n";
+
+    // ---------------------------------------------------------
+    // 1. TABLE: transfers
+    // ---------------------------------------------------------
+    echo "Checking table 'transfers'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS transfers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        plate VARCHAR(20),
+        name VARCHAR(100),
+        amount DECIMAL(10,2),
+        status VARCHAR(50) DEFAULT 'New',
+        phone VARCHAR(20),
+        franchise VARCHAR(50),
+        rawText TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    $pdo->exec($sql);
+
+    // List of required columns for 'transfers'
+    $columns = [
+        'user_response' => "VARCHAR(50) DEFAULT 'Pending'",
+        'service_date'  => "DATETIME DEFAULT NULL",
+        'review_stars'  => "INT DEFAULT NULL",
+        'review_comment'=> "TEXT DEFAULT NULL",
+        'internal_notes'=> "JSON DEFAULT NULL",  // or TEXT if MariaDB version is old
+        'system_logs'   => "JSON DEFAULT NULL"   // or TEXT if MariaDB version is old
+    ];
+
+    foreach ($columns as $col => $def) {
+        if (!columnExists($pdo, 'transfers', $col)) {
+            $pdo->exec("ALTER TABLE transfers ADD COLUMN $col $def");
+            echo " - Added missing column: $col\n";
+        } else {
+            echo " - Column $col exists.\n";
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 2. TABLE: sms_templates
+    // ---------------------------------------------------------
+    echo "\nChecking table 'sms_templates'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS sms_templates (
+        slug VARCHAR(50) PRIMARY KEY,
+        content TEXT
+    )";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
+    // ---------------------------------------------------------
+    // 3. TABLE: vehicles
+    // ---------------------------------------------------------
+    echo "\nChecking table 'vehicles'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS vehicles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        plate VARCHAR(20) UNIQUE NOT NULL,
+        ownerName VARCHAR(100),
+        phone VARCHAR(20),
+        model VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
+    // ---------------------------------------------------------
+    // 4. TABLE: manager_tokens (For Firebase)
+    // ---------------------------------------------------------
+    echo "\nChecking table 'manager_tokens'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS manager_tokens (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        token TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
+    echo "\n---------------------------------------------------\n";
+    echo "REPAIR COMPLETE. You can reload your app now.";
+
+} catch (PDOException $e) {
+    echo "CRITICAL ERROR: " . $e->getMessage();
+}
+
+// Helper function
+function columnExists($pdo, $table, $column) {
+    $stmt = $pdo->prepare("SHOW COLUMNS FROM $table LIKE ?");
+    $stmt->execute([$column]);
+    return (bool)$stmt->fetch();
+}
+?>

@@ -1,0 +1,144 @@
+[01-Dec-2025 12:41:31 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[22007]: Invalid datetime format: 1292 Incorrect datetime value: '' for column 'serviceDate' at row 1 in /home/otoexpre/portal.otoexpress.ge/api.php:89
+Stack trace:
+#0 /home/otoexpre/portal.otoexpress.ge/api.php(89): PDOStatement->execute()
+#1 {main}
+  thrown in /home/otoexpre/portal.otoexpress.ge/api.php on line 89
+[01-Dec-2025 12:41:48 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[22007]: Invalid datetime format: 1292 Incorrect datetime value: '' for column 'serviceDate' at row 1 in /home/otoexpre/portal.otoexpress.ge/api.php:89
+Stack trace:
+#0 /home/otoexpre/portal.otoexpress.ge/api.php(89): PDOStatement->execute()
+#1 {main}
+  thrown in /home/otoexpre/portal.otoexpress.ge/api.php on line 89
+[01-Dec-2025 12:42:17 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[22007]: Invalid datetime format: 1292 Incorrect datetime value: '' for column 'serviceDate' at row 1 in /home/otoexpre/portal.otoexpress.ge/api.php:89
+Stack trace:
+#0 /home/otoexpre/portal.otoexpress.ge/api.php(89): PDOStatement->execute()
+#1 {main}
+  thrown in /home/otoexpre/portal.otoexpress.ge/api.php on line 89
+[04-Dec-2025 12:33:09 UTC] PHP Parse error:  syntax error, unexpected token "*", expecting end of file in /home/otoexpre/portal.otoexpress.ge/index.php on line 1298
+[04-Dec-2025 12:33:10 UTC] PHP Parse error:  syntax error, unexpected token "*", expecting end of file in /home/otoexpre/portal.otoexpress.ge/index.php on line 1298
+[04-Dec-2025 12:33:10 UTC] PHP Parse error:  syntax error, unexpected token "*", expecting end of file in /home/otoexpre/portal.otoexpress.ge/index.php on line 1298
+[04-Dec-2025 12:33:16 UTC] PHP Parse error:  syntax error, unexpected token "*", expecting end of file in /home/otoexpre/portal.otoexpress.ge/index.php on line 1408
+[04-Dec-2025 12:33:33 UTC] PHP Parse error:  syntax error, unexpected token "*", expecting end of file in /home/otoexpre/portal.otoexpress.ge/index.php on line 1408
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $host in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $db in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $user in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $pass in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $host in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $db in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $user in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $pass in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $host in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $db in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $user in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $pass in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $host in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $db in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $user in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:27 UTC] PHP Warning:  Undefined variable $pass in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:38 UTC] PHP Warning:  Undefined variable $host in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:38 UTC] PHP Warning:  Undefined variable $db in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:38 UTC] PHP Warning:  Undefined variable $user in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:38 UTC] PHP Warning:  Undefined variable $pass in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:38 UTC] PHP Warning:  Undefined variable $host in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:38 UTC] PHP Warning:  Undefined variable $db in /home/otoexpre/portal.otoexpress.ge/api.php on line 31
+[04-Dec-2025 12:35:38 UTC] PHP Warning:  Undefined variable $user in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 12:35:38 UTC] PHP Warning:  Undefined variable $pass in /home/otoexpre/portal.otoexpress.ge/api.php on line 39
+[04-Dec-2025 13:06:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:06:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:05 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:05 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:05 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:05 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:05 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:45 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:07:55 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:08 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:08 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:08 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:08 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:08 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:15 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:16 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:16 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:16 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:16 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:16 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:25 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:26 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:26 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:26 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:26 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:26 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:35 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:36 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:36 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:36 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:36 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:36 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:46 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:46 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:46 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:46 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:46 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:56 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:56 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:56 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:56 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:08:56 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:09:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:09:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:09:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:09:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
+[04-Dec-2025 13:09:06 UTC] PHP Warning:  Undefined array key "service_date" in /home/otoexpre/portal.otoexpress.ge/api.php on line 184
