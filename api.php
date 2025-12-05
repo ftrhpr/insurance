@@ -199,8 +199,8 @@ try {
         $stmt = $pdo->query("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment FROM transfers ORDER BY created_at DESC");
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
-            $row['internalNotes'] = json_decode($row['internalNotes'] ?? '[]');
-            $row['systemLogs'] = json_decode($row['systemLogs'] ?? '[]');
+            $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');
+            $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
             $row['serviceDate'] = $row['service_date']; 
         }
         jsonResponse($rows);
@@ -226,7 +226,8 @@ try {
                 }
             }
             if ($key === 'internalNotes' || $key === 'systemLogs') {
-                $fields[] = "$key = :$key";
+                $dbColumn = $key === 'internalNotes' ? 'internal_notes' : 'system_logs';
+                $fields[] = "$dbColumn = :$key";
                 $params[":$key"] = json_encode($val);
             }
         }
@@ -239,7 +240,7 @@ try {
     // ... Include get_vehicles, sync_vehicle, etc. from previous version ...
     if ($action === 'add_transfer' && $method === 'POST') {
         $data = getJsonInput();
-        $sql = "INSERT INTO transfers (plate, name, amount, status, phone, rawText, internalNotes, systemLogs, user_response) VALUES (:plate, :name, :amount, 'New', '', :rawText, '[]', '[]', 'Pending')";
+        $sql = "INSERT INTO transfers (plate, name, amount, status, phone, rawText, internal_notes, system_logs, user_response) VALUES (:plate, :name, :amount, 'New', '', :rawText, '[]', '[]', 'Pending')";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':plate' => $data['plate'] ?? '', ':name' => $data['name'] ?? '', ':amount' => $data['amount'] ?? 0, ':rawText' => $data['rawText'] ?? '']);
         jsonResponse(['id' => $pdo->lastInsertId(), 'status' => 'success']);
