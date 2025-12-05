@@ -95,16 +95,14 @@ async function fetchAPI(action, method = 'GET', body = null, retries = 2) {
             
             clearTimeout(timeoutId);
             
-            // Clone response to allow multiple reads if needed
-            const resClone = res.clone();
-            
             if (!res.ok) {
                 let errorData = {};
+                const resClone = res.clone(); // Clone only when needed
                 try {
                     errorData = await resClone.json();
                 } catch (e) {
-                    // If JSON parsing fails, use text
-                    const errorText = await resClone.text();
+                    // If JSON parsing fails, read text from original response
+                    const errorText = await res.text();
                     errorData = { error: errorText || `HTTP ${res.status}` };
                 }
                 

@@ -1128,13 +1128,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             try {
                 const res = await fetch(`${API_URL}?action=${action}`, opts);
+                const resClone = res.clone(); // Clone response to allow multiple reads
                 
                 // Check if response is NOT OK (e.g. 500 Error)
                 if (!res.ok) {
                     // Try to parse the JSON error message from api.php
                     let errorText = res.statusText;
                     try {
-                        const errorJson = await res.json();
+                        const errorJson = await resClone.json();
                         if (errorJson.error) errorText = errorJson.error;
                     } catch (parseErr) {
                         // If parsing fails, use the text body or generic status
