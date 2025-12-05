@@ -95,8 +95,18 @@ async function fetchAPI(action, method = 'GET', body = null, retries = 2) {
             
             clearTimeout(timeoutId);
             
+            // Clone response to allow multiple reads if needed
+            const resClone = res.clone();
+            
             if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
+                let errorData = {};
+                try {
+                    errorData = await resClone.json();
+                } catch (e) {
+                    // If JSON parsing fails, use text
+                    const errorText = await resClone.text();
+                    errorData = { error: errorText || `HTTP ${res.status}` };
+                }
                 
                 // Retry on server errors (503)
                 if (res.status === 503 && errorData.retry && attempt < retries) {
@@ -108,7 +118,14 @@ async function fetchAPI(action, method = 'GET', body = null, retries = 2) {
             }
             
             updateConnectionStatus(true);
-            return await res.json();
+            
+            // Parse JSON response
+            try {
+                return await res.json();
+            } catch (jsonError) {
+                console.error('JSON parse error:', jsonError);
+                throw new Error('Invalid response format from server');
+            }
             
         } catch (err) {
             console.error(`API Error [${action}] (attempt ${attempt + 1}):`, err);
