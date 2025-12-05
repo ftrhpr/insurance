@@ -1,7 +1,7 @@
 <?php
 // Error handling configuration
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1); // Temporarily enabled to debug login error
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error_log');
 
@@ -53,7 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } catch (PDOException $e) {
             error_log('Login DB Error: ' . $e->getMessage());
-            $error = 'Unable to connect to the database. Please try again.';
+            // Check if it's a table not found error
+            if (strpos($e->getMessage(), "doesn't exist") !== false || strpos($e->getMessage(), "Table") !== false) {
+                $error = 'Database not initialized. Please run <a href="fix_db_all.php" class="underline">fix_db_all.php</a> first.';
+            } else {
+                $error = 'Unable to connect to the database. Please try again.';
+            }
         } catch (Exception $e) {
             error_log('Login Error: ' . $e->getMessage());
             if (strpos($e->getMessage(), 'connection failed') !== false) {
@@ -89,9 +94,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="p-8">
                 <?php if ($error): ?>
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                        <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
-                        <span><?php echo htmlspecialchars($error); ?></span>
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-start">
+                        <i data-lucide="alert-circle" class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5"></i>
+                        <span><?php echo $error; // Allow HTML for the setup link ?></span>
                     </div>
                 <?php endif; ?>
                 

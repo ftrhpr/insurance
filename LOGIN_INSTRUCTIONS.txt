@@ -1,0 +1,54 @@
+================================================================================
+  OTOMOTORS MANAGER PORTAL - LOGIN INSTRUCTIONS
+================================================================================
+
+Your system now requires authentication. Here's how to access it:
+
+STEP 1: Initialize the Database
+--------------------------------
+Open in browser: https://portal.otoexpress.ge/fix_db_all.php
+
+This will:
+- Create all required tables
+- Create default admin user
+- Fix any missing columns
+
+STEP 2: Login to the Portal
+----------------------------
+Open in browser: https://portal.otoexpress.ge/login.php
+
+Default Credentials:
+  Username: admin
+  Password: admin123
+
+STEP 3: Change Your Password (Recommended)
+-------------------------------------------
+After logging in:
+1. Click on User Management tab
+2. Find the admin user
+3. Click "Change Password"
+4. Set a secure password
+
+TROUBLESHOOTING
+---------------
+
+Problem: "HTTP 404" or "Unauthorized" errors in console
+Solution: You need to log in first at login.php
+
+Problem: Login page doesn't work
+Solution: Run fix_db_all.php first to create the users table
+
+Problem: Can't access index-modular.php
+Solution: This file requires login. Use login.php first.
+
+Problem: Want to use the old version without login
+Solution: Access index.php directly (old standalone version)
+
+FILES OVERVIEW
+--------------
+- login.php          = Login page (start here)
+- index-modular.php  = New dashboard (requires login)
+- index.php          = Old dashboard (no login required)
+- fix_db_all.php     = Database setup/repair tool
+
+================================================================================
