@@ -407,7 +407,10 @@
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-indigo-100 p-2 rounded-lg text-indigo-600"><i data-lucide="message-square" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Welcome SMS (New Case)</h3>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Welcome SMS (Processing)</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Sent when status changes to Processing</p>
+                                </div>
                             </div>
                             <textarea id="tpl-registered" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
@@ -415,7 +418,10 @@
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-purple-100 p-2 rounded-lg text-purple-600"><i data-lucide="phone-call" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Customer Contacted (Called)</h3>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Customer Contacted (Called)</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Sent when status changes to Called/Contacted</p>
+                                </div>
                             </div>
                             <textarea id="tpl-called" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
@@ -423,7 +429,10 @@
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-orange-100 p-2 rounded-lg text-orange-600"><i data-lucide="calendar" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Service Scheduled</h3>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Service Scheduled</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Sent when status changes to Scheduled with date/time</p>
+                                </div>
                             </div>
                             <textarea id="tpl-schedule" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
@@ -431,7 +440,10 @@
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-blue-100 p-2 rounded-lg text-blue-600"><i data-lucide="package" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Parts Ordered</h3>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Parts Ordered</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Sent when status changes to Parts Ordered</p>
+                                </div>
                             </div>
                             <textarea id="tpl-parts_ordered" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
@@ -439,7 +451,10 @@
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-teal-100 p-2 rounded-lg text-teal-600"><i data-lucide="package-check" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Parts Arrived</h3>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Parts Arrived</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Includes confirmation link - sent when status is Parts Arrived</p>
+                                </div>
                             </div>
                             <textarea id="tpl-parts_arrived" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
@@ -447,15 +462,32 @@
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-purple-100 p-2 rounded-lg text-purple-600"><i data-lucide="calendar-clock" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Reschedule (Response)</h3>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Reschedule Request (Customer)</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Sent when customer initially requests reschedule via link</p>
+                                </div>
                             </div>
                             <textarea id="tpl-rescheduled" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-green-100 p-2 rounded-lg text-green-600"><i data-lucide="check-square" class="w-4 h-4"></i></div>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Reschedule Accepted (Manager)</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Sent when manager accepts customer's reschedule request</p>
+                                </div>
+                            </div>
+                            <textarea id="tpl-reschedule_accepted" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
                         
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-emerald-100 p-2 rounded-lg text-emerald-600"><i data-lucide="check-circle" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Service Completed</h3>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Service Completed</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Includes review link for customer feedback</p>
+                                </div>
                             </div>
                             <textarea id="tpl-completed" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
@@ -463,7 +495,10 @@
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-red-100 p-2 rounded-lg text-red-600"><i data-lucide="alert-circle" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Issue Reported</h3>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-800">Issue Reported</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Sent when status changes to Issue</p>
+                                </div>
                             </div>
                             <textarea id="tpl-issue" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
@@ -1006,6 +1041,7 @@
             'parts_ordered': "Parts ordered for {plate}. We will notify you when ready.",
             'parts_arrived': "Hello {name}, your parts have arrived! Please confirm your visit here: {link}",
             'rescheduled': "Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}",
+            'reschedule_accepted': "Hello {name}, your reschedule request has been approved! New appointment: {date}. Ref: {plate}. - OTOMOTORS",
             'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
             'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly."
         };
@@ -1027,6 +1063,7 @@
                 smsTemplates.parts_ordered = getVal('tpl-parts_ordered');
                 smsTemplates.parts_arrived = getVal('tpl-parts_arrived');
                 smsTemplates.rescheduled = getVal('tpl-rescheduled');
+                smsTemplates.reschedule_accepted = getVal('tpl-reschedule_accepted');
                 smsTemplates.completed = getVal('tpl-completed');
                 smsTemplates.issue = getVal('tpl-issue');
                 
@@ -1060,6 +1097,7 @@
                 setVal('tpl-parts_ordered', smsTemplates.parts_ordered);
                 setVal('tpl-parts_arrived', smsTemplates.parts_arrived);
                 setVal('tpl-rescheduled', smsTemplates.rescheduled);
+                setVal('tpl-reschedule_accepted', smsTemplates.reschedule_accepted);
                 setVal('tpl-completed', smsTemplates.completed);
                 setVal('tpl-issue', smsTemplates.issue);
             } catch (e) {
