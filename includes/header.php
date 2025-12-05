@@ -20,24 +20,22 @@ $user = getCurrentUser();
                 <div class="hidden md:flex bg-slate-100/50 p-1 rounded-lg border border-slate-200/50">
                     <?php
                     $current_page = basename($_SERVER['PHP_SELF'], '.php');
-                    $base_path = strpos($_SERVER['PHP_SELF'], '/pages/') !== false ? '' : 'pages/';
                     
-                    function navButton($page, $label, $icon, $current, $basePath = '') {
+                    function navButton($page, $label, $icon, $current) {
                         $isActive = $current === $page;
                         $class = $isActive ? 'nav-active' : 'nav-inactive';
-                        $onclick = $basePath ? "window.location.href='{$basePath}{$page}.php'" : "window.switchView('{$page}')";
-                        echo "<button onclick=\"{$onclick}\" id=\"nav-{$page}\" class=\"{$class} px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2\">";
+                        echo "<button onclick=\"window.location.href='{$page}.php'\" id=\"nav-{$page}\" class=\"{$class} px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2\">";
                         echo "<i data-lucide=\"{$icon}\" class=\"w-4 h-4\"></i> {$label}";
                         echo "</button>";
                     }
                     
-                    navButton('dashboard', 'Dashboard', 'layout-dashboard', $current_page, $base_path);
-                    navButton('vehicles', 'Vehicle DB', 'database', $current_page, $base_path);
-                    navButton('reviews', 'Reviews', 'star', $current_page, $base_path);
-                    navButton('templates', 'SMS Templates', 'message-square-dashed', $current_page, $base_path);
+                    navButton('dashboard', 'Dashboard', 'layout-dashboard', $current_page);
+                    navButton('vehicles', 'Vehicle DB', 'database', $current_page);
+                    navButton('reviews', 'Reviews', 'star', $current_page);
+                    navButton('templates', 'SMS Templates', 'message-square-dashed', $current_page);
                     
                     if (isAdmin()) {
-                        navButton('users', 'Users', 'users', $current_page, $base_path);
+                        navButton('users', 'Users', 'users', $current_page);
                     }
                     ?>
                 </div>
@@ -45,20 +43,11 @@ $user = getCurrentUser();
 
             <!-- User Status -->
             <div class="flex items-center gap-4">
-                <!-- View Mode Toggle -->
-                <?php
-                $is_standalone = strpos($_SERVER['PHP_SELF'], '/pages/') !== false;
-                if ($is_standalone): ?>
-                    <a href="../index-modular.php" class="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-full transition-colors flex items-center gap-1.5">
-                        <i data-lucide="app-window" class="w-3.5 h-3.5"></i>
-                        Unified
-                    </a>
-                <?php else: ?>
-                    <a href="pages/" class="text-xs px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-full transition-colors flex items-center gap-1.5">
-                        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
-                        Pages
-                    </a>
-                <?php endif; ?>
+                <!-- Unified View Link -->
+                <a href="index-modular.php" class="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-full transition-colors flex items-center gap-1.5">
+                    <i data-lucide="app-window" class="w-3.5 h-3.5"></i>
+                    Unified View
+                </a>
                 
                 <!-- Notification Bell -->
                 <button id="btn-notify" onclick="window.requestNotificationPermission()" class="text-slate-400 hover:text-primary-600 transition-colors p-2 bg-slate-100 rounded-full group relative" title="Enable Notifications">

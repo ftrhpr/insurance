@@ -4,16 +4,8 @@
  */
 
 // Note: USER_ROLE, USER_NAME, CAN_EDIT are injected by index-modular.php
-// Auto-detect correct API path based on current location
-const API_URL = (() => {
-    const path = window.location.pathname;
-    // If we're in /pages/ subdirectory, go up one level
-    if (path.includes('/pages/')) {
-        return '../api.php';
-    }
-    // If we're at root or any other location, use relative path
-    return 'api.php';
-})();
+// All pages are now in root directory - use simple relative path
+const API_URL = 'api.php';
 const MANAGER_PHONE = "511144486";
 
 // Global state
