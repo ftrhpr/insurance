@@ -1105,166 +1105,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </div>
     <?php endif; ?>
 
-    <!-- External JavaScript -->
+    <!-- Initialize PHP variables for JavaScript -->
     <script>
-        // Initialize user role from PHP
         window.USER_ROLE = '<?php echo $current_user_role; ?>';
         window.CAN_EDIT = window.USER_ROLE === 'admin' || window.USER_ROLE === 'manager';
-        
-        // 1. FIREBASE CONFIG (REPLACE WITH YOURS)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBRvdcvgMsOiVzeUQdSMYZFQ1GKkHZUWYI",
-            authDomain: "otm-portal-312a5.firebaseapp.com",
-            projectId: "otm-portal-312a5",
-            storageBucket: "otm-portal-312a5.firebasestorage.app",
-            messagingSenderId: "917547807534",
-            appId: "1:917547807534:web:9021c744b7b0f62b4e80bf"
-        };
-
-        // Initialize Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            const messaging = firebase.messaging();
-            
-            // Handle foreground messages
-            messaging.onMessage((payload) => {
-                console.log('Message received. ', payload);
-                const { title, body } = payload.notification;
-                showToast(`${title}: ${body}`, 'success');
-            });
-        } catch (e) {
-            console.log("Firebase init failed (check config):", e);
-        }
-
-        // Notification Logic
-        window.requestNotificationPermission = async () => {
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const token = await firebase.messaging().getToken({ vapidKey: 'BPmaDT11APIDJCEoLFGA7ZoUCmc2IM9wxsNPJsy4984GaZNhBEEJa1VG6C65t1oCMTtUPVSudeivYsAmINDGc-w' });
-                    if (token) {
-                        await fetchAPI('register_token', 'POST', { token });
-                        showToast("Notifications Enabled");
-                    }
-                } else {
-                    showToast("Permission denied", "error");
-                }
-            } catch (error) {
-                console.error('Unable to get permission', error);
-            }
-        };
-
-        let transfers = [];
-        let vehicles = [];
-        window.currentEditingId = null;
-        let parsedImportData = [];
-        const currentUser = { uid: "manager", name: "Manager" }; 
-
-        // Helper
-        const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
-
-        // --- API HELPERS ---
-        async function fetchAPI(action, method = 'GET', body = null) {
-            const opts = { method };
-            if (body) opts.body = JSON.stringify(body);
-            
-            // If strictly using Mock Data, skip fetch
-            if (USE_MOCK_DATA) {
-                return getMockData(action, body);
-            }
-
-            try {
-                const res = await fetch(`${API_URL}?action=${action}`, opts);
-                
-                // Check if response is NOT OK (e.g. 500 Error)
-                if (!res.ok) {
-                    // Try to parse the JSON error message from api.php
-                    let errorText = res.statusText;
-                    try {
-                        const errorJson = await res.json();
-                        if (errorJson.error) errorText = errorJson.error;
-                    } catch (parseErr) {
-                        // If parsing fails, use the text body or generic status
-                        const text = await res.text();
-                        if(text) errorText = text.substring(0, 100); // Limit length
-                    }
-                    throw new Error(`Server Error (${res.status}): ${errorText}`);
-                }
-
-                const data = await res.json();
-                
-                // Update UI Connection Status
-                const statusEl = document.getElementById('connection-status');
-                if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> SQL Connected`;
-                
-                return data;
-            } catch (e) {
-                console.warn("Server unavailable:", e);
-                const statusEl = document.getElementById('connection-status');
-                if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-red-500 rounded-full"></span> Connection Failed`;
-                
-                // Show detailed error in toast
-                showToast("Connection Error", e.message, "error");
-                throw e; 
-            }
-        }
-
-        // Mock Data Handler (For Demo/Fallback)
-        function getMockData(action, body) {
-            // Update UI
-            const statusEl = document.getElementById('connection-status');
-            if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-yellow-500 rounded-full"></span> Demo Mode`;
-
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    if (action === 'get_transfers') resolve(transfers.length ? transfers : []);
-                    else if (action === 'get_vehicles') resolve(vehicles.length ? vehicles : []);
-                    else if (action === 'add_transfer') {
-                        const newId = Math.floor(Math.random()*10000);
-                        resolve({ id: newId, status: 'success' });
-                    }
-                    else if (action === 'save_vehicle') resolve({ status: 'success' });
-                    else resolve({ status: 'mock_success' });
-                }, 100);
-            });
-        }
-
-        // --- CONFIGURATION ---
-        // Set to FALSE to stop using fake data and connect to your SQL Database
-        const USE_MOCK_DATA = false; 
-
-        async function loadData() {
-            try {
-                const newTransfers = await fetchAPI('get_transfers');
-                const newVehicles = await fetchAPI('get_vehicles');
-                
-                if(Array.isArray(newTransfers)) transfers = newTransfers;
-                if(Array.isArray(newVehicles)) vehicles = newVehicles;
-
-                renderTable();
-                renderVehicleTable();
-            } catch(e) {
-                // Squelch load errors to prevent loop spam, alert user once via status
-            }
-
-            document.getElementById('loading-screen').classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                document.getElementById('loading-screen').classList.add('hidden');
-                document.getElementById('app-content').classList.remove('hidden');
-            }, 500);
-        }
-
-        // Poll for updates every 10 seconds
-        setInterval(loadData, 10000);
-
-        // Stylish Toast Function
-        function showToast(title, message = '', type = 'success', duration = 4000) {
-            const container = document.getElementById('toast-container');
-            
-            // Handle legacy calls
-            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
-            if (!message && !type) { type = 'success'; }
-            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
+    </script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
+<?php exit; ?>
             
             // Create toast
             const toast = document.createElement('div');
@@ -2636,10 +2485,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 loadUsers();
             } catch (err) {
                 console.error('Error deleting user:', err);
-                showToast('Error', err.message || 'Failed to delete user', 'error');
-            }
-        };
-
     </script>
     <script src="assets/js/app.js"></script>
 </body>
