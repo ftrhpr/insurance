@@ -350,9 +350,9 @@ try {
         foreach ($rows as &$row) {
             $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');
             $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
-            $row['serviceDate'] = $row['service_date']; 
+            $row['serviceDate'] = $row['service_date'] ?? null; 
         }
-        jsonResponse($rows);
+        jsonResponse(['transfers' => $rows]);
     }
 
     // ... (Rest of existing actions: add_transfer, update_transfer, delete_transfer, etc. remain unchanged) ...
