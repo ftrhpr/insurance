@@ -67,7 +67,7 @@
                         <span class="bg-white/20 p-1 rounded-full"><i data-lucide="check" class="w-4 h-4"></i></span>
                         <span>Confirm & Accept</span>
                     </button>
-                    <button onclick="submitResponse('Reschedule Requested')" class="w-full bg-white border-2 border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700 py-4 rounded-xl font-bold active:scale-95 transition-all text-sm">
+                    <button onclick="openRescheduleModal()" class="w-full bg-white border-2 border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700 py-4 rounded-xl font-bold active:scale-95 transition-all text-sm">
                         Request Another Time
                     </button>
                 </div>
@@ -140,6 +140,43 @@
             <a href="tel:+995511144486" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700 flex items-center justify-center gap-1">
                 <i data-lucide="phone" class="w-3 h-3"></i> Call Support
             </a>
+        </div>
+    </div>
+
+    <!-- Reschedule Modal -->
+    <div id="reschedule-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">Request Reschedule</h3>
+                        <p class="text-sm text-slate-500 mt-1">Tell us your preferred date and time</p>
+                    </div>
+                    <button onclick="closeRescheduleModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Preferred Date & Time</label>
+                        <input id="reschedule-date" type="datetime-local" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Additional Comments (Optional)</label>
+                        <textarea id="reschedule-comment" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none resize-none" rows="4" placeholder="Let us know any specific requirements or reasons for rescheduling..."></textarea>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeRescheduleModal()" class="flex-1 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium transition-colors border border-slate-200">
+                        Cancel
+                    </button>
+                    <button onclick="submitReschedule()" class="flex-1 px-4 py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                        Submit Request
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -260,6 +297,57 @@
         }
 
         // --- APPOINTMENT LOGIC ---
+        function openRescheduleModal() {
+            document.getElementById('reschedule-modal').classList.remove('hidden');
+            // Set minimum date to today
+            const now = new Date();
+            const minDate = now.toISOString().slice(0, 16);
+            document.getElementById('reschedule-date').min = minDate;
+            lucide.createIcons();
+        }
+
+        function closeRescheduleModal() {
+            document.getElementById('reschedule-modal').classList.add('hidden');
+            document.getElementById('reschedule-date').value = '';
+            document.getElementById('reschedule-comment').value = '';
+        }
+
+        async function submitReschedule() {
+            const desiredDate = document.getElementById('reschedule-date').value;
+            const comment = document.getElementById('reschedule-comment').value;
+
+            if (!desiredDate) {
+                alert('Please select your preferred date and time');
+                return;
+            }
+
+            const modal = document.getElementById('reschedule-modal');
+            const submitBtn = modal.querySelector('button[onclick="submitReschedule()"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-2"></i> Sending...';
+            lucide.createIcons();
+
+            try {
+                await fetch(`${API_URL}?action=user_respond`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        id: id, 
+                        response: 'Reschedule Requested',
+                        reschedule_date: desiredDate,
+                        reschedule_comment: comment
+                    })
+                });
+                closeRescheduleModal();
+                showSuccess('Reschedule Requested');
+            } catch(e) {
+                alert("Connection error.");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
         async function submitResponse(status) {
             const btnArea = document.getElementById('action-area');
             const originalContent = btnArea.innerHTML;

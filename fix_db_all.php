@@ -38,6 +38,8 @@ try {
     $columns = [
         'user_response' => "VARCHAR(50) DEFAULT 'Pending'",
         'service_date'  => "DATETIME DEFAULT NULL",
+        'reschedule_date' => "DATETIME DEFAULT NULL",
+        'reschedule_comment' => "TEXT DEFAULT NULL",
         'review_stars'  => "INT DEFAULT NULL",
         'review_comment'=> "TEXT DEFAULT NULL",
         'internal_notes'=> "JSON DEFAULT NULL",  // or TEXT if MariaDB version is old

@@ -654,6 +654,24 @@
                             <p id="modal-review-comment" class="text-sm text-slate-600 italic leading-relaxed bg-white/60 p-3 rounded-lg"></p>
                         </div>
 
+                        <!-- Reschedule Request Preview -->
+                        <div id="modal-reschedule-section" class="hidden bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 overflow-hidden shadow-sm p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-600"></i>
+                                <label class="text-xs font-bold text-purple-700 uppercase tracking-wider">Reschedule Request</label>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-purple-600 font-semibold">Requested Date:</span>
+                                    <span id="modal-reschedule-date" class="text-sm font-bold text-slate-800"></span>
+                                </div>
+                                <div class="bg-white/60 p-3 rounded-lg">
+                                    <span class="text-xs text-purple-600 font-semibold block mb-1">Customer Comment:</span>
+                                    <p id="modal-reschedule-comment" class="text-sm text-slate-600 italic leading-relaxed"></p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="flex-1 flex flex-col bg-yellow-50/50 rounded-2xl border border-yellow-100 overflow-hidden shadow-sm">
                             <div class="px-4 py-3 bg-yellow-50 border-b border-yellow-100 flex justify-between items-center">
                                 <label class="text-xs font-bold text-yellow-700 uppercase tracking-wider flex items-center gap-2">
@@ -1360,6 +1378,30 @@
                 document.getElementById('modal-review-comment').innerText = comment;
             } else {
                 reviewSection.classList.add('hidden');
+            }
+
+            // Display reschedule request if exists
+            const rescheduleSection = document.getElementById('modal-reschedule-section');
+            if (t.userResponse === 'Reschedule Requested' && (t.rescheduleDate || t.rescheduleComment)) {
+                rescheduleSection.classList.remove('hidden');
+                
+                if (t.rescheduleDate) {
+                    const requestedDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                    document.getElementById('modal-reschedule-date').innerText = requestedDate.toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+                } else {
+                    document.getElementById('modal-reschedule-date').innerText = 'Not specified';
+                }
+                
+                const rescheduleComment = t.rescheduleComment || 'No additional comments';
+                document.getElementById('modal-reschedule-comment').innerText = rescheduleComment;
+            } else {
+                rescheduleSection.classList.add('hidden');
             }
 
             document.getElementById('edit-modal').classList.remove('hidden');

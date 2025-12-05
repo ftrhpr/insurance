@@ -149,15 +149,28 @@ try {
         $data = getJsonInput();
         $id = $data['id'] ?? 0;
         $response = $data['response'] ?? 'Confirmed';
+        $rescheduleDate = $data['reschedule_date'] ?? null;
+        $rescheduleComment = $data['reschedule_comment'] ?? null;
         
         if($id) {
+            // Update user response
             $pdo->prepare("UPDATE transfers SET user_response = ? WHERE id = ?")->execute([$response, $id]);
+            
+            // If reschedule request, store the desired date and comment
+            if ($response === 'Reschedule Requested' && $rescheduleDate) {
+                $pdo->prepare("UPDATE transfers SET reschedule_date = ?, reschedule_comment = ? WHERE id = ?")
+                    ->execute([$rescheduleDate, $rescheduleComment, $id]);
+            }
             
             $stmt = $pdo->prepare("SELECT name, plate FROM transfers WHERE id = ?");
             $stmt->execute([$id]);
             $tr = $stmt->fetch();
             if($tr) {
-                sendFCM_V1($pdo, $service_account_file, "Customer Responded", "{$tr['name']} ({$tr['plate']}) marked as: $response");
+                $notificationBody = "{$tr['name']} ({$tr['plate']}) marked as: $response";
+                if ($rescheduleDate) {
+                    $notificationBody .= " - Requested: " . date('M d, Y H:i', strtotime($rescheduleDate));
+                }
+                sendFCM_V1($pdo, $service_account_file, "Customer Responded", $notificationBody);
             }
         }
         jsonResponse(['status' => 'success']);
