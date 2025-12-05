@@ -4,7 +4,8 @@
  */
 
 // Note: USER_ROLE, USER_NAME, CAN_EDIT are injected by index-modular.php
-const API_URL = 'api.php';
+// Auto-detect correct API path based on current location
+const API_URL = window.location.pathname.includes('/pages/') ? '../api.php' : 'api.php';
 const MANAGER_PHONE = "511144486";
 
 // Global state
