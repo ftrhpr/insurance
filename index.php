@@ -414,8 +414,16 @@
 
                         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                             <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-purple-100 p-2 rounded-lg text-purple-600"><i data-lucide="phone-call" class="w-4 h-4"></i></div>
+                                <h3 class="font-bold text-slate-800">Customer Contacted (Called)</h3>
+                            </div>
+                            <textarea id="tpl-called" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <div class="flex items-center gap-3 mb-3">
                                 <div class="bg-orange-100 p-2 rounded-lg text-orange-600"><i data-lucide="calendar" class="w-4 h-4"></i></div>
-                                <h3 class="font-bold text-slate-800">Service Schedule</h3>
+                                <h3 class="font-bold text-slate-800">Service Scheduled</h3>
                             </div>
                             <textarea id="tpl-schedule" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
@@ -450,6 +458,14 @@
                                 <h3 class="font-bold text-slate-800">Service Completed</h3>
                             </div>
                             <textarea id="tpl-completed" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-red-100 p-2 rounded-lg text-red-600"><i data-lucide="alert-circle" class="w-4 h-4"></i></div>
+                                <h3 class="font-bold text-slate-800">Issue Reported</h3>
+                            </div>
+                            <textarea id="tpl-issue" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-primary-500 outline-none resize-none leading-relaxed" placeholder="Enter template..."></textarea>
                         </div>
 
                     </div>
@@ -953,11 +969,13 @@
         // --- TEMPLATE LOGIC (UPDATED TO USE API) ---
         const defaultTemplates = {
             'registered': "Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service.",
+            'called': "Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.",
             'schedule': "Hello {name}, service scheduled for {date}. Ref: {plate}.",
             'parts_ordered': "Parts ordered for {plate}. We will notify you when ready.",
             'parts_arrived': "Hello {name}, your parts have arrived! Please confirm your visit here: {link}",
             'rescheduled': "Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}",
-            'completed': "Service for {plate} is completed. You can pick up your car."
+            'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
+            'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly."
         };
         
         let smsTemplates = defaultTemplates;
@@ -972,11 +990,13 @@
                 };
 
                 smsTemplates.registered = getVal('tpl-registered');
+                smsTemplates.called = getVal('tpl-called');
                 smsTemplates.schedule = getVal('tpl-schedule');
                 smsTemplates.parts_ordered = getVal('tpl-parts_ordered');
                 smsTemplates.parts_arrived = getVal('tpl-parts_arrived');
                 smsTemplates.rescheduled = getVal('tpl-rescheduled');
                 smsTemplates.completed = getVal('tpl-completed');
+                smsTemplates.issue = getVal('tpl-issue');
                 
                 // SAVE TO API
                 await fetchAPI('save_templates', 'POST', smsTemplates);
@@ -1003,11 +1023,13 @@
                 };
 
                 setVal('tpl-registered', smsTemplates.registered);
+                setVal('tpl-called', smsTemplates.called);
                 setVal('tpl-schedule', smsTemplates.schedule);
                 setVal('tpl-parts_ordered', smsTemplates.parts_ordered);
                 setVal('tpl-parts_arrived', smsTemplates.parts_arrived);
                 setVal('tpl-rescheduled', smsTemplates.rescheduled);
                 setVal('tpl-completed', smsTemplates.completed);
+                setVal('tpl-issue', smsTemplates.issue);
             } catch (e) {
                 console.error("UI Load Error", e);
             }
@@ -1402,9 +1424,9 @@
                         window.sendSMS(phone, msg, 'schedule_sms');
                     }
 
-                    // 3. Contacted -> Service Schedule SMS (As requested)
+                    // 3. Contacted -> Called SMS
                     else if (status === 'Called') {
-                        const msg = getFormattedMessage('schedule', templateData);
+                        const msg = getFormattedMessage('called', templateData);
                         window.sendSMS(phone, msg, 'contacted_sms');
                     }
 
@@ -1420,10 +1442,16 @@
                         window.sendSMS(phone, msg, 'parts_arrived_sms');
                     }
 
-                    // Completed
+                    // 6. Completed -> Completed SMS with review link
                     else if (status === 'Completed') {
                         const msg = getFormattedMessage('completed', templateData);
                         window.sendSMS(phone, msg, 'completed_sms');
+                    }
+
+                    // 7. Issue -> Issue SMS
+                    else if (status === 'Issue') {
+                        const msg = getFormattedMessage('issue', templateData);
+                        window.sendSMS(phone, msg, 'issue_sms');
                     }
                 }
             }
