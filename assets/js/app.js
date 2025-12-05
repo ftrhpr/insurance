@@ -12,32 +12,135 @@ let transfers = [];
 let vehicles = [];
 let reviews = [];
 const currentUser = { uid: "manager", name: "Manager" };
+let isOnline = true;
+let connectionCheckInterval = null;
 
 // Helper functions
 window.normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
-// API Helper
-async function fetchAPI(action, method = 'GET', body = null) {
-    const opts = { method };
+// Connection Status Management
+function updateConnectionStatus(online) {
+    isOnline = online;
+    const statusEl = document.getElementById('connection-status');
+    if (!statusEl) return;
+    
+    if (online) {
+        statusEl.className = 'flex items-center gap-2 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1.5 rounded-full shadow-sm';
+        statusEl.innerHTML = '<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span><span>Server Connected</span>';
+    } else {
+        statusEl.className = 'flex items-center gap-2 text-xs font-medium bg-red-50 text-red-700 border border-red-100 px-3 py-1.5 rounded-full shadow-sm';
+        statusEl.innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full"></span><span>Connection Lost</span>';
+        showToast('Connection Lost', 'Attempting to reconnect...', 'error');
+    }
+}
+
+// Monitor connection status
+function startConnectionMonitoring() {
+    // Check online status
+    window.addEventListener('online', () => {
+        updateConnectionStatus(true);
+        showToast('Back Online', 'Connection restored', 'success');
+        loadData(); // Reload data
+    });
+    
+    window.addEventListener('offline', () => {
+        updateConnectionStatus(false);
+    });
+    
+    // Periodic health check
+    if (connectionCheckInterval) clearInterval(connectionCheckInterval);
+    connectionCheckInterval = setInterval(async () => {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            
+            await fetch('api.php?action=health_check', {
+                method: 'GET',
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            if (!isOnline) {
+                updateConnectionStatus(true);
+                showToast('Connection Restored', 'Server is reachable', 'success');
+            }
+        } catch (err) {
+            if (isOnline) {
+                updateConnectionStatus(false);
+            }
+        }
+    }, 30000); // Check every 30 seconds
+}
+
+window.updateConnectionStatus = updateConnectionStatus;
+
+// API Helper with retry logic
+async function fetchAPI(action, method = 'GET', body = null, retries = 2) {
+    const opts = { 
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
+    };
     if (body) opts.body = JSON.stringify(body);
     
-    try {
-        const res = await fetch(`${API_URL}?action=${action}`, opts);
-        
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP ${res.status}`);
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            const res = await fetch(`${API_URL}?action=${action}`, {
+                ...opts,
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                
+                // Retry on server errors (503)
+                if (res.status === 503 && errorData.retry && attempt < retries) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+                    continue;
+                }
+                
+                throw new Error(errorData.message || errorData.error || `HTTP ${res.status}`);
+            }
+            
+            updateConnectionStatus(true);
+            return await res.json();
+            
+        } catch (err) {
+            console.error(`API Error [${action}] (attempt ${attempt + 1}):`, err);
+            
+            // Handle specific error types
+            if (err.name === 'AbortError') {
+                updateConnectionStatus(false);
+                if (attempt < retries) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    continue;
+                }
+                throw new Error('Request timeout. Please check your connection.');
+            }
+            
+            if (err.message.includes('Unauthorized') || err.message.includes('401')) {
+                window.location.href = 'login.php';
+                return;
+            }
+            
+            if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+                updateConnectionStatus(false);
+                if (attempt < retries) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    continue;
+                }
+                throw new Error('Network error. Please check your internet connection.');
+            }
+            
+            if (attempt === retries) {
+                throw err;
+            }
         }
-        
-        return await res.json();
-    } catch (err) {
-        console.error(`API Error [${action}]:`, err);
-        
-        if (err.message.includes('Unauthorized')) {
-            window.location.href = 'login.php';
-        }
-        
-        throw err;
     }
 }
 
@@ -171,6 +274,14 @@ window.initLucide = function() {
 
 // Initialize
 window.addEventListener('DOMContentLoaded', function() {
+    startConnectionMonitoring();
     loadData();
     initLucide();
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (connectionCheckInterval) {
+        clearInterval(connectionCheckInterval);
+    }
 });

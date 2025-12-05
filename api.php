@@ -17,11 +17,21 @@ $service_account_file = __DIR__ . '/service-account.json';
 
 // --- DB CONNECTION ---
 try {
-    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
+        PDO::ATTR_TIMEOUT => 5,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_PERSISTENT => false,
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
+        PDO::ATTR_EMULATE_PREPARES => false
+    ]);
 } catch (PDOException $e) {
-    http_response_code(500); 
-    die(json_encode(['error' => 'DB Connection failed: ' . $e->getMessage()]));
+    error_log('Database connection failed: ' . $e->getMessage());
+    http_response_code(503);
+    die(json_encode([
+        'error' => 'Service temporarily unavailable',
+        'message' => 'Database connection failed. Please try again.',
+        'retry' => true
+    ]));
 }
 
 $action = $_GET['action'] ?? '';
@@ -98,9 +108,14 @@ function getAccessToken($keyFile) {
 }
 
 function sendFCM_V1($pdo, $keyFile, $title, $body) {
-    $stmt = $pdo->query("SELECT token FROM manager_tokens");
-    $tokens = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    if (empty($tokens)) return ['status' => 'no_tokens'];
+    try {
+        $stmt = $pdo->query("SELECT token FROM manager_tokens");
+        $tokens = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($tokens)) return ['status' => 'no_tokens'];
+    } catch (PDOException $e) {
+        error_log('FCM token fetch failed: ' . $e->getMessage());
+        return ['status' => 'db_error', 'message' => 'Failed to fetch tokens'];
+    }
 
     $accessToken = getAccessToken($keyFile);
     if (!$accessToken) return ['status' => 'auth_failed', 'msg' => 'Could not generate access token'];
@@ -142,9 +157,18 @@ function sendFCM_V1($pdo, $keyFile, $title, $body) {
     curl_close($ch);
 
     return $results;
+    } catch (Exception $e) {
+        error_log('FCM send failed: ' . $e->getMessage());
+        return ['status' => 'error', 'message' => $e->getMessage()];
+    }
 }
 
 try {
+    // --- HEALTH CHECK (PUBLIC) ---
+    if ($action === 'health_check' && $method === 'GET') {
+        jsonResponse(['status' => 'ok', 'timestamp' => time()]);
+    }
+
     // --- PUBLIC ACTIONS ---
 
     if ($action === 'get_public_transfer' && $method === 'GET') {

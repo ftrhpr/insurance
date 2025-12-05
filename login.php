@@ -40,11 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Invalid username or password';
             }
         } catch (PDOException $e) {
-            $error = 'Database error: ' . $e->getMessage();
             error_log('Login DB Error: ' . $e->getMessage());
+            $error = 'Unable to connect to the database. Please try again.';
         } catch (Exception $e) {
-            $error = 'Error: ' . $e->getMessage();
             error_log('Login Error: ' . $e->getMessage());
+            if (strpos($e->getMessage(), 'connection failed') !== false) {
+                $error = 'Server connection failed. Please check your network and try again.';
+            } else {
+                $error = 'An error occurred. Please try again later.';
+            }
         }
     } else {
         $error = 'Please enter both username and password';
