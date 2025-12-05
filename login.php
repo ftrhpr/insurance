@@ -1,16 +1,4 @@
 <?php
-// Error handling configuration
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/error_log');
-
-// Custom error handler
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    error_log("Login [$errno] $errstr in $errfile on line $errline");
-    return true;
-});
-
 session_start();
 
 // If already logged in, redirect to dashboard
@@ -22,49 +10,53 @@ if (isset($_SESSION['user_id'])) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once 'config.php';
-    
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     
     if ($username && $password) {
         try {
-            $pdo = getDBConnection();
+            // Database credentials
+            $db_host = 'localhost';
+            $db_name = 'otoexpre_userdb';
+            $db_user = 'otoexpre_userdb';
+            $db_pass = 'p52DSsthB}=0AeZ#';
             
-            $stmt = $pdo->prepare("SELECT id, username, password, full_name, role, status FROM users WHERE username = ? AND status = 'active'");
-            $stmt->execute([$username]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
-            if ($user && password_verify($password, $user['password'])) {
-                // Update last login
-                $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-                $updateStmt->execute([$user['id']]);
-                
-                // Set session
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['full_name'] = $user['full_name'];
-                $_SESSION['role'] = $user['role'];
-                
-                header('Location: index.php');
-                exit;
+            // Check if users table exists
+            $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
+            if ($stmt->rowCount() === 0) {
+                $error = 'User system not initialized. Please run fix_db_all.php first.';
             } else {
-                $error = 'Invalid username or password';
+                $stmt = $pdo->prepare("SELECT id, username, password, full_name, role, status FROM users WHERE username = ? AND status = 'active'");
+                $stmt->execute([$username]);
+                $userRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($userRecord && password_verify($password, $userRecord['password'])) {
+                    // Update last login
+                    $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+                    $updateStmt->execute([$userRecord['id']]);
+                    
+                    // Set session
+                    $_SESSION['user_id'] = $userRecord['id'];
+                    $_SESSION['username'] = $userRecord['username'];
+                    $_SESSION['full_name'] = $userRecord['full_name'];
+                    $_SESSION['role'] = $userRecord['role'];
+                    
+                    header('Location: index.php');
+                    exit;
+                } else {
+                    $error = 'Invalid username or password';
+                }
             }
         } catch (PDOException $e) {
-            error_log('Login DB Error: ' . $e->getMessage());
-            // Check if it's a table not found error
-            if (strpos($e->getMessage(), "doesn't exist") !== false || strpos($e->getMessage(), "Table") !== false) {
-                $error = 'Database not initialized. Please run <a href="fix_db_all.php" class="underline">fix_db_all.php</a> first.';
+            if (strpos($e->getMessage(), 'Access denied') !== false) {
+                $error = 'Database connection failed. Please check credentials.';
+            } else if (strpos($e->getMessage(), "Unknown database") !== false) {
+                $error = 'Database not found. Please contact administrator.';
             } else {
-                $error = 'Unable to connect to the database. Please try again.';
-            }
-        } catch (Exception $e) {
-            error_log('Login Error: ' . $e->getMessage());
-            if (strpos($e->getMessage(), 'connection failed') !== false) {
-                $error = 'Server connection failed. Please check your network and try again.';
-            } else {
-                $error = 'An error occurred. Please try again later.';
+                $error = 'Database error: ' . $e->getMessage();
             }
         }
     } else {
@@ -94,9 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="p-8">
                 <?php if ($error): ?>
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-start">
-                        <i data-lucide="alert-circle" class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5"></i>
-                        <span><?php echo $error; // Allow HTML for the setup link ?></span>
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
+                        <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+                        <span><?php echo htmlspecialchars($error); ?></span>
                     </div>
                 <?php endif; ?>
                 

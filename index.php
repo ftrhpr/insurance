@@ -1,41 +1,84 @@
 <?php
-// Error handling configuration - PRODUCTION (OLD MONOLITHIC INDEX - DEPRECATED)
-// NOTE: This file is deprecated. Use dashboard.php, vehicles.php, etc. instead
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // DISABLED FOR PRODUCTION
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/error_log');
-
-// Custom error handler - NO VISIBLE OUTPUT
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    $error_types = [
-        E_ERROR => 'ERROR',
-        E_WARNING => 'WARNING',
-        E_NOTICE => 'NOTICE',
-        E_USER_ERROR => 'USER_ERROR',
-        E_USER_WARNING => 'USER_WARNING',
-        E_USER_NOTICE => 'USER_NOTICE'
-    ];
-    $type = $error_types[$errno] ?? 'UNKNOWN';
-    $msg = "[$type] $errstr in $errfile on line $errline";
-    error_log($msg);
-    return true; // Suppress output
-});
-
-// Custom exception handler - PRODUCTION (no details exposed)
-set_exception_handler(function($exception) {
-    error_log('Uncaught Exception: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ' on line ' . $exception->getLine());
-    error_log('Stack trace: ' . $exception->getTraceAsString());
-    
-    http_response_code(500);
-    echo '<!DOCTYPE html><html><head><title>Service Unavailable</title></head><body style="font-family:sans-serif;padding:20px;background:#f5f5f5;text-align:center;">';
-    echo '<h1 style="color:#666;">Service Temporarily Unavailable</h1>';
-    echo '<p style="color:#999;">Please try again later or contact support.</p>';
-    echo '</body></html>';
-    exit;
-});
-
 session_start();
+
+// Check if users table exists to determine if system is initialized
+$systemInitialized = false;
+try {
+    $db_host = 'localhost';
+    $db_name = 'otoexpre_userdb';
+    $db_user = 'otoexpre_userdb';
+    $db_pass = 'p52DSsthB}=0AeZ#';
+    
+    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
+    $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
+    $systemInitialized = ($stmt->rowCount() > 0);
+} catch (PDOException $e) {
+    // System not initialized
+}
+
+// If system not initialized, show setup message
+if (!$systemInitialized) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Setup Required - OTOMOTORS</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://unpkg.com/lucide@latest"></script>
+    </head>
+    <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8">
+            <div class="text-center mb-6">
+                <div class="bg-orange-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="alert-triangle" class="w-10 h-10 text-orange-600"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-800 mb-2">System Setup Required</h1>
+                <p class="text-slate-600">The database needs to be initialized before you can use the portal.</p>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <h3 class="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                    <i data-lucide="list-checks" class="w-5 h-5"></i>
+                    Setup Steps:
+                </h3>
+                <ol class="list-decimal list-inside space-y-2 text-blue-800">
+                    <li>First, test your database connection: <a href="test_db_connection.php" class="underline font-bold">test_db_connection.php</a></li>
+                    <li>Then, run the database setup: <a href="fix_db_all.php" class="underline font-bold">fix_db_all.php</a></li>
+                    <li>Finally, return here to login</li>
+                </ol>
+            </div>
+            
+            <div class="bg-slate-50 rounded-lg p-6">
+                <h3 class="font-bold text-slate-800 mb-3">Default Credentials:</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs text-slate-500 mb-1">Username</p>
+                        <p class="font-mono font-bold text-slate-900">admin</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 mb-1">Password</p>
+                        <p class="font-mono font-bold text-slate-900">admin123</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex gap-4">
+                <a href="test_db_connection.php" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center">
+                    Test Database
+                </a>
+                <a href="fix_db_all.php" class="flex-1 bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors text-center">
+                    Setup Database
+                </a>
+            </div>
+        </div>
+        <script>lucide.createIcons();</script>
+    </body>
+    </html>
+    <?php
+    exit;
+}
 
 // Redirect to login if not authenticated
 if (!isset($_SESSION['user_id'])) {
@@ -1132,14 +1175,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             try {
                 const res = await fetch(`${API_URL}?action=${action}`, opts);
-                const resClone = res.clone(); // Clone response to allow multiple reads
                 
                 // Check if response is NOT OK (e.g. 500 Error)
                 if (!res.ok) {
                     // Try to parse the JSON error message from api.php
                     let errorText = res.statusText;
                     try {
-                        const errorJson = await resClone.json();
+                        const errorJson = await res.json();
                         if (errorJson.error) errorText = errorJson.error;
                     } catch (parseErr) {
                         // If parsing fails, use the text body or generic status
@@ -1193,15 +1235,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         async function loadData() {
             try {
-                const transfersData = await fetchAPI('get_transfers');
-                const vehiclesData = await fetchAPI('get_vehicles');
+                const newTransfers = await fetchAPI('get_transfers');
+                const newVehicles = await fetchAPI('get_vehicles');
                 
-                // Handle wrapped response format
-                if(transfersData && transfersData.transfers) transfers = transfersData.transfers;
-                else if(Array.isArray(transfersData)) transfers = transfersData;
-                
-                if(vehiclesData && vehiclesData.vehicles) vehicles = vehiclesData.vehicles;
-                else if(Array.isArray(vehiclesData)) vehicles = vehiclesData;
+                if(Array.isArray(newTransfers)) transfers = newTransfers;
+                if(Array.isArray(newVehicles)) vehicles = newVehicles;
 
                 renderTable();
                 renderVehicleTable();
