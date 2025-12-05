@@ -187,7 +187,12 @@ async function loadData() {
         renderTable();
         renderVehicleTable();
     } catch(e) {
-        // Squelch load errors
+        console.error('Load data error:', e);
+        // Check if it's an authentication error
+        if (e.message && (e.message.includes('401') || e.message.includes('Unauthorized'))) {
+            window.location.href = 'login.php';
+            return;
+        }
     }
 
     document.getElementById('loading-screen').classList.add('opacity-0', 'pointer-events-none');
