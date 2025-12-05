@@ -1268,7 +1268,18 @@
                     if (t.user_response === 'Confirmed') {
                         replyBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="check" class="w-3 h-3"></i> Confirmed</span>`;
                     } else if (t.user_response === 'Reschedule Requested') {
-                        replyBadge = `<span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="clock" class="w-3 h-3"></i> Reschedule</span>`;
+                        let rescheduleInfo = '';
+                        if (t.rescheduleDate) {
+                            const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                            const dateStr = reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            rescheduleInfo = `<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ${dateStr}</div>`;
+                        }
+                        replyBadge = `<div class="flex flex-col items-start">
+                            <span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
+                                <i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request
+                            </span>
+                            ${rescheduleInfo}
+                        </div>`;
                     }
 
                     activeContainer.innerHTML += `
