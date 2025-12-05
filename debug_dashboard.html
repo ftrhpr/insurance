@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Debug - OTOMOTORS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Dashboard Error Diagnostic</h1>
+        
+        <div id="results" class="space-y-4"></div>
+        
+        <button onclick="runTests()" class="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Run Diagnostic Tests
+        </button>
+    </div>
+
+    <script>
+        function log(title, content, type = 'info') {
+            const div = document.createElement('div');
+            const colors = {
+                success: 'bg-green-50 border-green-200 text-green-800',
+                error: 'bg-red-50 border-red-200 text-red-800',
+                warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                info: 'bg-blue-50 border-blue-200 text-blue-800'
+            };
+            div.className = `p-4 border-l-4 rounded ${colors[type]}`;
+            div.innerHTML = `<strong class="font-bold">${title}</strong><pre class="mt-2 text-sm overflow-auto">${JSON.stringify(content, null, 2)}</pre>`;
+            document.getElementById('results').appendChild(div);
+        }
+
+        async function runTests() {
+            document.getElementById('results').innerHTML = '';
+            
+            // Test 1: Check session
+            log('Test 1: Session Check', 'Checking if logged in...', 'info');
+            
+            try {
+                const sessionRes = await fetch('api.php?action=get_current_user', {
+                    credentials: 'same-origin'
+                });
+                const sessionData = await sessionRes.json();
+                
+                if (sessionRes.status === 401) {
+                    log('Session Status', 'NOT LOGGED IN - You must login first!', 'error');
+                    log('Solution', 'Go to login.php and login with your credentials', 'warning');
+                    return;
+                } else {
+                    log('Session Status', sessionData, 'success');
+                }
+            } catch (err) {
+                log('Session Check Failed', err.message, 'error');
+                return;
+            }
+            
+            // Test 2: Health check
+            log('Test 2: API Health Check', 'Pinging API...', 'info');
+            
+            try {
+                const healthRes = await fetch('api.php?action=health_check');
+                const healthData = await healthRes.json();
+                log('API Health', healthData, 'success');
+            } catch (err) {
+                log('Health Check Failed', err.message, 'error');
+                return;
+            }
+            
+            // Test 3: Database connection
+            log('Test 3: Database Table Check', 'Checking if transfers table exists...', 'info');
+            
+            try {
+                const transferRes = await fetch('api.php?action=get_transfers', {
+                    credentials: 'same-origin'
+                });
+                
+                if (!transferRes.ok) {
+                    const errorText = await transferRes.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch {
+                        errorData = { error: errorText };
+                    }
+                    
+                    log('Get Transfers Failed', {
+                        status: transferRes.status,
+                        statusText: transferRes.statusText,
+                        error: errorData
+                    }, 'error');
+                    
+                    if (errorData.hint) {
+                        log('Suggested Fix', errorData.hint, 'warning');
+                    }
+                    
+                    return;
+                }
+                
+                const transferData = await transferRes.json();
+                log('Get Transfers Success', {
+                    status: 'success',
+                    count: transferData.transfers ? transferData.transfers.length : 0,
+                    sample: transferData.transfers ? transferData.transfers[0] : null
+                }, 'success');
+                
+            } catch (err) {
+                log('Get Transfers Exception', err.message, 'error');
+            }
+            
+            // Test 4: JavaScript API helper
+            log('Test 4: Testing JavaScript fetchAPI function', 'Loading app.js functions...', 'info');
+            
+            try {
+                // Load the API helper
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'assets/js/app.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+                
+                log('app.js Loaded', 'Attempting to call fetchAPI...', 'info');
+                
+                const result = await window.fetchAPI('get_transfers', 'GET');
+                log('fetchAPI Success', {
+                    transferCount: result.transfers ? result.transfers.length : 0
+                }, 'success');
+                
+            } catch (err) {
+                log('fetchAPI Failed', err.message, 'error');
+            }
+            
+            log('Diagnostic Complete', 'Check results above', 'info');
+        }
+        
+        // Auto-run on load
+        window.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

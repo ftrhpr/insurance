@@ -5,7 +5,10 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error_log');
 
-session_start();
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
@@ -46,11 +49,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'OPTIONS') exit(0);
 
 // Check authentication for protected endpoints
-$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'health_check'];
+$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'health_check', 'get_public_transfer', 'user_respond'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
-    error_log('Unauthorized access attempt: action=' . $action . ', session_id=' . session_id());
+    error_log('Unauthorized access attempt: action=' . $action . ', session_id=' . session_id() . ', session_data=' . json_encode($_SESSION));
     http_response_code(401);
-    die(json_encode(['error' => 'Unauthorized', 'action' => $action, 'hint' => 'Please login first']));
+    die(json_encode(['error' => 'Unauthorized', 'action' => $action, 'hint' => 'Please login first. Session may have expired.']));
 }
 
 // Check role permissions
@@ -324,18 +327,27 @@ try {
 
     if ($action === 'get_transfers' && $method === 'GET') {
         try {
+            // Check if table exists first
+            $tableCheck = $pdo->query("SHOW TABLES LIKE 'transfers'")->rowCount();
+            if ($tableCheck === 0) {
+                error_log('get_transfers error: transfers table does not exist');
+                http_response_code(500);
+                jsonResponse(['status' => 'error', 'message' => 'Transfers table does not exist', 'hint' => 'Run fix_db_all.php to create database tables']);
+            }
+            
             // Includes review columns and reschedule data
             $stmt = $pdo->query("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers ORDER BY created_at DESC");
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as &$row) {
-                $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');
-                $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
+                $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]', true) ?: [];
+                $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]', true) ?: [];
                 $row['serviceDate'] = $row['service_date'] ?? null; 
             }
-            jsonResponse(['transfers' => $rows]);
+            jsonResponse(['transfers' => $rows, 'status' => 'success']);
         } catch (PDOException $e) {
-            error_log('get_transfers error: ' . $e->getMessage());
-            jsonResponse(['status' => 'error', 'message' => 'Failed to fetch transfers. Table may not exist.', 'hint' => 'Run fix_db_all.php']);
+            error_log('get_transfers error: ' . $e->getMessage() . ' | Code: ' . $e->getCode());
+            http_response_code(500);
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage(), 'hint' => 'Check error_log file or run fix_db_all.php']);
         }
     }
 

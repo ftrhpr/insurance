@@ -105,6 +105,16 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
             clearTimeout(timeoutId);
             
             if (!res.ok) {
+                // Special handling for 401 Unauthorized
+                if (res.status === 401) {
+                    const errorData = await res.json().catch(() => ({}));
+                    const errorMsg = errorData.hint || errorData.message || 'Session expired. Please login again.';
+                    if (!window.location.pathname.includes('login.php')) {
+                        window.location.href = 'login.php';
+                    }
+                    throw new Error(errorMsg);
+                }
+                
                 // Special handling for 404
                 if (res.status === 404) {
                     throw new Error(`API endpoint not found (404): ${action}`);
@@ -131,7 +141,9 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
                     continue;
                 }
                 
-                throw new Error(errorData.message || errorData.error || `HTTP ${res.status}`);
+                const errorMsg = errorData.message || errorData.error || `HTTP ${res.status}`;
+                const hint = errorData.hint ? ` → ${errorData.hint}` : '';
+                throw new Error(errorMsg + hint);
             }
             
             updateConnectionStatus(true);
