@@ -1,7 +1,7 @@
 <?php
 // Error handling configuration for API
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // DEBUG: Temporarily enabled to see actual errors
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error_log');
 
@@ -364,7 +364,7 @@ try {
     }
     if ($action === 'get_vehicles' && $method === 'GET') {
         $stmt = $pdo->query("SELECT * FROM vehicles ORDER BY plate ASC");
-        jsonResponse($stmt->fetchAll(PDO::FETCH_ASSOC));
+        jsonResponse(['vehicles' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
     }
     if ($action === 'sync_vehicle' && $method === 'POST') {
         $data = getJsonInput();

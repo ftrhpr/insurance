@@ -1189,11 +1189,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         async function loadData() {
             try {
-                const newTransfers = await fetchAPI('get_transfers');
-                const newVehicles = await fetchAPI('get_vehicles');
+                const transfersData = await fetchAPI('get_transfers');
+                const vehiclesData = await fetchAPI('get_vehicles');
                 
-                if(Array.isArray(newTransfers)) transfers = newTransfers;
-                if(Array.isArray(newVehicles)) vehicles = newVehicles;
+                // Handle wrapped response format
+                if(transfersData && transfersData.transfers) transfers = transfersData.transfers;
+                else if(Array.isArray(transfersData)) transfers = transfersData;
+                
+                if(vehiclesData && vehiclesData.vehicles) vehicles = vehiclesData.vehicles;
+                else if(Array.isArray(vehiclesData)) vehicles = vehiclesData;
 
                 renderTable();
                 renderVehicleTable();
