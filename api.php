@@ -164,10 +164,6 @@ function sendFCM_V1($pdo, $keyFile, $title, $body) {
     curl_close($ch);
 
     return $results;
-    } catch (Exception $e) {
-        error_log('FCM send failed: ' . $e->getMessage());
-        return ['status' => 'error', 'message' => $e->getMessage()];
-    }
 }
 
 try {
