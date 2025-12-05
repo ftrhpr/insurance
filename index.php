@@ -1105,11 +1105,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </div>
     <?php endif; ?>
 
+    <!-- External JavaScript -->
     <script>
-        const API_URL = 'api.php';
-        const MANAGER_PHONE = "511144486";
-        const USER_ROLE = '<?php echo $current_user_role; ?>';
-        const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
+        // Initialize user role from PHP
+        window.USER_ROLE = '<?php echo $current_user_role; ?>';
+        window.CAN_EDIT = window.USER_ROLE === 'admin' || window.USER_ROLE === 'manager';
         
         // 1. FIREBASE CONFIG (REPLACE WITH YOURS)
         const firebaseConfig = {
@@ -2640,9 +2640,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
         };
 
-        loadData();
-        if(window.lucide) lucide.createIcons();
-
     </script>
+    <script src="assets/js/app.js"></script>
 </body>
 </html>
