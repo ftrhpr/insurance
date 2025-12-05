@@ -991,8 +991,8 @@
 
         function getFormattedMessage(type, data) {
             let template = smsTemplates[type] || defaultTemplates[type] || "";
-            // Generate Link: Assume public_view.php is in same dir as index.php
-            const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
+            // Generate Link: Assume public_view.html is in same dir as index.html
+            const baseUrl = window.location.href.replace(/index\.html.*/, '').replace(/\/$/, '');
             const link = `${baseUrl}/public_view.php?id=${data.id}`;
 
             return template
@@ -1697,7 +1697,7 @@
                 const reviewLink = `${baseUrl}/public_view.php?id=${t.id}`;
                 const reviewMsg = `Thank you for choosing OTOMOTORS! Your service for ${t.plate} is completed. Please share your experience: ${reviewLink}`;
                 
-                // Send review invitation SMSs
+                // Send review invitation SMS
                 setTimeout(() => {
                     window.sendSMS(phone, reviewMsg, 'review_invitation');
                     showToast('Review Link Sent', 'SMS sent to customer', 'success');
