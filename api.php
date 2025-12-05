@@ -1,7 +1,7 @@
 <?php
 // Error handling configuration for API
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1); // Temporarily enabled to debug 404 issue
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error_log');
 
@@ -46,10 +46,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'OPTIONS') exit(0);
 
 // Check authentication for protected endpoints
-$publicEndpoints = ['login', 'get_order_status', 'submit_review'];
+$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'health_check'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
+    error_log('Unauthorized access attempt: action=' . $action . ', session_id=' . session_id());
     http_response_code(401);
-    die(json_encode(['error' => 'Unauthorized']));
+    die(json_encode(['error' => 'Unauthorized', 'action' => $action, 'hint' => 'Please login first']));
 }
 
 // Check role permissions
@@ -646,6 +647,13 @@ try {
             'full_name' => $_SESSION['full_name'] ?? null,
             'role' => $_SESSION['role'] ?? null
         ]);
+    }
+
+    // Catch-all for undefined endpoints
+    if (!empty($action)) {
+        error_log('Unknown API action: ' . $action . ' (Method: ' . $method . ')');
+        http_response_code(404);
+        jsonResponse(['error' => 'Unknown action', 'action' => $action]);
     }
 
 } catch (PDOException $e) {
