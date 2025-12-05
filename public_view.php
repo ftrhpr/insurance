@@ -9,9 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style> 
         body { font-family: 'Inter', sans-serif; } 
-        .star-rating i { cursor: pointer; transition: color 0.2s, transform 0.1s; }
-        .star-rating i:hover { transform: scale(1.1); }
-        .star-rating i.active { fill: #FBBF24; color: #FBBF24; }
+        .star-rating span { display: inline-block; transition: transform 0.1s; }
+        .star-rating span:hover { transform: scale(1.1); }
+        .star-rating svg { transition: all 0.2s; }
+        .star-rating svg.active { fill: #FBBF24 !important; color: #FBBF24 !important; }
     </style>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
@@ -107,11 +108,11 @@
                     <p class="text-center text-gray-500 text-sm mb-6">Your service is complete. How did we do?</p>
                     
                     <div class="flex justify-center gap-2 mb-6 star-rating">
-                        <i data-lucide="star" class="w-10 h-10 text-gray-300" onclick="setRating(1)"></i>
-                        <i data-lucide="star" class="w-10 h-10 text-gray-300" onclick="setRating(2)"></i>
-                        <i data-lucide="star" class="w-10 h-10 text-gray-300" onclick="setRating(3)"></i>
-                        <i data-lucide="star" class="w-10 h-10 text-gray-300" onclick="setRating(4)"></i>
-                        <i data-lucide="star" class="w-10 h-10 text-gray-300" onclick="setRating(5)"></i>
+                        <span onclick="setRating(1)" style="cursor: pointer;"><i data-lucide="star" class="w-10 h-10 text-gray-300"></i></span>
+                        <span onclick="setRating(2)" style="cursor: pointer;"><i data-lucide="star" class="w-10 h-10 text-gray-300"></i></span>
+                        <span onclick="setRating(3)" style="cursor: pointer;"><i data-lucide="star" class="w-10 h-10 text-gray-300"></i></span>
+                        <span onclick="setRating(4)" style="cursor: pointer;"><i data-lucide="star" class="w-10 h-10 text-gray-300"></i></span>
+                        <span onclick="setRating(5)" style="cursor: pointer;"><i data-lucide="star" class="w-10 h-10 text-gray-300"></i></span>
                     </div>
                     <input type="hidden" id="rating-value" value="0">
 
@@ -292,20 +293,19 @@
         // --- REVIEW LOGIC ---
         function setRating(n) {
             currentStars = n;
-            const stars = document.querySelectorAll('.star-rating i');
-            stars.forEach((s, i) => {
+            const stars = document.querySelectorAll('.star-rating svg');
+            stars.forEach((svg, i) => {
                 if (i < n) {
-                    s.classList.add('active');
-                    s.classList.remove('text-gray-300');
-                    s.classList.add('text-yellow-400');
-                    s.setAttribute('fill', 'currentColor');
+                    svg.classList.add('active');
+                    svg.classList.remove('text-gray-300');
+                    svg.classList.add('text-yellow-400');
+                    svg.style.fill = 'currentColor';
                 } else {
-                    s.classList.remove('active', 'text-yellow-400');
-                    s.classList.add('text-gray-300');
-                    s.setAttribute('fill', 'none');
+                    svg.classList.remove('active', 'text-yellow-400');
+                    svg.classList.add('text-gray-300');
+                    svg.style.fill = 'none';
                 }
             });
-            lucide.createIcons();
         }
 
         async function submitReview() {
