@@ -7,26 +7,17 @@ header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
 // --- CONFIGURATION ---
-$db_host = 'localhost';
-$db_name = 'otoexpre_userdb';     
-$db_user = 'otoexpre_userdb';     
-$db_pass = 'p52DSsthB}=0AeZ#';     
+require_once 'config.php';
 
 // SERVICE ACCOUNT FILE PATH
 $service_account_file = __DIR__ . '/service-account.json';
 
 // --- DB CONNECTION ---
 try {
-    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_TIMEOUT, 5);
-} catch (PDOException $e) {
-    // For public endpoints that don't need DB, continue
-    $action = $_GET['action'] ?? '';
-    if (!in_array($action, ['get_order_status', 'submit_review'])) {
-        http_response_code(500); 
-        die(json_encode(['error' => 'Database connection failed. Please contact administrator.', 'details' => $e->getMessage()]));
-    }
+    $pdo = getDBConnection();
+} catch (Exception $e) {
+    http_response_code(500); 
+    die(json_encode(['error' => 'DB Connection failed: ' . $e->getMessage()]));
 }
 
 $action = $_GET['action'] ?? '';
@@ -34,20 +25,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'OPTIONS') exit(0);
 
-// Check if users table exists before enforcing authentication
-$usersTableExists = false;
-try {
-    $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
-    $usersTableExists = ($stmt->rowCount() > 0);
-} catch (PDOException $e) {
-    // Table doesn't exist yet
-}
-
-// Check authentication for protected endpoints (only if users table exists)
+// Check authentication for protected endpoints
 $publicEndpoints = ['login', 'get_order_status', 'submit_review'];
-if ($usersTableExists && !in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
+if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
     http_response_code(401);
-    die(json_encode(['error' => 'Unauthorized. Please login.']));
+    die(json_encode(['error' => 'Unauthorized']));
 }
 
 // Check role permissions

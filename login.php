@@ -10,54 +10,37 @@ if (isset($_SESSION['user_id'])) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once 'config.php';
+    
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     
     if ($username && $password) {
         try {
-            // Database credentials
-            $db_host = 'localhost';
-            $db_name = 'otoexpre_userdb';
-            $db_user = 'otoexpre_userdb';
-            $db_pass = 'p52DSsthB}=0AeZ#';
+            $pdo = getDBConnection();
             
-            $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $stmt = $pdo->prepare("SELECT id, username, password, full_name, role, status FROM users WHERE username = ? AND status = 'active'");
+            $stmt->execute([$username]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Check if users table exists
-            $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
-            if ($stmt->rowCount() === 0) {
-                $error = 'User system not initialized. Please run fix_db_all.php first.';
-            } else {
-                $stmt = $pdo->prepare("SELECT id, username, password, full_name, role, status FROM users WHERE username = ? AND status = 'active'");
-                $stmt->execute([$username]);
-                $userRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($userData && password_verify($password, $userData['password'])) {
+                // Update last login
+                $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+                $updateStmt->execute([$userData['id']]);
                 
-                if ($userRecord && password_verify($password, $userRecord['password'])) {
-                    // Update last login
-                    $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-                    $updateStmt->execute([$userRecord['id']]);
-                    
-                    // Set session
-                    $_SESSION['user_id'] = $userRecord['id'];
-                    $_SESSION['username'] = $userRecord['username'];
-                    $_SESSION['full_name'] = $userRecord['full_name'];
-                    $_SESSION['role'] = $userRecord['role'];
-                    
-                    header('Location: index.php');
-                    exit;
-                } else {
-                    $error = 'Invalid username or password';
-                }
+                // Set session
+                $_SESSION['user_id'] = $userData['id'];
+                $_SESSION['username'] = $userData['username'];
+                $_SESSION['full_name'] = $userData['full_name'];
+                $_SESSION['role'] = $userData['role'];
+                
+                header('Location: index.php');
+                exit;
+            } else {
+                $error = 'Invalid username or password';
             }
         } catch (PDOException $e) {
-            if (strpos($e->getMessage(), 'Access denied') !== false) {
-                $error = 'Database connection failed. Please check credentials.';
-            } else if (strpos($e->getMessage(), "Unknown database") !== false) {
-                $error = 'Database not found. Please contact administrator.';
-            } else {
-                $error = 'Database error: ' . $e->getMessage();
-            }
+            $error = 'Database error. Please try again.';
         }
     } else {
         $error = 'Please enter both username and password';

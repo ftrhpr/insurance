@@ -1,85 +1,6 @@
 <?php
 session_start();
 
-// Check if users table exists to determine if system is initialized
-$systemInitialized = false;
-try {
-    $db_host = 'localhost';
-    $db_name = 'otoexpre_userdb';
-    $db_user = 'otoexpre_userdb';
-    $db_pass = 'p52DSsthB}=0AeZ#';
-    
-    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
-    $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
-    $systemInitialized = ($stmt->rowCount() > 0);
-} catch (PDOException $e) {
-    // System not initialized
-}
-
-// If system not initialized, show setup message
-if (!$systemInitialized) {
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Setup Required - OTOMOTORS</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://unpkg.com/lucide@latest"></script>
-    </head>
-    <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
-        <div class="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8">
-            <div class="text-center mb-6">
-                <div class="bg-orange-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="alert-triangle" class="w-10 h-10 text-orange-600"></i>
-                </div>
-                <h1 class="text-3xl font-bold text-slate-800 mb-2">System Setup Required</h1>
-                <p class="text-slate-600">The database needs to be initialized before you can use the portal.</p>
-            </div>
-            
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-                <h3 class="font-bold text-blue-900 mb-3 flex items-center gap-2">
-                    <i data-lucide="list-checks" class="w-5 h-5"></i>
-                    Setup Steps:
-                </h3>
-                <ol class="list-decimal list-inside space-y-2 text-blue-800">
-                    <li>First, test your database connection: <a href="test_db_connection.php" class="underline font-bold">test_db_connection.php</a></li>
-                    <li>Then, run the database setup: <a href="fix_db_all.php" class="underline font-bold">fix_db_all.php</a></li>
-                    <li>Finally, return here to login</li>
-                </ol>
-            </div>
-            
-            <div class="bg-slate-50 rounded-lg p-6">
-                <h3 class="font-bold text-slate-800 mb-3">Default Credentials:</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-xs text-slate-500 mb-1">Username</p>
-                        <p class="font-mono font-bold text-slate-900">admin</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 mb-1">Password</p>
-                        <p class="font-mono font-bold text-slate-900">admin123</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-6 flex gap-4">
-                <a href="test_db_connection.php" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center">
-                    Test Database
-                </a>
-                <a href="fix_db_all.php" class="flex-1 bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors text-center">
-                    Setup Database
-                </a>
-            </div>
-        </div>
-        <script>lucide.createIcons();</script>
-    </body>
-    </html>
-    <?php
-    exit;
-}
-
 // Redirect to login if not authenticated
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -1105,15 +1026,166 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </div>
     <?php endif; ?>
 
-    <!-- Initialize PHP variables for JavaScript -->
     <script>
-        window.USER_ROLE = '<?php echo $current_user_role; ?>';
-        window.CAN_EDIT = window.USER_ROLE === 'admin' || window.USER_ROLE === 'manager';
-    </script>
-    <script src="assets/js/app.js"></script>
-</body>
-</html>
-<?php exit; ?>
+        const API_URL = 'api.php';
+        const MANAGER_PHONE = "511144486";
+        const USER_ROLE = '<?php echo $current_user_role; ?>';
+        const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
+        
+        // 1. FIREBASE CONFIG (REPLACE WITH YOURS)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRvdcvgMsOiVzeUQdSMYZFQ1GKkHZUWYI",
+            authDomain: "otm-portal-312a5.firebaseapp.com",
+            projectId: "otm-portal-312a5",
+            storageBucket: "otm-portal-312a5.firebasestorage.app",
+            messagingSenderId: "917547807534",
+            appId: "1:917547807534:web:9021c744b7b0f62b4e80bf"
+        };
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const messaging = firebase.messaging();
+            
+            // Handle foreground messages
+            messaging.onMessage((payload) => {
+                console.log('Message received. ', payload);
+                const { title, body } = payload.notification;
+                showToast(`${title}: ${body}`, 'success');
+            });
+        } catch (e) {
+            console.log("Firebase init failed (check config):", e);
+        }
+
+        // Notification Logic
+        window.requestNotificationPermission = async () => {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await firebase.messaging().getToken({ vapidKey: 'BPmaDT11APIDJCEoLFGA7ZoUCmc2IM9wxsNPJsy4984GaZNhBEEJa1VG6C65t1oCMTtUPVSudeivYsAmINDGc-w' });
+                    if (token) {
+                        await fetchAPI('register_token', 'POST', { token });
+                        showToast("Notifications Enabled");
+                    }
+                } else {
+                    showToast("Permission denied", "error");
+                }
+            } catch (error) {
+                console.error('Unable to get permission', error);
+            }
+        };
+
+        let transfers = [];
+        let vehicles = [];
+        window.currentEditingId = null;
+        let parsedImportData = [];
+        const currentUser = { uid: "manager", name: "Manager" }; 
+
+        // Helper
+        const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+
+        // --- API HELPERS ---
+        async function fetchAPI(action, method = 'GET', body = null) {
+            const opts = { method };
+            if (body) opts.body = JSON.stringify(body);
+            
+            // If strictly using Mock Data, skip fetch
+            if (USE_MOCK_DATA) {
+                return getMockData(action, body);
+            }
+
+            try {
+                const res = await fetch(`${API_URL}?action=${action}`, opts);
+                
+                // Check if response is NOT OK (e.g. 500 Error)
+                if (!res.ok) {
+                    // Try to parse the JSON error message from api.php
+                    let errorText = res.statusText;
+                    try {
+                        const errorJson = await res.json();
+                        if (errorJson.error) errorText = errorJson.error;
+                    } catch (parseErr) {
+                        // If parsing fails, use the text body or generic status
+                        const text = await res.text();
+                        if(text) errorText = text.substring(0, 100); // Limit length
+                    }
+                    throw new Error(`Server Error (${res.status}): ${errorText}`);
+                }
+
+                const data = await res.json();
+                
+                // Update UI Connection Status
+                const statusEl = document.getElementById('connection-status');
+                if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> SQL Connected`;
+                
+                return data;
+            } catch (e) {
+                console.warn("Server unavailable:", e);
+                const statusEl = document.getElementById('connection-status');
+                if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-red-500 rounded-full"></span> Connection Failed`;
+                
+                // Show detailed error in toast
+                showToast("Connection Error", e.message, "error");
+                throw e; 
+            }
+        }
+
+        // Mock Data Handler (For Demo/Fallback)
+        function getMockData(action, body) {
+            // Update UI
+            const statusEl = document.getElementById('connection-status');
+            if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-yellow-500 rounded-full"></span> Demo Mode`;
+
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    if (action === 'get_transfers') resolve(transfers.length ? transfers : []);
+                    else if (action === 'get_vehicles') resolve(vehicles.length ? vehicles : []);
+                    else if (action === 'add_transfer') {
+                        const newId = Math.floor(Math.random()*10000);
+                        resolve({ id: newId, status: 'success' });
+                    }
+                    else if (action === 'save_vehicle') resolve({ status: 'success' });
+                    else resolve({ status: 'mock_success' });
+                }, 100);
+            });
+        }
+
+        // --- CONFIGURATION ---
+        // Set to FALSE to stop using fake data and connect to your SQL Database
+        const USE_MOCK_DATA = false; 
+
+        async function loadData() {
+            try {
+                const newTransfers = await fetchAPI('get_transfers');
+                const newVehicles = await fetchAPI('get_vehicles');
+                
+                if(Array.isArray(newTransfers)) transfers = newTransfers;
+                if(Array.isArray(newVehicles)) vehicles = newVehicles;
+
+                renderTable();
+                renderVehicleTable();
+            } catch(e) {
+                // Squelch load errors to prevent loop spam, alert user once via status
+            }
+
+            document.getElementById('loading-screen').classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+            }, 500);
+        }
+
+        // Poll for updates every 10 seconds
+        setInterval(loadData, 10000);
+
+        // Stylish Toast Function
+        function showToast(title, message = '', type = 'success', duration = 4000) {
+            const container = document.getElementById('toast-container');
+            
+            // Handle legacy calls
+            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
+            if (!message && !type) { type = 'success'; }
+            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
             
             // Create toast
             const toast = document.createElement('div');
@@ -2485,7 +2557,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 loadUsers();
             } catch (err) {
                 console.error('Error deleting user:', err);
+                showToast('Error', err.message || 'Failed to delete user', 'error');
+            }
+        };
+
+        loadData();
+        if(window.lucide) lucide.createIcons();
+
     </script>
-    <script src="assets/js/app.js"></script>
 </body>
 </html>
