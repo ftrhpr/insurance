@@ -1,4 +1,22 @@
 <?php
+// Error handling
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', dirname(__DIR__) . '/error_log');
+
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    error_log("Vehicles Page [$errno] $errstr in $errfile on line $errline");
+    return true;
+});
+
+set_exception_handler(function($exception) {
+    error_log('Vehicles Exception: ' . $exception->getMessage());
+    http_response_code(500);
+    echo '<!DOCTYPE html><html><body><h1>Error</h1><p>Service unavailable. Please try again.</p></body></html>';
+    exit;
+});
+
 session_start();
 require_once '../includes/auth.php';
 require_once '../config.php';

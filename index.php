@@ -1,4 +1,36 @@
 <?php
+// Error handling configuration
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't display errors to users
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/error_log');
+
+// Custom error handler
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    $error_types = [
+        E_ERROR => 'ERROR',
+        E_WARNING => 'WARNING',
+        E_NOTICE => 'NOTICE',
+        E_USER_ERROR => 'USER_ERROR',
+        E_USER_WARNING => 'USER_WARNING',
+        E_USER_NOTICE => 'USER_NOTICE'
+    ];
+    $type = $error_types[$errno] ?? 'UNKNOWN';
+    error_log("[$type] $errstr in $errfile on line $errline");
+    return true;
+});
+
+// Custom exception handler
+set_exception_handler(function($exception) {
+    error_log('Uncaught Exception: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ' on line ' . $exception->getLine());
+    error_log('Stack trace: ' . $exception->getTraceAsString());
+    
+    // Show generic error page to user
+    http_response_code(500);
+    echo '<h1>Service Temporarily Unavailable</h1><p>Please try again later.</p>';
+    exit;
+});
+
 session_start();
 
 // Redirect to login if not authenticated
