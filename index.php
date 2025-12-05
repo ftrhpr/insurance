@@ -1697,7 +1697,7 @@
                 const reviewLink = `${baseUrl}/public_view.php?id=${t.id}`;
                 const reviewMsg = `Thank you for choosing OTOMOTORS! Your service for ${t.plate} is completed. Please share your experience: ${reviewLink}`;
                 
-                // Send review invitation SMS
+                // Send review invitation SMSs
                 setTimeout(() => {
                     window.sendSMS(phone, reviewMsg, 'review_invitation');
                     showToast('Review Link Sent', 'SMS sent to customer', 'success');
