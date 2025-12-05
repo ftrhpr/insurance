@@ -92,9 +92,6 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
     };
     if (body) opts.body = JSON.stringify(body);
     
-    // Debug: Log the API URL being used
-    console.log(`[API] Calling: ${API_URL}?action=${action} (Method: ${method})`);
-    
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
             const controller = new AbortController();
@@ -110,10 +107,7 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
             if (!res.ok) {
                 // Special handling for 404
                 if (res.status === 404) {
-                    console.error(`[API] 404 Not Found: ${API_URL}?action=${action}`);
-                    console.error(`[API] Current page: ${window.location.pathname}`);
-                    console.error(`[API] Full URL attempted: ${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)}${API_URL}`);
-                    throw new Error(`API endpoint not found (404). Check if ${API_URL} exists at the correct location.`);
+                    throw new Error(`API endpoint not found (404): ${action}`);
                 }
                 
                 let errorData = {};
@@ -186,32 +180,24 @@ window.fetchAPI = async function(action, method = 'GET', body = null, retries = 
 
 // Load transfers data
 window.loadData = async function() {
-    console.log('[loadData] Starting data load...');
     try {
         const data = await fetchAPI('get_transfers', 'GET');
         transfers = data.transfers || data || [];
-        console.log('[loadData] Loaded', transfers.length, 'transfers');
         
         // Call renderTable if it exists (for dashboard)
-        // Use setTimeout to ensure DOM and other scripts are ready
         if (typeof window.renderTable === 'function') {
-            console.log('[loadData] Calling renderTable...');
             setTimeout(() => {
                 try {
                     window.renderTable();
                 } catch (renderErr) {
-                    console.error('[loadData] Error calling renderTable:', renderErr);
+                    console.error('Error rendering table:', renderErr);
                 }
             }, 0);
-        } else {
-            console.log('[loadData] renderTable not available (not on dashboard page)');
         }
     } catch (err) {
-        console.error('[loadData] Error loading transfers:', err);
+        console.error('Error loading transfers:', err);
         if (typeof window.showToast === 'function') {
             showToast('Load Error', err.message, 'error');
-        } else {
-            console.error('[loadData] showToast not available yet, error:', err.message);
         }
     }
 };

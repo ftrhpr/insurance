@@ -1,5 +1,5 @@
 <?php
-// Error handling configuration for API
+// Error handling configuration for API (PRODUCTION)
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);

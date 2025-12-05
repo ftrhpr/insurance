@@ -1,11 +1,12 @@
 <?php
-// Error handling configuration - DEBUG MODE
+// Error handling configuration - PRODUCTION (OLD MONOLITHIC INDEX - DEPRECATED)
+// NOTE: This file is deprecated. Use dashboard.php, vehicles.php, etc. instead
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // SHOW ERRORS FOR DEBUGGING
+ini_set('display_errors', 0); // DISABLED FOR PRODUCTION
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error_log');
 
-// Custom error handler
+// Custom error handler - NO VISIBLE OUTPUT
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
     $error_types = [
         E_ERROR => 'ERROR',
@@ -18,33 +19,19 @@ set_error_handler(function($errno, $errstr, $errfile, $errline) {
     $type = $error_types[$errno] ?? 'UNKNOWN';
     $msg = "[$type] $errstr in $errfile on line $errline";
     error_log($msg);
-    
-    // Display inline for debugging
-    echo "<div style='background:#ffebee;border-left:4px solid #f44336;padding:12px;margin:10px;font-family:monospace;font-size:12px;'>";
-    echo "<strong style='color:#c62828;'>PHP $type:</strong> $errstr<br>";
-    echo "<span style='color:#666;'>File: $errfile : $errline</span>";
-    echo "</div>";
-    return true;
+    return true; // Suppress output
 });
 
-// Custom exception handler
+// Custom exception handler - PRODUCTION (no details exposed)
 set_exception_handler(function($exception) {
     error_log('Uncaught Exception: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ' on line ' . $exception->getLine());
     error_log('Stack trace: ' . $exception->getTraceAsString());
     
-    // Show detailed error for debugging
     http_response_code(500);
-    echo '<!DOCTYPE html><html><head><title>Error</title></head><body style="font-family:sans-serif;padding:20px;background:#f5f5f5;">';
-    echo '<div style="background:white;border:3px solid #f44336;border-radius:8px;padding:20px;max-width:900px;margin:20px auto;">';
-    echo '<h1 style="color:#f44336;margin:0 0 20px 0;">⚠️ Application Error</h1>';
-    echo '<div style="background:#ffebee;padding:15px;border-radius:4px;margin-bottom:15px;">';
-    echo '<strong>Message:</strong> ' . htmlspecialchars($exception->getMessage());
-    echo '</div>';
-    echo '<p><strong>File:</strong> <code>' . htmlspecialchars($exception->getFile()) . '</code></p>';
-    echo '<p><strong>Line:</strong> ' . $exception->getLine() . '</p>';
-    echo '<details style="margin-top:20px;"><summary style="cursor:pointer;padding:10px;background:#e0e0e0;border-radius:4px;"><strong>Stack Trace</strong></summary>';
-    echo '<pre style="background:#263238;color:#aed581;padding:15px;border-radius:4px;overflow:auto;margin-top:10px;">' . htmlspecialchars($exception->getTraceAsString()) . '</pre>';
-    echo '</details></div></body></html>';
+    echo '<!DOCTYPE html><html><head><title>Service Unavailable</title></head><body style="font-family:sans-serif;padding:20px;background:#f5f5f5;text-align:center;">';
+    echo '<h1 style="color:#666;">Service Temporarily Unavailable</h1>';
+    echo '<p style="color:#999;">Please try again later or contact support.</p>';
+    echo '</body></html>';
     exit;
 });
 

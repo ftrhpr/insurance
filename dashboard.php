@@ -1,7 +1,7 @@
 <?php
-// Error handling - DEBUG MODE
+// Error handling - PRODUCTION
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error_log');
 
@@ -79,18 +79,9 @@ $user = getCurrentUser();
     <script>
         // Standalone page: load data immediately
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('[Dashboard] DOMContentLoaded - checking functions...');
-            console.log('[Dashboard] loadData:', typeof window.loadData);
-            console.log('[Dashboard] renderTable:', typeof window.renderTable);
-            console.log('[Dashboard] showToast:', typeof window.showToast);
-            
-            // Ensure all scripts are loaded before calling loadData
             if (typeof window.loadData === 'function') {
                 loadData();
-            } else {
-                console.error('[Dashboard] loadData is not defined!');
             }
-            
             if (window.lucide) lucide.createIcons();
         });
         
