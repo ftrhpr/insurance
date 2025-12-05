@@ -1,19 +1,31 @@
 <?php
-// Error handling
+// Error handling - DEBUGGING MODE
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1); // SHOW ERRORS FOR DEBUGGING
 ini_set('log_errors', 1);
 ini_set('error_log', dirname(__DIR__) . '/error_log');
 
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    error_log("Pages Index [$errno] $errstr in $errfile on line $errline");
+    $msg = "Pages Index [$errno] $errstr in $errfile on line $errline";
+    error_log($msg);
+    // Also display for debugging
+    echo "<div style='background:#fee;border:2px solid red;padding:10px;margin:10px;font-family:monospace;'>";
+    echo "<strong>PHP Error:</strong> $msg";
+    echo "</div>";
     return true;
 });
 
 set_exception_handler(function($exception) {
-    error_log('Pages Index Exception: ' . $exception->getMessage());
+    $msg = 'Pages Index Exception: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine();
+    error_log($msg);
     http_response_code(500);
-    echo '<!DOCTYPE html><html><body><h1>Error</h1><p>Service unavailable. Please try again.</p></body></html>';
+    echo '<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;">';
+    echo '<h1 style="color:red;">Error Occurred</h1>';
+    echo '<p><strong>Message:</strong> ' . htmlspecialchars($exception->getMessage()) . '</p>';
+    echo '<p><strong>File:</strong> ' . htmlspecialchars($exception->getFile()) . '</p>';
+    echo '<p><strong>Line:</strong> ' . $exception->getLine() . '</p>';
+    echo '<pre style="background:#f5f5f5;padding:10px;overflow:auto;">' . htmlspecialchars($exception->getTraceAsString()) . '</pre>';
+    echo '</body></html>';
     exit;
 });
 
