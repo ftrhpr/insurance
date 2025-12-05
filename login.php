@@ -17,8 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($username && $password) {
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo = getDBConnection();
             
             $stmt = $pdo->prepare("SELECT id, username, password, full_name, role, status FROM users WHERE username = ? AND status = 'active'");
             $stmt->execute([$username]);
@@ -41,7 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Invalid username or password';
             }
         } catch (PDOException $e) {
-            $error = 'Database error. Please try again.';
+            $error = 'Database error: ' . $e->getMessage();
+            error_log('Login DB Error: ' . $e->getMessage());
+        } catch (Exception $e) {
+            $error = 'Error: ' . $e->getMessage();
+            error_log('Login Error: ' . $e->getMessage());
         }
     } else {
         $error = 'Please enter both username and password';
