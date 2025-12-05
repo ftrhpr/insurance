@@ -63,7 +63,7 @@ $order['name'] instead of $order['customer_name']
 ## 🎨 How It Works
 
 ### Customer Flow
-1. Customer receives order status link: `public_view.php?order_id=12345`
+1. Customer receives order status link: `public_view.php?id=12345`
 2. Views their order status
 3. When order status is "completed", review form appears
 4. Customer fills out:
@@ -142,7 +142,7 @@ echo "Connected successfully!";
 ```
 
 ### 2. Test Review Form
-1. Visit: `public_view.php?order_id=YOUR_ORDER_ID`
+1. Visit: `public_view.php?id=YOUR_ORDER_ID`
 2. Ensure order status is set to "completed" in database:
    ```sql
    UPDATE orders SET status = 'completed' WHERE id = YOUR_ORDER_ID;

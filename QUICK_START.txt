@@ -75,7 +75,7 @@ Auto-SMS on Completion:
 │                                                        │
 │ System Action (Automatic):                            │
 │   📱 SMS Sent: "Service completed! Rate us: [link]"  │
-│   🔗 Link: public_view.php?order_id=XXX              │
+│   🔗 Link: public_view.php?id=XXX                    │
 └───────────────────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -131,7 +131,7 @@ Test 2: Complete & Send SMS (1 minute)
   □ See toast: "Review Link Sent"
 
 Test 3: Customer View (2 minutes)
-  □ Open: public_view.php?order_id=XXX
+  □ Open: public_view.php?id=XXX
   □ See 5-star rating
   □ Click stars (hover animation)
   □ Write comment
