@@ -1562,15 +1562,24 @@
 
         async function loadReviews() {
             try {
+                console.log('Loading reviews...');
                 const data = await fetchAPI('get_reviews');
+                console.log('Reviews data received:', data);
+                
                 if (data && data.reviews) {
                     customerReviews = data.reviews;
+                    console.log('Number of reviews:', customerReviews.length);
+                    
                     document.getElementById('avg-rating').textContent = data.average_rating || '0.0';
                     document.getElementById('total-reviews').textContent = data.total || 0;
                     
                     const pendingCount = customerReviews.filter(r => r.status === 'pending').length;
                     document.getElementById('pending-count').textContent = pendingCount;
                     
+                    renderReviews();
+                } else {
+                    console.warn('No reviews data in response:', data);
+                    // Show empty state
                     renderReviews();
                 }
             } catch(e) {
@@ -1599,10 +1608,14 @@
             const container = document.getElementById('reviews-grid');
             const emptyState = document.getElementById('reviews-empty');
             
-            let filteredReviews = customerReviews;
+            console.log('Rendering reviews, total:', customerReviews.length, 'filter:', currentReviewFilter);
+            
+            let filteredReviews = customerReviews || [];
             if (currentReviewFilter !== 'all') {
-                filteredReviews = customerReviews.filter(r => r.status === currentReviewFilter);
+                filteredReviews = filteredReviews.filter(r => r.status === currentReviewFilter);
             }
+            
+            console.log('Filtered reviews:', filteredReviews.length);
             
             if (filteredReviews.length === 0) {
                 container.innerHTML = '';

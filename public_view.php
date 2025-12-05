@@ -294,9 +294,18 @@
             currentStars = n;
             const stars = document.querySelectorAll('.star-rating i');
             stars.forEach((s, i) => {
-                if (i < n) s.classList.add('active', 'fill-yellow-400', 'text-yellow-400');
-                else s.classList.remove('active', 'fill-yellow-400', 'text-yellow-400');
+                if (i < n) {
+                    s.classList.add('active');
+                    s.classList.remove('text-gray-300');
+                    s.classList.add('text-yellow-400');
+                    s.setAttribute('fill', 'currentColor');
+                } else {
+                    s.classList.remove('active', 'text-yellow-400');
+                    s.classList.add('text-gray-300');
+                    s.setAttribute('fill', 'none');
+                }
             });
+            lucide.createIcons();
         }
 
         async function submitReview() {
