@@ -309,11 +309,11 @@
             <div id="view-vehicles" class="hidden space-y-6 animate-in fade-in duration-300">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h2 class="text-2xl font-bold text-slate-800">Vehicle Registry</h2>
-                        <p class="text-slate-500 text-sm">Centralized database of all cars and customers.</p>
+                        <h2 class="text-2xl font-bold text-slate-800">Customer DB</h2>
+                        <p class="text-slate-500 text-sm">Centralized database of all customers, vehicles and service history.</p>
                     </div>
                     <button onclick="window.openVehicleModal()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Add Vehicle
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Customer
                     </button>
                 </div>
 
@@ -331,6 +331,7 @@
                                     <th class="px-6 py-4">Owner</th>
                                     <th class="px-6 py-4">Phone</th>
                                     <th class="px-6 py-4">Model</th>
+                                    <th class="px-6 py-4">Service History</th>
                                     <th class="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -678,11 +679,11 @@
             <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-800">Vehicle Details</h3>
-                        <p class="text-xs text-slate-500">Edit registry information.</p>
+                        <h3 class="text-lg font-bold text-slate-800">Customer Details</h3>
+                        <p class="text-xs text-slate-500">Edit customer and vehicle information.</p>
                     </div>
                     <div class="bg-slate-100 p-2 rounded-full text-slate-400">
-                        <i data-lucide="car" class="w-5 h-5"></i>
+                        <i data-lucide="user" class="w-5 h-5"></i>
                     </div>
                 </div>
                 
@@ -704,6 +705,16 @@
                         <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">Car Model</label>
                         <input id="veh-model" type="text" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-primary-500 outline-none" placeholder="e.g. Toyota Prius, Silver">
                     </div>
+                </div>
+
+                <!-- Service History -->
+                <div id="veh-history-section" class="hidden bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+                    <div class="px-4 py-2 bg-slate-100 border-b border-slate-200">
+                        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="history" class="w-3 h-3"></i> Service History
+                        </label>
+                    </div>
+                    <div id="veh-history-list" class="p-4 max-h-48 overflow-y-auto space-y-2 text-xs"></div>
                 </div>
 
                 <div class="flex gap-3 justify-end pt-2 border-t border-slate-100">
@@ -1509,17 +1520,44 @@
             const term = document.getElementById('vehicle-search').value.toLowerCase();
             const rows = vehicles.filter(v => (v.plate+v.ownerName).toLowerCase().includes(term));
             
-            const html = rows.map(v => `
+            const html = rows.map(v => {
+                // Get service history for this plate
+                const serviceHistory = transfers.filter(t => normalizePlate(t.plate) === normalizePlate(v.plate));
+                const historyCount = serviceHistory.length;
+                const lastService = serviceHistory.length > 0 ? serviceHistory[serviceHistory.length - 1] : null;
+                
+                let historyBadge = '';
+                if (historyCount > 0) {
+                    historyBadge = `<span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg text-xs font-semibold">
+                        <i data-lucide="file-text" class="w-3 h-3"></i> ${historyCount} service${historyCount > 1 ? 's' : ''}
+                    </span>`;
+                    if (lastService) {
+                        const statusColors = {
+                            'New': 'bg-blue-50 text-blue-600',
+                            'Processing': 'bg-yellow-50 text-yellow-600',
+                            'Completed': 'bg-green-50 text-green-600',
+                            'Scheduled': 'bg-orange-50 text-orange-600'
+                        };
+                        const colorClass = statusColors[lastService.status] || 'bg-slate-50 text-slate-600';
+                        historyBadge += ` <span class="ml-1 text-[10px] ${colorClass} px-1.5 py-0.5 rounded">${lastService.status}</span>`;
+                    }
+                } else {
+                    historyBadge = '<span class="text-slate-300 text-xs italic">No history</span>';
+                }
+                
+                return `
                 <tr class="border-b border-slate-50 hover:bg-slate-50/50 group transition-colors">
                     <td class="px-6 py-4 font-mono font-bold text-slate-800">${v.plate}</td>
                     <td class="px-6 py-4 text-slate-600">${v.ownerName || '-'}</td>
                     <td class="px-6 py-4 text-sm text-slate-500">${v.phone || '-'}</td>
                     <td class="px-6 py-4 text-sm text-slate-500">${v.model || ''}</td>
+                    <td class="px-6 py-4">${historyBadge}</td>
                     <td class="px-6 py-4 text-right">
                         <button onclick="window.editVehicle(${v.id})" class="text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-all"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
                         <button onclick="window.deleteVehicle(${v.id})" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
             
             document.getElementById('vehicle-table-body').innerHTML = html;
             document.getElementById('vehicle-empty').classList.toggle('hidden', rows.length > 0);
@@ -1543,7 +1581,46 @@
             document.getElementById('veh-owner').value = v.ownerName;
             document.getElementById('veh-phone').value = v.phone;
             document.getElementById('veh-model').value = v.model;
+            
+            // Show service history
+            const serviceHistory = transfers.filter(t => normalizePlate(t.plate) === normalizePlate(v.plate));
+            const historySection = document.getElementById('veh-history-section');
+            
+            if (serviceHistory.length > 0) {
+                historySection.classList.remove('hidden');
+                const historyHTML = serviceHistory.map(s => {
+                    const date = s.serviceDate ? new Date(s.serviceDate.replace(' ', 'T')).toLocaleDateString() : 'Not scheduled';
+                    const statusColors = {
+                        'New': 'bg-blue-100 text-blue-700',
+                        'Processing': 'bg-yellow-100 text-yellow-700',
+                        'Called': 'bg-purple-100 text-purple-700',
+                        'Parts Ordered': 'bg-indigo-100 text-indigo-700',
+                        'Parts Arrived': 'bg-teal-100 text-teal-700',
+                        'Scheduled': 'bg-orange-100 text-orange-700',
+                        'Completed': 'bg-green-100 text-green-700',
+                        'Issue': 'bg-red-100 text-red-700'
+                    };
+                    const statusClass = statusColors[s.status] || 'bg-slate-100 text-slate-700';
+                    return `
+                        <div class="bg-white p-3 rounded-lg border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer" onclick="window.openEditModal(${s.id})">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="font-semibold text-slate-700">${s.name}</span>
+                                <span class="text-[10px] ${statusClass} px-2 py-0.5 rounded-full font-bold">${s.status}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 flex items-center gap-3">
+                                <span><i data-lucide="calendar" class="w-3 h-3 inline"></i> ${date}</span>
+                                <span><i data-lucide="coins" class="w-3 h-3 inline"></i> ${s.amount || 0} GEL</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('veh-history-list').innerHTML = historyHTML;
+            } else {
+                historySection.classList.add('hidden');
+            }
+            
             document.getElementById('vehicle-modal').classList.remove('hidden');
+            lucide.createIcons();
         };
 
         window.saveVehicle = async () => {
