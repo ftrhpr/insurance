@@ -624,6 +624,19 @@
                             </div>
                         </div>
 
+                        <!-- Customer Review Preview -->
+                        <div id="modal-review-section" class="hidden bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200 overflow-hidden shadow-sm p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="star" class="w-4 h-4 text-yellow-600"></i>
+                                <label class="text-xs font-bold text-yellow-700 uppercase tracking-wider">Customer Review</label>
+                            </div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <div id="modal-review-stars" class="flex gap-1"></div>
+                                <span id="modal-review-rating" class="text-2xl font-bold text-slate-800"></span>
+                            </div>
+                            <p id="modal-review-comment" class="text-sm text-slate-600 italic leading-relaxed bg-white/60 p-3 rounded-lg"></p>
+                        </div>
+
                         <div class="flex-1 flex flex-col bg-yellow-50/50 rounded-2xl border border-yellow-100 overflow-hidden shadow-sm">
                             <div class="px-4 py-3 bg-yellow-50 border-b border-yellow-100 flex justify-between items-center">
                                 <label class="text-xs font-bold text-yellow-700 uppercase tracking-wider flex items-center gap-2">
@@ -1297,7 +1310,27 @@
                 </div>`).join('');
             document.getElementById('notes-list').innerHTML = noteHTML || '<div class="h-full flex items-center justify-center text-slate-400 text-xs italic">No team notes yet</div>';
 
+            // Display customer review if exists
+            const reviewSection = document.getElementById('modal-review-section');
+            if (t.reviewStars && t.reviewStars > 0) {
+                reviewSection.classList.remove('hidden');
+                document.getElementById('modal-review-rating').innerText = t.reviewStars;
+                
+                // Render stars
+                const starsHTML = Array(5).fill(0).map((_, i) => 
+                    `<i data-lucide="star" class="w-5 h-5 ${i < t.reviewStars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}"></i>`
+                ).join('');
+                document.getElementById('modal-review-stars').innerHTML = starsHTML;
+                
+                // Display comment
+                const comment = t.reviewComment || 'No comment provided';
+                document.getElementById('modal-review-comment').innerText = comment;
+            } else {
+                reviewSection.classList.add('hidden');
+            }
+
             document.getElementById('edit-modal').classList.remove('hidden');
+            lucide.createIcons();
         };
 
         window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
