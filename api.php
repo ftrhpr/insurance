@@ -201,8 +201,9 @@ try {
         $rescheduleComment = $data['reschedule_comment'] ?? null;
         
         if($id) {
-            // Update user response
-            $pdo->prepare("UPDATE transfers SET user_response = ? WHERE id = ?")->execute([$response, $id]);
+            try {
+                // Update user response
+                $pdo->prepare("UPDATE transfers SET user_response = ? WHERE id = ?")->execute([$response, $id]);
             
             // If reschedule request, store the desired date and comment
             if ($response === 'Reschedule Requested' && $rescheduleDate) {
@@ -219,6 +220,10 @@ try {
                     $notificationBody .= " - Requested: " . date('M d, Y H:i', strtotime($rescheduleDate));
                 }
                 sendFCM_V1($pdo, $service_account_file, "Customer Responded", $notificationBody);
+            }
+            } catch (PDOException $e) {
+                error_log('user_respond error: ' . $e->getMessage());
+                jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
             }
         }
         jsonResponse(['status' => 'success']);
@@ -265,9 +270,10 @@ try {
         $serviceDate = $data['service_date'] ?? null;
 
         if ($id && $serviceDate) {
-            // Update service date and clear reschedule request, mark as confirmed
-            $pdo->prepare("UPDATE transfers SET service_date = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
-                ->execute([$serviceDate, $id]);
+            try {
+                // Update service date and clear reschedule request, mark as confirmed
+                $pdo->prepare("UPDATE transfers SET service_date = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
+                    ->execute([$serviceDate, $id]);
 
             // Get transfer details for SMS
             $stmt = $pdo->prepare("SELECT name, plate, phone, amount FROM transfers WHERE id = ?");
@@ -284,7 +290,11 @@ try {
                 @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText));
             }
 
-            jsonResponse(['status' => 'success', 'message' => 'Reschedule accepted and SMS sent']);
+                jsonResponse(['status' => 'success', 'message' => 'Reschedule accepted and SMS sent']);
+            } catch (PDOException $e) {
+                error_log('accept_reschedule error: ' . $e->getMessage());
+                jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            }
         } else {
             jsonResponse(['status' => 'error', 'message' => 'Invalid parameters']);
         }
@@ -295,11 +305,16 @@ try {
         $id = $_GET['id'] ?? 0;
 
         if ($id) {
-            // Clear reschedule data and reset to pending
-            $pdo->prepare("UPDATE transfers SET reschedule_date = NULL, reschedule_comment = NULL, user_response = 'Pending' WHERE id = ?")
-                ->execute([$id]);
+            try {
+                // Clear reschedule data and reset to pending
+                $pdo->prepare("UPDATE transfers SET reschedule_date = NULL, reschedule_comment = NULL, user_response = 'Pending' WHERE id = ?")
+                    ->execute([$id]);
 
-            jsonResponse(['status' => 'success', 'message' => 'Reschedule request declined']);
+                jsonResponse(['status' => 'success', 'message' => 'Reschedule request declined']);
+            } catch (PDOException $e) {
+                error_log('decline_reschedule error: ' . $e->getMessage());
+                jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            }
         } else {
             jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
         }
@@ -308,15 +323,20 @@ try {
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
-        // Includes review columns and reschedule data
-        $stmt = $pdo->query("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers ORDER BY created_at DESC");
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rows as &$row) {
-            $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');
-            $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
-            $row['serviceDate'] = $row['service_date'] ?? null; 
+        try {
+            // Includes review columns and reschedule data
+            $stmt = $pdo->query("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers ORDER BY created_at DESC");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$row) {
+                $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');
+                $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
+                $row['serviceDate'] = $row['service_date'] ?? null; 
+            }
+            jsonResponse(['transfers' => $rows]);
+        } catch (PDOException $e) {
+            error_log('get_transfers error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to fetch transfers. Table may not exist.', 'hint' => 'Run fix_db_all.php']);
         }
-        jsonResponse(['transfers' => $rows]);
     }
 
     // ... (Rest of existing actions: add_transfer, update_transfer, delete_transfer, etc. remain unchanged) ...
@@ -324,47 +344,77 @@ try {
     
     // 4. UPDATE EXISTING TRANSFER
     if ($action === 'update_transfer' && $method === 'POST') {
-        $data = getJsonInput();
-        $id = $_GET['id'] ?? 0;
-        $fields = []; $params = [':id' => $id];
-        foreach ($data as $key => $val) {
-            if (in_array($key, ['phone', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
-                if ($key === 'serviceDate') {
-                    if(empty($val)) $val = null;
-                    $fields[] = "service_date = :serviceDate";
-                    $params[":serviceDate"] = $val;
-                } else {
-                    $fields[] = "$key = :$key";
-                    $params[":$key"] = $val;
+        try {
+            $data = getJsonInput();
+            $id = $_GET['id'] ?? 0;
+            if (!$id) {
+                jsonResponse(['status' => 'error', 'message' => 'Invalid transfer ID']);
+            }
+            $fields = []; $params = [':id' => $id];
+            foreach ($data as $key => $val) {
+                if (in_array($key, ['phone', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
+                    if ($key === 'serviceDate') {
+                        if(empty($val)) $val = null;
+                        $fields[] = "service_date = :serviceDate";
+                        $params[":serviceDate"] = $val;
+                    } else {
+                        $fields[] = "$key = :$key";
+                        $params[":$key"] = $val;
+                    }
+                }
+                if ($key === 'internalNotes' || $key === 'systemLogs') {
+                    $dbColumn = $key === 'internalNotes' ? 'internal_notes' : 'system_logs';
+                    $fields[] = "$dbColumn = :$key";
+                    $params[":$key"] = json_encode($val);
                 }
             }
-            if ($key === 'internalNotes' || $key === 'systemLogs') {
-                $dbColumn = $key === 'internalNotes' ? 'internal_notes' : 'system_logs';
-                $fields[] = "$dbColumn = :$key";
-                $params[":$key"] = json_encode($val);
+            if (!empty($fields)) {
+                $pdo->prepare("UPDATE transfers SET " . implode(', ', $fields) . " WHERE id = :id")->execute($params);
             }
+            jsonResponse(['status' => 'success']);
+        } catch (PDOException $e) {
+            error_log('update_transfer error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
         }
-        if (!empty($fields)) {
-            $pdo->prepare("UPDATE transfers SET " . implode(', ', $fields) . " WHERE id = :id")->execute($params);
-        }
-        jsonResponse(['status' => 'success']);
     }
     
     // ... Include get_vehicles, sync_vehicle, etc. from previous version ...
     if ($action === 'add_transfer' && $method === 'POST') {
-        $data = getJsonInput();
-        $sql = "INSERT INTO transfers (plate, name, amount, status, phone, rawText, internal_notes, system_logs, user_response) VALUES (:plate, :name, :amount, 'New', '', :rawText, '[]', '[]', 'Pending')";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([':plate' => $data['plate'] ?? '', ':name' => $data['name'] ?? '', ':amount' => $data['amount'] ?? 0, ':rawText' => $data['rawText'] ?? '']);
-        jsonResponse(['id' => $pdo->lastInsertId(), 'status' => 'success']);
+        try {
+            $data = getJsonInput();
+            if (!isset($data['plate']) || !isset($data['name'])) {
+                jsonResponse(['status' => 'error', 'message' => 'Plate and name are required']);
+            }
+            $sql = "INSERT INTO transfers (plate, name, amount, status, phone, rawText, internal_notes, system_logs, user_response) VALUES (:plate, :name, :amount, 'New', '', :rawText, '[]', '[]', 'Pending')";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':plate' => $data['plate'] ?? '', ':name' => $data['name'] ?? '', ':amount' => $data['amount'] ?? 0, ':rawText' => $data['rawText'] ?? '']);
+            jsonResponse(['id' => $pdo->lastInsertId(), 'status' => 'success']);
+        } catch (PDOException $e) {
+            error_log('add_transfer error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
     }
     if ($action === 'delete_transfer' && $method === 'POST') {
-        $pdo->prepare("DELETE FROM transfers WHERE id = ?")->execute([$_GET['id'] ?? 0]);
-        jsonResponse(['status' => 'deleted']);
+        try {
+            $id = $_GET['id'] ?? 0;
+            if (!$id) {
+                jsonResponse(['status' => 'error', 'message' => 'Invalid transfer ID']);
+            }
+            $pdo->prepare("DELETE FROM transfers WHERE id = ?")->execute([$id]);
+            jsonResponse(['status' => 'deleted']);
+        } catch (PDOException $e) {
+            error_log('delete_transfer error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
     }
     if ($action === 'get_vehicles' && $method === 'GET') {
-        $stmt = $pdo->query("SELECT * FROM vehicles ORDER BY plate ASC");
-        jsonResponse(['vehicles' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        try {
+            $stmt = $pdo->query("SELECT * FROM vehicles ORDER BY plate ASC");
+            jsonResponse(['vehicles' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        } catch (PDOException $e) {
+            error_log('get_vehicles error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to fetch vehicles. Table may not exist.', 'hint' => 'Run fix_db_all.php']);
+        }
     }
     if ($action === 'sync_vehicle' && $method === 'POST') {
         $data = getJsonInput();
@@ -385,17 +435,34 @@ try {
         jsonResponse(['status' => 'synced']);
     }
     if ($action === 'save_vehicle' && $method === 'POST') {
-        $data = getJsonInput();
-        if (isset($_GET['id']) && $_GET['id']) {
-            $pdo->prepare("UPDATE vehicles SET plate=?, ownerName=?, phone=?, model=? WHERE id=?")->execute([$data['plate'], $data['ownerName'], $data['phone'], $data['model'], $_GET['id']]);
-        } else {
-            $pdo->prepare("INSERT INTO vehicles (plate, ownerName, phone, model) VALUES (?, ?, ?, ?)")->execute([$data['plate'], $data['ownerName'], $data['phone'], $data['model']]);
+        try {
+            $data = getJsonInput();
+            if (!isset($data['plate']) || empty($data['plate'])) {
+                jsonResponse(['status' => 'error', 'message' => 'Plate number is required']);
+            }
+            if (isset($_GET['id']) && $_GET['id']) {
+                $pdo->prepare("UPDATE vehicles SET plate=?, ownerName=?, phone=?, model=? WHERE id=?")->execute([$data['plate'], $data['ownerName'] ?? '', $data['phone'] ?? '', $data['model'] ?? '', $_GET['id']]);
+            } else {
+                $pdo->prepare("INSERT INTO vehicles (plate, ownerName, phone, model) VALUES (?, ?, ?, ?)")->execute([$data['plate'], $data['ownerName'] ?? '', $data['phone'] ?? '', $data['model'] ?? '']);
+            }
+            jsonResponse(['status' => 'saved']);
+        } catch (PDOException $e) {
+            error_log('save_vehicle error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
         }
-        jsonResponse(['status' => 'saved']);
     }
     if ($action === 'delete_vehicle' && $method === 'POST') {
-        $pdo->prepare("DELETE FROM vehicles WHERE id=?")->execute([$_GET['id']]);
-        jsonResponse(['status' => 'deleted']);
+        try {
+            $id = $_GET['id'] ?? 0;
+            if (!$id) {
+                jsonResponse(['status' => 'error', 'message' => 'Invalid vehicle ID']);
+            }
+            $pdo->prepare("DELETE FROM vehicles WHERE id=?")->execute([$id]);
+            jsonResponse(['status' => 'deleted']);
+        } catch (PDOException $e) {
+            error_log('delete_vehicle error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
     }
     if ($action === 'send_sms' && $method === 'POST') {
         $data = getJsonInput();
@@ -495,9 +562,14 @@ try {
             jsonResponse(['error' => 'Admin access required']);
         }
         
-        $stmt = $pdo->query("SELECT id, username, full_name, email, role, status, last_login, created_at FROM users ORDER BY created_at DESC");
-        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        jsonResponse(['users' => $users]);
+        try {
+            $stmt = $pdo->query("SELECT id, username, full_name, email, role, status, last_login, created_at FROM users ORDER BY created_at DESC");
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            jsonResponse(['users' => $users]);
+        } catch (PDOException $e) {
+            error_log('get_users error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to fetch users. Table may not exist.', 'hint' => 'Run fix_db_all.php']);
+        }
     }
 
     if ($action === 'create_user' && $method === 'POST') {
