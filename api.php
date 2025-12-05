@@ -161,14 +161,22 @@ try {
         $comment = $data['comment'] ?? '';
 
         if($id) {
-            $pdo->prepare("UPDATE transfers SET review_stars = ?, review_comment = ? WHERE id = ?")->execute([$stars, $comment, $id]);
-            
-            // Notify Manager
+            // Get transfer details
             $stmt = $pdo->prepare("SELECT name, plate FROM transfers WHERE id = ?");
             $stmt->execute([$id]);
             $tr = $stmt->fetch();
+            
             if($tr) {
-                sendFCM_V1($pdo, $service_account_file, "New 5-Star Review!", "{$tr['name']} rated: $stars Stars");
+                // Save to customer_reviews table
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $pdo->prepare("INSERT INTO customer_reviews (order_id, customer_name, rating, comment, status, ip_address) VALUES (?, ?, ?, ?, 'pending', ?)")
+                    ->execute([$id, $tr['name'], $stars, $comment, $ip]);
+                
+                // Also update transfers table for backward compatibility
+                $pdo->prepare("UPDATE transfers SET review_stars = ?, review_comment = ? WHERE id = ?")->execute([$stars, $comment, $id]);
+                
+                // Notify Manager
+                sendFCM_V1($pdo, $service_account_file, "New Customer Review!", "{$tr['name']} ({$tr['plate']}) rated: $stars Stars");
             }
         }
         jsonResponse(['status' => 'success']);
@@ -304,6 +312,39 @@ try {
             $stmt->execute([':slug' => $slug, ':content' => $content]);
         }
         jsonResponse(['status' => 'saved']);
+    }
+
+    // --- CUSTOMER REVIEWS ENDPOINTS ---
+    if ($action === 'get_reviews' && $method === 'GET') {
+        $stmt = $pdo->query("SELECT * FROM customer_reviews ORDER BY created_at DESC");
+        $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Calculate statistics
+        $total = count($reviews);
+        $avgRating = 0;
+        if ($total > 0) {
+            $sum = array_sum(array_column($reviews, 'rating'));
+            $avgRating = round($sum / $total, 1);
+        }
+        
+        jsonResponse([
+            'reviews' => $reviews,
+            'total' => $total,
+            'average_rating' => $avgRating
+        ]);
+    }
+
+    if ($action === 'update_review_status' && $method === 'POST') {
+        $data = getJsonInput();
+        $id = $_GET['id'] ?? 0;
+        $status = $data['status'] ?? 'pending';
+        
+        if ($id && in_array($status, ['pending', 'approved', 'rejected'])) {
+            $pdo->prepare("UPDATE customer_reviews SET status = ? WHERE id = ?")->execute([$status, $id]);
+            jsonResponse(['status' => 'success']);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid parameters']);
+        }
     }
 
 } catch (Exception $e) {
