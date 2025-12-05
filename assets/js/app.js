@@ -76,7 +76,7 @@ function startConnectionMonitoring() {
 window.updateConnectionStatus = updateConnectionStatus;
 
 // API Helper with retry logic
-async function fetchAPI(action, method = 'GET', body = null, retries = 2) {
+window.fetchAPI = async function(action, method = 'GET', body = null, retries = 2) {
     const opts = { 
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -160,6 +160,22 @@ async function fetchAPI(action, method = 'GET', body = null, retries = 2) {
     }
 }
 
+// Load transfers data
+window.loadData = async function() {
+    try {
+        const data = await fetchAPI('get_transfers', 'GET');
+        transfers = data.transfers || data || [];
+        
+        // Call renderTable if it exists (for dashboard)
+        if (typeof window.renderTable === 'function') {
+            window.renderTable();
+        }
+    } catch (err) {
+        console.error('Error loading transfers:', err);
+        showToast('Load Error', err.message, 'error');
+    }
+};
+
 // View Switching
 window.switchView = (v) => {
     const dashboard = document.getElementById('view-dashboard');
@@ -204,7 +220,7 @@ window.switchView = (v) => {
 };
 
 // Toast Notifications
-function showToast(title, message = '', type = 'info') {
+window.showToast = function(title, message = '', type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) {
         console.error('Toast container not found');
