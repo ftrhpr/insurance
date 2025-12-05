@@ -1,3 +1,15 @@
+<?php
+session_start();
+
+// Redirect to login if not authenticated
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$current_user_name = $_SESSION['full_name'] ?? 'User';
+$current_user_role = $_SESSION['role'] ?? 'viewer';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -124,6 +136,11 @@
                             <button onclick="window.switchView('templates')" id="nav-templates" class="nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2">
                                 <i data-lucide="message-square-dashed" class="w-4 h-4"></i> SMS Templates
                             </button>
+                            <?php if ($current_user_role === 'admin'): ?>
+                            <button onclick="window.switchView('users')" id="nav-users" class="nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2">
+                                <i data-lucide="users" class="w-4 h-4"></i> Users
+                            </button>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -139,8 +156,35 @@
                             <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                             Server Connected
                         </div>
-                        <div id="user-display" class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-500 text-xs font-bold border border-slate-300">
-                            M
+                        
+                        <!-- User Menu -->
+                        <div class="relative" id="user-menu-container">
+                            <button onclick="window.toggleUserMenu()" class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                                <div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                    <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
+                                </div>
+                                <div class="text-left hidden sm:block">
+                                    <div class="text-sm font-semibold text-slate-700"><?php echo htmlspecialchars($current_user_name); ?></div>
+                                    <div class="text-xs text-slate-500 capitalize"><?php echo htmlspecialchars($current_user_role); ?></div>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50">
+                                <div class="px-4 py-2 border-b border-slate-100">
+                                    <p class="text-sm font-semibold text-slate-700"><?php echo htmlspecialchars($current_user_name); ?></p>
+                                    <p class="text-xs text-slate-500"><?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?></p>
+                                </div>
+                                <button onclick="window.openChangePasswordModal()" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                    Change Password
+                                </button>
+                                <a href="logout.php" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                                    Logout
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -540,6 +584,73 @@
                 </div>
             </div>
 
+            <!-- USERS VIEW (Admin Only) -->
+            <?php if ($current_user_role === 'admin'): ?>
+            <div id="view-users" class="hidden space-y-6 animate-in fade-in duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">User Management</h2>
+                        <p class="text-sm text-slate-500 mt-1">Manage system users and permissions</p>
+                    </div>
+                    <button onclick="window.openCreateUserModal()" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        Add User
+                    </button>
+                </div>
+
+                <!-- Users Table -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">User</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Username</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Last Login</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="divide-y divide-slate-100">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                                        <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+                                        <p>Loading users...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Role Descriptions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i data-lucide="shield" class="w-5 h-5 text-purple-600"></i>
+                            <h4 class="font-bold text-purple-900">Admin</h4>
+                        </div>
+                        <p class="text-sm text-purple-700">Full system access, can manage users and all settings</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i data-lucide="briefcase" class="w-5 h-5 text-blue-600"></i>
+                            <h4 class="font-bold text-blue-900">Manager</h4>
+                        </div>
+                        <p class="text-sm text-blue-700">Can edit cases, send SMS, manage appointments</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-4 border border-slate-200">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i data-lucide="eye" class="w-5 h-5 text-slate-600"></i>
+                            <h4 class="font-bold text-slate-900">Viewer</h4>
+                        </div>
+                        <p class="text-sm text-slate-700">Read-only access to cases and reports</p>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
         </main>
     </div>
 
@@ -811,9 +922,115 @@
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
+    <!-- User Management Modals -->
+    <?php if ($current_user_role === 'admin'): ?>
+    <!-- Create/Edit User Modal -->
+    <div id="user-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="window.closeUserModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 p-2 rounded-lg">
+                            <i data-lucide="user-plus" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h3 id="user-modal-title" class="text-lg font-bold text-white">Add User</h3>
+                    </div>
+                    <button onclick="window.closeUserModal()" class="text-white/80 hover:text-white">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="user-id">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-2">Username *</label>
+                        <input id="user-username" type="text" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" placeholder="username">
+                    </div>
+                    <div id="password-field">
+                        <label class="block text-xs font-bold text-slate-600 mb-2">Password *</label>
+                        <input id="user-password" type="password" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" placeholder="Min 6 characters">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-2">Full Name *</label>
+                        <input id="user-fullname" type="text" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" placeholder="Full Name">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-2">Email</label>
+                        <input id="user-email" type="email" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" placeholder="user@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-2">Role *</label>
+                        <select id="user-role" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none">
+                            <option value="viewer">Viewer (Read-only)</option>
+                            <option value="manager" selected>Manager (Edit cases)</option>
+                            <option value="admin">Admin (Full access)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-2">Status *</label>
+                        <select id="user-status" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none">
+                            <option value="active" selected>Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 justify-end px-6 pb-6">
+                    <button onclick="window.closeUserModal()" class="px-4 py-2.5 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
+                    <button onclick="window.saveUser()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 rounded-lg font-semibold shadow-lg transition-all">
+                        <span id="user-save-btn-text">Create User</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="password-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="window.closePasswordModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200">
+                <div class="bg-gradient-to-r from-slate-700 to-slate-900 px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 p-2 rounded-lg">
+                            <i data-lucide="lock" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Change Password</h3>
+                    </div>
+                    <button onclick="window.closePasswordModal()" class="text-white/80 hover:text-white">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="pwd-user-id">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-2">New Password</label>
+                        <input id="pwd-new-password" type="password" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 outline-none" placeholder="Min 6 characters">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-2">Confirm Password</label>
+                        <input id="pwd-confirm-password" type="password" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 outline-none" placeholder="Re-enter password">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 justify-end px-6 pb-6">
+                    <button onclick="window.closePasswordModal()" class="px-4 py-2.5 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
+                    <button onclick="window.savePassword()" class="px-6 py-2.5 bg-slate-900 text-white hover:bg-slate-800 rounded-lg font-semibold shadow-lg transition-all">
+                        Update Password
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <script>
         const API_URL = 'api.php';
-        const MANAGER_PHONE = "511144486"; 
+        const MANAGER_PHONE = "511144486";
+        const USER_ROLE = '<?php echo $current_user_role; ?>';
+        const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
         
         // 1. FIREBASE CONFIG (REPLACE WITH YOURS)
         const firebaseConfig = {
@@ -1020,6 +1237,11 @@
             document.getElementById('view-reviews').classList.toggle('hidden', v !== 'reviews');
             document.getElementById('view-templates').classList.toggle('hidden', v !== 'templates');
             
+            const usersView = document.getElementById('view-users');
+            if (usersView) {
+                usersView.classList.toggle('hidden', v !== 'users');
+            }
+            
             const activeClass = "nav-active px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 bg-slate-900 text-white shadow-sm";
             const inactiveClass = "nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-white";
 
@@ -1027,9 +1249,17 @@
             document.getElementById('nav-vehicles').className = v === 'vehicles' ? activeClass : inactiveClass;
             document.getElementById('nav-reviews').className = v === 'reviews' ? activeClass : inactiveClass;
             document.getElementById('nav-templates').className = v === 'templates' ? activeClass : inactiveClass;
+            
+            const navUsers = document.getElementById('nav-users');
+            if (navUsers) {
+                navUsers.className = v === 'users' ? activeClass : inactiveClass;
+            }
 
             if (v === 'reviews') {
                 loadReviews();
+            }
+            if (v === 'users') {
+                loadUsers();
             }
         };
 
@@ -1342,7 +1572,10 @@
                             <td class="px-6 py-4 text-sm">${hasPhone}</td>
                             <td class="px-6 py-4">${replyBadge}</td>
                             <td class="px-6 py-4 text-right">
-                                <button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-lg transition-all"><i data-lucide="settings-2" class="w-4 h-4"></i></button>
+                                ${CAN_EDIT ? 
+                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-lg transition-all"><i data-lucide="settings-2" class="w-4 h-4"></i></button>` :
+                                    `<button onclick="window.viewCase(${t.id})" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-lg transition-all" title="View Only"><i data-lucide="eye" class="w-4 h-4"></i></button>`
+                                }
                             </td>
                         </tr>`;
                 }
@@ -1478,7 +1711,28 @@
 
         window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
 
+        window.viewCase = function(id) {
+            window.openEditModal(id);
+            // Disable all form inputs for viewers
+            if (!CAN_EDIT) {
+                const modal = document.getElementById('edit-modal');
+                modal.querySelectorAll('input, select, textarea, button[onclick*="save"]').forEach(el => {
+                    el.disabled = true;
+                });
+                // Change save button to close
+                const saveBtn = modal.querySelector('button[onclick*="saveEdit"]');
+                if (saveBtn) {
+                    saveBtn.textContent = 'Close';
+                    saveBtn.onclick = window.closeModal;
+                }
+            }
+        };
+
         window.saveEdit = async () => {
+            if (!CAN_EDIT) {
+                showToast('Permission Denied', 'You do not have permission to edit cases', 'error');
+                return;
+            }
             const t = transfers.find(i => i.id == window.currentEditingId);
             const status = document.getElementById('input-status').value;
             const phone = document.getElementById('input-phone').value;
@@ -2054,6 +2308,257 @@
             
             // Call original function
             await originalSaveEdit();
+        };
+
+        // =====================================================
+        // USER MANAGEMENT FUNCTIONS
+        // =====================================================
+        
+        let allUsers = [];
+        
+        window.toggleUserMenu = function() {
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.classList.toggle('hidden');
+            if (!dropdown.classList.contains('hidden')) {
+                lucide.createIcons();
+            }
+        };
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const container = document.getElementById('user-menu-container');
+            const dropdown = document.getElementById('user-dropdown');
+            if (container && dropdown && !container.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+        
+        async function loadUsers() {
+            try {
+                const data = await fetchAPI('get_users', 'GET');
+                allUsers = data.users || [];
+                renderUsersTable();
+            } catch (err) {
+                console.error('Error loading users:', err);
+                showToast('Error', 'Failed to load users', 'error');
+            }
+        }
+        
+        function renderUsersTable() {
+            const tbody = document.getElementById('users-table-body');
+            if (!tbody) return;
+            
+            if (allUsers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                            <i data-lucide="users" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                            <p>No users found</p>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            tbody.innerHTML = allUsers.map(user => {
+                const roleColors = {
+                    admin: 'bg-purple-100 text-purple-800 border-purple-200',
+                    manager: 'bg-blue-100 text-blue-800 border-blue-200',
+                    viewer: 'bg-slate-100 text-slate-800 border-slate-200'
+                };
+                
+                const statusColors = {
+                    active: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                    inactive: 'bg-red-100 text-red-800 border-red-200'
+                };
+                
+                const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
+                
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+                                    ${user.full_name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-slate-800">${user.full_name}</div>
+                                    ${user.email ? `<div class="text-xs text-slate-500">${user.email}</div>` : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-mono text-sm text-slate-700">${user.username}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${roleColors[user.role]}">
+                                ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${statusColors[user.status]}">
+                                ${user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600">${lastLogin}</td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="window.openEditUserModal(${user.id})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit User">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="window.openChangeUserPasswordModal(${user.id})" class="p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors" title="Change Password">
+                                    <i data-lucide="key" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="window.deleteUser(${user.id})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete User">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+        
+        window.openCreateUserModal = function() {
+            document.getElementById('user-modal-title').textContent = 'Add User';
+            document.getElementById('user-save-btn-text').textContent = 'Create User';
+            document.getElementById('user-id').value = '';
+            document.getElementById('user-username').value = '';
+            document.getElementById('user-username').disabled = false;
+            document.getElementById('user-password').value = '';
+            document.getElementById('password-field').style.display = 'block';
+            document.getElementById('user-fullname').value = '';
+            document.getElementById('user-email').value = '';
+            document.getElementById('user-role').value = 'manager';
+            document.getElementById('user-status').value = 'active';
+            document.getElementById('user-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+        
+        window.openEditUserModal = function(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+            
+            document.getElementById('user-modal-title').textContent = 'Edit User';
+            document.getElementById('user-save-btn-text').textContent = 'Update User';
+            document.getElementById('user-id').value = user.id;
+            document.getElementById('user-username').value = user.username;
+            document.getElementById('user-username').disabled = true;
+            document.getElementById('password-field').style.display = 'none';
+            document.getElementById('user-fullname').value = user.full_name;
+            document.getElementById('user-email').value = user.email || '';
+            document.getElementById('user-role').value = user.role;
+            document.getElementById('user-status').value = user.status;
+            document.getElementById('user-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+        
+        window.closeUserModal = function() {
+            document.getElementById('user-modal').classList.add('hidden');
+        };
+        
+        window.saveUser = async function() {
+            const userId = document.getElementById('user-id').value;
+            const username = document.getElementById('user-username').value.trim();
+            const password = document.getElementById('user-password').value;
+            const fullName = document.getElementById('user-fullname').value.trim();
+            const email = document.getElementById('user-email').value.trim();
+            const role = document.getElementById('user-role').value;
+            const status = document.getElementById('user-status').value;
+            
+            if (!username || !fullName) {
+                showToast('Validation Error', 'Username and full name are required', 'error');
+                return;
+            }
+            
+            if (!userId && (!password || password.length < 6)) {
+                showToast('Validation Error', 'Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            const data = { full_name: fullName, email, role, status };
+            if (!userId) {
+                data.username = username;
+                data.password = password;
+            }
+            
+            try {
+                const action = userId ? `update_user&id=${userId}` : 'create_user';
+                await fetchAPI(action, 'POST', data);
+                showToast('Success', userId ? 'User updated successfully' : 'User created successfully', 'success');
+                window.closeUserModal();
+                loadUsers();
+            } catch (err) {
+                console.error('Error saving user:', err);
+                showToast('Error', err.message || 'Failed to save user', 'error');
+            }
+        };
+        
+        window.openChangePasswordModal = function() {
+            document.getElementById('pwd-user-id').value = '';
+            document.getElementById('pwd-new-password').value = '';
+            document.getElementById('pwd-confirm-password').value = '';
+            document.getElementById('password-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+        
+        window.openChangeUserPasswordModal = function(userId) {
+            document.getElementById('pwd-user-id').value = userId;
+            document.getElementById('pwd-new-password').value = '';
+            document.getElementById('pwd-confirm-password').value = '';
+            document.getElementById('password-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+        
+        window.closePasswordModal = function() {
+            document.getElementById('password-modal').classList.add('hidden');
+        };
+        
+        window.savePassword = async function() {
+            const userId = document.getElementById('pwd-user-id').value;
+            const newPassword = document.getElementById('pwd-new-password').value;
+            const confirmPassword = document.getElementById('pwd-confirm-password').value;
+            
+            if (!newPassword || newPassword.length < 6) {
+                showToast('Validation Error', 'Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showToast('Validation Error', 'Passwords do not match', 'error');
+                return;
+            }
+            
+            try {
+                const action = userId ? `change_password&id=${userId}` : 'change_password';
+                await fetchAPI(action, 'POST', { password: newPassword });
+                showToast('Success', 'Password changed successfully', 'success');
+                window.closePasswordModal();
+            } catch (err) {
+                console.error('Error changing password:', err);
+                showToast('Error', err.message || 'Failed to change password', 'error');
+            }
+        };
+        
+        window.deleteUser = async function(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+            
+            if (!confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                await fetchAPI(`delete_user&id=${userId}`, 'POST');
+                showToast('Success', 'User deleted successfully', 'success');
+                loadUsers();
+            } catch (err) {
+                console.error('Error deleting user:', err);
+                showToast('Error', err.message || 'Failed to delete user', 'error');
+            }
         };
 
         loadData();

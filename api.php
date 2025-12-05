@@ -1,4 +1,6 @@
 <?php
+session_start();
+
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -26,6 +28,25 @@ $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'OPTIONS') exit(0);
+
+// Check authentication for protected endpoints
+$publicEndpoints = ['login', 'get_order_status', 'submit_review'];
+if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
+    http_response_code(401);
+    die(json_encode(['error' => 'Unauthorized']));
+}
+
+// Check role permissions
+function checkPermission($required_role) {
+    global $pdo;
+    $user_role = $_SESSION['role'] ?? 'viewer';
+    $hierarchy = ['viewer' => 1, 'manager' => 2, 'admin' => 3];
+    return $hierarchy[$user_role] >= $hierarchy[$required_role];
+}
+
+function getCurrentUserId() {
+    return $_SESSION['user_id'] ?? null;
+}
 
 function jsonResponse($data) {
     echo json_encode($data);
@@ -435,6 +456,166 @@ try {
         } else {
             jsonResponse(['status' => 'error', 'message' => 'Invalid parameters']);
         }
+    }
+
+    // =====================================================
+    // USER MANAGEMENT ENDPOINTS
+    // =====================================================
+
+    if ($action === 'get_users' && $method === 'GET') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $stmt = $pdo->query("SELECT id, username, full_name, email, role, status, last_login, created_at FROM users ORDER BY created_at DESC");
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        jsonResponse(['users' => $users]);
+    }
+
+    if ($action === 'create_user' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $data = getJsonInput();
+        $username = $data['username'] ?? '';
+        $password = $data['password'] ?? '';
+        $full_name = $data['full_name'] ?? '';
+        $email = $data['email'] ?? '';
+        $role = $data['role'] ?? 'manager';
+        $status = $data['status'] ?? 'active';
+        
+        if (!$username || !$password || !$full_name) {
+            jsonResponse(['status' => 'error', 'message' => 'Username, password, and full name are required']);
+        }
+        
+        if (!in_array($role, ['admin', 'manager', 'viewer'])) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid role']);
+        }
+        
+        // Check if username exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        if ($stmt->fetch()) {
+            jsonResponse(['status' => 'error', 'message' => 'Username already exists']);
+        }
+        
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $created_by = getCurrentUserId();
+        
+        $stmt = $pdo->prepare("INSERT INTO users (username, password, full_name, email, role, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$username, $hashed_password, $full_name, $email, $role, $status, $created_by]);
+        
+        jsonResponse(['status' => 'success', 'user_id' => $pdo->lastInsertId()]);
+    }
+
+    if ($action === 'update_user' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $data = getJsonInput();
+        $id = $_GET['id'] ?? 0;
+        $full_name = $data['full_name'] ?? '';
+        $email = $data['email'] ?? '';
+        $role = $data['role'] ?? '';
+        $status = $data['status'] ?? '';
+        
+        if (!$id || !$full_name) {
+            jsonResponse(['status' => 'error', 'message' => 'User ID and full name are required']);
+        }
+        
+        $updates = [];
+        $params = [];
+        
+        if ($full_name) {
+            $updates[] = "full_name = ?";
+            $params[] = $full_name;
+        }
+        if ($email !== null) {
+            $updates[] = "email = ?";
+            $params[] = $email;
+        }
+        if ($role && in_array($role, ['admin', 'manager', 'viewer'])) {
+            $updates[] = "role = ?";
+            $params[] = $role;
+        }
+        if ($status && in_array($status, ['active', 'inactive'])) {
+            $updates[] = "status = ?";
+            $params[] = $status;
+        }
+        
+        $params[] = $id;
+        
+        $sql = "UPDATE users SET " . implode(", ", $updates) . " WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        
+        jsonResponse(['status' => 'success']);
+    }
+
+    if ($action === 'change_password' && $method === 'POST') {
+        $data = getJsonInput();
+        $user_id = $_GET['id'] ?? null;
+        $new_password = $data['password'] ?? '';
+        
+        // Admins can change any user's password, users can change their own
+        if (!checkPermission('admin') && $user_id != getCurrentUserId()) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Permission denied']);
+        }
+        
+        if (!$new_password || strlen($new_password) < 6) {
+            jsonResponse(['status' => 'error', 'message' => 'Password must be at least 6 characters']);
+        }
+        
+        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->execute([$hashed_password, $user_id ?: getCurrentUserId()]);
+        
+        jsonResponse(['status' => 'success']);
+    }
+
+    if ($action === 'delete_user' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $id = $_GET['id'] ?? 0;
+        
+        if ($id == getCurrentUserId()) {
+            jsonResponse(['status' => 'error', 'message' => 'Cannot delete your own account']);
+        }
+        
+        // Check if this is the last admin
+        $stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND status = 'active'");
+        $result = $stmt->fetch();
+        
+        $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        $user = $stmt->fetch();
+        
+        if ($user['role'] === 'admin' && $result['count'] <= 1) {
+            jsonResponse(['status' => 'error', 'message' => 'Cannot delete the last admin user']);
+        }
+        
+        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        jsonResponse(['status' => 'success']);
+    }
+
+    if ($action === 'get_current_user' && $method === 'GET') {
+        jsonResponse([
+            'user_id' => $_SESSION['user_id'] ?? null,
+            'username' => $_SESSION['username'] ?? null,
+            'full_name' => $_SESSION['full_name'] ?? null,
+            'role' => $_SESSION['role'] ?? null
+        ]);
     }
 
 } catch (Exception $e) {

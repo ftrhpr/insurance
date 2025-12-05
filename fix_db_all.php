@@ -94,6 +94,38 @@ try {
     echo " - Table structure verified.\n";
 
     // ---------------------------------------------------------
+    // 4.5. TABLE: users (User Management System)
+    // ---------------------------------------------------------
+    echo "\nChecking table 'users'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        full_name VARCHAR(100) NOT NULL,
+        email VARCHAR(100),
+        role ENUM('admin', 'manager', 'viewer') DEFAULT 'manager',
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        last_login TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_by INT DEFAULT NULL,
+        INDEX idx_username (username),
+        INDEX idx_role (role),
+        INDEX idx_status (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
+    // Create default admin user if no users exist
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM users");
+    $result = $stmt->fetch();
+    if ($result['count'] == 0) {
+        $defaultPassword = password_hash('admin123', PASSWORD_DEFAULT);
+        $pdo->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'admin', 'active')")
+            ->execute(['admin', $defaultPassword, 'System Administrator']);
+        echo " - Default admin user created (username: admin, password: admin123)\n";
+    }
+
+    // ---------------------------------------------------------
     // 5. TABLE: customer_reviews
     // ---------------------------------------------------------
     echo "\nChecking table 'customer_reviews'...\n";
