@@ -158,16 +158,28 @@
         let currentStars = 0;
 
         async function init() {
-            if(!id) return showError();
+            if(!id) {
+                console.error('No ID provided in URL');
+                return showError();
+            }
+
+            console.log('Fetching transfer ID:', id);
 
             try {
                 const res = await fetch(`${API_URL}?action=get_public_transfer&id=${id}`);
+                console.log('Response status:', res.status);
+                
                 const data = await res.json();
+                console.log('Response data:', data);
 
-                if(data.error || !data.id) return showError();
+                if(data.error || !data.id) {
+                    console.error('Error in response:', data.error || 'No ID in data');
+                    return showError();
+                }
 
                 renderData(data);
             } catch(e) {
+                console.error('Fetch error:', e);
                 showError();
             }
         }

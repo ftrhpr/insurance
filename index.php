@@ -991,9 +991,9 @@
 
         function getFormattedMessage(type, data) {
             let template = smsTemplates[type] || defaultTemplates[type] || "";
-            // Generate Link: Assume public_view.html is in same dir as index.html
-            const baseUrl = window.location.href.replace(/index\.html.*/, '').replace(/\/$/, '');
-            const link = `${baseUrl}/public_view.html?id=${data.id}`;
+            // Generate Link: Assume public_view.php is in same dir as index.php
+            const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
+            const link = `${baseUrl}/public_view.php?id=${data.id}`;
 
             return template
                 .replace(/{name}/g, data.name || '')
@@ -1694,7 +1694,7 @@
             // If status changed to Completed, send review link
             if (newStatus === 'Completed' && t.status !== 'Completed' && phone) {
                 const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
-                const reviewLink = `${baseUrl}/public_view.php?order_id=${t.id}`;
+                const reviewLink = `${baseUrl}/public_view.php?id=${t.id}`;
                 const reviewMsg = `Thank you for choosing OTOMOTORS! Your service for ${t.plate} is completed. Please share your experience: ${reviewLink}`;
                 
                 // Send review invitation SMS

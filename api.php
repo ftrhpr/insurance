@@ -128,11 +128,21 @@ try {
 
     if ($action === 'get_public_transfer' && $method === 'GET') {
         $id = $_GET['id'] ?? 0;
+        if (!$id) {
+            jsonResponse(['error' => 'Missing ID parameter']);
+        }
+        
         // Fetch status and review data
         $stmt = $pdo->prepare("SELECT id, name, plate, status, service_date as serviceDate, user_response as userResponse, review_stars as reviewStars, review_comment as reviewComment FROM transfers WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        jsonResponse($row ?: ['error' => 'Not found']);
+        
+        if (!$row) {
+            http_response_code(404);
+            jsonResponse(['error' => 'Transfer not found', 'id' => $id]);
+        }
+        
+        jsonResponse($row);
     }
 
     if ($action === 'user_respond' && $method === 'POST') {
