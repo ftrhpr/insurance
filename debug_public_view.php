@@ -13,9 +13,9 @@ $db_user = 'otoexpre_userdb';
 $db_pass = 'p52DSsthB}=0AeZ#';
 
 // Test ID (change this to an actual ID from your database)
-$test_id = isset($_GET['test_id']) ? $_GET['test_id'] : 1;
+$test_id = intval($_GET['test_id'] ?? 1);
 
-echo "<h3>Testing with ID: $test_id</h3>";
+echo "<h3>Testing with ID: " . htmlspecialchars($test_id, ENT_QUOTES, 'UTF-8') . "</h3>";
 echo "<p><a href='?test_id=" . ($test_id + 1) . "'>Try ID " . ($test_id + 1) . "</a></p>";
 echo "<hr>";
 

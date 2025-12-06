@@ -24,6 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userData = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($userData && password_verify($password, $userData['password'])) {
+                // Regenerate session ID to prevent session fixation attacks
+                session_regenerate_id(true);
+                
                 // Update last login
                 $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
                 $updateStmt->execute([$userData['id']]);

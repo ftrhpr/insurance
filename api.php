@@ -325,7 +325,7 @@ try {
         }
         $fields = []; $params = [':id' => $id];
         foreach ($data as $key => $val) {
-            if (in_array($key, ['phone', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
+            if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
                 if ($key === 'serviceDate') {
                     if(empty($val)) $val = null;
                     $fields[] = "service_date = :serviceDate";

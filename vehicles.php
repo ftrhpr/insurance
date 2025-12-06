@@ -585,11 +585,23 @@ try {
         let currentOrderId = null;
         let isEditMode = false;
         
-        window.openOrderModal = (orderId) => {
-            const order = transfers.find(t => t.id == orderId);
+        window.openOrderModal = async (orderId) => {
+            let order = transfers.find(t => t.id == orderId);
+            
+            // If not found in local cache, try fetching from API
+            if (!order) {
+                console.log('Order not in cache, fetching from API...');
+                try {
+                    await loadData();
+                    order = transfers.find(t => t.id == orderId);
+                } catch(e) {
+                    console.error('Failed to reload data:', e);
+                }
+            }
+            
             if (!order) {
                 console.error('Order not found:', orderId);
-                showToast('Error', 'Order not found', 'error');
+                showToast('Error', 'Order not found. Please refresh the page.', 'error');
                 return;
             }
             
@@ -830,11 +842,6 @@ try {
                 return;
             }
 
-            if (!data.phone) {
-                showToast('Validation Error', 'Phone number is required for SMS notifications', 'error');
-                return;
-            }
-
             try {
                 await fetchAPI(`update_transfer&id=${currentOrderId}`, 'POST', data);
                 
@@ -842,7 +849,7 @@ try {
                 const sendSmsChecked = document.getElementById('send-sms-on-save').checked;
                 const statusChanged = oldOrder.status !== data.status;
                 
-                if (sendSmsChecked && statusChanged) {
+                if (sendSmsChecked && statusChanged && data.phone) {
                     const publicUrl = window.location.origin + window.location.pathname.replace('vehicles.php', 'public_view.php');
                     const serviceDate = data.serviceDate ? new Date(data.serviceDate).toLocaleString('ka-GE', { 
                         month: 'long', 
@@ -892,6 +899,8 @@ try {
                     } else {
                         showToast('Order Updated', 'Changes saved (no SMS sent for this status)', 'success');
                     }
+                } else if (sendSmsChecked && !data.phone) {
+                    showToast('Order Updated', 'Changes saved but no phone number for SMS', 'info');
                 } else {
                     showToast('Order Updated', 'Service order has been updated successfully', 'success');
                 }
