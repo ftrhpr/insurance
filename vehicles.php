@@ -280,6 +280,28 @@ try {
         </div>
     </div>
 
+    <!-- Order Details Modal -->
+    <div id="order-modal" class="hidden fixed inset-0 z-[60] overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="window.closeOrderModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-5">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Service Order Details</h3>
+                        <p class="text-xs text-slate-500">Complete order information and history.</p>
+                    </div>
+                    <button onclick="window.closeOrderModal()" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full text-slate-400 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <div id="order-details-content" class="space-y-4">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
@@ -411,9 +433,9 @@ try {
                                 <i data-lucide="file-text" class="w-3 h-3"></i>
                                 ${historyCount}
                             </span>
-                            ${lastService ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg ${colorClass} font-semibold text-xs">
+                            ${lastService ? `<button onclick="event.stopPropagation(); window.openOrderModal(${lastService.id})" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg ${colorClass} font-semibold text-xs hover:scale-105 transition-transform active:scale-95">
                                 ${lastService.status}
-                            </span>` : ''}
+                            </button>` : ''}
                         </div>
                     `;
                 } else {
@@ -493,6 +515,132 @@ try {
 
         window.closeVehicleModal = () => document.getElementById('vehicle-modal').classList.add('hidden');
 
+        // Order Modal Functions
+        window.openOrderModal = (orderId) => {
+            const order = transfers.find(t => t.id == orderId);
+            if (!order) {
+                console.error('Order not found:', orderId);
+                showToast('Error', 'Order not found', 'error');
+                return;
+            }
+            
+            const statusColors = {
+                'New': 'bg-gradient-to-r from-blue-500 to-blue-600 text-white',
+                'Processing': 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white',
+                'Called': 'bg-gradient-to-r from-purple-500 to-purple-600 text-white',
+                'Parts Ordered': 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white',
+                'Parts Arrived': 'bg-gradient-to-r from-teal-500 to-teal-600 text-white',
+                'Scheduled': 'bg-gradient-to-r from-orange-500 to-orange-600 text-white',
+                'Completed': 'bg-gradient-to-r from-green-500 to-green-600 text-white',
+                'Issue': 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+            };
+            const statusClass = statusColors[order.status] || 'bg-gradient-to-r from-slate-500 to-slate-600 text-white';
+            
+            const serviceDate = order.serviceDate ? new Date(order.serviceDate.replace(' ', 'T')).toLocaleString() : 'Not scheduled';
+            const createdAt = order.createdAt ? new Date(order.createdAt.replace(' ', 'T')).toLocaleString() : 'N/A';
+            
+            const contentHTML = `
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200/50">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg shadow-blue-500/25">
+                                <i data-lucide="car" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-mono font-extrabold text-slate-900 text-xl tracking-wide">${order.plate}</h4>
+                                <p class="text-sm text-slate-600">Order #${order.id}</p>
+                            </div>
+                        </div>
+                        <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl ${statusClass} font-bold text-sm shadow-lg">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            ${order.status}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Customer Name</label>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                            <span class="font-semibold text-slate-800">${order.name}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Phone Number</label>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
+                            <span class="font-semibold text-slate-800">${order.phone || 'N/A'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Amount</label>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="coins" class="w-4 h-4 text-slate-400"></i>
+                            <span class="font-bold text-green-600 text-lg">${order.amount || 0} GEL</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Franchise</label>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="percent" class="w-4 h-4 text-slate-400"></i>
+                            <span class="font-semibold text-slate-800">${order.franchise || 0} GEL</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Service Date</label>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                            <span class="font-semibold text-slate-800">${serviceDate}</span>
+                        </div>
+                    </div>
+                    
+                    ${order.userResponse ? `
+                    <div class="col-span-2 bg-blue-50 p-4 rounded-xl border border-blue-200">
+                        <label class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                            <i data-lucide="message-circle" class="w-3 h-3"></i>
+                            Customer Response
+                        </label>
+                        <span class="font-semibold text-blue-800">${order.userResponse}</span>
+                    </div>
+                    ` : ''}
+                    
+                    ${order.reviewStars ? `
+                    <div class="col-span-2 bg-green-50 p-4 rounded-xl border border-green-200">
+                        <label class="text-xs font-bold text-green-700 uppercase tracking-wider mb-2 block flex items-center gap-2">
+                            <i data-lucide="star" class="w-3 h-3"></i>
+                            Customer Review
+                        </label>
+                        <div class="flex items-center gap-2 mb-1">
+                            ${'⭐'.repeat(order.reviewStars)}
+                        </div>
+                        ${order.reviewComment ? `<p class="text-sm text-green-800 mt-2">${order.reviewComment}</p>` : ''}
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Created At</label>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+                        <span class="text-sm text-slate-600">${createdAt}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('order-details-content').innerHTML = contentHTML;
+            document.getElementById('order-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closeOrderModal = () => {
+            document.getElementById('order-modal').classList.add('hidden');
+        };
+
         window.editVehicle = (id) => {
             const v = vehicles.find(i => i.id == id);
             if (!v) {
@@ -527,7 +675,7 @@ try {
                     };
                     const statusClass = statusColors[s.status] || 'bg-slate-100 text-slate-700';
                     return `
-                        <div class="bg-white p-3 rounded-lg border border-slate-200 hover:border-indigo-300 transition-all">
+                        <div class="bg-white p-3 rounded-lg border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer" onclick="window.openOrderModal(${s.id})">
                             <div class="flex justify-between items-start mb-1">
                                 <span class="font-semibold text-slate-700">${s.name}</span>
                                 <span class="text-[10px] ${statusClass} px-2 py-0.5 rounded-full font-bold">${s.status}</span>
