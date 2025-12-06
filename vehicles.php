@@ -7,8 +7,29 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Include database configuration
+require_once 'config.php';
+
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
+
+// Get database connection for initial data load
+try {
+    $pdo = getDBConnection();
+    
+    // Fetch vehicles
+    $stmt = $pdo->query("SELECT * FROM vehicles ORDER BY plate ASC");
+    $vehicles_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Fetch transfers for service history
+    $stmt = $pdo->query("SELECT * FROM transfers ORDER BY id DESC");
+    $transfers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+} catch (Exception $e) {
+    error_log("Database error in vehicles.php: " . $e->getMessage());
+    $vehicles_data = [];
+    $transfers_data = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -236,9 +257,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         const USER_ROLE = '<?php echo $current_user_role; ?>';
         const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
 
-        // Data arrays
-        let vehicles = [];
-        let transfers = [];
+        // Data arrays - Initialize with database data
+        let vehicles = <?php echo json_encode($vehicles_data); ?>;
+        let transfers = <?php echo json_encode($transfers_data); ?>;
 
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
@@ -505,7 +526,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         // Event Listeners
         document.getElementById('vehicle-search').addEventListener('input', renderVehicleTable);
 
-        // Initialize
+        // Initialize - Render table with initial PHP data, then refresh from API
+        renderVehicleTable();
         loadData();
         lucide.createIcons();
     </script>
