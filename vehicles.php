@@ -123,10 +123,47 @@ try {
                 <?php endif; ?>
             </div>
 
-            <!-- Search Bar -->
-            <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center">
-                <div class="p-3"><i data-lucide="search" class="w-5 h-5 text-slate-400"></i></div>
-                <input id="vehicle-search" type="text" placeholder="Search registry by plate, owner or model..." class="w-full bg-transparent outline-none text-sm h-full py-2">
+            <!-- Search and Filter Bar -->
+            <div class="bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-lg p-4">
+                <div class="flex flex-col lg:flex-row gap-4">
+                    <!-- Search -->
+                    <div class="flex-1 flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
+                        <input id="vehicle-search" type="text" placeholder="Search by plate, owner or model..." class="w-full bg-transparent outline-none text-sm ml-3">
+                    </div>
+                    
+                    <!-- Status Filter -->
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5 min-w-[200px]">
+                            <i data-lucide="filter" class="w-5 h-5 text-slate-400"></i>
+                            <select id="status-filter" class="w-full bg-transparent outline-none text-sm ml-3 cursor-pointer">
+                                <option value="">All Status</option>
+                                <option value="New">New</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Called">Called</option>
+                                <option value="Parts Ordered">Parts Ordered</option>
+                                <option value="Parts Arrived">Parts Arrived</option>
+                                <option value="Scheduled">Scheduled</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Issue">Issue</option>
+                                <option value="no-history">No History</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Sort -->
+                        <div class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5 min-w-[180px]">
+                            <i data-lucide="arrow-up-down" class="w-5 h-5 text-slate-400"></i>
+                            <select id="sort-select" class="w-full bg-transparent outline-none text-sm ml-3 cursor-pointer">
+                                <option value="plate-asc">Plate (A-Z)</option>
+                                <option value="plate-desc">Plate (Z-A)</option>
+                                <option value="owner-asc">Owner (A-Z)</option>
+                                <option value="owner-desc">Owner (Z-A)</option>
+                                <option value="services-desc">Most Services</option>
+                                <option value="services-asc">Least Services</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Table -->
@@ -135,37 +172,37 @@ try {
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white">
                             <tr>
-                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                <th class="px-6 py-4 text-xs uppercase tracking-wider font-extrabold">
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="hash" class="w-4 h-4"></i>
                                         <span>Plate</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                <th class="px-6 py-4 text-xs uppercase tracking-wider font-extrabold">
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="user" class="w-4 h-4"></i>
                                         <span>Owner</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                <th class="px-6 py-4 text-xs uppercase tracking-wider font-extrabold">
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="phone" class="w-4 h-4"></i>
                                         <span>Phone</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                <th class="px-6 py-4 text-xs uppercase tracking-wider font-extrabold">
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="car" class="w-4 h-4"></i>
                                         <span>Model</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                <th class="px-6 py-4 text-xs uppercase tracking-wider font-extrabold">
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="clock" class="w-4 h-4"></i>
                                         <span>Service History</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold text-right">
+                                <th class="px-6 py-4 text-xs uppercase tracking-wider font-extrabold text-right">
                                     <div class="flex items-center gap-2 justify-end">
                                         <i data-lucide="settings" class="w-4 h-4"></i>
                                         <span>Actions</span>
@@ -312,7 +349,40 @@ try {
             console.log('Current vehicles array:', vehicles);
             
             const term = document.getElementById('vehicle-search').value.toLowerCase();
-            const rows = vehicles.filter(v => (v.plate+v.ownerName+v.model).toLowerCase().includes(term));
+            const statusFilter = document.getElementById('status-filter').value;
+            const sortBy = document.getElementById('sort-select').value;
+            
+            // Filter by search term
+            let rows = vehicles.filter(v => (v.plate+v.ownerName+v.model).toLowerCase().includes(term));
+            
+            // Filter by status
+            if (statusFilter) {
+                rows = rows.filter(v => {
+                    const serviceHistory = transfers.filter(t => normalizePlate(t.plate) === normalizePlate(v.plate));
+                    if (statusFilter === 'no-history') {
+                        return serviceHistory.length === 0;
+                    } else {
+                        const lastService = serviceHistory.length > 0 ? serviceHistory[serviceHistory.length - 1] : null;
+                        return lastService && lastService.status === statusFilter;
+                    }
+                });
+            }
+            
+            // Sort
+            rows.sort((a, b) => {
+                const aServiceCount = transfers.filter(t => normalizePlate(t.plate) === normalizePlate(a.plate)).length;
+                const bServiceCount = transfers.filter(t => normalizePlate(t.plate) === normalizePlate(b.plate)).length;
+                
+                switch(sortBy) {
+                    case 'plate-asc': return a.plate.localeCompare(b.plate);
+                    case 'plate-desc': return b.plate.localeCompare(a.plate);
+                    case 'owner-asc': return (a.ownerName || '').localeCompare(b.ownerName || '');
+                    case 'owner-desc': return (b.ownerName || '').localeCompare(a.ownerName || '');
+                    case 'services-desc': return bServiceCount - aServiceCount;
+                    case 'services-asc': return aServiceCount - bServiceCount;
+                    default: return 0;
+                }
+            });
             
             console.log('Filtered rows:', rows.length);
             
@@ -334,52 +404,46 @@ try {
                         'Completed': 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30',
                         'Issue': 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
                     };
-                    const colorClass = statusColors[lastService.status] || 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg shadow-slate-500/30';
+                    const colorClass = statusColors[lastService.status] || 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-sm shadow-slate-500/30';
                     historyBadge = `
-                        <div class="flex items-center gap-2">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">
-                                <i data-lucide="history" class="w-3 h-3"></i>
-                                ${historyCount} service${historyCount > 1 ? 's' : ''}
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-xs">
+                                <i data-lucide="file-text" class="w-3 h-3"></i>
+                                ${historyCount}
                             </span>
-                            ${lastService ? `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${colorClass} font-bold text-xs uppercase tracking-wide">
-                                <i data-lucide="activity" class="w-3 h-3"></i>
+                            ${lastService ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg ${colorClass} font-semibold text-xs">
                                 ${lastService.status}
                             </span>` : ''}
                         </div>
                     `;
                 } else {
-                    historyBadge = '<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-400 text-xs font-medium"><i data-lucide="clock" class="w-3 h-3"></i>No history</span>';
+                    historyBadge = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 text-slate-400 text-xs"><i data-lucide="minus" class="w-3 h-3"></i>No history</span>';
                 }
                 
                 return `
                 <tr class="hover:bg-gradient-to-r hover:from-blue-50/50 hover:via-indigo-50/30 hover:to-blue-50/50 group transition-all duration-200 cursor-pointer" onclick="window.editVehicle(${v.id})">
-                    <td class="px-6 py-5">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25">
-                                <i data-lucide="car" class="w-4 h-4 text-white"></i>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2.5">
+                            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-lg shadow-blue-500/25">
+                                <i data-lucide="car" class="w-3.5 h-3.5 text-white"></i>
                             </div>
-                            <span class="font-mono font-extrabold text-slate-900 text-base tracking-wide">${v.plate}</span>
+                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${v.plate}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-5">
-                        <div class="flex flex-col">
-                            <span class="font-semibold text-slate-800 text-sm">${v.ownerName || '-'}</span>
-                            <span class="text-xs text-slate-400">Customer</span>
-                        </div>
+                    <td class="px-6 py-4">
+                        <span class="font-semibold text-slate-800 text-sm">${v.ownerName || '-'}</span>
                     </td>
-                    <td class="px-6 py-5">
+                    <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
-                            <div class="bg-slate-100 p-1.5 rounded-lg">
-                                <i data-lucide="phone" class="w-3 h-3 text-slate-500"></i>
-                            </div>
-                            <span class="text-sm text-slate-600 font-medium">${v.phone || '-'}</span>
+                            <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i>
+                            <span class="text-sm text-slate-600">${v.phone || '-'}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-5">
-                        <span class="text-sm text-slate-600 font-medium">${v.model || '<span class="text-slate-400 italic">Not specified</span>'}</span>
+                    <td class="px-6 py-4">
+                        <span class="text-sm text-slate-600">${v.model || '<span class="text-slate-400 italic">Not specified</span>'}</span>
                     </td>
-                    <td class="px-6 py-5">${historyBadge}</td>
-                    <td class="px-6 py-5 text-right" onclick="event.stopPropagation()">
+                    <td class="px-6 py-4">${historyBadge}</td>
+                    <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
                         <div class="flex items-center justify-end gap-2">
                             ${CAN_EDIT ? `
                                 <button onclick="window.editVehicle(${v.id})" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="Edit">
@@ -604,6 +668,18 @@ try {
         const searchInput = document.getElementById('vehicle-search');
         if (searchInput) {
             searchInput.addEventListener('input', renderVehicleTable);
+        }
+        
+        // Add filter and sort listeners
+        const statusFilter = document.getElementById('status-filter');
+        const sortSelect = document.getElementById('sort-select');
+        
+        if (statusFilter) {
+            statusFilter.addEventListener('change', renderVehicleTable);
+        }
+        
+        if (sortSelect) {
+            sortSelect.addEventListener('change', renderVehicleTable);
         }
 
         // Initialize - Ensure modal is hidden and render table
