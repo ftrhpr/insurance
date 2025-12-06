@@ -482,7 +482,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         <!-- Fullscreen Dialog Container -->
         <div class="fixed inset-0 flex items-stretch p-0 sm:p-2 md:p-4 lg:p-6">
-            <div class="relative flex-1 flex flex-col overflow-hidden rounded-none sm:rounded-2xl lg:rounded-3xl bg-gradient-to-br from-white to-slate-50 text-left shadow-2xl shadow-blue-900/30 transition-all border-0 sm:border sm:border-slate-200/50 ring-0 sm:ring-1 sm:ring-white/50 w-full h-full">
+            <div class="relative flex-1 flex flex-col rounded-none sm:rounded-2xl lg:rounded-3xl bg-gradient-to-br from-white to-slate-50 text-left shadow-2xl shadow-blue-900/30 transition-all border-0 sm:border sm:border-slate-200/50 ring-0 sm:ring-1 sm:ring-white/50 w-full h-full">
                 
                 <!-- Premium Header with Enhanced Gradient - Fixed -->
                 <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-4 md:py-5 lg:py-6 flex justify-between items-center shadow-2xl shrink-0">
