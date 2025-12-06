@@ -777,13 +777,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- Manual Create Order Modal -->
-    <div id="manual-create-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+    <div id="manual-create-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-emerald-900/40 to-teal-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
 
         <!-- Modal Container -->
-        <div class="fixed inset-0 flex items-center justify-center p-4">
-            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+        <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl z-[10001]">
                 
                 <!-- Header -->
                 <div class="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
