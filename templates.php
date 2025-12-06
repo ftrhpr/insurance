@@ -327,12 +327,20 @@ try {
             }, 4000);
         }
 
+        const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
+        
         async function fetchAPI(action, method = 'GET', data = null) {
             const url = `${API_URL}?action=${action}`;
             const options = {
                 method,
                 headers: { 'Content-Type': 'application/json' }
             };
+            
+            // Add CSRF token for POST requests
+            if (method === 'POST' && CSRF_TOKEN) {
+                options.headers['X-CSRF-Token'] = CSRF_TOKEN;
+            }
+            
             if (data && method === 'POST') {
                 options.body = JSON.stringify(data);
             }

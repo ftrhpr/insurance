@@ -41,9 +41,14 @@
         <div class="p-6 space-y-6">
             <div class="text-center space-y-2">
                 <h2 id="user-name" class="text-xl font-bold text-gray-800">Customer</h2>
-                <div class="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full text-xs font-mono font-bold text-gray-500 border border-gray-200">
-                    <i data-lucide="car" class="w-3 h-3"></i>
-                    <span id="plate">---</span>
+                <div class="flex flex-col items-center gap-2">
+                    <div class="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full text-xs font-mono font-bold text-gray-500 border border-gray-200">
+                        <i data-lucide="car" class="w-3 h-3"></i>
+                        <span id="plate">---</span>
+                    </div>
+                    <div class="text-[10px] font-mono text-gray-400 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                        Order ID: <span id="order-id">#0</span>
+                    </div>
                 </div>
             </div>
 
@@ -196,8 +201,8 @@
         let currentStars = 0;
 
         async function init() {
-            if(!id) {
-                console.error('No ID provided in URL');
+            if(!id || !/^\d+$/.test(id)) {
+                console.error('Invalid or missing ID in URL');
                 return showError();
             }
 
@@ -235,8 +240,10 @@
                 card.classList.add('scale-100', 'opacity-100');
             }, 100);
 
-            document.getElementById('user-name').innerText = data.name || 'Valued Customer';
-            document.getElementById('plate').innerText = data.plate || '---';
+            // Sanitize and set text content (prevents XSS)
+            document.getElementById('user-name').textContent = String(data.name || 'Valued Customer').substring(0, 100);
+            document.getElementById('plate').textContent = String(data.plate || '---').substring(0, 20);
+            document.getElementById('order-id').textContent = '#' + (parseInt(data.id) || '0');
 
             // SCENARIO CHECK: If Completed, show Review. Else show Appointment logic.
             if (data.status === 'Completed') {
@@ -285,13 +292,18 @@
                 document.getElementById('review-success').classList.remove('hidden');
                 // Render static stars in success message
                 const container = document.querySelector('#review-success h3');
-                const starHtml = Array(5).fill(0).map((_, i) => 
-                    `<i data-lucide="star" class="w-5 h-5 inline-block ${i < data.reviewStars ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}"></i>`
-                ).join('');
-                // Prevent duplicate stars if re-rendered
                 const existingStars = document.getElementById('static-stars');
                 if(!existingStars) {
-                    container.insertAdjacentHTML('afterend', `<div id="static-stars" class="mb-2">${starHtml}</div>`);
+                    const starDiv = document.createElement('div');
+                    starDiv.id = 'static-stars';
+                    starDiv.className = 'mb-2';
+                    for(let i = 0; i < 5; i++) {
+                        const star = document.createElement('i');
+                        star.setAttribute('data-lucide', 'star');
+                        star.className = `w-5 h-5 inline-block ${i < data.reviewStars ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`;
+                        starDiv.appendChild(star);
+                    }
+                    container.parentNode.insertBefore(starDiv, container.nextSibling);
                 }
             }
         }

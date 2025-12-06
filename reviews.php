@@ -173,8 +173,21 @@ try {
         console.log('Can edit:', CAN_EDIT);
 
         // API Helper
+        const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
+        
         async function fetchAPI(action, method = 'GET', body = null) {
-            const opts = { method };
+            const opts = { 
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            // Add CSRF token for POST requests
+            if (method === 'POST' && CSRF_TOKEN) {
+                opts.headers['X-CSRF-Token'] = CSRF_TOKEN;
+            }
+            
             if (body) opts.body = JSON.stringify(body);
             
             try {

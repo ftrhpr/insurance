@@ -12,8 +12,28 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once 'config.php';
     
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
+    // Rate limiting - prevent brute force attacks
+    $max_attempts = 5;
+    $lockout_time = 900; // 15 minutes in seconds
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    
+    if (!isset($_SESSION['login_attempts'])) {
+        $_SESSION['login_attempts'] = [];
+    }
+    
+    // Clean old attempts
+    $_SESSION['login_attempts'] = array_filter(
+        $_SESSION['login_attempts'],
+        fn($time) => (time() - $time) < $lockout_time
+    );
+    
+    // Check if locked out
+    if (count($_SESSION['login_attempts']) >= $max_attempts) {
+        $wait_time = ceil(($lockout_time - (time() - min($_SESSION['login_attempts']))) / 60);
+        $error = "Too many failed attempts. Please try again in {$wait_time} minutes.";
+    } else {
+        $username = $_POST['username'] ?? '';
+        $password = $_POST['password'] ?? '';
     
     if ($username && $password) {
         try {
@@ -26,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($userData && password_verify($password, $userData['password'])) {
                 // Regenerate session ID to prevent session fixation attacks
                 session_regenerate_id(true);
+                
+                // Clear failed login attempts on success
+                $_SESSION['login_attempts'] = [];
                 
                 // Update last login
                 $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
@@ -40,13 +63,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: index.php');
                 exit();
             } else {
-                $error = 'Invalid username or password';
+                // Track failed attempt
+                $_SESSION['login_attempts'][] = time();
+                $remaining = $max_attempts - count($_SESSION['login_attempts']);
+                $error = "Invalid username or password. {$remaining} attempts remaining.";
             }
         } catch (PDOException $e) {
             $error = 'Database error. Please try again.';
         }
     } else {
         $error = 'Please enter both username and password';
+    }
     }
 }
 ?>

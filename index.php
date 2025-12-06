@@ -455,7 +455,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                          </div>
                          <div class="h-8 w-px bg-white/30"></div>
                          <div class="flex flex-col">
-                             <span class="text-xs text-white/70 font-bold uppercase tracking-wider">Customer</span>
+                             <div class="flex items-center gap-2">
+                                 <span class="text-xs text-white/70 font-bold uppercase tracking-wider">Order ID:</span>
+                                 <span class="text-xs font-mono text-white/90 bg-white/10 px-2 py-0.5 rounded" id="modal-order-id">#0</span>
+                             </div>
                              <span class="text-base font-bold text-white" id="modal-title-name">User Name</span>
                          </div>
                     </div>
@@ -694,8 +697,21 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
         // --- API HELPERS ---
+        const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
+        
         async function fetchAPI(action, method = 'GET', body = null) {
-            const opts = { method };
+            const opts = { 
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            // Add CSRF token for POST requests
+            if (method === 'POST' && CSRF_TOKEN) {
+                opts.headers['X-CSRF-Token'] = CSRF_TOKEN;
+            }
+            
             if (body) opts.body = JSON.stringify(body);
             
             // If strictly using Mock Data, skip fetch
@@ -1080,8 +1096,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     newContainer.innerHTML += `
                         <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                             <div class="absolute top-0 left-0 w-1.5 h-full bg-primary-500"></div>
-                            <div class="flex justify-between mb-3 pl-3">
-                                <span class="bg-primary-50 text-primary-700 border border-primary-100 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}</span>
+                            <div class="flex justify-between items-start mb-3 pl-3">
+                                <div class="flex flex-col gap-1">
+                                    <span class="bg-primary-50 text-primary-700 border border-primary-100 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1 w-fit"><i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}</span>
+                                    <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
+                                </div>
                                 <span class="text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">${t.amount} ₾</span>
                             </div>
                             <div class="pl-3 mb-5">
@@ -1147,7 +1166,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <div>
                                         <div class="font-semibold text-sm text-slate-800">${t.name}</div>
                                         <div class="text-xs text-slate-400 font-mono">${t.amount} ₾</div>
-                                        <div class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5"><i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}</div>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <div class="text-[10px] text-slate-400 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}</div>
+                                            <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
+                                        </div>
                                         ${t.franchise ? `<div class="text-[10px] text-orange-500 mt-0.5">Franchise: ${t.franchise}</div>` : ''}
                                     </div>
                                 </div>
@@ -1183,6 +1205,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             document.getElementById('modal-title-ref').innerText = t.plate;
             document.getElementById('modal-title-name').innerText = t.name;
+            document.getElementById('modal-order-id').innerText = `#${t.id}`;
             document.getElementById('input-phone').value = phoneToFill;
             document.getElementById('input-service-date').value = t.serviceDate ? t.serviceDate.replace(' ', 'T') : ''; 
             document.getElementById('input-franchise').value = t.franchise || '';

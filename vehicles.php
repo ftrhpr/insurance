@@ -392,8 +392,21 @@ try {
         }
 
         // API Helper
+        const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
+        
         async function fetchAPI(action, method = 'GET', body = null) {
-            const opts = { method };
+            const opts = { 
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            // Add CSRF token for POST requests
+            if (method === 'POST' && CSRF_TOKEN) {
+                opts.headers['X-CSRF-Token'] = CSRF_TOKEN;
+            }
+            
             if (body) opts.body = JSON.stringify(body);
             
             try {
@@ -508,6 +521,9 @@ try {
                     historyBadge = '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 text-slate-400 text-xs"><i data-lucide="minus" class="w-3 h-3"></i>No history</span>';
                 }
                 
+                // Escape HTML to prevent XSS
+                const escapeHtml = (str) => String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+                
                 return `
                 <tr class="hover:bg-gradient-to-r hover:from-blue-50/50 hover:via-indigo-50/30 hover:to-blue-50/50 group transition-all duration-200 cursor-pointer" onclick="window.editVehicle(${v.id})">
                     <td class="px-6 py-4">
@@ -515,20 +531,20 @@ try {
                             <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-lg shadow-blue-500/25">
                                 <i data-lucide="car" class="w-3.5 h-3.5 text-white"></i>
                             </div>
-                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${v.plate}</span>
+                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(v.plate)}</span>
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="font-semibold text-slate-800 text-sm">${v.ownerName || '-'}</span>
+                        <span class="font-semibold text-slate-800 text-sm">${escapeHtml(v.ownerName) || '-'}</span>
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
                             <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i>
-                            <span class="text-sm text-slate-600">${v.phone || '-'}</span>
+                            <span class="text-sm text-slate-600">${escapeHtml(v.phone) || '-'}</span>
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="text-sm text-slate-600">${v.model || '<span class="text-slate-400 italic">Not specified</span>'}</span>
+                        <span class="text-sm text-slate-600">${escapeHtml(v.model) || '<span class="text-slate-400 italic">Not specified</span>'}</span>
                     </td>
                     <td class="px-6 py-4">${historyBadge}</td>
                     <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
@@ -613,6 +629,9 @@ try {
         };
 
         function renderOrderModal(order, editMode = false) {
+            // Escape HTML to prevent XSS vulnerabilities
+            const escapeHtml = (str) => String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+            
             const statusColors = {
                 'New': 'bg-gradient-to-r from-blue-500 to-blue-600 text-white',
                 'Processing': 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white',
@@ -650,17 +669,17 @@ try {
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Customer Name</label>
-                        <input type="text" id="edit-name" value="${order.name}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800" placeholder="Customer Name">
+                        <input type="text" id="edit-name" value="${escapeHtml(order.name)}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800" placeholder="Customer Name">
                     </div>
                     
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Phone Number</label>
-                        <input type="text" id="edit-phone" value="${order.phone || ''}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800" placeholder="Phone Number">
+                        <input type="text" id="edit-phone" value="${escapeHtml(order.phone)}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800" placeholder="Phone Number">
                     </div>
                     
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Amount (GEL)</label>
-                        <input type="number" id="edit-amount" value="${order.amount || 0}" class="w-full p-2 border border-slate-200 rounded-lg font-bold text-green-600" placeholder="0">
+                        <input type="number" id="edit-amount" value="${parseFloat(order.amount) || 0}" class="w-full p-2 border border-slate-200 rounded-lg font-bold text-green-600" placeholder="0">
                     </div>
                     
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -709,13 +728,13 @@ try {
                                 <i data-lucide="car" class="w-6 h-6 text-white"></i>
                             </div>
                             <div>
-                                <h4 class="font-mono font-extrabold text-slate-900 text-xl tracking-wide">${order.plate}</h4>
-                                <p class="text-sm text-slate-600">Order #${order.id}</p>
+                                <h4 class="font-mono font-extrabold text-slate-900 text-xl tracking-wide">${escapeHtml(order.plate)}</h4>
+                                <p class="text-sm text-slate-600">Order #${parseInt(order.id) || 0}</p>
                             </div>
                         </div>
                         <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl ${statusClass} font-bold text-sm shadow-lg">
                             <i data-lucide="activity" class="w-4 h-4"></i>
-                            ${order.status}
+                            ${escapeHtml(order.status)}
                         </span>
                     </div>
                 </div>
@@ -725,7 +744,7 @@ try {
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Customer Name</label>
                         <div class="flex items-center gap-2">
                             <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
-                            <span class="font-semibold text-slate-800">${order.name}</span>
+                            <span class="font-semibold text-slate-800">${escapeHtml(order.name)}</span>
                         </div>
                     </div>
                     
@@ -733,7 +752,7 @@ try {
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Phone Number</label>
                         <div class="flex items-center gap-2">
                             <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
-                            <span class="font-semibold text-slate-800">${order.phone || 'N/A'}</span>
+                            <span class="font-semibold text-slate-800">${escapeHtml(order.phone) || 'N/A'}</span>
                         </div>
                     </div>
                     
@@ -767,7 +786,7 @@ try {
                             <i data-lucide="message-circle" class="w-3 h-3"></i>
                             Customer Response
                         </label>
-                        <span class="font-semibold text-blue-800">${order.userResponse}</span>
+                        <span class="font-semibold text-blue-800">${escapeHtml(order.userResponse)}</span>
                     </div>
                     ` : ''}
                     
@@ -778,9 +797,9 @@ try {
                             Customer Review
                         </label>
                         <div class="flex items-center gap-2 mb-1">
-                            ${'⭐'.repeat(order.reviewStars)}
+                            ${'⭐'.repeat(parseInt(order.reviewStars) || 0)}
                         </div>
-                        ${order.reviewComment ? `<p class="text-sm text-green-800 mt-2">${order.reviewComment}</p>` : ''}
+                        ${order.reviewComment ? `<p class="text-sm text-green-800 mt-2">${escapeHtml(order.reviewComment)}</p>` : ''}
                     </div>
                     ` : ''}
                 </div>
@@ -962,10 +981,13 @@ try {
                     return `
                         <div class="bg-white p-3 rounded-lg border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer" onclick="window.openOrderModal(${s.id})">
                             <div class="flex justify-between items-start mb-1">
-                                <span class="font-semibold text-slate-700">${s.name}</span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="font-semibold text-slate-700">${s.name}</span>
+                                    <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 w-fit">Order #${s.id}</span>
+                                </div>
                                 <span class="text-[10px] ${statusClass} px-2 py-0.5 rounded-full font-bold">${s.status}</span>
                             </div>
-                            <div class="text-[10px] text-slate-400 flex items-center gap-3">
+                            <div class="text-[10px] text-slate-400 flex items-center gap-3 mt-2">
                                 <span><i data-lucide="calendar" class="w-3 h-3 inline"></i> ${date}</span>
                                 <span><i data-lucide="coins" class="w-3 h-3 inline"></i> ${s.amount || 0} GEL</span>
                             </div>

@@ -8,6 +8,9 @@ define('DB_NAME', 'otoexpre_userdb');
 define('DB_USER', 'otoexpre_userdb');
 define('DB_PASS', 'p52DSsthB}=0AeZ#');
 
+// SMS API configuration
+define('SMS_API_KEY', '5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1');
+
 // Create PDO connection function with timeout and retry
 function getDBConnection($retries = 3) {
     $lastException = null;

@@ -25,11 +25,25 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'OPTIONS') exit(0);
 
+// Generate CSRF token if not exists
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 // Check authentication for protected endpoints
-$publicEndpoints = ['login', 'get_order_status', 'submit_review'];
+$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode(['error' => 'Unauthorized']));
+}
+
+// CSRF protection for state-changing operations (POST/DELETE)
+if ($method === 'POST' && !in_array($action, $publicEndpoints)) {
+    $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (empty($csrfToken) || $csrfToken !== $_SESSION['csrf_token']) {
+        http_response_code(403);
+        die(json_encode(['error' => 'Invalid CSRF token']));
+    }
 }
 
 // Check role permissions
@@ -265,7 +279,7 @@ try {
                 $formattedDate = date('M d, Y H:i', strtotime($serviceDate));
                 $smsText = "Hello {$tr['name']}, your reschedule request has been approved! New appointment: {$formattedDate}. Ref: {$tr['plate']}. - OTOMOTORS";
                 
-                $api_key = "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+                $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
                 $to = $tr['phone'];
                 @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText));
             }
@@ -420,7 +434,7 @@ try {
         $data = getJsonInput();
         $to = $data['to'] ?? ''; $text = $data['text'] ?? '';
         if (empty($to) || empty($text)) jsonResponse(['status' => 'error', 'message' => 'Missing data']);
-        $api_key = "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+        $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
         echo @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($text));
         exit;
     }
