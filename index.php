@@ -772,6 +772,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             </div>
         </div>
     </div>
+    </div>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
