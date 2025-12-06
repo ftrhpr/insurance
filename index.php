@@ -452,6 +452,56 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             </div>
 
             <!-- VIEW: VEHICLES -->
+            <div id="view-vehicles" class="hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold text-slate-900">Vehicle Registry</h2>
+                    <div class="text-sm text-slate-500" id="vehicles-count">0 vehicles</div>
+                </div>
+
+                <!-- Search -->
+                <div class="bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="vehicles-search" placeholder="Search by plate or phone..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm">
+                    </div>
+                </div>
+
+                <!-- Vehicles Table -->
+                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Plate</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Phone</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Added</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Source</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vehicles-table-body" class="divide-y divide-slate-200">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="vehicles-empty" class="hidden py-12 flex flex-col items-center justify-center text-slate-400">
+                        <i data-lucide="car" class="w-16 h-16 mb-4 opacity-30"></i>
+                        <p class="text-sm font-medium">No vehicles found</p>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="text-sm text-slate-600" id="vehicles-page-info">
+                        Showing <span id="vehicles-showing-start">0</span>-<span id="vehicles-showing-end">0</span> of <span id="vehicles-total">0</span>
+                    </div>
+                    <div class="flex gap-2" id="vehicles-pagination">
+                        <!-- Pagination buttons populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
             <!-- VIEW: REVIEWS -->
             <!-- VIEW: TEMPLATES (Moved to templates.php) -->
             <!-- VIEW: USERS (Moved to users.php) -->
@@ -1144,20 +1194,208 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.switchView = (v) => {
             // Toggle views (check if element exists before accessing)
             const dashboardView = document.getElementById('view-dashboard');
+            const vehiclesView = document.getElementById('view-vehicles');
             const templatesView = document.getElementById('view-templates');
             const usersView = document.getElementById('view-users');
             
             if (dashboardView) dashboardView.classList.toggle('hidden', v !== 'dashboard');
+            if (vehiclesView) vehiclesView.classList.toggle('hidden', v !== 'vehicles');
             if (templatesView) templatesView.classList.toggle('hidden', v !== 'templates');
             if (usersView) usersView.classList.toggle('hidden', v !== 'users');
+            
+            // Render vehicles when switching to that view
+            if (v === 'vehicles') {
+                renderVehicles();
+            }
             
             const activeClass = "nav-active px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 bg-slate-900 text-white shadow-sm";
             const inactiveClass = "nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-white";
 
             // Update nav button (check if element exists)
             const navDashboard = document.getElementById('nav-dashboard');
+            const navVehicles = document.getElementById('nav-vehicles');
             if (navDashboard) navDashboard.className = v === 'dashboard' ? activeClass : inactiveClass;
+            if (navVehicles) navVehicles.className = v === 'vehicles' ? activeClass : inactiveClass;
         };
+
+        // --- VEHICLES PAGINATION ---
+        let currentVehiclesPage = 1;
+        const vehiclesPerPage = 10;
+
+        function renderVehicles(page = 1) {
+            if (!vehicles || vehicles.length === 0) {
+                document.getElementById('vehicles-table-body').innerHTML = '';
+                document.getElementById('vehicles-empty').classList.remove('hidden');
+                document.getElementById('vehicles-count').textContent = '0 vehicles';
+                document.getElementById('vehicles-page-info').classList.add('hidden');
+                document.getElementById('vehicles-pagination').innerHTML = '';
+                return;
+            }
+
+            currentVehiclesPage = page;
+            const searchTerm = document.getElementById('vehicles-search')?.value.toLowerCase() || '';
+            
+            // Filter vehicles
+            let filtered = vehicles.filter(v => {
+                const plate = (v.plate || '').toLowerCase();
+                const phone = (v.phone || '').toLowerCase();
+                return plate.includes(searchTerm) || phone.includes(searchTerm);
+            });
+
+            const totalVehicles = filtered.length;
+            const totalPages = Math.ceil(totalVehicles / vehiclesPerPage);
+            
+            // Adjust page if out of range
+            if (currentVehiclesPage > totalPages && totalPages > 0) {
+                currentVehiclesPage = totalPages;
+            }
+            if (currentVehiclesPage < 1) {
+                currentVehiclesPage = 1;
+            }
+
+            const startIndex = (currentVehiclesPage - 1) * vehiclesPerPage;
+            const endIndex = Math.min(startIndex + vehiclesPerPage, totalVehicles);
+            const pageVehicles = filtered.slice(startIndex, endIndex);
+
+            // Update count
+            document.getElementById('vehicles-count').textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
+
+            // Render table
+            const tbody = document.getElementById('vehicles-table-body');
+            if (pageVehicles.length === 0) {
+                tbody.innerHTML = '';
+                document.getElementById('vehicles-empty').classList.remove('hidden');
+            } else {
+                document.getElementById('vehicles-empty').classList.add('hidden');
+                tbody.innerHTML = pageVehicles.map(v => {
+                    const addedDate = v.created_at ? new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+                    const source = v.source || 'Manual';
+                    return `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="car" class="w-4 h-4 text-slate-400"></i>
+                                    <span class="font-mono font-bold text-slate-900">${v.plate || 'N/A'}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
+                                    <span class="text-slate-700">${v.phone || 'N/A'}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-slate-600 text-sm">${addedDate}</td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                    source === 'Import' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'
+                                }">${source}</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Update pagination info
+            if (totalVehicles > 0) {
+                document.getElementById('vehicles-page-info').classList.remove('hidden');
+                document.getElementById('vehicles-showing-start').textContent = startIndex + 1;
+                document.getElementById('vehicles-showing-end').textContent = endIndex;
+                document.getElementById('vehicles-total').textContent = totalVehicles;
+            } else {
+                document.getElementById('vehicles-page-info').classList.add('hidden');
+            }
+
+            // Render pagination buttons
+            renderVehiclesPagination(totalPages);
+            
+            // Re-init Lucide icons
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function renderVehiclesPagination(totalPages) {
+            const container = document.getElementById('vehicles-pagination');
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            // Previous button
+            html += `
+                <button onclick="renderVehicles(${currentVehiclesPage - 1})" 
+                    class="px-3 py-1.5 rounded-lg border transition-all ${
+                        currentVehiclesPage === 1 
+                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }" 
+                    ${currentVehiclesPage === 1 ? 'disabled' : ''}>
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+            `;
+
+            // Page numbers (show max 5 pages)
+            let startPage = Math.max(1, currentVehiclesPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            if (startPage > 1) {
+                html += `<button onclick="renderVehicles(1)" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">1</button>`;
+                if (startPage > 2) {
+                    html += `<span class="px-2 text-slate-400">...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <button onclick="renderVehicles(${i})" 
+                        class="px-3 py-1.5 rounded-lg border transition-all ${
+                            i === currentVehiclesPage 
+                                ? 'bg-slate-900 text-white border-slate-900' 
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                        }">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<span class="px-2 text-slate-400">...</span>`;
+                }
+                html += `<button onclick="renderVehicles(${totalPages})" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">${totalPages}</button>`;
+            }
+
+            // Next button
+            html += `
+                <button onclick="renderVehicles(${currentVehiclesPage + 1})" 
+                    class="px-3 py-1.5 rounded-lg border transition-all ${
+                        currentVehiclesPage === totalPages 
+                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }" 
+                    ${currentVehiclesPage === totalPages ? 'disabled' : ''}>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            `;
+
+            container.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Search handler for vehicles
+        document.addEventListener('DOMContentLoaded', () => {
+            const vehiclesSearch = document.getElementById('vehicles-search');
+            if (vehiclesSearch) {
+                vehiclesSearch.addEventListener('input', () => {
+                    currentVehiclesPage = 1; // Reset to first page on search
+                    renderVehicles(1);
+                });
+            }
+        });
 
         // --- SMS TEMPLATE LOGIC (Template editing moved to templates.php) ---
         const defaultTemplates = {
