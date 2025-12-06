@@ -4,7 +4,7 @@ session_start();
 // Redirect to login if not authenticated
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
-    exit;
+    exit();
 }
 
 // Include database configuration
@@ -101,49 +101,9 @@ try {
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen">
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
 
-    <!-- Navigation Bar -->
-    <nav class="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30 shadow-lg shadow-slate-200/50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-18 items-center">
-                <div class="flex items-center gap-4">
-                    <!-- Back to Dashboard -->
-                    <a href="index.php" class="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all text-sm font-semibold text-slate-700">
-                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                        Back to Dashboard
-                    </a>
-                    
-                    <div class="h-8 w-px bg-slate-200"></div>
-                    
-                    <!-- Logo -->
-                    <div class="flex items-center gap-3">
-                        <div class="relative">
-                            <div class="absolute inset-0 bg-gradient-to-br from-primary-400 to-accent-500 rounded-xl blur-md opacity-60"></div>
-                            <div class="relative bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 p-2.5 rounded-xl text-white shadow-lg">
-                                <i data-lucide="star" class="w-5 h-5"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <h1 class="text-lg font-bold text-slate-900">Customer Reviews</h1>
-                            <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">OTOMOTORS</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User Info -->
-                <div class="flex items-center gap-3">
-                    <div class="text-right hidden sm:block">
-                        <div class="text-sm font-bold text-slate-800"><?php echo htmlspecialchars($current_user_name); ?></div>
-                        <div class="text-xs text-slate-500 capitalize"><?php echo htmlspecialchars($current_user_role); ?></div>
-                    </div>
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                        <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+<?php include 'header.php'; ?>
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

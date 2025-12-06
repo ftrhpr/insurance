@@ -4,7 +4,7 @@ session_start();
 // Redirect to login if not authenticated
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
-    exit;
+    exit();
 }
 
 $current_user_name = $_SESSION['full_name'] ?? 'User';

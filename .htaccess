@@ -1,0 +1,33 @@
+# Prevent direct access to sensitive PHP files
+<FilesMatch "^(config\.php|header\.php)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Prevent access to backup and log files
+<FilesMatch "\.(bak|log|sql|md|txt)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Protect service account JSON
+<FilesMatch "\.json$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Disable PHP error display in production
+php_flag display_errors Off
+php_flag display_startup_errors Off
+php_value error_reporting 0

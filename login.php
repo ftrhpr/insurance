@@ -4,7 +4,7 @@ session_start();
 // If already logged in, redirect to dashboard
 if (isset($_SESSION['user_id'])) {
     header('Location: index.php');
-    exit;
+    exit();
 }
 
 $error = '';
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['role'] = $userData['role'];
                 
                 header('Location: index.php');
-                exit;
+                exit();
             } else {
                 $error = 'Invalid username or password';
             }

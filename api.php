@@ -144,9 +144,10 @@ try {
     // --- PUBLIC ACTIONS ---
 
     if ($action === 'get_public_transfer' && $method === 'GET') {
-        $id = $_GET['id'] ?? 0;
-        if (!$id) {
-            jsonResponse(['error' => 'Missing ID parameter']);
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Invalid ID parameter']);
         }
         
         // Fetch status and review data
@@ -164,12 +165,18 @@ try {
 
     if ($action === 'user_respond' && $method === 'POST') {
         $data = getJsonInput();
-        $id = $data['id'] ?? 0;
+        $id = intval($data['id'] ?? 0);
         $response = $data['response'] ?? 'Confirmed';
         $rescheduleDate = $data['reschedule_date'] ?? null;
         $rescheduleComment = $data['reschedule_comment'] ?? null;
         
-        if($id) {
+        // Validate response value
+        $validResponses = ['Confirmed', 'Reschedule Requested', 'Pending', 'Declined'];
+        if (!in_array($response, $validResponses)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid response value']);
+        }
+        
+        if($id > 0) {
             // Update user response
             $pdo->prepare("UPDATE transfers SET user_response = ? WHERE id = ?")->execute([$response, $id]);
             
@@ -196,11 +203,21 @@ try {
     // --- NEW: SUBMIT REVIEW ---
     if ($action === 'submit_review' && $method === 'POST') {
         $data = getJsonInput();
-        $id = $data['id'] ?? 0;
-        $stars = $data['stars'] ?? 5;
-        $comment = $data['comment'] ?? '';
+        $id = intval($data['id'] ?? 0);
+        $stars = intval($data['stars'] ?? 5);
+        $comment = trim($data['comment'] ?? '');
 
-        if($id) {
+        // Validate star rating
+        if ($stars < 1 || $stars > 5) {
+            jsonResponse(['status' => 'error', 'message' => 'Rating must be between 1 and 5']);
+        }
+
+        // Sanitize comment (max 1000 chars)
+        if (strlen($comment) > 1000) {
+            $comment = substr($comment, 0, 1000);
+        }
+
+        if($id > 0) {
             try {
                 // Get transfer details
                 $stmt = $pdo->prepare("SELECT name, plate FROM transfers WHERE id = ?");
@@ -230,10 +247,10 @@ try {
     // --- ACCEPT RESCHEDULE REQUEST ---
     if ($action === 'accept_reschedule' && $method === 'POST') {
         $data = getJsonInput();
-        $id = $_GET['id'] ?? 0;
+        $id = intval($_GET['id'] ?? 0);
         $serviceDate = $data['service_date'] ?? null;
 
-        if ($id && $serviceDate) {
+        if ($id > 0 && $serviceDate) {
             // Update service date and clear reschedule request, mark as confirmed
             $pdo->prepare("UPDATE transfers SET service_date = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
                 ->execute([$serviceDate, $id]);
@@ -261,9 +278,9 @@ try {
 
     // --- DECLINE RESCHEDULE REQUEST ---
     if ($action === 'decline_reschedule' && $method === 'POST') {
-        $id = $_GET['id'] ?? 0;
+        $id = intval($_GET['id'] ?? 0);
 
-        if ($id) {
+        if ($id > 0) {
             // Clear reschedule data and reset to pending
             $pdo->prepare("UPDATE transfers SET reschedule_date = NULL, reschedule_comment = NULL, user_response = 'Pending' WHERE id = ?")
                 ->execute([$id]);
@@ -302,7 +319,10 @@ try {
     // 4. UPDATE EXISTING TRANSFER
     if ($action === 'update_transfer' && $method === 'POST') {
         $data = getJsonInput();
-        $id = $_GET['id'] ?? 0;
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
+        }
         $fields = []; $params = [':id' => $id];
         foreach ($data as $key => $val) {
             if (in_array($key, ['phone', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
@@ -336,8 +356,13 @@ try {
         jsonResponse(['id' => $pdo->lastInsertId(), 'status' => 'success']);
     }
     if ($action === 'delete_transfer' && $method === 'POST') {
-        $pdo->prepare("DELETE FROM transfers WHERE id = ?")->execute([$_GET['id'] ?? 0]);
-        jsonResponse(['status' => 'deleted']);
+        $id = intval($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $pdo->prepare("DELETE FROM transfers WHERE id = ?")->execute([$id]);
+            jsonResponse(['status' => 'deleted']);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
+        }
     }
     if ($action === 'get_vehicles' && $method === 'GET') {
         $stmt = $pdo->query("SELECT * FROM vehicles ORDER BY plate ASC");
@@ -464,10 +489,10 @@ try {
 
     if ($action === 'update_review_status' && $method === 'POST') {
         $data = getJsonInput();
-        $id = $_GET['id'] ?? 0;
+        $id = intval($_GET['id'] ?? 0);
         $status = $data['status'] ?? 'pending';
         
-        if ($id && in_array($status, ['pending', 'approved', 'rejected'])) {
+        if ($id > 0 && in_array($status, ['pending', 'approved', 'rejected'])) {
             try {
                 $pdo->prepare("UPDATE customer_reviews SET status = ? WHERE id = ?")->execute([$status, $id]);
                 jsonResponse(['status' => 'success']);
@@ -539,13 +564,13 @@ try {
         }
         
         $data = getJsonInput();
-        $id = $_GET['id'] ?? 0;
+        $id = intval($_GET['id'] ?? 0);
         $full_name = $data['full_name'] ?? '';
         $email = $data['email'] ?? '';
         $role = $data['role'] ?? '';
         $status = $data['status'] ?? '';
         
-        if (!$id || !$full_name) {
+        if ($id <= 0 || !$full_name) {
             jsonResponse(['status' => 'error', 'message' => 'User ID and full name are required']);
         }
         
@@ -580,8 +605,13 @@ try {
 
     if ($action === 'change_password' && $method === 'POST') {
         $data = getJsonInput();
-        $user_id = $_GET['id'] ?? null;
+        $user_id = intval($_GET['id'] ?? 0);
         $new_password = $data['password'] ?? '';
+        
+        // Use current user if no ID provided
+        if ($user_id <= 0) {
+            $user_id = getCurrentUserId();
+        }
         
         // Admins can change any user's password, users can change their own
         if (!checkPermission('admin') && $user_id != getCurrentUserId()) {
@@ -595,7 +625,7 @@ try {
         
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-        $stmt->execute([$hashed_password, $user_id ?: getCurrentUserId()]);
+        $stmt->execute([$hashed_password, $user_id]);
         
         jsonResponse(['status' => 'success']);
     }
@@ -606,7 +636,11 @@ try {
             jsonResponse(['error' => 'Admin access required']);
         }
         
-        $id = $_GET['id'] ?? 0;
+        $id = intval($_GET['id'] ?? 0);
+        
+        if ($id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid user ID']);
+        }
         
         if ($id == getCurrentUserId()) {
             jsonResponse(['status' => 'error', 'message' => 'Cannot delete your own account']);

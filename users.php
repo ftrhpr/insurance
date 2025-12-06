@@ -4,13 +4,13 @@ session_start();
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
-    exit;
+    exit();
 }
 
 // Check admin access
 if ($_SESSION['role'] !== 'admin') {
     header('Location: index.php');
-    exit;
+    exit();
 }
 
 // Get user info from session
@@ -102,7 +102,7 @@ try {
     </div>
 
     <!-- Main Content -->
-    <div class="glass rounded-2xl shadow-2xl p-8">
+    <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-slate-800">User Accounts</h2>
             <button onclick="window.openCreateUserModal()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
@@ -576,5 +576,6 @@ try {
             lucide.createIcons();
         }
     </script>
+</main>
 </body>
 </html>

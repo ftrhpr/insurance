@@ -4,7 +4,7 @@ session_start();
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
-    exit;
+    exit();
 }
 
 // Get user info from session
@@ -54,57 +54,41 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMS Templates - OTOMOTORS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc',
+                            400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
+                            800: '#075985', 900: '#0c4a6e'
+                        },
+                        accent: {
+                            50: '#fdf4ff', 100: '#fae8ff', 500: '#d946ef', 600: '#c026d3'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         * { font-family: 'Inter', -apple-system, system-ui, sans-serif; }
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .gradient-primary {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-        }
-        .gradient-accent {
-            background: linear-gradient(135deg, #d946ef 0%, #c026d3 100%);
-        }
     </style>
 </head>
-<body class="p-6">
-    <!-- Navigation Bar -->
-    <div class="glass rounded-2xl shadow-2xl p-4 mb-6">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <a href="index.php" class="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-white/50 rounded-lg transition-colors">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                    <span class="font-semibold">Back to Dashboard</span>
-                </a>
-                <div class="h-6 w-px bg-slate-300"></div>
-                <div class="flex items-center gap-2 text-slate-700">
-                    <i data-lucide="message-square" class="w-5 h-5"></i>
-                    <span class="font-bold text-lg">SMS Templates</span>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-3">
-                <div class="text-right">
-                    <div class="text-sm font-semibold text-slate-800"><?php echo htmlspecialchars($current_user_name); ?></div>
-                    <div class="text-xs text-slate-500 capitalize"><?php echo htmlspecialchars($current_user_role); ?></div>
-                </div>
-                <div class="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-white font-bold">
-                    <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
-                </div>
-            </div>
-        </div>
-    </div>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
 
+<?php include 'header.php'; ?>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Main Content -->
-    <div class="glass rounded-2xl shadow-2xl p-8">
+    <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
         <div class="grid lg:grid-cols-3 gap-8">
             <!-- Templates Section -->
             <div class="lg:col-span-2 space-y-6">
@@ -404,5 +388,7 @@ try {
             lucide.createIcons();
         }
     </script>
+</main>
 </body>
+</html>
 </html>
