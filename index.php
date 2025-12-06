@@ -484,8 +484,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         <div class="fixed inset-0 flex items-stretch p-0 sm:p-2 md:p-4 lg:p-6">
             <div class="relative flex-1 flex flex-col overflow-hidden rounded-none sm:rounded-2xl lg:rounded-3xl bg-gradient-to-br from-white to-slate-50 text-left shadow-2xl shadow-blue-900/30 transition-all border-0 sm:border sm:border-slate-200/50 ring-0 sm:ring-1 sm:ring-white/50 w-full h-full">
                 
-                <!-- Premium Header with Enhanced Gradient - Responsive -->
-                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-4 md:py-5 lg:py-6 flex justify-between items-center sticky top-0 z-10 shadow-2xl shrink-0">
+                <!-- Premium Header with Enhanced Gradient - Fixed -->
+                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-4 md:py-5 lg:py-6 flex justify-between items-center shadow-2xl shrink-0">
                     <!-- Decorative Background Pattern -->
                     <div class="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
                     <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
@@ -523,7 +523,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     </button>
                 </div>
 
-                <!-- Enhanced Body with Responsive Columns - Fullscreen optimized -->
+                <!-- Enhanced Body with Responsive Columns - Scrollable Content -->
                 <div class="flex-1 overflow-y-auto custom-scrollbar px-3 sm:px-5 md:px-6 lg:px-8 py-4 sm:py-5 md:py-6 lg:py-8">
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 lg:gap-8">
                     
@@ -751,8 +751,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     </div>
                 </div>
 
-                <!-- Premium Footer with Actions -->
-                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 rounded-b-xl sm:rounded-b-2xl lg:rounded-b-3xl">
+                <!-- Premium Footer with Actions - Fixed/Floating -->
+                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 rounded-b-xl sm:rounded-b-2xl lg:rounded-b-3xl shadow-2xl shrink-0">
                     <button type="button" onclick="window.deleteRecord(window.currentEditingId)" class="group text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 text-sm font-bold flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-lg sm:rounded-xl transition-all border-2 border-red-200 hover:border-red-600 shadow-sm hover:shadow-xl hover:shadow-red-600/30 active:scale-95 w-full sm:w-auto">
                         <i data-lucide="trash-2" class="w-4 h-4"></i> 
                         <span>Delete Order</span>
