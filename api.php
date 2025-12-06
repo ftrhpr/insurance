@@ -336,6 +336,70 @@ try {
     // ... (Rest of existing actions: add_transfer, update_transfer, delete_transfer, etc. remain unchanged) ...
     // Keeping previous endpoints for brevity, assume they are present here exactly as before.
     
+    // CREATE NEW TRANSFER (Manual Order Creation)
+    if ($action === 'create_transfer' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions']);
+        }
+        
+        $data = getJsonInput();
+        
+        // Required fields validation
+        if (empty($data['plate']) || empty($data['name']) || !isset($data['amount'])) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing required fields: plate, name, amount']);
+        }
+        
+        // Prepare data with defaults
+        $plate = strtoupper(trim($data['plate']));
+        $name = trim($data['name']);
+        $phone = trim($data['phone'] ?? '');
+        $amount = floatval($data['amount']);
+        $franchise = floatval($data['franchise'] ?? 0);
+        $status = $data['status'] ?? 'New';
+        $internalNotes = $data['internalNotes'] ?? [];
+        $systemLogs = $data['systemLogs'] ?? [];
+        
+        // Additional validation
+        if ($amount <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Amount must be greater than 0']);
+        }
+        if ($franchise < 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Franchise cannot be negative']);
+        }
+        if (!in_array($status, ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'])) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid status value']);
+        }
+        
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO transfers (plate, name, phone, amount, franchise, status, internal_notes, system_logs, created_at)
+                VALUES (:plate, :name, :phone, :amount, :franchise, :status, :internal_notes, :system_logs, NOW())
+            ");
+            
+            $stmt->execute([
+                ':plate' => $plate,
+                ':name' => $name,
+                ':phone' => $phone,
+                ':amount' => $amount,
+                ':franchise' => $franchise,
+                ':status' => $status,
+                ':internal_notes' => json_encode($internalNotes),
+                ':system_logs' => json_encode($systemLogs)
+            ]);
+            
+            $newId = $pdo->lastInsertId();
+            
+            jsonResponse([
+                'status' => 'success',
+                'message' => 'Order created successfully',
+                'id' => $newId
+            ]);
+        } catch (PDOException $e) {
+            error_log("Create transfer error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+    
     // 4. UPDATE EXISTING TRANSFER
     if ($action === 'update_transfer' && $method === 'POST') {
         $data = getJsonInput();

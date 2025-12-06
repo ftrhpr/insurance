@@ -265,16 +265,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <p class="text-sm text-slate-600 mt-2 font-medium">Paste SMS or bank statement text to auto-detect transfers.</p>
                             </div>
                             <div class="flex gap-2">
+                                <button onclick="window.openManualCreateModal()" class="text-xs font-semibold text-white bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="plus-circle" class="w-3 h-3"></i>
+                                        Manual Create
+                                    </span>
+                                </button>
                                 <button onclick="window.insertSample('მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00 (ფრანშიზა 273.97)')" class="text-xs font-semibold text-primary-700 bg-gradient-to-br from-primary-50 to-accent-50 px-4 py-2.5 rounded-xl hover:from-primary-100 hover:to-accent-100 transition-all border border-primary-200/50 shadow-sm hover:shadow-md hover:-translate-y-0.5">
                                     <span class="flex items-center gap-1.5">
                                         <i data-lucide="sparkles" class="w-3 h-3"></i>
-                                        Sample with Franchise
-                                    </span>
-                                </button>
-                                <button onclick="window.insertSample('მანქანის ნომერი: GE-123-GE დამზღვევი: Sample User, 150.00')" class="text-xs font-semibold text-slate-700 bg-slate-50 px-4 py-2.5 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                                    <span class="flex items-center gap-1.5">
-                                        <i data-lucide="file-text" class="w-3 h-3"></i>
-                                        Simple Sample
+                                        Sample
                                     </span>
                                 </button>
                             </div>
@@ -545,11 +545,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         <span class="text-2xl font-bold text-emerald-600"><span id="modal-amount">0</span>₾</span>
                                     </div>
                                 </div>
-                                <div class="bg-white/80 rounded-xl p-3 border border-blue-100">
+                                <div class="bg-white/80 rounded-lg p-2 border border-blue-100">
                                     <div class="text-[10px] text-blue-600 font-bold uppercase mb-1">Franchise</div>
                                     <input id="input-franchise" type="number" placeholder="0.00" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-base font-bold text-orange-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none">
                                 </div>
-                                <div class="bg-white/80 rounded-xl p-3 border border-blue-100">
+                                <div class="bg-white/80 rounded-lg p-2 border border-blue-100">
                                     <div class="text-[10px] text-blue-600 font-bold uppercase mb-1">Created At</div>
                                     <div class="flex items-center gap-2 text-sm text-slate-700">
                                         <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
@@ -773,6 +773,118 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Manual Create Order Modal -->
+    <div id="manual-create-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-emerald-900/40 to-teal-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
+
+        <!-- Modal Container -->
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+                
+                <!-- Header -->
+                <div class="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 backdrop-blur-md border-2 border-white/40 p-2 rounded-xl">
+                            <i data-lucide="plus-circle" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Create New Order</h3>
+                            <p class="text-xs text-white/80">Manually add a new insurance order</p>
+                        </div>
+                    </div>
+                    <button onclick="window.closeManualCreateModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    <!-- Vehicle Plate -->
+                    <div>
+                        <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <i data-lucide="car" class="w-4 h-4 text-emerald-600"></i>
+                            Vehicle Plate Number *
+                        </label>
+                        <input id="manual-plate" type="text" placeholder="AA-123-BB" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 outline-none">
+                    </div>
+
+                    <!-- Customer Name -->
+                    <div>
+                        <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <i data-lucide="user" class="w-4 h-4 text-emerald-600"></i>
+                            Customer Name *
+                        </label>
+                        <input id="manual-name" type="text" placeholder="John Doe" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 outline-none">
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div>
+                        <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <i data-lucide="phone" class="w-4 h-4 text-emerald-600"></i>
+                            Phone Number
+                        </label>
+                        <input id="manual-phone" type="text" placeholder="555123456" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 outline-none">
+                    </div>
+
+                    <!-- Amount Row -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Amount -->
+                        <div>
+                            <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="coins" class="w-4 h-4 text-emerald-600"></i>
+                                Amount (₾) *
+                            </label>
+                            <input id="manual-amount" type="number" step="0.01" placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 outline-none">
+                        </div>
+
+                        <!-- Franchise -->
+                        <div>
+                            <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="percent" class="w-4 h-4 text-orange-600"></i>
+                                Franchise (₾)
+                            </label>
+                            <input id="manual-franchise" type="number" step="0.01" placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-orange-400 focus:ring-4 focus:ring-orange-400/20 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-purple-600"></i>
+                            Initial Status
+                        </label>
+                        <select id="manual-status" class="w-full appearance-none px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-purple-400 focus:ring-4 focus:ring-purple-400/20 outline-none cursor-pointer">
+                            <option value="New">🔵 New Case</option>
+                            <option value="Processing">🟡 Processing</option>
+                            <option value="Called">🟣 Contacted</option>
+                        </select>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <i data-lucide="sticky-note" class="w-4 h-4 text-slate-600"></i>
+                            Internal Notes (Optional)
+                        </label>
+                        <textarea id="manual-notes" rows="3" placeholder="Add any additional notes..." class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm resize-none focus:border-slate-400 focus:ring-4 focus:ring-slate-400/20 outline-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 bg-slate-50 border-t-2 border-slate-200 flex justify-between items-center gap-3 rounded-b-2xl">
+                    <button type="button" onclick="window.closeManualCreateModal()" class="px-6 py-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-xl font-bold text-sm transition-all border-2 border-slate-300">
+                        Cancel
+                    </button>
+                    <button type="button" id="manual-create-submit" onclick="window.saveManualOrder()" class="px-8 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-sm shadow-lg transition-all flex items-center gap-2">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        Create Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const API_URL = 'api.php';
@@ -1140,20 +1252,28 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if(parsedImportData.length > 0) {
                 document.getElementById('parsed-result').classList.remove('hidden');
                 document.getElementById('parsed-placeholder').classList.add('hidden');
+                
+                // Escape HTML to prevent XSS
+                const escapeHtml = (text) => {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                };
+                
                 document.getElementById('parsed-content').innerHTML = parsedImportData.map(i => 
                     `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
                         <div class="flex items-center gap-2">
-                            <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${i.plate}</div> 
-                            <span class="text-slate-500">${i.name}</span>
-                            ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${i.franchise}</span>` : ''}
+                            <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
+                            <span class="text-slate-500">${escapeHtml(i.name)}</span>
+                            ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${escapeHtml(i.franchise)}</span>` : ''}
                         </div>
-                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${i.amount} ₾</div>
+                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
                     </div>`
                 ).join('');
                 document.getElementById('btn-save-import').innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
                 lucide.createIcons();
             } else {
-                showToast("No matches found", "error");
+                showToast("No matches found", "Could not parse any transfers from the text", "error");
             }
         };
 
@@ -1161,29 +1281,50 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const btn = document.getElementById('btn-save-import');
             btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
             
+            let successCount = 0;
+            let failCount = 0;
+            
             for(let data of parsedImportData) {
-                const res = await fetchAPI('add_transfer', 'POST', data);
-                if (res && res.id && data.franchise) {
-                    await fetchAPI(`update_transfer&id=${res.id}`, 'POST', { franchise: data.franchise });
+                try {
+                    const res = await fetchAPI('add_transfer', 'POST', data);
+                    if (res && res.status === 'success') {
+                        successCount++;
+                        if (res.id && data.franchise) {
+                            await fetchAPI(`update_transfer&id=${res.id}`, 'POST', { franchise: data.franchise });
+                        }
+                        await fetchAPI('sync_vehicle', 'POST', { plate: data.plate, ownerName: data.name });
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    console.error('Error importing transfer:', error);
+                    failCount++;
                 }
-                await fetchAPI('sync_vehicle', 'POST', { plate: data.plate, ownerName: data.name });
             }
             
-            if(MANAGER_PHONE) {
-                const msg = `System Alert: ${parsedImportData.length} new transfer(s) added to OTOMOTORS portal.`;
+            if(MANAGER_PHONE && successCount > 0) {
+                const msg = `System Alert: ${successCount} new transfer(s) added to OTOMOTORS portal.`;
                 window.sendSMS(MANAGER_PHONE, msg, 'system');
             }
             
-            await fetchAPI('send_broadcast', 'POST', { 
-                title: 'New Transfers Imported', 
-                body: `${parsedImportData.length} new cases added.` 
-            });
+            if (successCount > 0) {
+                await fetchAPI('send_broadcast', 'POST', { 
+                    title: 'New Transfers Imported', 
+                    body: `${successCount} new cases added.` 
+                });
+            }
 
             document.getElementById('import-text').value = '';
             document.getElementById('parsed-result').classList.add('hidden');
             document.getElementById('parsed-placeholder').classList.remove('hidden');
             loadData();
-            showToast("Import Successful", "success");
+            
+            if (failCount > 0) {
+                showToast("Import Completed with Errors", `${successCount} succeeded, ${failCount} failed`, "error");
+            } else {
+                showToast("Import Successful", `${successCount} orders imported successfully`, "success");
+            }
+            
             btn.disabled = false;
             btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Confirm & Save`;
             lucide.createIcons();
@@ -1520,6 +1661,111 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
+
+        // Manual Create Modal Functions
+        window.openManualCreateModal = () => {
+            document.getElementById('manual-create-modal').classList.remove('hidden');
+            // Clear all inputs
+            document.getElementById('manual-plate').value = '';
+            document.getElementById('manual-name').value = '';
+            document.getElementById('manual-phone').value = '';
+            document.getElementById('manual-amount').value = '';
+            document.getElementById('manual-franchise').value = '';
+            document.getElementById('manual-status').value = 'New';
+            document.getElementById('manual-notes').value = '';
+            lucide.createIcons();
+            
+            // Focus on first input
+            setTimeout(() => {
+                document.getElementById('manual-plate').focus();
+            }, 100);
+        };
+
+        window.closeManualCreateModal = () => {
+            document.getElementById('manual-create-modal').classList.add('hidden');
+        };
+
+        window.saveManualOrder = async () => {
+            const plate = document.getElementById('manual-plate').value.trim();
+            const name = document.getElementById('manual-name').value.trim();
+            const phone = document.getElementById('manual-phone').value.trim();
+            const amount = parseFloat(document.getElementById('manual-amount').value) || 0;
+            const franchise = parseFloat(document.getElementById('manual-franchise').value) || 0;
+            const status = document.getElementById('manual-status').value;
+            const notes = document.getElementById('manual-notes').value.trim();
+
+            // Validation
+            if (!plate) {
+                showToast('Validation Error', 'Vehicle plate number is required', 'error');
+                document.getElementById('manual-plate').focus();
+                return;
+            }
+            if (!name) {
+                showToast('Validation Error', 'Customer name is required', 'error');
+                document.getElementById('manual-name').focus();
+                return;
+            }
+            if (isNaN(amount) || amount <= 0) {
+                showToast('Validation Error', 'Amount must be a valid number greater than 0', 'error');
+                document.getElementById('manual-amount').focus();
+                return;
+            }
+            if (franchise < 0) {
+                showToast('Validation Error', 'Franchise cannot be negative', 'error');
+                document.getElementById('manual-franchise').focus();
+                return;
+            }
+
+            // Disable submit button to prevent double submission
+            const submitBtn = document.getElementById('manual-create-submit');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Creating...';
+            
+            // Prepare data
+            const orderData = {
+                plate: plate.toUpperCase(),
+                name: name,
+                phone: phone,
+                amount: amount,
+                franchise: franchise,
+                status: status,
+                internalNotes: notes ? [{ note: notes, timestamp: new Date().toISOString(), user: '<?php echo $current_user_name; ?>' }] : [],
+                systemLogs: [{ 
+                    message: `Order manually created by <?php echo $current_user_name; ?>`, 
+                    timestamp: new Date().toISOString(), 
+                    type: 'info' 
+                }]
+            };
+
+            try {
+                const result = await fetchAPI('create_transfer', 'POST', orderData);
+                
+                if (result.status === 'success') {
+                    showToast('Success', 'Order created successfully!', 'success');
+                    window.closeManualCreateModal();
+                    
+                    // Refresh the table
+                    await loadData();
+                    
+                    // Open the newly created order
+                    if (result.id) {
+                        setTimeout(() => {
+                            window.openEditModal(result.id);
+                        }, 500);
+                    }
+                } else {
+                    showToast('Error', result.message || 'Failed to create order', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating order:', error);
+                showToast('Error', 'Failed to create order', 'error');
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Create Order';
+                lucide.createIcons();
+            }
+        };
 
         window.viewCase = function(id) {
             window.openEditModal(id);
