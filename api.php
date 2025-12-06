@@ -285,7 +285,15 @@ try {
             $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
             $row['serviceDate'] = $row['service_date']; 
         }
-        jsonResponse($rows);
+        
+        // Also get vehicles for vehicle DB page
+        $vehicleStmt = $pdo->query("SELECT * FROM vehicles ORDER BY plate ASC");
+        $vehicles = $vehicleStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        jsonResponse([
+            'transfers' => $rows,
+            'vehicles' => $vehicles
+        ]);
     }
 
     // ... (Rest of existing actions: add_transfer, update_transfer, delete_transfer, etc. remain unchanged) ...

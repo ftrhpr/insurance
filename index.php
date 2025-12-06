@@ -1234,14 +1234,20 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         async function loadData() {
             try {
-                const newTransfers = await fetchAPI('get_transfers');
-                const newVehicles = await fetchAPI('get_vehicles');
+                const response = await fetchAPI('get_transfers');
                 
-                if(Array.isArray(newTransfers)) transfers = newTransfers;
-                if(Array.isArray(newVehicles)) vehicles = newVehicles;
+                // Handle new combined response format
+                if (response.transfers && response.vehicles) {
+                    transfers = response.transfers;
+                    vehicles = response.vehicles;
+                } else if (Array.isArray(response)) {
+                    // Fallback for old format (just transfers array)
+                    transfers = response;
+                    const newVehicles = await fetchAPI('get_vehicles');
+                    if(Array.isArray(newVehicles)) vehicles = newVehicles;
+                }
 
                 renderTable();
-                renderVehicleTable();
             } catch(e) {
                 // Squelch load errors to prevent loop spam, alert user once via status
             }

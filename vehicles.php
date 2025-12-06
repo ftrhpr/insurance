@@ -299,9 +299,16 @@ try {
         // Load Data
         async function loadData() {
             try {
+                console.log('loadData: Fetching from API...');
                 const data = await fetchAPI('get_transfers');
+                console.log('loadData: API response:', data);
+                console.log('loadData: Transfers from API:', data.transfers?.length || 0);
+                console.log('loadData: Vehicles from API:', data.vehicles?.length || 0);
+                
                 transfers = data.transfers || [];
                 vehicles = data.vehicles || [];
+                
+                console.log('loadData: Updated arrays - Transfers:', transfers.length, 'Vehicles:', vehicles.length);
                 renderVehicleTable();
             } catch (err) {
                 console.error('Load error:', err);
