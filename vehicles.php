@@ -222,6 +222,16 @@ try {
                     </div>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            <div class="flex items-center justify-between bg-white/95 backdrop-blur-xl p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-sm text-slate-600" id="vehicles-page-info">
+                    Showing <span id="vehicles-showing-start">0</span>-<span id="vehicles-showing-end">0</span> of <span id="vehicles-total">0</span>
+                </div>
+                <div class="flex gap-2" id="vehicles-pagination">
+                    <!-- Pagination buttons populated by JavaScript -->
+                </div>
+            </div>
         </div>
     </main>
 
@@ -444,11 +454,16 @@ try {
             }
         }
 
+        // Pagination variables
+        let currentVehiclesPage = 1;
+        const vehiclesPerPage = 10;
+
         // Render Vehicle Table
-        function renderVehicleTable() {
+        function renderVehicleTable(page = 1) {
             console.log('renderVehicleTable called');
             console.log('Current vehicles array:', vehicles);
             
+            currentVehiclesPage = page;
             const term = document.getElementById('vehicle-search').value.toLowerCase();
             const statusFilter = document.getElementById('status-filter').value;
             const sortBy = document.getElementById('sort-select').value;
@@ -487,7 +502,33 @@ try {
             
             console.log('Filtered rows:', rows.length);
             
-            const html = rows.map(v => {
+            // Pagination logic
+            const totalVehicles = rows.length;
+            const totalPages = Math.ceil(totalVehicles / vehiclesPerPage);
+            
+            // Adjust page if out of range
+            if (currentVehiclesPage > totalPages && totalPages > 0) {
+                currentVehiclesPage = totalPages;
+            }
+            if (currentVehiclesPage < 1) {
+                currentVehiclesPage = 1;
+            }
+            
+            const startIndex = (currentVehiclesPage - 1) * vehiclesPerPage;
+            const endIndex = Math.min(startIndex + vehiclesPerPage, totalVehicles);
+            const pageRows = rows.slice(startIndex, endIndex);
+            
+            // Update pagination info
+            if (totalVehicles > 0) {
+                document.getElementById('vehicles-page-info').classList.remove('hidden');
+                document.getElementById('vehicles-showing-start').textContent = startIndex + 1;
+                document.getElementById('vehicles-showing-end').textContent = endIndex;
+                document.getElementById('vehicles-total').textContent = totalVehicles;
+            } else {
+                document.getElementById('vehicles-page-info').classList.add('hidden');
+            }
+            
+            const html = pageRows.map(v => {
                 // Get service history for this plate
                 const serviceHistory = transfers.filter(t => normalizePlate(t.plate) === normalizePlate(v.plate));
                 const historyCount = serviceHistory.length;
@@ -574,6 +615,85 @@ try {
             
             console.log('Empty state visible:', rows.length === 0);
             console.log('Reinitializing icons...');
+            
+            // Render pagination
+            renderVehiclesPagination(totalPages);
+            
+            lucide.createIcons();
+        }
+
+        // Pagination rendering
+        function renderVehiclesPagination(totalPages) {
+            const container = document.getElementById('vehicles-pagination');
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            // Previous button
+            html += `
+                <button onclick="renderVehicleTable(${currentVehiclesPage - 1})" 
+                    class="px-3 py-1.5 rounded-lg border transition-all ${
+                        currentVehiclesPage === 1 
+                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }" 
+                    ${currentVehiclesPage === 1 ? 'disabled' : ''}>
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+            `;
+
+            // Page numbers (show max 5 pages)
+            let startPage = Math.max(1, currentVehiclesPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            if (startPage > 1) {
+                html += `<button onclick="renderVehicleTable(1)" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">1</button>`;
+                if (startPage > 2) {
+                    html += `<span class="px-2 text-slate-400">...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <button onclick="renderVehicleTable(${i})" 
+                        class="px-3 py-1.5 rounded-lg border transition-all ${
+                            i === currentVehiclesPage 
+                                ? 'bg-blue-600 text-white border-blue-600' 
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                        }">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<span class="px-2 text-slate-400">...</span>`;
+                }
+                html += `<button onclick="renderVehicleTable(${totalPages})" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">${totalPages}</button>`;
+            }
+
+            // Next button
+            html += `
+                <button onclick="renderVehicleTable(${currentVehiclesPage + 1})" 
+                    class="px-3 py-1.5 rounded-lg border transition-all ${
+                        currentVehiclesPage === totalPages 
+                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }" 
+                    ${currentVehiclesPage === totalPages ? 'disabled' : ''}>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            `;
+
+            container.innerHTML = html;
             lucide.createIcons();
         }
 
@@ -1122,7 +1242,10 @@ try {
         // Event Listeners
         const searchInput = document.getElementById('vehicle-search');
         if (searchInput) {
-            searchInput.addEventListener('input', renderVehicleTable);
+            searchInput.addEventListener('input', () => {
+                currentVehiclesPage = 1; // Reset to first page on search
+                renderVehicleTable(1);
+            });
         }
         
         // Add filter and sort listeners
@@ -1130,11 +1253,17 @@ try {
         const sortSelect = document.getElementById('sort-select');
         
         if (statusFilter) {
-            statusFilter.addEventListener('change', renderVehicleTable);
+            statusFilter.addEventListener('change', () => {
+                currentVehiclesPage = 1; // Reset to first page on filter
+                renderVehicleTable(1);
+            });
         }
         
         if (sortSelect) {
-            sortSelect.addEventListener('change', renderVehicleTable);
+            sortSelect.addEventListener('change', () => {
+                currentVehiclesPage = 1; // Reset to first page on sort
+                renderVehicleTable(1);
+            });
         }
 
         // Initialize - Ensure modal is hidden and render table
