@@ -1701,6 +1701,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         window.saveManualOrder = async () => {
+            console.log('=== saveManualOrder called ===');
+            
             // Check permissions
             if (!CAN_EDIT) {
                 showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
@@ -1716,8 +1718,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const status = document.getElementById('manual-status').value;
             const notes = document.getElementById('manual-notes').value.trim();
 
+            console.log('Form values:', { plate, name, phone, amount, franchise, status, notes });
+
             // Validation
             if (!plate) {
+                console.log('Validation failed: no plate');
+                showToast('Validation Error', 'Vehicle plate number is required', 'error');
+                document.getElementById('manual-plate').focus();
+                return;
+            }
+            if (!name) {
+                console.log('Validation failed: no name');
                 showToast('Validation Error', 'Vehicle plate number is required', 'error');
                 document.getElementById('manual-plate').focus();
                 return;
