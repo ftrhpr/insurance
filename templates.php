@@ -14,6 +14,19 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 // Database connection
 require_once 'config.php';
 
+// Default templates
+$defaultTemplatesData = [
+    'registered' => 'გამარჯობა {name}, თქვენი სერვისის რეგისტრაცია მოხდა. ავტომობილი: {plate}. თანხა: {amount}₾',
+    'called' => 'გამარჯობა {name}, დაგიკავშირდით ჩვენი მენეჯერი. ავტომობილი: {plate}',
+    'schedule' => 'გამარჯობა {name}, თქვენი სერვისის თარიღი: {date}. ავტომობილი: {plate}',
+    'parts_ordered' => 'გამარჯობა {name}, თქვენი ნაწილები შეკვეთილია. ავტომობილი: {plate}',
+    'parts_arrived' => 'გამარჯობა {name}, თქვენი ნაწილები მივიდა. დაადასტურეთ თქვენი ვიზიტი: {link}',
+    'rescheduled' => 'გამარჯობა, კლიენტმა {name} მოითხოვა თარიღის შეცვლა. ავტომობილი: {plate}',
+    'reschedule_accepted' => 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}',
+    'completed' => 'გამარჯობა {name}, თქვენი სერვისი დასრულდა. გთხოვთ შეაფასოთ ჩვენი მომსახურება',
+    'issue' => 'გამარჯობა {name}, დაფიქსირდა პრობლემა. ავტომობილი: {plate}. ჩვენ დაგიკავშირდებით.'
+];
+
 try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -27,8 +40,11 @@ try {
         $templatesData[$tpl['slug']] = $tpl['content'];
     }
     
+    // Merge with defaults (use database values if exist, otherwise use defaults)
+    $templatesData = array_merge($defaultTemplatesData, $templatesData);
+    
 } catch (PDOException $e) {
-    $templatesData = [];
+    $templatesData = $defaultTemplatesData;
     error_log("Database error in templates.php: " . $e->getMessage());
 }
 ?>
