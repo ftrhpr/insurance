@@ -221,7 +221,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 <body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen selection:bg-primary-200 selection:text-primary-900">
 
     <!-- Modern Loading Screen -->
-    <div id="loading-screen" class="fixed inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 flex flex-col items-center justify-center z-50 transition-opacity duration-500">
+    <div id="loading-screen" class="fixed inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 flex flex-col items-center justify-center z-50 transition-opacity duration-500 pointer-events-auto">
         <div class="relative">
             <!-- Outer rotating ring -->
             <div class="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
@@ -240,10 +240,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </div>
 
     <!-- App Content -->
-    <div id="app-content" class="hidden pb-20">
+    <div id="app-content" class="hidden pb-20 relative z-0">
         
         <!-- Premium Navbar with Gradient Accent -->
-        <nav class="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-20 shadow-lg shadow-slate-200/50">
+        <nav class="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-40 shadow-lg shadow-slate-200/50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-18">
                     <div class="flex items-center gap-8">
@@ -1344,28 +1344,30 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         }
 
         window.switchView = (v) => {
-            document.getElementById('view-dashboard').classList.toggle('hidden', v !== 'dashboard');
-            document.getElementById('view-vehicles').classList.toggle('hidden', v !== 'vehicles');
-            document.getElementById('view-reviews').classList.toggle('hidden', v !== 'reviews');
-            document.getElementById('view-templates').classList.toggle('hidden', v !== 'templates');
-            
+            // Toggle views (check if element exists before accessing)
+            const dashboardView = document.getElementById('view-dashboard');
+            const reviewsView = document.getElementById('view-reviews');
+            const templatesView = document.getElementById('view-templates');
             const usersView = document.getElementById('view-users');
-            if (usersView) {
-                usersView.classList.toggle('hidden', v !== 'users');
-            }
+            
+            if (dashboardView) dashboardView.classList.toggle('hidden', v !== 'dashboard');
+            if (reviewsView) reviewsView.classList.toggle('hidden', v !== 'reviews');
+            if (templatesView) templatesView.classList.toggle('hidden', v !== 'templates');
+            if (usersView) usersView.classList.toggle('hidden', v !== 'users');
             
             const activeClass = "nav-active px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 bg-slate-900 text-white shadow-sm";
             const inactiveClass = "nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-white";
 
-            document.getElementById('nav-dashboard').className = v === 'dashboard' ? activeClass : inactiveClass;
-            document.getElementById('nav-vehicles').className = v === 'vehicles' ? activeClass : inactiveClass;
-            document.getElementById('nav-reviews').className = v === 'reviews' ? activeClass : inactiveClass;
-            document.getElementById('nav-templates').className = v === 'templates' ? activeClass : inactiveClass;
-            
+            // Update nav buttons (check if element exists)
+            const navDashboard = document.getElementById('nav-dashboard');
+            const navReviews = document.getElementById('nav-reviews');
+            const navTemplates = document.getElementById('nav-templates');
             const navUsers = document.getElementById('nav-users');
-            if (navUsers) {
-                navUsers.className = v === 'users' ? activeClass : inactiveClass;
-            }
+            
+            if (navDashboard) navDashboard.className = v === 'dashboard' ? activeClass : inactiveClass;
+            if (navReviews) navReviews.className = v === 'reviews' ? activeClass : inactiveClass;
+            if (navTemplates) navTemplates.className = v === 'templates' ? activeClass : inactiveClass;
+            if (navUsers) navUsers.className = v === 'users' ? activeClass : inactiveClass;
 
             if (v === 'reviews') {
                 loadReviews();
@@ -2529,6 +2531,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
         };
 
+        // Ensure all modals and overlays are hidden on page load
+        document.getElementById('edit-modal')?.classList.add('hidden');
+        document.getElementById('user-modal')?.classList.add('hidden');
+        document.getElementById('password-modal')?.classList.add('hidden');
+        document.getElementById('user-dropdown')?.classList.add('hidden');
+        
         loadData();
         if(window.lucide) lucide.createIcons();
 

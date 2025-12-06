@@ -106,7 +106,7 @@ try {
 <body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen">
 
     <!-- Navigation Bar -->
-    <nav class="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-20 shadow-lg shadow-slate-200/50">
+    <nav class="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30 shadow-lg shadow-slate-200/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-18 items-center">
                 <div class="flex items-center gap-4">
@@ -556,8 +556,11 @@ try {
         // Event Listeners
         document.getElementById('vehicle-search').addEventListener('input', renderVehicleTable);
 
-        // Initialize - Render table with initial PHP data, then refresh from API
+        // Initialize - Ensure modal is hidden and render table
         console.log('Starting initialization...');
+        
+        // Ensure vehicle modal is hidden on page load
+        document.getElementById('vehicle-modal')?.classList.add('hidden');
         
         try {
             renderVehicleTable();
