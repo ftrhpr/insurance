@@ -41,15 +41,42 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     },
                     colors: {
                         primary: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            500: '#d946ef',
+                            600: '#c026d3',
                         }
                     },
                     animation: {
                         'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% center' },
+                            '100%': { backgroundPosition: '200% center' },
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'glass': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
                     }
                 }
             }
@@ -57,48 +84,157 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </script>
 
     <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Premium Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { 
+            width: 8px; 
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track { 
+            background: rgba(148, 163, 184, 0.1); 
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+            background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+            background-clip: padding-box;
+        }
         
+        /* Enhanced Navigation */
         .nav-item {
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
         .nav-active { 
-            background-color: #f1f5f9; 
-            color: #0f172a; 
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: #ffffff; 
             font-weight: 600;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3), 0 2px 4px rgba(14, 165, 233, 0.2);
         }
         .nav-inactive { 
-            color: #64748b; 
+            color: #64748b;
+            background: transparent;
         }
         .nav-inactive:hover { 
             color: #0f172a;
-            background-color: #f8fafc;
+            background: rgba(14, 165, 233, 0.08);
+            transform: translateY(-1px);
         }
 
-        /* Custom Blink Animation for Urgent Toasts */
+        /* Glass Morphism Effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #c026d3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Enhanced Card Hover */
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(14, 165, 233, 0.1);
+        }
+
+        /* Animated Border for Urgent Toasts */
         @keyframes border-pulse {
-            0% { border-color: rgba(99, 102, 241, 0.2); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); transform: scale(1); }
-            50% { border-color: rgba(99, 102, 241, 1); box-shadow: 0 0 20px 0 rgba(99, 102, 241, 0.4); transform: scale(1.02); }
-            100% { border-color: rgba(99, 102, 241, 0.2); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); transform: scale(1); }
+            0% { 
+                border-color: rgba(14, 165, 233, 0.3); 
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5), 0 4px 12px rgba(14, 165, 233, 0.2);
+                transform: scale(1); 
+            }
+            50% { 
+                border-color: rgba(14, 165, 233, 1); 
+                box-shadow: 0 0 30px 0 rgba(14, 165, 233, 0.5), 0 8px 20px rgba(14, 165, 233, 0.3);
+                transform: scale(1.02); 
+            }
+            100% { 
+                border-color: rgba(14, 165, 233, 0.3); 
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5), 0 4px 12px rgba(14, 165, 233, 0.2);
+                transform: scale(1); 
+            }
         }
         .toast-urgent {
             animation: border-pulse 2s infinite;
             border-width: 2px;
         }
+
+        /* Shimmer Effect for Loading States */
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        /* Premium Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4), 0 4px 8px rgba(14, 165, 233, 0.2);
+            transform: translateY(-2px);
+        }
+        .btn-primary:active {
+            transform: translateY(0px) scale(0.98);
+        }
+
+        /* Floating Animation for Icons */
+        .float-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Modern Badge Styles */
+        .badge-modern {
+            position: relative;
+            overflow: hidden;
+        }
+        .badge-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        .badge-modern:hover::before {
+            left: 100%;
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen selection:bg-primary-100 selection:text-primary-700">
+<body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen selection:bg-primary-200 selection:text-primary-900">
 
-    <!-- Loading -->
-    <div id="loading-screen" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 transition-opacity duration-500">
+    <!-- Modern Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 flex flex-col items-center justify-center z-50 transition-opacity duration-500">
         <div class="relative">
-            <div class="w-12 h-12 border-4 border-slate-200 border-t-primary-600 rounded-full animate-spin"></div>
+            <!-- Outer rotating ring -->
+            <div class="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+            <!-- Inner pulsing circle -->
             <div class="absolute inset-0 flex items-center justify-center">
-                <i data-lucide="car" class="w-4 h-4 text-primary-600"></i>
+                <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm animate-pulse">
+                    <i data-lucide="car" class="w-6 h-6 text-white float-icon"></i>
+                </div>
             </div>
+        </div>
+        <div class="mt-8 text-center">
+            <h3 class="text-white text-xl font-bold mb-2">OTOMOTORS</h3>
+            <p class="text-white/80 text-sm font-medium">Loading your workspace...</p>
         </div>
         <div class="mt-4 text-slate-500 text-sm font-medium tracking-wide animate-pulse">CONNECTING...</div>
     </div>
@@ -106,24 +242,27 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <!-- App Content -->
     <div id="app-content" class="hidden pb-20">
         
-        <!-- Navbar -->
-        <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-20 shadow-sm">
+        <!-- Premium Navbar with Gradient Accent -->
+        <nav class="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-20 shadow-lg shadow-slate-200/50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
+                <div class="flex justify-between h-18">
                     <div class="flex items-center gap-8">
-                        <!-- Logo -->
+                        <!-- Enhanced Logo with Gradient -->
                         <div class="flex items-center gap-3">
-                            <div class="bg-gradient-to-br from-primary-600 to-primary-700 p-2 rounded-xl text-white shadow-lg shadow-primary-500/30">
-                                <i data-lucide="car" class="w-5 h-5"></i>
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-gradient-to-br from-primary-400 to-accent-500 rounded-xl blur-md opacity-60"></div>
+                                <div class="relative bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 p-2.5 rounded-xl text-white shadow-lg">
+                                    <i data-lucide="car" class="w-5 h-5"></i>
+                                </div>
                             </div>
                             <div>
-                                <h1 class="text-lg font-bold text-slate-900 leading-tight tracking-tight">OTOMOTORS</h1>
+                                <h1 class="text-lg font-bold gradient-text leading-tight tracking-tight">OTOMOTORS</h1>
                                 <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Service Manager</span>
                             </div>
                         </div>
                         
-                        <!-- Navigation -->
-                        <div class="hidden md:flex bg-slate-100/50 p-1 rounded-lg border border-slate-200/50">
+                        <!-- Enhanced Navigation -->
+                        <div class="hidden md:flex bg-slate-50/80 p-1.5 rounded-xl border border-slate-200/60 shadow-inner">
                             <button onclick="window.switchView('dashboard')" id="nav-dashboard" class="nav-active px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2">
                                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
                             </button>
@@ -144,45 +283,63 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                     </div>
 
-                    <!-- User Status -->
-                    <div class="flex items-center gap-4">
-                        <!-- Notification Bell (Manual Trigger) -->
-                        <button id="btn-notify" onclick="window.requestNotificationPermission()" class="text-slate-400 hover:text-primary-600 transition-colors p-2 bg-slate-100 rounded-full group relative" title="Enable Notifications">
-                            <i data-lucide="bell" class="w-5 h-5"></i>
-                            <span id="notify-badge" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white hidden"></span>
+                    <!-- Premium User Status Section -->
+                    <div class="flex items-center gap-3">
+                        <!-- Enhanced Notification Bell -->
+                        <button id="btn-notify" onclick="window.requestNotificationPermission()" class="relative text-slate-400 hover:text-primary-600 transition-all p-2.5 bg-slate-50 hover:bg-primary-50 rounded-xl group shadow-sm hover:shadow-md" title="Enable Notifications">
+                            <i data-lucide="bell" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                            <span id="notify-badge" class="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-red-500 to-red-600 rounded-full border-2 border-white hidden animate-pulse shadow-lg shadow-red-500/50"></span>
                         </button>
 
-                        <div id="connection-status" class="flex items-center gap-2 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1.5 rounded-full shadow-sm">
-                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                            Server Connected
+                        <!-- Premium Connection Status -->
+                        <div id="connection-status" class="flex items-center gap-2 text-xs font-semibold bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border border-emerald-200/60 px-3.5 py-2 rounded-xl shadow-sm">
+                            <div class="relative">
+                                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                                <span class="absolute inset-0 w-2 h-2 bg-emerald-400 rounded-full animate-ping opacity-75"></span>
+                            </div>
+                            <span class="tracking-wide">Connected</span>
                         </div>
                         
-                        <!-- User Menu -->
+                        <!-- Enhanced User Menu -->
                         <div class="relative" id="user-menu-container">
-                            <button onclick="window.toggleUserMenu()" class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
-                                <div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                    <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
+                            <button onclick="window.toggleUserMenu()" class="flex items-center gap-2.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all shadow-sm hover:shadow-md border border-slate-200/50">
+                                <div class="relative">
+                                    <div class="absolute inset-0 bg-gradient-to-br from-primary-400 to-accent-500 rounded-full blur opacity-40"></div>
+                                    <div class="relative w-8 h-8 bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                                        <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
+                                    </div>
                                 </div>
                                 <div class="text-left hidden sm:block">
-                                    <div class="text-sm font-semibold text-slate-700"><?php echo htmlspecialchars($current_user_name); ?></div>
-                                    <div class="text-xs text-slate-500 capitalize"><?php echo htmlspecialchars($current_user_role); ?></div>
+                                    <div class="text-sm font-bold text-slate-800"><?php echo htmlspecialchars($current_user_name); ?></div>
+                                    <div class="text-xs text-slate-500 capitalize font-medium"><?php echo htmlspecialchars($current_user_role); ?></div>
                                 </div>
-                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"></i>
                             </button>
                             
-                            <!-- Dropdown Menu -->
-                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50">
-                                <div class="px-4 py-2 border-b border-slate-100">
-                                    <p class="text-sm font-semibold text-slate-700"><?php echo htmlspecialchars($current_user_name); ?></p>
-                                    <p class="text-xs text-slate-500"><?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?></p>
+                            <!-- Premium Dropdown Menu -->
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50 overflow-hidden">
+                                <div class="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-primary-50/50 to-accent-50/50">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                                            <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-800"><?php echo htmlspecialchars($current_user_name); ?></p>
+                                            <p class="text-xs text-slate-500 font-medium">@<?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?></p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <button onclick="window.openChangePasswordModal()" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                                    <i data-lucide="lock" class="w-4 h-4"></i>
-                                    Change Password
+                                <button onclick="window.openChangePasswordModal()" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors group">
+                                    <div class="w-8 h-8 bg-slate-100 group-hover:bg-primary-50 rounded-lg flex items-center justify-center transition-colors">
+                                        <i data-lucide="lock" class="w-4 h-4 text-slate-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Change Password</span>
                                 </button>
-                                <a href="logout.php" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                    <i data-lucide="log-out" class="w-4 h-4"></i>
-                                    Logout
+                                <a href="logout.php" class="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors group">
+                                    <div class="w-8 h-8 bg-red-50 group-hover:bg-red-100 rounded-lg flex items-center justify-center transition-colors">
+                                        <i data-lucide="log-out" class="w-4 h-4 text-red-600"></i>
+                                    </div>
+                                    <span class="font-semibold">Logout</span>
                                 </a>
                             </div>
                         </div>
@@ -196,23 +353,33 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             <!-- DASHBOARD VIEW -->
             <div id="view-dashboard" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
-                <!-- Import Section -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all hover:shadow-md group">
+                <!-- Premium Import Section -->
+                <section class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary-500/10 card-hover group">
+                    <!-- Gradient accent bar -->
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-600"></div>
                     <div class="p-6 sm:p-8">
                         <div class="flex justify-between items-start mb-6">
                             <div>
-                                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                    <i data-lucide="file-input" class="w-5 h-5 text-primary-500"></i>
+                                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-3">
+                                    <div class="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg shadow-primary-500/30">
+                                        <i data-lucide="file-input" class="w-5 h-5 text-white"></i>
+                                    </div>
                                     Quick Import
                                 </h2>
-                                <p class="text-sm text-slate-500 mt-1">Paste SMS or bank statement text to auto-detect transfers.</p>
+                                <p class="text-sm text-slate-600 mt-2 font-medium">Paste SMS or bank statement text to auto-detect transfers.</p>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="window.insertSample('მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00 (ფრანშიზა 273.97)')" class="text-xs font-medium text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-100">
-                                    Sample with Franchise
+                                <button onclick="window.insertSample('მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00 (ფრანშიზა 273.97)')" class="text-xs font-semibold text-primary-700 bg-gradient-to-br from-primary-50 to-accent-50 px-4 py-2.5 rounded-xl hover:from-primary-100 hover:to-accent-100 transition-all border border-primary-200/50 shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="sparkles" class="w-3 h-3"></i>
+                                        Sample with Franchise
+                                    </span>
                                 </button>
-                                <button onclick="window.insertSample('მანქანის ნომერი: GE-123-GE დამზღვევი: Sample User, 150.00')" class="text-xs font-medium text-slate-600 bg-slate-50 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200">
-                                    Simple Sample
+                                <button onclick="window.insertSample('მანქანის ნომერი: GE-123-GE დამზღვევი: Sample User, 150.00')" class="text-xs font-semibold text-slate-700 bg-slate-50 px-4 py-2.5 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="file-text" class="w-3 h-3"></i>
+                                        Simple Sample
+                                    </span>
                                 </button>
                             </div>
                         </div>
@@ -221,10 +388,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <!-- Text Input -->
                             <div class="flex-1 space-y-3">
                                 <div class="relative">
-                                    <textarea id="import-text" class="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none text-sm font-mono resize-none transition-all placeholder:text-slate-400" placeholder="Paste bank text here..."></textarea>
-                                    <div class="absolute bottom-3 right-3">
-                                        <button onclick="window.parseBankText()" id="btn-analyze" class="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 active:scale-95 transition-all text-xs font-semibold flex items-center gap-2 shadow-lg shadow-slate-900/20">
-                                            <i data-lucide="sparkles" class="w-3 h-3"></i> Detect
+                                    <textarea id="import-text" class="w-full h-32 p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-slate-200/60 rounded-2xl focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20 outline-none text-sm font-mono resize-none transition-all placeholder:text-slate-400 shadow-inner" placeholder="Paste bank text here..."></textarea>
+                                    <div class="absolute bottom-4 right-4">
+                                        <button onclick="window.parseBankText()" id="btn-analyze" class="btn-primary text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xl">
+                                            <i data-lucide="sparkles" class="w-4 h-4"></i> Detect
                                         </button>
                                     </div>
                                 </div>
@@ -323,16 +490,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="overflow-x-auto">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
+                        <div class="overflow-x-auto custom-scrollbar">
                             <table class="w-full text-left border-collapse">
-                                <thead class="bg-slate-50/80 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                                <thead class="bg-gradient-to-r from-slate-50 via-primary-50/30 to-slate-50 border-b-2 border-primary-200/50 text-xs uppercase tracking-wider text-slate-600 font-bold">
                                     <tr>
-                                        <th class="px-6 py-4">Vehicle & Owner</th>
-                                        <th class="px-6 py-4">Stage</th>
-                                        <th class="px-6 py-4">Contact Info</th>
-                                        <th class="px-6 py-4">Customer Reply</th>
-                                        <th class="px-6 py-4 text-right">Action</th>
+                                        <th class="px-6 py-5">Vehicle & Owner</th>
+                                        <th class="px-6 py-5">Stage</th>
+                                        <th class="px-6 py-5">Contact Info</th>
+                                        <th class="px-6 py-5">Customer Reply</th>
+                                        <th class="px-6 py-5 text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="table-body" class="divide-y divide-slate-100">
@@ -672,34 +839,34 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         </div>
     </div>
 
-    <!-- Edit Modal (SaaS Style) -->
+    <!-- Premium Edit Modal -->
     <div id="edit-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="window.closeModal()"></div>
+        <!-- Enhanced Backdrop -->
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/50 via-primary-900/30 to-slate-900/50 backdrop-blur-md transition-opacity" onclick="window.closeModal()"></div>
 
         <!-- Dialog -->
         <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-4xl border border-slate-100">
+            <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl shadow-primary-900/20 transition-all sm:my-8 sm:w-full sm:max-w-4xl border-2 border-slate-200/50">
                 
-                <!-- Header -->
-                <div class="bg-white px-6 py-4 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
+                <!-- Premium Header with Gradient -->
+                <div class="relative bg-gradient-to-r from-primary-500 via-primary-600 to-accent-600 px-6 py-5 flex justify-between items-center sticky top-0 z-10 shadow-lg">
                     <div class="flex items-center gap-4">
-                         <div class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg text-sm font-mono font-bold text-slate-800 shadow-sm">
+                         <div class="bg-white/20 backdrop-blur-sm border border-white/30 px-4 py-2 rounded-xl text-sm font-mono font-bold text-white shadow-xl">
                             <span id="modal-title-ref">AB-123-CD</span>
                          </div>
-                         <div class="h-6 w-px bg-slate-200"></div>
+                         <div class="h-8 w-px bg-white/30"></div>
                          <div class="flex flex-col">
-                             <span class="text-xs text-slate-400 font-semibold uppercase">Customer</span>
-                             <span class="text-sm font-medium text-slate-700" id="modal-title-name">User Name</span>
+                             <span class="text-xs text-white/70 font-bold uppercase tracking-wider">Customer</span>
+                             <span class="text-base font-bold text-white" id="modal-title-name">User Name</span>
                          </div>
                     </div>
-                    <button onclick="window.closeModal()" class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-colors">
+                    <button onclick="window.closeModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-2.5 rounded-xl transition-all">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
-                <!-- Body -->
-                <div class="px-8 py-8 grid grid-cols-1 lg:grid-cols-2 gap-10 max-h-[75vh] overflow-y-auto custom-scrollbar bg-slate-50/30">
+                <!-- Enhanced Body -->
+                <div class="px-8 py-8 grid grid-cols-1 lg:grid-cols-2 gap-10 max-h-[75vh] overflow-y-auto custom-scrollbar bg-gradient-to-br from-slate-50 to-blue-50/30">
                     
                     <!-- Left Column: Actions -->
                     <div class="space-y-6">
@@ -1178,7 +1345,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         // Poll for updates every 10 seconds
         setInterval(loadData, 10000);
 
-        // Stylish Toast Function
+        // Premium Toast Notifications
         function showToast(title, message = '', type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
             
@@ -1191,25 +1358,53 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const toast = document.createElement('div');
             
             const colors = {
-                success: { bg: 'bg-white', border: 'border-emerald-100', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', icon: 'check-circle-2' },
-                error: { bg: 'bg-white', border: 'border-red-100', iconBg: 'bg-red-50', iconColor: 'text-red-600', icon: 'alert-circle' },
-                info: { bg: 'bg-white', border: 'border-blue-100', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', icon: 'info' },
-                urgent: { bg: 'bg-white', border: 'border-indigo-200 toast-urgent', iconBg: 'bg-indigo-50', iconColor: 'text-indigo-600', icon: 'bell-ring' }
+                success: { 
+                    bg: 'bg-white/95 backdrop-blur-xl', 
+                    border: 'border-emerald-200/60', 
+                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', 
+                    iconColor: 'text-emerald-600', 
+                    icon: 'check-circle-2',
+                    shadow: 'shadow-emerald-500/20' 
+                },
+                error: { 
+                    bg: 'bg-white/95 backdrop-blur-xl', 
+                    border: 'border-red-200/60', 
+                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50', 
+                    iconColor: 'text-red-600', 
+                    icon: 'alert-circle',
+                    shadow: 'shadow-red-500/20' 
+                },
+                info: { 
+                    bg: 'bg-white/95 backdrop-blur-xl', 
+                    border: 'border-primary-200/60', 
+                    iconBg: 'bg-gradient-to-br from-primary-50 to-accent-50', 
+                    iconColor: 'text-primary-600', 
+                    icon: 'info',
+                    shadow: 'shadow-primary-500/20' 
+                },
+                urgent: { 
+                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent', 
+                    border: 'border-primary-300', 
+                    iconBg: 'bg-gradient-to-br from-primary-100 to-accent-100', 
+                    iconColor: 'text-primary-700', 
+                    icon: 'bell-ring',
+                    shadow: 'shadow-primary-500/30' 
+                }
             };
             
             const style = colors[type] || colors.info;
 
-            toast.className = `pointer-events-auto w-80 ${style.bg} border ${style.border} shadow-xl shadow-slate-200/60 rounded-xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
+            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
             
             toast.innerHTML = `
-                <div class="${style.iconBg} p-2.5 rounded-full shrink-0">
+                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
                     <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
                 </div>
                 <div class="flex-1 pt-1">
-                    <h4 class="text-sm font-bold text-slate-800 leading-none mb-1">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-500 leading-relaxed">${message}</p>` : ''}
+                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
+                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
                 </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-500 transition-colors -mt-1 -mr-1 p-1">
+                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             `;
