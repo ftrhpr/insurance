@@ -283,7 +283,7 @@ try {
         foreach ($rows as &$row) {
             $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');
             $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
-            $row['serviceDate'] = $row['service_date']; 
+            $row['serviceDate'] = $row['service_date'] ?? null; 
         }
         
         // Also get vehicles for vehicle DB page
