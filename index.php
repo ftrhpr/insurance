@@ -485,7 +485,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             <div class="relative flex-1 flex flex-col rounded-none sm:rounded-2xl lg:rounded-3xl bg-gradient-to-br from-white to-slate-50 text-left shadow-2xl shadow-blue-900/30 transition-all border-0 sm:border sm:border-slate-200/50 ring-0 sm:ring-1 sm:ring-white/50 w-full h-full">
                 
                 <!-- Premium Header with Enhanced Gradient - Fixed -->
-                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-2 sm:px-4 md:px-5 py-2 sm:py-3 md:py-4 flex justify-between items-center shadow-2xl shrink-0">
+                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 flex justify-between items-center shadow-2xl shrink-0">
                     <!-- Decorative Background Pattern -->
                     <div class="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
                     <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
@@ -524,20 +524,20 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 </div>
 
                 <!-- Enhanced Body with Responsive Columns - Compact Layout -->
-                <div class="flex-1 overflow-y-auto custom-scrollbar px-2 sm:px-3 md:px-4 lg:px-5 py-2 sm:py-3 md:py-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+                <div class="flex-1 overflow-y-auto custom-scrollbar px-1.5 sm:px-2 md:px-3 py-1.5 sm:py-2 md:py-2.5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5 sm:gap-2 md:gap-2.5">
                     
                     <!-- Left Column: Order Details & Status -->
-                    <div class="space-y-2 sm:space-y-3 md:space-y-3">
+                    <div class="space-y-1.5 sm:space-y-2">
                         <!-- Order Information Card -->
-                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 border-2 border-blue-100 shadow-lg">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="bg-blue-600 p-2 rounded-lg shadow-lg">
-                                    <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-blue-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-blue-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="file-text" class="w-3 h-3 text-white"></i>
                                 </div>
-                                <h3 class="text-sm font-bold text-blue-900 uppercase tracking-wider">Order Details</h3>
+                                <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wider">Order Details</h3>
                             </div>
-                            <div class="space-y-2">
+                            <div class="space-y-1.5">
                                 <div class="bg-white/80 rounded-lg p-2 border border-blue-100">
                                     <div class="text-[10px] text-blue-600 font-bold uppercase mb-1">Amount</div>
                                     <div class="flex items-center gap-2">
@@ -560,12 +560,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                         
                         <!-- Status Selection -->
-                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 border-2 border-purple-100 shadow-lg">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="bg-purple-600 p-2 rounded-lg shadow-lg">
-                                    <i data-lucide="activity" class="w-4 h-4 text-white"></i>
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-purple-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-purple-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="activity" class="w-3 h-3 text-white"></i>
                                 </div>
-                                <h3 class="text-sm font-bold text-purple-900 uppercase tracking-wider">Workflow Stage</h3>
+                                <h3 class="text-xs font-bold text-purple-900 uppercase tracking-wider">Workflow Stage</h3>
                             </div>
                             <div class="relative">
                                 <select id="input-status" class="w-full appearance-none bg-white border-2 border-purple-200 text-slate-800 py-4 pl-12 pr-10 rounded-xl leading-tight focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-sm font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
@@ -588,24 +588,24 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
 
                         <!-- System Activity Log -->
-                        <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg sm:rounded-xl border-2 border-slate-200 overflow-hidden shadow-lg">
-                            <div class="px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
-                                <i data-lucide="history" class="w-3.5 sm:w-4 h-3.5 sm:h-4 text-white"></i>
-                                <label class="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">Activity Timeline</label>
+                        <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+                            <div class="px-1.5 sm:px-2 py-1 sm:py-1.5 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-1.5">
+                                <i data-lucide="history" class="w-3 h-3 text-white"></i>
+                                <label class="text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">Activity Timeline</label>
                             </div>
-                            <div id="activity-log-container" class="p-2 sm:p-3 h-20 sm:h-24 md:h-28 overflow-y-auto custom-scrollbar text-xs space-y-1 bg-white/50"></div>
+                            <div id="activity-log-container" class="p-1.5 sm:p-2 h-16 sm:h-18 md:h-20 overflow-y-auto custom-scrollbar text-[10px] space-y-0.5 bg-white/50"></div>
                         </div>
                     </div>
 
                     <!-- Middle Column: Communication & Actions -->
-                    <div class="space-y-2 sm:space-y-3 md:space-y-3">
+                    <div class="space-y-1.5 sm:space-y-2">
                         <!-- Contact Information -->
-                        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 border-2 border-teal-100 shadow-lg">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="bg-teal-600 p-2 rounded-lg shadow-lg">
-                                    <i data-lucide="phone" class="w-4 h-4 text-white"></i>
+                        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-teal-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-teal-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="phone" class="w-3 h-3 text-white"></i>
                                 </div>
-                                <h3 class="text-sm font-bold text-teal-900 uppercase tracking-wider">Contact Information</h3>
+                                <h3 class="text-xs font-bold text-teal-900 uppercase tracking-wider">Contact Information</h3>
                             </div>
                             <div class="flex gap-2">
                                 <div class="relative flex-1">
@@ -619,12 +619,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                         
                         <!-- Service Appointment -->
-                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 border-2 border-amber-100 shadow-lg">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="bg-orange-600 p-2 rounded-lg shadow-lg">
-                                    <i data-lucide="calendar-check" class="w-4 h-4 text-white"></i>
+                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-amber-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-orange-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="calendar-check" class="w-3 h-3 text-white"></i>
                                 </div>
-                                <h3 class="text-sm font-bold text-orange-900 uppercase tracking-wider">Service Appointment</h3>
+                                <h3 class="text-xs font-bold text-orange-900 uppercase tracking-wider">Service Appointment</h3>
                             </div>
                             <div class="relative">
                                 <i data-lucide="calendar" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500"></i>
@@ -633,12 +633,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
 
                         <!-- Quick SMS Actions -->
-                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 border-2 border-indigo-100 shadow-lg">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="bg-indigo-600 p-2 rounded-lg shadow-lg">
-                                    <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
+                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-indigo-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-indigo-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="message-circle" class="w-3 h-3 text-white"></i>
                                 </div>
-                                <h3 class="text-sm font-bold text-indigo-900 uppercase tracking-wider">Quick SMS Actions</h3>
+                                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Quick SMS Actions</h3>
                             </div>
                             <div class="space-y-2 sm:space-y-2.5 md:space-y-3">
                                 <button id="btn-sms-register" class="group w-full flex justify-between items-center px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 bg-white border-2 border-indigo-200 rounded-lg sm:rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
@@ -673,7 +673,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     </div>
 
                     <!-- Right Column: Customer Feedback & Notes -->
-                    <div class="space-y-2 sm:space-y-3 md:space-y-3 flex flex-col h-full">
+                    <div class="space-y-1.5 sm:space-y-2 flex flex-col h-full">
                         <!-- Customer Review Preview -->
                         <div id="modal-review-section" class="hidden bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg sm:rounded-xl border-2 border-amber-200 overflow-hidden shadow-lg">
                             <div class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center gap-2">
@@ -740,7 +740,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </div>
                                 <span class="text-[10px] bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold border border-white/30">Internal</span>
                             </div>
-                            <div id="notes-list" class="flex-1 p-2 sm:p-3 overflow-y-auto custom-scrollbar space-y-1 sm:space-y-1.5 min-h-[120px] sm:min-h-[140px] md:min-h-[160px] bg-white/60"></div>
+                            <div id="notes-list" class="flex-1 p-1.5 sm:p-2 overflow-y-auto custom-scrollbar space-y-0.5 sm:space-y-1 min-h-[80px] sm:min-h-[100px] md:min-h-[120px] bg-white/60"></div>
                             <div class="p-2 sm:p-3 bg-white border-t-2 border-emerald-200 flex gap-2">
                                 <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 text-sm px-4 py-2.5 bg-emerald-50 border-2 border-emerald-200 rounded-xl focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 outline-none font-medium">
                                 <button onclick="window.addNote()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white p-3 rounded-xl transition-all shadow-lg active:scale-95">
@@ -752,7 +752,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 </div>
 
                 <!-- Premium Footer with Actions - Fixed/Floating -->
-                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-2 sm:px-4 md:px-5 py-2 sm:py-3 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-3 rounded-b-xl sm:rounded-b-2xl shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] shrink-0 backdrop-blur-sm">
+                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-1.5 sm:gap-2 rounded-b-xl shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] shrink-0 backdrop-blur-sm">
                     <button type="button" onclick="window.deleteRecord(window.currentEditingId)" class="group text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 text-sm font-bold flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-lg sm:rounded-xl transition-all border-2 border-red-200 hover:border-red-600 shadow-lg hover:shadow-2xl hover:shadow-red-600/50 active:scale-95 w-full sm:w-auto hover:scale-105">
                         <i data-lucide="trash-2" class="w-4 h-4"></i> 
                         <span>Delete Order</span>
