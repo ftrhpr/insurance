@@ -40,11 +40,6 @@ try {
     $stmt = $pdo->query("SELECT id, username, full_name, email, role, status, last_login, created_at FROM users ORDER BY created_at DESC");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // If empty, add default user
-    if (empty($users)) {
-        $users = [$defaultUser];
-    }
-    
 } catch (PDOException $e) {
     // On error, show at least the current logged-in user
     $users = [$defaultUser];
