@@ -1761,8 +1761,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             try {
                 console.log('Creating order with data:', orderData);
+                console.log('Sending to API URL:', `${API_URL}?action=create_transfer`);
                 const result = await fetchAPI('create_transfer', 'POST', orderData);
                 console.log('Create transfer result:', result);
+                console.log('Result type:', typeof result, 'Result keys:', result ? Object.keys(result) : 'null');
                 
                 if (result && result.status === 'success') {
                     showToast('Success', 'Order created successfully!', 'success');
