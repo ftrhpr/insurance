@@ -1665,7 +1665,20 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
 
         // Manual Create Modal Functions
-        window.openManualCreateModal = () => {
+        window.openManualCreateModal = async () => {
+            // Test session before opening
+            try {
+                const sessionInfo = await fetchAPI('test_session', 'GET');
+                console.log('Session info:', sessionInfo);
+                
+                if (!sessionInfo.can_create) {
+                    showToast('Permission Denied', `Your role (${sessionInfo.role || 'unknown'}) cannot create orders. Manager or Admin required.`, 'error');
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking session:', error);
+            }
+            
             document.getElementById('manual-create-modal').classList.remove('hidden');
             // Clear all inputs
             document.getElementById('manual-plate').value = '';

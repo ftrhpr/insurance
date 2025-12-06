@@ -336,6 +336,16 @@ try {
     // ... (Rest of existing actions: add_transfer, update_transfer, delete_transfer, etc. remain unchanged) ...
     // Keeping previous endpoints for brevity, assume they are present here exactly as before.
     
+    // TEST SESSION ENDPOINT
+    if ($action === 'test_session' && $method === 'GET') {
+        jsonResponse([
+            'user_id' => $_SESSION['user_id'] ?? null,
+            'role' => $_SESSION['role'] ?? null,
+            'full_name' => $_SESSION['full_name'] ?? null,
+            'can_create' => checkPermission('manager')
+        ]);
+    }
+    
     // CREATE NEW TRANSFER (Manual Order Creation)
     if ($action === 'create_transfer' && $method === 'POST') {
         error_log("Create transfer request from user: " . ($_SESSION['user_id'] ?? 'unknown') . ", role: " . ($_SESSION['role'] ?? 'unknown'));
