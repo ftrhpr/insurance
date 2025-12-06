@@ -1701,6 +1701,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         window.saveManualOrder = async () => {
+            alert('Create Order button clicked!');
             console.log('=== saveManualOrder called ===');
             
             // Check permissions
