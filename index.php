@@ -389,16 +389,53 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
                         <div class="overflow-x-auto custom-scrollbar">
                             <table class="w-full text-left border-collapse">
-                                <thead class="bg-gradient-to-r from-slate-50 via-primary-50/30 to-slate-50 border-b-2 border-primary-200/50 text-xs uppercase tracking-wider text-slate-600 font-bold">
+                                <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
                                     <tr>
-                                        <th class="px-6 py-5">Vehicle & Owner</th>
-                                        <th class="px-6 py-5">Stage</th>
-                                        <th class="px-6 py-5">Contact Info</th>
-                                        <th class="px-6 py-5">Customer Reply</th>
-                                        <th class="px-6 py-5 text-right">Action</th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="car" class="w-4 h-4"></i>
+                                                <span>Vehicle & Owner</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="coins" class="w-4 h-4"></i>
+                                                <span>Amount</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="activity" class="w-4 h-4"></i>
+                                                <span>Status</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="phone" class="w-4 h-4"></i>
+                                                <span>Contact & Review</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                <span>Service Date</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                                <span>Customer Reply</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4 text-right">
+                                            <div class="flex items-center gap-2 justify-end">
+                                                <i data-lucide="settings" class="w-4 h-4"></i>
+                                                <span>Action</span>
+                                            </div>
+                                        </th>
                                     </tr>
                                 </thead>
-                                <tbody id="table-body" class="divide-y divide-slate-100">
+                                <tbody id="table-body" class="divide-y divide-slate-100 bg-white">
                                     <!-- Rows injected by JS -->
                                 </tbody>
                             </table>
@@ -1158,29 +1195,81 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>`;
                     }
 
+                    // Service date formatting
+                    let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
+                    if (t.service_date) {
+                        const svcDate = new Date(t.service_date.replace(' ', 'T'));
+                        const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
+                            <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span class="font-semibold">${svcDateStr}</span>
+                        </div>`;
+                    }
+                    
+                    // Review stars display
+                    let reviewDisplay = '';
+                    if (t.reviewStars && t.reviewStars > 0) {
+                        const stars = '⭐'.repeat(parseInt(t.reviewStars));
+                        reviewDisplay = `<div class="flex items-center gap-1 mt-1">
+                            <span class="text-xs">${stars}</span>
+                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
+                        </div>`;
+                    }
+
                     activeContainer.innerHTML += `
-                        <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
-                            <td class="px-6 py-4">
+                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.openEditModal(${t.id})">
+                            <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="bg-white border border-slate-200 text-slate-800 font-mono font-bold px-2.5 py-1.5 rounded-lg text-sm shadow-sm">${t.plate}</div>
-                                    <div>
-                                        <div class="font-semibold text-sm text-slate-800">${t.name}</div>
-                                        <div class="text-xs text-slate-400 font-mono">${t.amount} ₾</div>
-                                        <div class="flex items-center gap-2 mt-0.5">
-                                            <div class="text-[10px] text-slate-400 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}</div>
+                                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all">
+                                        <i data-lucide="car" class="w-4 h-4 text-white"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${t.plate}</span>
                                             <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
                                         </div>
-                                        ${t.franchise ? `<div class="text-[10px] text-orange-500 mt-0.5">Franchise: ${t.franchise}</div>` : ''}
+                                        <div class="font-semibold text-xs text-slate-700">${t.name}</div>
+                                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                            <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                                <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
+                                            </span>
+                                            ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${t.franchise}₾
+                                            </span>` : ''}
+                                        </div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4"><span class="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold border ${badgeClass}">${t.status}</span></td>
-                            <td class="px-6 py-4 text-sm">${hasPhone}</td>
-                            <td class="px-6 py-4">${replyBadge}</td>
-                            <td class="px-6 py-4 text-right">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
+                                    <span class="font-bold text-emerald-600 text-base">${t.amount}₾</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
+                                    ${t.status}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4">
+                                ${hasPhone}
+                                ${reviewDisplay}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${serviceDateDisplay}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${replyBadge}
+                            </td>
+                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 ${CAN_EDIT ? 
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-lg transition-all"><i data-lucide="settings-2" class="w-4 h-4"></i></button>` :
-                                    `<button onclick="window.viewCase(${t.id})" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-lg transition-all" title="View Only"><i data-lucide="eye" class="w-4 h-4"></i></button>`
+                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2.5 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95 group-hover:bg-white">
+                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                    </button>` :
+                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-blue-600 p-2.5 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>`
                                 }
                             </td>
                         </tr>`;
