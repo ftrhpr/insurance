@@ -269,9 +269,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <a href="vehicles.php" class="nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2">
                                 <i data-lucide="database" class="w-4 h-4"></i> Vehicle DB
                             </a>
-                            <button onclick="window.switchView('reviews')" id="nav-reviews" class="nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2">
+                            <a href="reviews.php" class="nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2">
                                 <i data-lucide="star" class="w-4 h-4"></i> Reviews
-                            </button>
+                            </a>
                             <button onclick="window.switchView('templates')" id="nav-templates" class="nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2">
                                 <i data-lucide="message-square-dashed" class="w-4 h-4"></i> SMS Templates
                             </button>
@@ -518,50 +518,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             <!-- VIEW: VEHICLES -->
             <!-- VIEW: REVIEWS -->
-            <div id="view-reviews" class="hidden space-y-6 animate-in fade-in duration-300">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800">Customer Reviews</h2>
-                        <p class="text-slate-500 text-sm">Manage and approve customer feedback.</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="bg-gradient-to-r from-yellow-400 to-orange-400 px-4 py-2 rounded-xl text-white font-bold flex items-center gap-2">
-                            <i data-lucide="star" class="w-5 h-5"></i>
-                            <span id="avg-rating">0.0</span>
-                        </div>
-                        <div class="bg-white border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600">
-                            <span id="total-reviews">0</span> Total Reviews
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filter Tabs -->
-                <div class="bg-white rounded-2xl border border-slate-200 p-2 flex gap-2">
-                    <button onclick="window.filterReviews('all')" id="filter-all" class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 text-white transition-all">
-                        All Reviews
-                    </button>
-                    <button onclick="window.filterReviews('pending')" id="filter-pending" class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
-                        Pending <span id="pending-count" class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs ml-1">0</span>
-                    </button>
-                    <button onclick="window.filterReviews('approved')" id="filter-approved" class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
-                        Approved
-                    </button>
-                    <button onclick="window.filterReviews('rejected')" id="filter-rejected" class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
-                        Rejected
-                    </button>
-                </div>
-
-                <!-- Reviews Grid -->
-                <div id="reviews-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <!-- Reviews injected here -->
-                </div>
-
-                <div id="reviews-empty" class="hidden py-20 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
-                    <div class="bg-slate-50 p-3 rounded-full mb-3"><i data-lucide="star-off" class="w-6 h-6"></i></div>
-                    <span class="text-sm font-medium">No reviews yet</span>
-                </div>
-            </div>
-
             <!-- VIEW: TEMPLATES -->
             <div id="view-templates" class="hidden space-y-6 animate-in fade-in duration-300">
                 <div class="flex justify-between items-center border-b border-slate-200 pb-6">
@@ -1346,12 +1302,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.switchView = (v) => {
             // Toggle views (check if element exists before accessing)
             const dashboardView = document.getElementById('view-dashboard');
-            const reviewsView = document.getElementById('view-reviews');
             const templatesView = document.getElementById('view-templates');
             const usersView = document.getElementById('view-users');
             
             if (dashboardView) dashboardView.classList.toggle('hidden', v !== 'dashboard');
-            if (reviewsView) reviewsView.classList.toggle('hidden', v !== 'reviews');
             if (templatesView) templatesView.classList.toggle('hidden', v !== 'templates');
             if (usersView) usersView.classList.toggle('hidden', v !== 'users');
             
@@ -1360,18 +1314,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             // Update nav buttons (check if element exists)
             const navDashboard = document.getElementById('nav-dashboard');
-            const navReviews = document.getElementById('nav-reviews');
             const navTemplates = document.getElementById('nav-templates');
             const navUsers = document.getElementById('nav-users');
             
             if (navDashboard) navDashboard.className = v === 'dashboard' ? activeClass : inactiveClass;
-            if (navReviews) navReviews.className = v === 'reviews' ? activeClass : inactiveClass;
             if (navTemplates) navTemplates.className = v === 'templates' ? activeClass : inactiveClass;
             if (navUsers) navUsers.className = v === 'users' ? activeClass : inactiveClass;
 
-            if (v === 'reviews') {
-                loadReviews();
-            }
             if (v === 'users') {
                 loadUsers();
             }
@@ -2115,171 +2064,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         document.getElementById('new-note-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') window.addNote(); });
         window.insertSample = (t) => document.getElementById('import-text').value = t;
 
-        // --- REVIEWS SYSTEM ---
-        let customerReviews = [];
-        let currentReviewFilter = 'all';
-
-        async function loadReviews() {
-            try {
-                console.log('Loading reviews...');
-                const data = await fetchAPI('get_reviews');
-                console.log('Reviews data received:', data);
-                
-                if (data && data.reviews) {
-                    customerReviews = data.reviews;
-                    console.log('Number of reviews:', customerReviews.length);
-                    
-                    document.getElementById('avg-rating').textContent = data.average_rating || '0.0';
-                    document.getElementById('total-reviews').textContent = data.total || 0;
-                    
-                    const pendingCount = customerReviews.filter(r => r.status === 'pending').length;
-                    document.getElementById('pending-count').textContent = pendingCount;
-                    
-                    renderReviews();
-                } else {
-                    console.warn('No reviews data in response:', data);
-                    // Show empty state
-                    renderReviews();
-                }
-            } catch(e) {
-                console.error('Load reviews error:', e);
-                showToast('Failed to load reviews', 'error');
-            }
-        }
-
-        window.filterReviews = (filter) => {
-            currentReviewFilter = filter;
-            
-            // Update button states
-            ['all', 'pending', 'approved', 'rejected'].forEach(f => {
-                const btn = document.getElementById(`filter-${f}`);
-                if (f === filter) {
-                    btn.className = 'flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 text-white transition-all';
-                } else {
-                    btn.className = 'flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all';
-                }
-            });
-            
-            renderReviews();
-        };
-
-        function renderReviews() {
-            const container = document.getElementById('reviews-grid');
-            const emptyState = document.getElementById('reviews-empty');
-            
-            console.log('Rendering reviews, total:', customerReviews.length, 'filter:', currentReviewFilter);
-            
-            let filteredReviews = customerReviews || [];
-            if (currentReviewFilter !== 'all') {
-                filteredReviews = filteredReviews.filter(r => r.status === currentReviewFilter);
-            }
-            
-            console.log('Filtered reviews:', filteredReviews.length);
-            
-            if (filteredReviews.length === 0) {
-                container.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                return;
-            }
-            
-            emptyState.classList.add('hidden');
-            
-            const html = filteredReviews.map(review => {
-                const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
-                const statusColors = {
-                    pending: 'bg-yellow-50 border-yellow-200 text-yellow-700',
-                    approved: 'bg-green-50 border-green-200 text-green-700',
-                    rejected: 'bg-red-50 border-red-200 text-red-700'
-                };
-                const statusColor = statusColors[review.status] || statusColors.pending;
-                
-                const date = new Date(review.created_at).toLocaleDateString('en-GB', { 
-                    month: 'short', day: 'numeric', year: 'numeric' 
-                });
-                
-                return `
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-slate-800">${review.customer_name || 'Anonymous'}</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">${date}</p>
-                            </div>
-                            <span class="text-2xl text-yellow-400">${stars}</span>
-                        </div>
-                        
-                        <p class="text-sm text-slate-600 leading-relaxed mb-4 line-clamp-3">${review.comment || ''}</p>
-                        
-                        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
-                            <span class="text-[10px] font-mono font-bold text-slate-400">Order #${review.order_id}</span>
-                            <span class="px-2 py-1 rounded-full text-[10px] font-bold border ${statusColor} uppercase">
-                                ${review.status}
-                            </span>
-                        </div>
-                        
-                        ${review.status === 'pending' ? `
-                            <div class="flex gap-2 mt-3">
-                                <button onclick="window.approveReview(${review.id})" class="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 active:scale-95 transition-all flex items-center justify-center gap-1">
-                                    <i data-lucide="check" class="w-4 h-4"></i> Approve
-                                </button>
-                                <button onclick="window.rejectReview(${review.id})" class="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 active:scale-95 transition-all flex items-center justify-center gap-1">
-                                    <i data-lucide="x" class="w-4 h-4"></i> Reject
-                                </button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
-            
-            container.innerHTML = html;
-            if (window.lucide) lucide.createIcons();
-        }
-
-        window.approveReview = async (id) => {
-            try {
-                await fetchAPI(`update_review_status&id=${id}`, 'POST', { status: 'approved' });
-                showToast('Review Approved', 'success');
-                loadReviews();
-            } catch(e) {
-                showToast('Failed to approve review', 'error');
-            }
-        };
-
-        window.rejectReview = async (id) => {
-            if (confirm('Reject this review permanently?')) {
-                try {
-                    await fetchAPI(`update_review_status&id=${id}`, 'POST', { status: 'rejected' });
-                    showToast('Review Rejected', 'error');
-                    loadReviews();
-                } catch(e) {
-                    showToast('Failed to reject review', 'error');
-                }
-            }
-        };
-
-        // Auto-send review link when marking as Completed
-        const originalSaveEdit = window.saveEdit;
-        window.saveEdit = async function() {
-            const t = transfers.find(i => i.id == window.currentEditingId);
-            const newStatus = document.getElementById('input-status').value;
-            const phone = document.getElementById('input-phone').value;
-            
-            // If status changed to Completed, send review link
-            if (newStatus === 'Completed' && t.status !== 'Completed' && phone) {
-                const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
-                const reviewLink = `${baseUrl}/public_view.php?id=${t.id}`;
-                const reviewMsg = `Thank you for choosing OTOMOTORS! Your service for ${t.plate} is completed. Please share your experience: ${reviewLink}`;
-                
-                // Send review invitation SMS
-                setTimeout(() => {
-                    window.sendSMS(phone, reviewMsg, 'review_invitation');
-                    showToast('Review Link Sent', 'SMS sent to customer', 'success');
-                }, 500);
-            }
-            
-            // Call original function
-            await originalSaveEdit();
-        };
-
         // =====================================================
         // USER MANAGEMENT FUNCTIONS
         // =====================================================
@@ -2536,8 +2320,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         document.getElementById('user-modal')?.classList.add('hidden');
         document.getElementById('password-modal')?.classList.add('hidden');
         document.getElementById('user-dropdown')?.classList.add('hidden');
+        document.getElementById('template-modal')?.classList.add('hidden');
         
-        loadData();
+        // Initialize data and icons
+        try {
+            loadData();
+        } catch (e) {
+            console.error('Error loading initial data:', e);
+            showToast('Error', 'Failed to load data. Please refresh the page.', 'error');
+        }
+        
         if(window.lucide) lucide.createIcons();
 
     </script>

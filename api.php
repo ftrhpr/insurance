@@ -363,16 +363,33 @@ try {
     }
     if ($action === 'save_vehicle' && $method === 'POST') {
         $data = getJsonInput();
+        
+        // Validation
+        if (empty($data['plate'])) {
+            jsonResponse(['status' => 'error', 'message' => 'Plate number is required']);
+        }
+        
+        $plate = trim($data['plate']);
+        $ownerName = trim($data['ownerName'] ?? '');
+        $phone = trim($data['phone'] ?? '');
+        $model = trim($data['model'] ?? '');
+        
         if (isset($_GET['id']) && $_GET['id']) {
-            $pdo->prepare("UPDATE vehicles SET plate=?, ownerName=?, phone=?, model=? WHERE id=?")->execute([$data['plate'], $data['ownerName'], $data['phone'], $data['model'], $_GET['id']]);
+            $id = intval($_GET['id']);
+            $pdo->prepare("UPDATE vehicles SET plate=?, ownerName=?, phone=?, model=? WHERE id=?")->execute([$plate, $ownerName, $phone, $model, $id]);
         } else {
-            $pdo->prepare("INSERT INTO vehicles (plate, ownerName, phone, model) VALUES (?, ?, ?, ?)")->execute([$data['plate'], $data['ownerName'], $data['phone'], $data['model']]);
+            $pdo->prepare("INSERT INTO vehicles (plate, ownerName, phone, model) VALUES (?, ?, ?, ?)")->execute([$plate, $ownerName, $phone, $model]);
         }
         jsonResponse(['status' => 'saved']);
     }
     if ($action === 'delete_vehicle' && $method === 'POST') {
-        $pdo->prepare("DELETE FROM vehicles WHERE id=?")->execute([$_GET['id']]);
-        jsonResponse(['status' => 'deleted']);
+        $id = intval($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $pdo->prepare("DELETE FROM vehicles WHERE id=?")->execute([$id]);
+            jsonResponse(['status' => 'deleted']);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid vehicle ID']);
+        }
     }
     if ($action === 'send_sms' && $method === 'POST') {
         $data = getJsonInput();

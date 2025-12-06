@@ -382,13 +382,19 @@ try {
 
         // Modal Functions
         window.openVehicleModal = () => {
+            const modal = document.getElementById('vehicle-modal');
+            if (!modal) {
+                console.error('Vehicle modal not found');
+                return;
+            }
+            
             document.getElementById('veh-id').value = '';
             document.getElementById('veh-plate').value = '';
             document.getElementById('veh-owner').value = '';
             document.getElementById('veh-phone').value = '';
             document.getElementById('veh-model').value = '';
             document.getElementById('veh-history-section').classList.add('hidden');
-            document.getElementById('vehicle-modal').classList.remove('hidden');
+            modal.classList.remove('hidden');
             lucide.createIcons();
         };
 
@@ -396,6 +402,12 @@ try {
 
         window.editVehicle = (id) => {
             const v = vehicles.find(i => i.id == id);
+            if (!v) {
+                console.error('Vehicle not found:', id);
+                showToast('Error', 'Vehicle not found', 'error');
+                return;
+            }
+            
             document.getElementById('veh-id').value = id;
             document.getElementById('veh-plate').value = v.plate;
             document.getElementById('veh-owner').value = v.ownerName;
@@ -451,11 +463,17 @@ try {
 
             const id = document.getElementById('veh-id').value;
             const data = {
-                plate: document.getElementById('veh-plate').value,
-                ownerName: document.getElementById('veh-owner').value,
-                phone: document.getElementById('veh-phone').value,
-                model: document.getElementById('veh-model').value
+                plate: document.getElementById('veh-plate').value.trim(),
+                ownerName: document.getElementById('veh-owner').value.trim(),
+                phone: document.getElementById('veh-phone').value.trim(),
+                model: document.getElementById('veh-model').value.trim()
             };
+            
+            // Validation
+            if (!data.plate) {
+                showToast('Validation Error', 'Plate number is required', 'error');
+                return;
+            }
             
             try {
                 await fetchAPI(`save_vehicle${id ? '&id='+id : ''}`, 'POST', data);
@@ -554,7 +572,10 @@ try {
         }
 
         // Event Listeners
-        document.getElementById('vehicle-search').addEventListener('input', renderVehicleTable);
+        const searchInput = document.getElementById('vehicle-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', renderVehicleTable);
+        }
 
         // Initialize - Ensure modal is hidden and render table
         console.log('Starting initialization...');
