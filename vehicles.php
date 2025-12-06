@@ -337,6 +337,59 @@ try {
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
+        // SMS Templates
+        const defaultTemplates = {
+            registered: "გამარჯობა {name}! თქვენი მანქანა {plate} დარეგისტრირდა სერვისზე. თანხა: {amount} ლარი. მალე დაგიკავშირდებით! 🚗",
+            called: "გამარჯობა {name}! გვესმის თქვენი მანქანის {plate} შეკეთების საჭიროება. მალე დაგიკავშირდებით დეტალებისთვის. 📞",
+            schedule: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისი დაინიშნა: {date}. გთხოვთ იყოთ დროულად! ⏰",
+            parts_ordered: "გამარჯობა {name}! თქვენი მანქანის {plate} ნაწილები შეკვეთილია. მალე მოგვა! 📦",
+            parts_arrived: "გამარჯობა {name}! თქვენი მანქანის {plate} ნაწილები მივიდა! გთხოვთ დაადასტუროთ: {link} ✅",
+            rescheduled: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისი გადატანილია: {date}. მადლობა! 📅",
+            reschedule_accepted: "გამარჯობა {name}! თქვენი გადატანის მოთხოვნა დადასტურდა. ახალი თარიღი: {date}. გნახავთ! 👍",
+            completed: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისი დასრულდა! თანხა: {amount} ლარი. გთხოვთ შეაფასოთ: {link} ⭐",
+            issue: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისთან დაკავშირებით პრობლემაა. გთხოვთ დაგვიკავშირდით. ☎️"
+        };
+
+        let smsTemplates = defaultTemplates;
+
+        // Load SMS templates from API
+        async function loadSMSTemplates() {
+            try {
+                const serverTemplates = await fetchAPI('get_sms_templates');
+                smsTemplates = { ...defaultTemplates, ...serverTemplates };
+            } catch(e) {
+                console.warn('Could not load SMS templates:', e);
+                smsTemplates = defaultTemplates;
+            }
+        }
+
+        // Format SMS message with template placeholders
+        function getFormattedMessage(type, data) {
+            let template = smsTemplates[type] || defaultTemplates[type] || "";
+            return template
+                .replace(/{name}/g, data.name || '')
+                .replace(/{plate}/g, data.plate || '')
+                .replace(/{amount}/g, data.amount || '0')
+                .replace(/{date}/g, data.date || '')
+                .replace(/{link}/g, data.link || '');
+        }
+
+        // Send SMS function
+        async function sendSMS(phone, message, context = 'manual') {
+            if (!phone) {
+                showToast('Error', 'Phone number is required', 'error');
+                return;
+            }
+            
+            try {
+                await fetchAPI('send_sms', 'POST', { phone, message, context });
+                console.log('SMS sent:', context, phone);
+            } catch(e) {
+                console.error('SMS send error:', e);
+                showToast('SMS Error', 'Failed to send SMS notification', 'error');
+            }
+        }
+
         // API Helper
         async function fetchAPI(action, method = 'GET', body = null) {
             const opts = { method };
@@ -620,6 +673,20 @@ try {
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Service Date</label>
                         <input type="datetime-local" id="edit-service-date" value="${serviceDateValue}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800">
                     </div>
+                    
+                    <div class="col-span-2 bg-indigo-50 p-4 rounded-xl border border-indigo-200">
+                        <label class="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3 block flex items-center gap-2">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            SMS Notification Settings
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-indigo-100/50 transition-colors">
+                                <input type="checkbox" id="send-sms-on-save" class="w-4 h-4 text-indigo-600 border-indigo-300 rounded focus:ring-indigo-500">
+                                <span class="text-sm text-slate-700 font-medium">Send SMS notification after saving changes</span>
+                            </label>
+                            <p class="text-xs text-slate-500 ml-7">SMS will be sent based on the selected status (Processing, Scheduled, Called, Parts Ordered, Parts Arrived, Completed, Issue)</p>
+                        </div>
+                    </div>
                 </div>
             ` : `
                 <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200/50">
@@ -745,6 +812,7 @@ try {
                 return;
             }
 
+            const oldOrder = transfers.find(t => t.id == currentOrderId);
             const data = {
                 plate: document.getElementById('edit-plate').value.trim(),
                 name: document.getElementById('edit-name').value.trim(),
@@ -761,8 +829,71 @@ try {
                 return;
             }
 
+            if (!data.phone) {
+                showToast('Validation Error', 'Phone number is required for SMS notifications', 'error');
+                return;
+            }
+
             try {
                 await fetchAPI(`update_transfer&id=${currentOrderId}`, 'POST', data);
+                
+                // Check if SMS should be sent
+                const sendSmsChecked = document.getElementById('send-sms-on-save').checked;
+                const statusChanged = oldOrder.status !== data.status;
+                
+                if (sendSmsChecked && statusChanged) {
+                    const publicUrl = window.location.origin + window.location.pathname.replace('vehicles.php', 'public_view.php');
+                    const serviceDate = data.serviceDate ? new Date(data.serviceDate).toLocaleString('ka-GE', { 
+                        month: 'long', 
+                        day: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }) : 'არ არის დანიშნული';
+                    
+                    const templateData = {
+                        name: data.name,
+                        plate: data.plate,
+                        amount: data.amount,
+                        date: serviceDate,
+                        link: `${publicUrl}?id=${currentOrderId}`
+                    };
+
+                    // Send SMS based on status
+                    let smsType = null;
+                    switch(data.status) {
+                        case 'Processing':
+                            smsType = 'registered';
+                            break;
+                        case 'Called':
+                            smsType = 'called';
+                            break;
+                        case 'Scheduled':
+                            smsType = 'schedule';
+                            break;
+                        case 'Parts Ordered':
+                            smsType = 'parts_ordered';
+                            break;
+                        case 'Parts Arrived':
+                            smsType = 'parts_arrived';
+                            break;
+                        case 'Completed':
+                            smsType = 'completed';
+                            break;
+                        case 'Issue':
+                            smsType = 'issue';
+                            break;
+                    }
+
+                    if (smsType) {
+                        const message = getFormattedMessage(smsType, templateData);
+                        await sendSMS(data.phone, message, `${smsType}_from_vehicles`);
+                        showToast('Order Updated', 'Changes saved and SMS notification sent', 'success');
+                    } else {
+                        showToast('Order Updated', 'Changes saved (no SMS sent for this status)', 'success');
+                    }
+                } else {
+                    showToast('Order Updated', 'Service order has been updated successfully', 'success');
+                }
                 
                 // Update local array
                 const idx = transfers.findIndex(t => t.id == currentOrderId);
@@ -773,8 +904,8 @@ try {
                 // Reload data and close modal
                 await loadData();
                 window.closeOrderModal();
-                showToast('Order Updated', 'Service order has been updated successfully', 'success');
             } catch (err) {
+                console.error('Save error:', err);
                 showToast('Error', 'Failed to update order', 'error');
             }
         };
@@ -988,6 +1119,7 @@ try {
         }
         
         loadData();
+        loadSMSTemplates(); // Load SMS templates from API
         lucide.createIcons();
         
         console.log('Initialization complete');
