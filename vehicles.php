@@ -130,20 +130,50 @@ try {
             </div>
 
             <!-- Table -->
-            <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
+            <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-300/40 border border-slate-200/80 overflow-hidden">
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-gradient-to-r from-slate-50 via-primary-50/30 to-slate-50 border-b-2 border-primary-200/50 text-xs uppercase tracking-wider text-slate-600 font-bold">
+                        <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white">
                             <tr>
-                                <th class="px-6 py-5">Plate</th>
-                                <th class="px-6 py-5">Owner</th>
-                                <th class="px-6 py-5">Phone</th>
-                                <th class="px-6 py-5">Model</th>
-                                <th class="px-6 py-5">Service History</th>
-                                <th class="px-6 py-5 text-right">Actions</th>
+                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="hash" class="w-4 h-4"></i>
+                                        <span>Plate</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="user" class="w-4 h-4"></i>
+                                        <span>Owner</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="phone" class="w-4 h-4"></i>
+                                        <span>Phone</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="car" class="w-4 h-4"></i>
+                                        <span>Model</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="clock" class="w-4 h-4"></i>
+                                        <span>Service History</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-5 text-xs uppercase tracking-wider font-extrabold text-right">
+                                    <div class="flex items-center gap-2 justify-end">
+                                        <i data-lucide="settings" class="w-4 h-4"></i>
+                                        <span>Actions</span>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="vehicle-table-body" class="divide-y divide-slate-50"></tbody>
+                        <tbody id="vehicle-table-body" class="divide-y divide-slate-100"></tbody>
                     </table>
                     <div id="vehicle-empty" class="hidden py-16 text-center text-slate-400 text-sm">
                         <div class="flex flex-col items-center">
@@ -294,37 +324,76 @@ try {
                 
                 let historyBadge = '';
                 if (historyCount > 0) {
-                    historyBadge = `<span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg text-xs font-semibold">
-                        <i data-lucide="file-text" class="w-3 h-3"></i> ${historyCount} service${historyCount > 1 ? 's' : ''}
-                    </span>`;
-                    if (lastService) {
-                        const statusColors = {
-                            'New': 'bg-blue-50 text-blue-600',
-                            'Processing': 'bg-yellow-50 text-yellow-600',
-                            'Completed': 'bg-green-50 text-green-600',
-                            'Scheduled': 'bg-orange-50 text-orange-600'
-                        };
-                        const colorClass = statusColors[lastService.status] || 'bg-slate-50 text-slate-600';
-                        historyBadge += ` <span class="ml-1 text-[10px] ${colorClass} px-1.5 py-0.5 rounded">${lastService.status}</span>`;
-                    }
+                    const statusColors = {
+                        'New': 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30',
+                        'Processing': 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg shadow-yellow-500/30',
+                        'Called': 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30',
+                        'Parts Ordered': 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30',
+                        'Parts Arrived': 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/30',
+                        'Scheduled': 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30',
+                        'Completed': 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30',
+                        'Issue': 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
+                    };
+                    const colorClass = statusColors[lastService.status] || 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg shadow-slate-500/30';
+                    historyBadge = `
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">
+                                <i data-lucide="history" class="w-3 h-3"></i>
+                                ${historyCount} service${historyCount > 1 ? 's' : ''}
+                            </span>
+                            ${lastService ? `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${colorClass} font-bold text-xs uppercase tracking-wide">
+                                <i data-lucide="activity" class="w-3 h-3"></i>
+                                ${lastService.status}
+                            </span>` : ''}
+                        </div>
+                    `;
                 } else {
-                    historyBadge = '<span class="text-slate-300 text-xs italic">No history</span>';
+                    historyBadge = '<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-400 text-xs font-medium"><i data-lucide="clock" class="w-3 h-3"></i>No history</span>';
                 }
                 
                 return `
-                <tr class="border-b border-slate-50 hover:bg-slate-50/50 group transition-colors">
-                    <td class="px-6 py-4 font-mono font-bold text-slate-800">${v.plate}</td>
-                    <td class="px-6 py-4 text-slate-600">${v.ownerName || '-'}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">${v.phone || '-'}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">${v.model || ''}</td>
-                    <td class="px-6 py-4">${historyBadge}</td>
-                    <td class="px-6 py-4 text-right">
-                        ${CAN_EDIT ? `
-                            <button onclick="window.editVehicle(${v.id})" class="text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-all"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                            <button onclick="window.deleteVehicle(${v.id})" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        ` : `
-                            <button onclick="window.editVehicle(${v.id})" class="text-slate-400 hover:bg-slate-50 p-2 rounded-lg transition-all" title="View Only"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                        `}
+                <tr class="hover:bg-gradient-to-r hover:from-blue-50/50 hover:via-indigo-50/30 hover:to-blue-50/50 group transition-all duration-200 cursor-pointer" onclick="window.editVehicle(${v.id})">
+                    <td class="px-6 py-5">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25">
+                                <i data-lucide="car" class="w-4 h-4 text-white"></i>
+                            </div>
+                            <span class="font-mono font-extrabold text-slate-900 text-base tracking-wide">${v.plate}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-5">
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-slate-800 text-sm">${v.ownerName || '-'}</span>
+                            <span class="text-xs text-slate-400">Customer</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-5">
+                        <div class="flex items-center gap-2">
+                            <div class="bg-slate-100 p-1.5 rounded-lg">
+                                <i data-lucide="phone" class="w-3 h-3 text-slate-500"></i>
+                            </div>
+                            <span class="text-sm text-slate-600 font-medium">${v.phone || '-'}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-5">
+                        <span class="text-sm text-slate-600 font-medium">${v.model || '<span class="text-slate-400 italic">Not specified</span>'}</span>
+                    </td>
+                    <td class="px-6 py-5">${historyBadge}</td>
+                    <td class="px-6 py-5 text-right" onclick="event.stopPropagation()">
+                        <div class="flex items-center justify-end gap-2">
+                            ${CAN_EDIT ? `
+                                <button onclick="window.editVehicle(${v.id})" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white p-2.5 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="Edit">
+                                    <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="window.deleteVehicle(${v.id})" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-2.5 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-red-500/25 active:scale-95" title="Delete">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            ` : `
+                                <button onclick="window.editVehicle(${v.id})" class="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2.5 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                            `}
+                        </div>
                     </td>
                 </tr>`;
             }).join('');
