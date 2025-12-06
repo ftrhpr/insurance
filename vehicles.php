@@ -156,9 +156,11 @@ try {
                     <h2 class="text-2xl font-bold text-slate-800">Customer Database</h2>
                     <p class="text-slate-500 text-sm">Centralized database of all customers, vehicles and service history.</p>
                 </div>
-                <button onclick="window.openVehicleModal()" class="btn-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg">
+                <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
+                <button onclick="window.openVehicleModal()" class="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg active:scale-95 transition-all">
                     <i data-lucide="plus" class="w-4 h-4"></i> Add Customer
                 </button>
+                <?php endif; ?>
             </div>
 
             <!-- Search Bar -->
@@ -243,7 +245,9 @@ try {
 
                 <div class="flex gap-3 justify-end pt-2 border-t border-slate-100">
                     <button onclick="window.closeVehicleModal()" class="px-4 py-2.5 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">Cancel</button>
+                    <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
                     <button onclick="window.saveVehicle()" class="px-6 py-2.5 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-sm font-semibold shadow-lg shadow-slate-900/10 transition-all active:scale-95">Save Vehicle</button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -260,6 +264,14 @@ try {
         // Data arrays - Initialize with database data
         let vehicles = <?php echo json_encode($vehicles_data); ?>;
         let transfers = <?php echo json_encode($transfers_data); ?>;
+        
+        // Debug logs
+        console.log('Initial data loaded:');
+        console.log('Vehicles count:', vehicles.length);
+        console.log('Vehicles data:', vehicles);
+        console.log('Transfers count:', transfers.length);
+        console.log('User role:', USER_ROLE);
+        console.log('Can edit:', CAN_EDIT);
 
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
@@ -299,8 +311,13 @@ try {
 
         // Render Vehicle Table
         function renderVehicleTable() {
+            console.log('renderVehicleTable called');
+            console.log('Current vehicles array:', vehicles);
+            
             const term = document.getElementById('vehicle-search').value.toLowerCase();
             const rows = vehicles.filter(v => (v.plate+v.ownerName+v.model).toLowerCase().includes(term));
+            
+            console.log('Filtered rows:', rows.length);
             
             const html = rows.map(v => {
                 // Get service history for this plate
@@ -345,8 +362,14 @@ try {
                 </tr>`;
             }).join('');
             
+            console.log('Generated HTML length:', html.length);
+            console.log('Updating table body...');
+            
             document.getElementById('vehicle-table-body').innerHTML = html;
             document.getElementById('vehicle-empty').classList.toggle('hidden', rows.length > 0);
+            
+            console.log('Empty state visible:', rows.length === 0);
+            console.log('Reinitializing icons...');
             lucide.createIcons();
         }
 
@@ -527,9 +550,19 @@ try {
         document.getElementById('vehicle-search').addEventListener('input', renderVehicleTable);
 
         // Initialize - Render table with initial PHP data, then refresh from API
-        renderVehicleTable();
+        console.log('Starting initialization...');
+        
+        try {
+            renderVehicleTable();
+            console.log('Initial render complete');
+        } catch(e) {
+            console.error('Render error:', e);
+        }
+        
         loadData();
         lucide.createIcons();
+        
+        console.log('Initialization complete');
     </script>
 </body>
 </html>
