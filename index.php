@@ -1679,7 +1679,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 console.error('Error checking session:', error);
             }
             
-            document.getElementById('manual-create-modal').classList.remove('hidden');
+            console.log('Opening manual create modal...');
+            const modal = document.getElementById('manual-create-modal');
+            modal.classList.remove('hidden');
+            console.log('Modal display:', window.getComputedStyle(modal).display);
+            
             // Clear all inputs
             document.getElementById('manual-plate').value = '';
             document.getElementById('manual-name').value = '';
@@ -1693,6 +1697,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Focus on first input
             setTimeout(() => {
                 document.getElementById('manual-plate').focus();
+                console.log('Modal should be visible now. Fill the form and click Create Order button.');
             }, 100);
         };
 
