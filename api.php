@@ -419,15 +419,15 @@ try {
         jsonResponse(['status' => 'sent', 'fcm_result' => $result]);
     }
     if ($action === 'get_templates' && $method === 'GET') {
-        $stmt = $pdo->query("SELECT slug, message FROM sms_templates");
+        $stmt = $pdo->query("SELECT slug, content FROM sms_templates");
         $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
         jsonResponse($rows ?: new stdClass());
     }
     if ($action === 'save_templates' && $method === 'POST') {
         $data = getJsonInput();
-        $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, message) VALUES (:slug, :message) ON DUPLICATE KEY UPDATE message = :message");
-        foreach ($data as $slug => $message) {
-            $stmt->execute([':slug' => $slug, ':message' => $message]);
+        $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (:slug, :content) ON DUPLICATE KEY UPDATE content = :content");
+        foreach ($data as $slug => $content) {
+            $stmt->execute([':slug' => $slug, ':content' => $content]);
         }
         jsonResponse(['status' => 'saved']);
     }

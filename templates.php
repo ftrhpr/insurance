@@ -24,7 +24,7 @@ try {
     
     $templatesData = [];
     foreach ($templates as $tpl) {
-        $templatesData[$tpl['slug']] = $tpl['message'];
+        $templatesData[$tpl['slug']] = $tpl['content'];
     }
     
 } catch (PDOException $e) {
