@@ -382,8 +382,9 @@ try {
             }
             
             try {
-                await fetchAPI('send_sms', 'POST', { phone, message, context });
+                await fetchAPI('send_sms', 'POST', { to: phone, text: message, context });
                 console.log('SMS sent:', context, phone);
+                showToast('SMS Sent', 'Notification delivered successfully', 'success');
             } catch(e) {
                 console.error('SMS send error:', e);
                 showToast('SMS Error', 'Failed to send SMS notification', 'error');
