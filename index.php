@@ -485,35 +485,95 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl shadow-primary-900/20 transition-all sm:my-8 sm:w-full sm:max-w-4xl border-2 border-slate-200/50">
                 
                 <!-- Premium Header with Gradient -->
-                <div class="relative bg-gradient-to-r from-primary-500 via-primary-600 to-accent-600 px-6 py-5 flex justify-between items-center sticky top-0 z-10 shadow-lg">
-                    <div class="flex items-center gap-4">
-                         <div class="bg-white/20 backdrop-blur-sm border border-white/30 px-4 py-2 rounded-xl text-sm font-mono font-bold text-white shadow-xl">
-                            <span id="modal-title-ref">AB-123-CD</span>
+                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 px-8 py-6 flex justify-between items-center sticky top-0 z-10 shadow-2xl">
+                    <div class="flex items-center gap-5">
+                         <div class="bg-white/20 backdrop-blur-md border-2 border-white/40 p-3 rounded-2xl shadow-2xl">
+                            <i data-lucide="car" class="w-8 h-8 text-white"></i>
                          </div>
-                         <div class="h-8 w-px bg-white/30"></div>
-                         <div class="flex flex-col">
-                             <div class="flex items-center gap-2">
-                                 <span class="text-xs text-white/70 font-bold uppercase tracking-wider">Order ID:</span>
-                                 <span class="text-xs font-mono text-white/90 bg-white/10 px-2 py-0.5 rounded" id="modal-order-id">#0</span>
+                         <div class="flex flex-col gap-1">
+                             <div class="flex items-center gap-3">
+                                 <span id="modal-title-ref" class="text-2xl font-black text-white font-mono tracking-wide">AB-123-CD</span>
+                                 <span class="text-xs font-mono text-white/90 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/30" id="modal-order-id">#0</span>
                              </div>
-                             <span class="text-base font-bold text-white" id="modal-title-name">User Name</span>
+                             <span class="text-base font-bold text-white/90" id="modal-title-name">User Name</span>
+                             <div class="flex items-center gap-2 mt-1">
+                                 <div class="bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                                     <i data-lucide="coins" class="w-3.5 h-3.5 text-white/80"></i>
+                                     <span id="modal-title-amount" class="text-sm font-bold text-white">0</span>
+                                     <span class="text-xs text-white/70">₾</span>
+                                 </div>
+                                 <div id="modal-title-franchise" class="hidden bg-orange-500/30 backdrop-blur-sm px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-orange-300/30">
+                                     <i data-lucide="percent" class="w-3.5 h-3.5 text-orange-200"></i>
+                                     <span id="modal-franchise-amount" class="text-sm font-bold text-white">0</span>
+                                 </div>
+                             </div>
                          </div>
                     </div>
-                    <button onclick="window.closeModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-2.5 rounded-xl transition-all">
-                        <i data-lucide="x" class="w-5 h-5"></i>
+                    <button onclick="window.closeModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-3 rounded-xl transition-all hover:scale-105 active:scale-95">
+                        <i data-lucide="x" class="w-6 h-6"></i>
                     </button>
                 </div>
 
                 <!-- Enhanced Body -->
-                <div class="px-8 py-8 grid grid-cols-1 lg:grid-cols-2 gap-10 max-h-[75vh] overflow-y-auto custom-scrollbar bg-gradient-to-br from-slate-50 to-blue-50/30">
+                <div class="px-8 py-8 max-h-[75vh] overflow-y-auto custom-scrollbar bg-gradient-to-br from-slate-50 to-blue-50/30">
+                    
+                    <!-- Order Information Cards -->
+                    <div class="grid grid-cols-4 gap-4 mb-8">
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-blue-50 p-2.5 rounded-xl">
+                                    <i data-lucide="calendar-clock" class="w-5 h-5 text-blue-600"></i>
+                                </div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Created</span>
+                            </div>
+                            <div id="modal-created-date" class="text-sm font-semibold text-slate-800">-</div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-purple-50 p-2.5 rounded-xl">
+                                    <i data-lucide="activity" class="w-5 h-5 text-purple-600"></i>
+                                </div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Status</span>
+                            </div>
+                            <div id="modal-current-status" class="text-sm font-bold text-slate-800">-</div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-green-50 p-2.5 rounded-xl">
+                                    <i data-lucide="message-circle" class="w-5 h-5 text-green-600"></i>
+                                </div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Customer Reply</span>
+                            </div>
+                            <div id="modal-user-response" class="text-sm font-semibold text-slate-800">-</div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-orange-50 p-2.5 rounded-xl">
+                                    <i data-lucide="calendar-check" class="w-5 h-5 text-orange-600"></i>
+                                </div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Service Date</span>
+                            </div>
+                            <div id="modal-service-date-display" class="text-sm font-semibold text-slate-800">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     
                     <!-- Left Column: Actions -->
                     <div class="space-y-6">
                         <!-- Status -->
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Workflow Stage</label>
+                        <div class="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-lg">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-lg">
+                                    <i data-lucide="workflow" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <label class="text-sm font-bold text-slate-700 uppercase tracking-wider">Workflow Stage</label>
+                            </div>
                             <div class="relative">
-                                <select id="input-status" class="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-3 pl-4 pr-10 rounded-xl leading-tight focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 text-sm font-medium shadow-sm transition-all">
+                                <select id="input-status" class="w-full appearance-none bg-gradient-to-r from-slate-50 to-blue-50 border-2 border-slate-200 text-slate-700 py-3.5 pl-4 pr-10 rounded-xl leading-tight focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-bold shadow-sm hover:shadow-md transition-all">
                                     <option value="New">🔵 New Case</option>
                                     <option value="Processing">🟡 Processing</option>
                                     <option value="Called">🟣 Contacted</option>
@@ -529,9 +589,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </div>
                         </div>
 
+                        </div>
+                        
                         <!-- Contact -->
-                        <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100/50">
-                            <label class="block text-xs font-bold text-blue-800/70 uppercase tracking-wider mb-2">Contact Info</label>
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border-2 border-blue-200 shadow-lg">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="bg-blue-500 p-2 rounded-lg shadow-lg">
+                                    <i data-lucide="phone" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <label class="text-sm font-bold text-blue-800 uppercase tracking-wider">Contact Info</label>
+                            </div>
                             <div class="flex gap-2">
                                 <div class="relative flex-1">
                                     <i data-lucide="phone" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400"></i>
@@ -543,9 +610,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </div>
                         </div>
 
+                        </div>
+                        
                         <!-- Quick Actions -->
-                        <div class="space-y-3">
-                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Communication</label>
+                        <div class="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-lg">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-lg shadow-lg">
+                                    <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <label class="text-sm font-bold text-slate-700 uppercase tracking-wider">Quick Communication</label>
+                            </div>
                             <div class="grid grid-cols-1 gap-3">
                                 <button id="btn-sms-register" class="group flex justify-between items-center px-4 py-3.5 bg-white border border-slate-200 rounded-xl hover:border-primary-300 hover:shadow-md transition-all text-left">
                                     <div>
@@ -571,12 +645,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </div>
                         </div>
 
-                        <!-- System Log -->
-                        <div class="bg-slate-100/50 rounded-xl border border-slate-200 overflow-hidden">
-                            <div class="px-4 py-2 border-b border-slate-200 bg-slate-50/50">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">System Activity</label>
                             </div>
-                            <div id="activity-log-container" class="p-3 h-32 overflow-y-auto custom-scrollbar text-xs space-y-1.5"></div>
+                        </div>
+                        
+                        <!-- System Log -->
+                        <div class="bg-white rounded-2xl border-2 border-slate-200 overflow-hidden shadow-lg">
+                            <div class="px-6 py-4 border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="history" class="w-4 h-4 text-slate-600"></i>
+                                    <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">System Activity</label>
+                                </div>
+                            </div>
+                            <div id="activity-log-container" class="p-4 h-40 overflow-y-auto custom-scrollbar text-xs space-y-2 bg-slate-50/50"></div>
                         </div>
                     </div>
 
@@ -1292,11 +1372,44 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
             const phoneToFill = t.phone || (linkedVehicle ? linkedVehicle.phone : '');
 
+            // Header info
             document.getElementById('modal-title-ref').innerText = t.plate;
             document.getElementById('modal-title-name').innerText = t.name;
             document.getElementById('modal-order-id').innerText = `#${t.id}`;
+            document.getElementById('modal-title-amount').innerText = t.amount || '0';
+            
+            // Franchise display in header
+            const franchiseDiv = document.getElementById('modal-title-franchise');
+            if (t.franchise && parseFloat(t.franchise) > 0) {
+                franchiseDiv.classList.remove('hidden');
+                franchiseDiv.classList.add('flex');
+                document.getElementById('modal-franchise-amount').innerText = t.franchise;
+            } else {
+                franchiseDiv.classList.add('hidden');
+                franchiseDiv.classList.remove('flex');
+            }
+            
+            // Info cards
+            const createdDate = t.created_at ? new Date(t.created_at).toLocaleString('en-US', { 
+                month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+            }) : 'N/A';
+            document.getElementById('modal-created-date').innerText = createdDate;
+            document.getElementById('modal-current-status').innerText = t.status || 'N/A';
+            document.getElementById('modal-user-response').innerText = t.user_response || 'Pending';
+            
+            const serviceDateDisplay = document.getElementById('modal-service-date-display');
+            if (t.service_date) {
+                const svcDate = new Date(t.service_date.replace(' ', 'T'));
+                serviceDateDisplay.innerText = svcDate.toLocaleString('en-US', { 
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                });
+            } else {
+                serviceDateDisplay.innerText = 'Not scheduled';
+            }
+            
+            // Form inputs
             document.getElementById('input-phone').value = phoneToFill;
-            document.getElementById('input-service-date').value = t.serviceDate ? t.serviceDate.replace(' ', 'T') : ''; 
+            document.getElementById('input-service-date').value = t.service_date ? t.service_date.replace(' ', 'T') : ''; 
             document.getElementById('input-franchise').value = t.franchise || '';
             document.getElementById('input-status').value = t.status;
             
