@@ -476,60 +476,61 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </div>
 
     <!-- Premium Edit Modal -->
-    <div id="edit-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+    <div id="edit-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
         <!-- Enhanced Backdrop with Animation -->
         <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeModal()"></div>
 
-        <!-- Dialog -->
-        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-3xl bg-gradient-to-br from-white to-slate-50 text-left shadow-2xl shadow-blue-900/30 transition-all sm:my-8 sm:w-full sm:max-w-6xl border border-slate-200/50 ring-1 ring-white/50">
+        <!-- Fullscreen Dialog Container -->
+        <div class="fixed inset-0 flex items-stretch p-0 sm:p-2 md:p-4 lg:p-6">
+            <div class="relative flex-1 flex flex-col overflow-hidden rounded-none sm:rounded-2xl lg:rounded-3xl bg-gradient-to-br from-white to-slate-50 text-left shadow-2xl shadow-blue-900/30 transition-all border-0 sm:border sm:border-slate-200/50 ring-0 sm:ring-1 sm:ring-white/50 w-full h-full">
                 
-                <!-- Premium Header with Enhanced Gradient -->
-                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-8 py-6 flex justify-between items-center sticky top-0 z-10 shadow-2xl">
+                <!-- Premium Header with Enhanced Gradient - Responsive -->
+                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-4 md:py-5 lg:py-6 flex justify-between items-center sticky top-0 z-10 shadow-2xl shrink-0">
                     <!-- Decorative Background Pattern -->
                     <div class="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
                     <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
                     
-                    <div class="relative flex items-center gap-5">
+                    <div class="relative flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 overflow-hidden">
                          <!-- Vehicle Badge -->
-                         <div class="relative">
+                         <div class="relative shrink-0">
                              <div class="absolute inset-0 bg-white/30 blur-xl rounded-2xl"></div>
-                             <div class="relative bg-white/20 backdrop-blur-md border-2 border-white/40 px-5 py-3 rounded-2xl text-sm font-mono font-extrabold text-white shadow-2xl flex items-center gap-3">
-                                <div class="bg-white/20 p-1.5 rounded-lg">
-                                    <i data-lucide="car" class="w-5 h-5"></i>
+                             <div class="relative bg-white/20 backdrop-blur-md border-2 border-white/40 px-2 sm:px-3 md:px-4 lg:px-5 py-2 sm:py-2.5 md:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-mono font-extrabold text-white shadow-2xl flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                                <div class="bg-white/20 p-1 sm:p-1.5 rounded-lg">
+                                    <i data-lucide="car" class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5"></i>
                                 </div>
-                                <span id="modal-title-ref" class="tracking-wider text-lg">AB-123-CD</span>
+                                <span id="modal-title-ref" class="tracking-wider text-sm sm:text-base md:text-lg truncate max-w-[80px] sm:max-w-[120px] md:max-w-none">AB-123-CD</span>
                              </div>
                          </div>
                          
-                         <!-- Divider -->
-                         <div class="h-12 w-px bg-white/30"></div>
+                         <!-- Divider - Hidden on mobile -->
+                         <div class="hidden sm:block h-8 md:h-10 lg:h-12 w-px bg-white/30 shrink-0"></div>
                          
                          <!-- Customer Info -->
-                         <div class="flex flex-col gap-1.5">
-                             <div class="flex items-center gap-2">
-                                 <span class="text-[10px] text-white/60 font-bold uppercase tracking-widest">Order</span>
-                                 <span class="text-sm font-mono text-white bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg border border-white/30 shadow-lg" id="modal-order-id">#0</span>
+                         <div class="flex flex-col gap-0.5 sm:gap-1 md:gap-1.5 min-w-0 flex-1">
+                             <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                 <span class="text-[8px] sm:text-[10px] text-white/60 font-bold uppercase tracking-widest">Order</span>
+                                 <span class="text-xs sm:text-sm font-mono text-white bg-white/20 backdrop-blur-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-md sm:rounded-lg border border-white/30 shadow-lg" id="modal-order-id">#0</span>
                              </div>
-                             <div class="flex items-center gap-2">
-                                 <i data-lucide="user" class="w-4 h-4 text-white/70"></i>
-                                 <span class="text-lg font-bold text-white" id="modal-title-name">Customer Name</span>
+                             <div class="flex items-center gap-1 sm:gap-2">
+                                 <i data-lucide="user" class="w-3 sm:w-4 h-3 sm:h-4 text-white/70 shrink-0"></i>
+                                 <span class="text-sm sm:text-base md:text-lg font-bold text-white truncate" id="modal-title-name">Customer Name</span>
                              </div>
                          </div>
                     </div>
                     
-                    <button onclick="window.closeModal()" class="relative text-white/80 hover:text-white hover:bg-white/20 p-3 rounded-xl transition-all hover:rotate-90 duration-300 group">
-                        <i data-lucide="x" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
+                    <button onclick="window.closeModal()" class="relative text-white/80 hover:text-white hover:bg-white/20 p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl transition-all hover:rotate-90 duration-300 group shrink-0">
+                        <i data-lucide="x" class="w-5 sm:w-5 md:w-6 h-5 sm:h-5 md:h-6 group-hover:scale-110 transition-transform"></i>
                     </button>
                 </div>
 
-                <!-- Enhanced Body with Three Columns -->
-                <div class="px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                <!-- Enhanced Body with Responsive Columns - Fullscreen optimized -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar px-3 sm:px-5 md:px-6 lg:px-8 py-4 sm:py-5 md:py-6 lg:py-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 lg:gap-8">
                     
                     <!-- Left Column: Order Details & Status -->
-                    <div class="space-y-6">
+                    <div class="space-y-4 sm:space-y-5 md:space-y-6">
                         <!-- Order Information Card -->
-                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-100 shadow-lg">
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-blue-100 shadow-lg">
                             <div class="flex items-center gap-2 mb-4">
                                 <div class="bg-blue-600 p-2 rounded-lg shadow-lg">
                                     <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
@@ -559,7 +560,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                         
                         <!-- Status Selection -->
-                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-100 shadow-lg">
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-purple-100 shadow-lg">
                             <div class="flex items-center gap-2 mb-4">
                                 <div class="bg-purple-600 p-2 rounded-lg shadow-lg">
                                     <i data-lucide="activity" class="w-4 h-4 text-white"></i>
@@ -587,19 +588,19 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
 
                         <!-- System Activity Log -->
-                        <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border-2 border-slate-200 overflow-hidden shadow-lg">
-                            <div class="px-5 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
-                                <i data-lucide="history" class="w-4 h-4 text-white"></i>
-                                <label class="text-xs font-bold text-white uppercase tracking-wider">Activity Timeline</label>
+                        <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl sm:rounded-2xl border-2 border-slate-200 overflow-hidden shadow-lg">
+                            <div class="px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
+                                <i data-lucide="history" class="w-3.5 sm:w-4 h-3.5 sm:h-4 text-white"></i>
+                                <label class="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">Activity Timeline</label>
                             </div>
-                            <div id="activity-log-container" class="p-4 h-48 overflow-y-auto custom-scrollbar text-xs space-y-2 bg-white/50"></div>
+                            <div id="activity-log-container" class="p-3 sm:p-4 h-32 sm:h-40 md:h-48 overflow-y-auto custom-scrollbar text-xs space-y-2 bg-white/50"></div>
                         </div>
                     </div>
 
                     <!-- Middle Column: Communication & Actions -->
-                    <div class="space-y-6">
+                    <div class="space-y-4 sm:space-y-5 md:space-y-6">
                         <!-- Contact Information -->
-                        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-6 border-2 border-teal-100 shadow-lg">
+                        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-teal-100 shadow-lg">
                             <div class="flex items-center gap-2 mb-4">
                                 <div class="bg-teal-600 p-2 rounded-lg shadow-lg">
                                     <i data-lucide="phone" class="w-4 h-4 text-white"></i>
@@ -618,7 +619,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                         
                         <!-- Service Appointment -->
-                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-100 shadow-lg">
+                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-amber-100 shadow-lg">
                             <div class="flex items-center gap-2 mb-4">
                                 <div class="bg-orange-600 p-2 rounded-lg shadow-lg">
                                     <i data-lucide="calendar-check" class="w-4 h-4 text-white"></i>
@@ -632,15 +633,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
 
                         <!-- Quick SMS Actions -->
-                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-6 border-2 border-indigo-100 shadow-lg">
+                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-indigo-100 shadow-lg">
                             <div class="flex items-center gap-2 mb-4">
                                 <div class="bg-indigo-600 p-2 rounded-lg shadow-lg">
                                     <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
                                 </div>
                                 <h3 class="text-sm font-bold text-indigo-900 uppercase tracking-wider">Quick SMS Actions</h3>
                             </div>
-                            <div class="space-y-2.5">
-                                <button id="btn-sms-register" class="group w-full flex justify-between items-center px-4 py-3.5 bg-white border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
+                            <div class="space-y-2 sm:space-y-2.5 md:space-y-3">
+                                <button id="btn-sms-register" class="group w-full flex justify-between items-center px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 bg-white border-2 border-indigo-200 rounded-lg sm:rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
                                     <div>
                                         <div class="text-sm font-bold text-slate-800 group-hover:text-indigo-700">Send Welcome SMS</div>
                                         <div class="text-[10px] text-slate-500 mt-0.5">Registration confirmation</div>
@@ -649,7 +650,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         <i data-lucide="message-square" class="w-4 h-4 text-indigo-600 group-hover:text-white"></i>
                                     </div>
                                 </button>
-                                <button id="btn-sms-arrived" class="group w-full flex justify-between items-center px-4 py-3.5 bg-white border-2 border-teal-200 rounded-xl hover:border-teal-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
+                                <button id="btn-sms-arrived" class="group w-full flex justify-between items-center px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 bg-white border-2 border-teal-200 rounded-lg sm:rounded-xl hover:border-teal-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
                                     <div>
                                         <div class="text-sm font-bold text-slate-800 group-hover:text-teal-700">Parts Arrived SMS</div>
                                         <div class="text-[10px] text-slate-500 mt-0.5">Includes customer link</div>
@@ -658,7 +659,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         <i data-lucide="package-check" class="w-4 h-4 text-teal-600 group-hover:text-white"></i>
                                     </div>
                                 </button>
-                                <button id="btn-sms-schedule" class="group w-full flex justify-between items-center px-4 py-3.5 bg-white border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
+                                <button id="btn-sms-schedule" class="group w-full flex justify-between items-center px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 bg-white border-2 border-orange-200 rounded-lg sm:rounded-xl hover:border-orange-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
                                     <div>
                                         <div class="text-sm font-bold text-slate-800 group-hover:text-orange-700">Send Schedule SMS</div>
                                         <div class="text-[10px] text-slate-500 mt-0.5">Appointment reminder</div>
@@ -672,16 +673,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     </div>
 
                     <!-- Right Column: Customer Feedback & Notes -->
-                    <div class="space-y-6 flex flex-col h-full">
+                    <div class="space-y-4 sm:space-y-5 md:space-y-6 flex flex-col h-full">
                         <!-- Customer Review Preview -->
-                        <div id="modal-review-section" class="hidden bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-200 overflow-hidden shadow-lg">
-                            <div class="px-5 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center gap-2">
+                        <div id="modal-review-section" class="hidden bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl sm:rounded-2xl border-2 border-amber-200 overflow-hidden shadow-lg">
+                            <div class="px-4 sm:px-5 md:px-6 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center gap-2">
                                 <div class="bg-white/20 p-1.5 rounded-lg">
                                     <i data-lucide="star" class="w-4 h-4 text-white"></i>
                                 </div>
                                 <label class="text-xs font-bold text-white uppercase tracking-wider">Customer Review</label>
                             </div>
-                            <div class="p-5 space-y-4">
+                            <div class="p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
                                 <div class="flex items-center gap-4">
                                     <div id="modal-review-stars" class="flex gap-1"></div>
                                     <span id="modal-review-rating" class="text-3xl font-black text-amber-600"></span>
@@ -693,8 +694,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
 
                         <!-- Reschedule Request Preview -->
-                        <div id="modal-reschedule-section" class="hidden bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-2xl border-2 border-purple-200 overflow-hidden shadow-lg">
-                            <div class="px-5 py-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
+                        <div id="modal-reschedule-section" class="hidden bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl sm:rounded-2xl border-2 border-purple-200 overflow-hidden shadow-lg">
+                            <div class="px-4 sm:px-5 md:px-6 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <div class="bg-white/20 p-1.5 rounded-lg">
                                         <i data-lucide="calendar-clock" class="w-4 h-4 text-white"></i>
@@ -703,7 +704,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </div>
                                 <span id="reschedule-status-badge" class="text-[10px] bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold border border-white/30">Pending</span>
                             </div>
-                            <div class="p-5 space-y-3">
+                            <div class="p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
                                 <div class="bg-white/80 p-4 rounded-xl border-2 border-purple-200">
                                     <span class="text-xs text-purple-700 font-bold block mb-2 uppercase tracking-wider">Requested Date</span>
                                     <div class="flex items-center gap-2">
@@ -729,8 +730,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
 
                         <!-- Team Notes Section -->
-                        <div class="flex-1 flex flex-col bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border-2 border-emerald-200 overflow-hidden shadow-lg">
-                            <div class="px-5 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 flex justify-between items-center">
+                        <div class="flex-1 flex flex-col bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl sm:rounded-2xl border-2 border-emerald-200 overflow-hidden shadow-lg">
+                            <div class="px-4 sm:px-5 md:px-6 py-3 sm:py-4 bg-gradient-to-r from-emerald-600 to-teal-600 flex justify-between items-center">
                                 <div class="flex items-center gap-2">
                                     <div class="bg-white/20 p-1.5 rounded-lg">
                                         <i data-lucide="sticky-note" class="w-4 h-4 text-white"></i>
@@ -739,8 +740,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </div>
                                 <span class="text-[10px] bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold border border-white/30">Internal</span>
                             </div>
-                            <div id="notes-list" class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-2.5 min-h-[250px] bg-white/60"></div>
-                            <div class="p-4 bg-white border-t-2 border-emerald-200 flex gap-2">
+                            <div id="notes-list" class="flex-1 p-3 sm:p-4 md:p-5 overflow-y-auto custom-scrollbar space-y-2 sm:space-y-2.5 min-h-[180px] sm:min-h-[220px] md:min-h-[250px] bg-white/60"></div>
+                            <div class="p-3 sm:p-4 md:p-5 bg-white border-t-2 border-emerald-200 flex gap-2">
                                 <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 text-sm px-4 py-2.5 bg-emerald-50 border-2 border-emerald-200 rounded-xl focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 outline-none font-medium">
                                 <button onclick="window.addNote()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white p-3 rounded-xl transition-all shadow-lg active:scale-95">
                                     <i data-lucide="send" class="w-5 h-5"></i>
@@ -751,16 +752,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 </div>
 
                 <!-- Premium Footer with Actions -->
-                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-8 py-5 border-t-2 border-slate-200 flex justify-between items-center rounded-b-3xl">
-                    <button type="button" onclick="window.deleteRecord(window.currentEditingId)" class="group text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 text-sm font-bold flex items-center gap-2 px-5 py-3 rounded-xl transition-all border-2 border-red-200 hover:border-red-600 shadow-sm hover:shadow-xl hover:shadow-red-600/30 active:scale-95">
+                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 rounded-b-xl sm:rounded-b-2xl lg:rounded-b-3xl">
+                    <button type="button" onclick="window.deleteRecord(window.currentEditingId)" class="group text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 text-sm font-bold flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-lg sm:rounded-xl transition-all border-2 border-red-200 hover:border-red-600 shadow-sm hover:shadow-xl hover:shadow-red-600/30 active:scale-95 w-full sm:w-auto">
                         <i data-lucide="trash-2" class="w-4 h-4"></i> 
                         <span>Delete Order</span>
                     </button>
-                    <div class="flex gap-3">
-                        <button type="button" onclick="window.closeModal()" class="px-6 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl font-bold text-sm transition-all border-2 border-slate-200 hover:border-slate-300 active:scale-95">
+                    <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
+                        <button type="button" onclick="window.closeModal()" class="flex-1 sm:flex-initial px-4 sm:px-6 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg sm:rounded-xl font-bold text-sm transition-all border-2 border-slate-200 hover:border-slate-300 active:scale-95">
                             <i data-lucide="x" class="w-4 h-4 inline mr-1"></i> Cancel
                         </button>
-                        <button type="button" onclick="window.saveEdit()" class="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-sm shadow-2xl shadow-blue-600/40 transition-all active:scale-95 flex items-center gap-2 border border-blue-500/50">
+                        <button type="button" onclick="window.saveEdit()" class="flex-1 sm:flex-initial px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg sm:rounded-xl font-bold text-sm shadow-2xl shadow-blue-600/40 transition-all active:scale-95 flex items-center justify-center gap-2 border border-blue-500/50">
                             <i data-lucide="save" class="w-5 h-5"></i> 
                             <span>Save Changes</span>
                         </button>
