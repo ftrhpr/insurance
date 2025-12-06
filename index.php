@@ -739,11 +739,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-    <!-- User Management Modals -->
-    <?php if ($current_user_role === 'admin'): ?>
-    <!-- Create/Edit User Modal -->
-
-
     <script>
         const API_URL = 'api.php';
         const MANAGER_PHONE = "511144486";
