@@ -338,14 +338,19 @@ try {
     
     // CREATE NEW TRANSFER (Manual Order Creation)
     if ($action === 'create_transfer' && $method === 'POST') {
+        error_log("Create transfer request from user: " . ($_SESSION['user_id'] ?? 'unknown') . ", role: " . ($_SESSION['role'] ?? 'unknown'));
+        
         if (!checkPermission('manager')) {
-            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions']);
+            error_log("Permission denied for create_transfer. User role: " . ($_SESSION['role'] ?? 'none'));
+            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions. Manager or Admin role required.', 'current_role' => $_SESSION['role'] ?? 'none']);
         }
         
         $data = getJsonInput();
+        error_log("Create transfer data: " . json_encode($data));
         
         // Required fields validation
         if (empty($data['plate']) || empty($data['name']) || !isset($data['amount'])) {
+            error_log("Create transfer validation failed: missing required fields");
             jsonResponse(['status' => 'error', 'message' => 'Missing required fields: plate, name, amount']);
         }
         

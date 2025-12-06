@@ -265,12 +265,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <p class="text-sm text-slate-600 mt-2 font-medium">Paste SMS or bank statement text to auto-detect transfers.</p>
                             </div>
                             <div class="flex gap-2">
+                                <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
                                 <button onclick="window.openManualCreateModal()" class="text-xs font-semibold text-white bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
                                     <span class="flex items-center gap-1.5">
                                         <i data-lucide="plus-circle" class="w-3 h-3"></i>
                                         Manual Create
                                     </span>
                                 </button>
+                                <?php endif; ?>
                                 <button onclick="window.insertSample('მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00 (ფრანშიზა 273.97)')" class="text-xs font-semibold text-primary-700 bg-gradient-to-br from-primary-50 to-accent-50 px-4 py-2.5 rounded-xl hover:from-primary-100 hover:to-accent-100 transition-all border border-primary-200/50 shadow-sm hover:shadow-md hover:-translate-y-0.5">
                                     <span class="flex items-center gap-1.5">
                                         <i data-lucide="sparkles" class="w-3 h-3"></i>
@@ -1686,6 +1688,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         window.saveManualOrder = async () => {
+            // Check permissions
+            if (!CAN_EDIT) {
+                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
+                console.error('Current role:', USER_ROLE, 'Can edit:', CAN_EDIT);
+                return;
+            }
+            
             const plate = document.getElementById('manual-plate').value.trim();
             const name = document.getElementById('manual-name').value.trim();
             const phone = document.getElementById('manual-phone').value.trim();
@@ -1738,9 +1747,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             };
 
             try {
+                console.log('Creating order with data:', orderData);
                 const result = await fetchAPI('create_transfer', 'POST', orderData);
+                console.log('Create transfer result:', result);
                 
-                if (result.status === 'success') {
+                if (result && result.status === 'success') {
                     showToast('Success', 'Order created successfully!', 'success');
                     window.closeManualCreateModal();
                     
@@ -1754,11 +1765,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         }, 500);
                     }
                 } else {
-                    showToast('Error', result.message || 'Failed to create order', 'error');
+                    const errorMsg = result?.message || 'Failed to create order';
+                    console.error('Order creation failed:', errorMsg, result);
+                    showToast('Error', errorMsg, 'error');
                 }
             } catch (error) {
                 console.error('Error creating order:', error);
-                showToast('Error', 'Failed to create order', 'error');
+                showToast('Error', error.message || 'Failed to create order', 'error');
             } finally {
                 // Re-enable button
                 submitBtn.disabled = false;
