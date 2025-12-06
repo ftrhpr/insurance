@@ -752,16 +752,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 </div>
 
                 <!-- Premium Footer with Actions - Fixed/Floating -->
-                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 rounded-b-xl sm:rounded-b-2xl lg:rounded-b-3xl shadow-2xl shrink-0">
-                    <button type="button" onclick="window.deleteRecord(window.currentEditingId)" class="group text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 text-sm font-bold flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-lg sm:rounded-xl transition-all border-2 border-red-200 hover:border-red-600 shadow-sm hover:shadow-xl hover:shadow-red-600/30 active:scale-95 w-full sm:w-auto">
+                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 rounded-b-xl sm:rounded-b-2xl lg:rounded-b-3xl shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] shrink-0 backdrop-blur-sm">
+                    <button type="button" onclick="window.deleteRecord(window.currentEditingId)" class="group text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 text-sm font-bold flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-lg sm:rounded-xl transition-all border-2 border-red-200 hover:border-red-600 shadow-lg hover:shadow-2xl hover:shadow-red-600/50 active:scale-95 w-full sm:w-auto hover:scale-105">
                         <i data-lucide="trash-2" class="w-4 h-4"></i> 
                         <span>Delete Order</span>
                     </button>
                     <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
-                        <button type="button" onclick="window.closeModal()" class="flex-1 sm:flex-initial px-4 sm:px-6 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg sm:rounded-xl font-bold text-sm transition-all border-2 border-slate-200 hover:border-slate-300 active:scale-95">
+                        <button type="button" onclick="window.closeModal()" class="flex-1 sm:flex-initial px-4 sm:px-6 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg sm:rounded-xl font-bold text-sm transition-all border-2 border-slate-200 hover:border-slate-300 shadow-lg hover:shadow-xl active:scale-95 hover:scale-105">
                             <i data-lucide="x" class="w-4 h-4 inline mr-1"></i> Cancel
                         </button>
-                        <button type="button" onclick="window.saveEdit()" class="flex-1 sm:flex-initial px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg sm:rounded-xl font-bold text-sm shadow-2xl shadow-blue-600/40 transition-all active:scale-95 flex items-center justify-center gap-2 border border-blue-500/50">
+                        <button type="button" onclick="window.saveEdit()" class="flex-1 sm:flex-initial px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg sm:rounded-xl font-bold text-sm shadow-2xl shadow-blue-600/50 transition-all active:scale-95 hover:scale-105 flex items-center justify-center gap-2 border border-blue-500/50">
                             <i data-lucide="save" class="w-5 h-5"></i> 
                             <span>Save Changes</span>
                         </button>
