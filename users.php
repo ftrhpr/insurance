@@ -20,6 +20,18 @@ $current_user_role = $_SESSION['role'];
 // Database connection
 require_once 'config.php';
 
+// Add current logged-in user as default
+$defaultUser = [
+    'id' => $_SESSION['user_id'] ?? 1,
+    'username' => $_SESSION['username'] ?? 'admin',
+    'full_name' => $_SESSION['full_name'] ?? 'System Administrator',
+    'email' => $_SESSION['email'] ?? 'admin@otoexpress.ge',
+    'role' => $_SESSION['role'] ?? 'admin',
+    'status' => 'active',
+    'last_login' => date('Y-m-d H:i:s'),
+    'created_at' => date('Y-m-d H:i:s')
+];
+
 try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -28,8 +40,14 @@ try {
     $stmt = $pdo->query("SELECT id, username, full_name, email, role, status, last_login, created_at FROM users ORDER BY created_at DESC");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // If empty, add default user
+    if (empty($users)) {
+        $users = [$defaultUser];
+    }
+    
 } catch (PDOException $e) {
-    $users = [];
+    // On error, show at least the current logged-in user
+    $users = [$defaultUser];
     error_log("Database error in users.php: " . $e->getMessage());
 }
 ?>
