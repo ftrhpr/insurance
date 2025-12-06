@@ -1666,23 +1666,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         // Manual Create Modal Functions
         window.openManualCreateModal = async () => {
-            // Test session before opening
-            try {
-                const sessionInfo = await fetchAPI('test_session', 'GET');
-                console.log('Session info:', sessionInfo);
-                
-                if (!sessionInfo.can_create) {
-                    showToast('Permission Denied', `Your role (${sessionInfo.role || 'unknown'}) cannot create orders. Manager or Admin required.`, 'error');
-                    return;
-                }
-            } catch (error) {
-                console.error('Error checking session:', error);
+            // Check permissions
+            if (!CAN_EDIT) {
+                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
+                return;
             }
             
-            console.log('Opening manual create modal...');
             const modal = document.getElementById('manual-create-modal');
             modal.classList.remove('hidden');
-            console.log('Modal display:', window.getComputedStyle(modal).display);
             
             // Clear all inputs
             document.getElementById('manual-plate').value = '';
@@ -1695,10 +1686,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             lucide.createIcons();
             
             // Focus on first input
-            setTimeout(() => {
-                document.getElementById('manual-plate').focus();
-                console.log('Modal should be visible now. Fill the form and click Create Order button.');
-            }, 100);
+            setTimeout(() => document.getElementById('manual-plate').focus(), 100);
         };
 
         window.closeManualCreateModal = () => {
@@ -1706,13 +1694,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         window.saveManualOrder = async () => {
-            alert('Create Order button clicked!');
-            console.log('=== saveManualOrder called ===');
-            
             // Check permissions
             if (!CAN_EDIT) {
                 showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
-                console.error('Current role:', USER_ROLE, 'Can edit:', CAN_EDIT);
                 return;
             }
             
@@ -1724,17 +1708,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const status = document.getElementById('manual-status').value;
             const notes = document.getElementById('manual-notes').value.trim();
 
-            console.log('Form values:', { plate, name, phone, amount, franchise, status, notes });
-
             // Validation
             if (!plate) {
-                console.log('Validation failed: no plate');
-                showToast('Validation Error', 'Vehicle plate number is required', 'error');
-                document.getElementById('manual-plate').focus();
-                return;
-            }
-            if (!name) {
-                console.log('Validation failed: no name');
                 showToast('Validation Error', 'Vehicle plate number is required', 'error');
                 document.getElementById('manual-plate').focus();
                 return;
@@ -1777,11 +1752,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             };
 
             try {
-                console.log('Creating order with data:', orderData);
-                console.log('Sending to API URL:', `${API_URL}?action=create_transfer`);
                 const result = await fetchAPI('create_transfer', 'POST', orderData);
-                console.log('Create transfer result:', result);
-                console.log('Result type:', typeof result, 'Result keys:', result ? Object.keys(result) : 'null');
                 
                 if (result && result.status === 'success') {
                     showToast('Success', 'Order created successfully!', 'success');
@@ -1792,17 +1763,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     
                     // Open the newly created order
                     if (result.id) {
-                        setTimeout(() => {
-                            window.openEditModal(result.id);
-                        }, 500);
+                        setTimeout(() => window.openEditModal(result.id), 500);
                     }
                 } else {
                     const errorMsg = result?.message || 'Failed to create order';
-                    console.error('Order creation failed:', errorMsg, result);
                     showToast('Error', errorMsg, 'error');
                 }
             } catch (error) {
-                console.error('Error creating order:', error);
                 showToast('Error', error.message || 'Failed to create order', 'error');
             } finally {
                 // Re-enable button
