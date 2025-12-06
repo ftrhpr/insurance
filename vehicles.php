@@ -287,16 +287,28 @@ try {
             <div class="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-5">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-800">Service Order Details</h3>
-                        <p class="text-xs text-slate-500">Complete order information and history.</p>
+                        <h3 class="text-lg font-bold text-slate-800" id="order-modal-title">Service Order Details</h3>
+                        <p class="text-xs text-slate-500" id="order-modal-subtitle">Complete order information and history.</p>
                     </div>
-                    <button onclick="window.closeOrderModal()" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full text-slate-400 transition-colors">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
+                        <button id="order-edit-btn" onclick="window.toggleOrderEdit()" class="bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white p-2 rounded-xl transition-all shadow-sm" title="Edit Order">
+                            <i data-lucide="edit-2" class="w-5 h-5"></i>
+                        </button>
+                        <?php endif; ?>
+                        <button onclick="window.closeOrderModal()" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full text-slate-400 transition-colors">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="order-details-content" class="space-y-4">
                     <!-- Content will be populated by JavaScript -->
+                </div>
+                
+                <div id="order-edit-actions" class="hidden flex gap-3 justify-end pt-4 border-t border-slate-100">
+                    <button onclick="window.cancelOrderEdit()" class="px-4 py-2.5 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">Cancel</button>
+                    <button onclick="window.saveOrderEdit()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all active:scale-95">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -516,6 +528,9 @@ try {
         window.closeVehicleModal = () => document.getElementById('vehicle-modal').classList.add('hidden');
 
         // Order Modal Functions
+        let currentOrderId = null;
+        let isEditMode = false;
+        
         window.openOrderModal = (orderId) => {
             const order = transfers.find(t => t.id == orderId);
             if (!order) {
@@ -524,6 +539,14 @@ try {
                 return;
             }
             
+            currentOrderId = orderId;
+            isEditMode = false;
+            renderOrderModal(order, false);
+            document.getElementById('order-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        function renderOrderModal(order, editMode = false) {
             const statusColors = {
                 'New': 'bg-gradient-to-r from-blue-500 to-blue-600 text-white',
                 'Processing': 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white',
@@ -537,9 +560,68 @@ try {
             const statusClass = statusColors[order.status] || 'bg-gradient-to-r from-slate-500 to-slate-600 text-white';
             
             const serviceDate = order.serviceDate ? new Date(order.serviceDate.replace(' ', 'T')).toLocaleString() : 'Not scheduled';
+            const serviceDateValue = order.serviceDate ? order.serviceDate.replace(' ', 'T').substring(0, 16) : '';
             const createdAt = order.createdAt ? new Date(order.createdAt.replace(' ', 'T')).toLocaleString() : 'N/A';
             
-            const contentHTML = `
+            // Update modal title
+            document.getElementById('order-modal-title').textContent = editMode ? 'Edit Service Order' : 'Service Order Details';
+            document.getElementById('order-modal-subtitle').textContent = editMode ? 'Update order information below.' : 'Complete order information and history.';
+            document.getElementById('order-edit-actions').classList.toggle('hidden', !editMode);
+            
+            const contentHTML = editMode ? `
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200/50">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg shadow-blue-500/25">
+                            <i data-lucide="car" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <input type="text" id="edit-plate" value="${order.plate}" class="font-mono font-extrabold text-slate-900 text-xl tracking-wide bg-white border border-slate-200 rounded-lg px-3 py-1 uppercase" placeholder="Plate">
+                            <p class="text-sm text-slate-600">Order #${order.id}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Customer Name</label>
+                        <input type="text" id="edit-name" value="${order.name}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800" placeholder="Customer Name">
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Phone Number</label>
+                        <input type="text" id="edit-phone" value="${order.phone || ''}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800" placeholder="Phone Number">
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Amount (GEL)</label>
+                        <input type="number" id="edit-amount" value="${order.amount || 0}" class="w-full p-2 border border-slate-200 rounded-lg font-bold text-green-600" placeholder="0">
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Franchise (GEL)</label>
+                        <input type="number" id="edit-franchise" value="${order.franchise || 0}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800" placeholder="0">
+                    </div>
+                    
+                    <div class="col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Status</label>
+                        <select id="edit-status" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800 cursor-pointer">
+                            <option value="New" ${order.status === 'New' ? 'selected' : ''}>New</option>
+                            <option value="Processing" ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                            <option value="Called" ${order.status === 'Called' ? 'selected' : ''}>Called</option>
+                            <option value="Parts Ordered" ${order.status === 'Parts Ordered' ? 'selected' : ''}>Parts Ordered</option>
+                            <option value="Parts Arrived" ${order.status === 'Parts Arrived' ? 'selected' : ''}>Parts Arrived</option>
+                            <option value="Scheduled" ${order.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                            <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                            <option value="Issue" ${order.status === 'Issue' ? 'selected' : ''}>Issue</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Service Date</label>
+                        <input type="datetime-local" id="edit-service-date" value="${serviceDateValue}" class="w-full p-2 border border-slate-200 rounded-lg font-semibold text-slate-800">
+                    </div>
+                </div>
+            ` : `
                 <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200/50">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex items-center gap-3">
@@ -633,12 +715,74 @@ try {
             `;
             
             document.getElementById('order-details-content').innerHTML = contentHTML;
-            document.getElementById('order-modal').classList.remove('hidden');
             lucide.createIcons();
+        }
+
+        window.toggleOrderEdit = () => {
+            if (!CAN_EDIT) {
+                showToast('Permission Denied', 'You do not have permission to edit orders', 'error');
+                return;
+            }
+            
+            const order = transfers.find(t => t.id == currentOrderId);
+            if (!order) return;
+            
+            isEditMode = !isEditMode;
+            renderOrderModal(order, isEditMode);
+        };
+
+        window.cancelOrderEdit = () => {
+            const order = transfers.find(t => t.id == currentOrderId);
+            if (!order) return;
+            
+            isEditMode = false;
+            renderOrderModal(order, false);
+        };
+
+        window.saveOrderEdit = async () => {
+            if (!CAN_EDIT) {
+                showToast('Permission Denied', 'You do not have permission to edit orders', 'error');
+                return;
+            }
+
+            const data = {
+                plate: document.getElementById('edit-plate').value.trim(),
+                name: document.getElementById('edit-name').value.trim(),
+                phone: document.getElementById('edit-phone').value.trim(),
+                amount: parseFloat(document.getElementById('edit-amount').value) || 0,
+                franchise: parseFloat(document.getElementById('edit-franchise').value) || 0,
+                status: document.getElementById('edit-status').value,
+                serviceDate: document.getElementById('edit-service-date').value
+            };
+
+            // Validation
+            if (!data.plate || !data.name) {
+                showToast('Validation Error', 'Plate and name are required', 'error');
+                return;
+            }
+
+            try {
+                await fetchAPI(`update_transfer&id=${currentOrderId}`, 'POST', data);
+                
+                // Update local array
+                const idx = transfers.findIndex(t => t.id == currentOrderId);
+                if (idx !== -1) {
+                    transfers[idx] = { ...transfers[idx], ...data };
+                }
+                
+                // Reload data and close modal
+                await loadData();
+                window.closeOrderModal();
+                showToast('Order Updated', 'Service order has been updated successfully', 'success');
+            } catch (err) {
+                showToast('Error', 'Failed to update order', 'error');
+            }
         };
 
         window.closeOrderModal = () => {
             document.getElementById('order-modal').classList.add('hidden');
+            currentOrderId = null;
+            isEditMode = false;
         };
 
         window.editVehicle = (id) => {
