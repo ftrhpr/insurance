@@ -1039,15 +1039,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 
                 // Check if response is NOT OK (e.g. 500 Error)
                 if (!res.ok) {
-                    // Try to parse the JSON error message from api.php
+                    // Read response body once as text
+                    const responseText = await res.text();
                     let errorText = res.statusText;
+                    
+                    // Try to parse as JSON first
                     try {
-                        const errorJson = await res.json();
+                        const errorJson = JSON.parse(responseText);
                         if (errorJson.error) errorText = errorJson.error;
+                        else if (responseText) errorText = responseText.substring(0, 200);
                     } catch (parseErr) {
-                        // If parsing fails, use the text body or generic status
-                        const text = await res.text();
-                        if(text) errorText = text.substring(0, 100); // Limit length
+                        // If not JSON, use the text directly
+                        if(responseText) errorText = responseText.substring(0, 200);
                     }
                     throw new Error(`Server Error (${res.status}): ${errorText}`);
                 }
