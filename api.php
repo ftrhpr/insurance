@@ -1,18 +1,15 @@
 <?php
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't output errors directly
-ini_set('display_startup_errors', 0);
-ini_set('log_errors', 1);
-
-// Set custom error handler to catch all errors
+// Set error handler FIRST before anything else
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    header("Content-Type: application/json");
-    http_response_code(500);
+    if (!headers_sent()) {
+        header("Content-Type: application/json");
+        http_response_code(500);
+    }
     echo json_encode([
         'error' => 'PHP Error',
+        'type' => $errno,
         'message' => $errstr,
-        'file' => $errfile,
+        'file' => basename($errfile),
         'line' => $errline
     ]);
     exit;
@@ -20,16 +17,25 @@ set_error_handler(function($errno, $errstr, $errfile, $errline) {
 
 // Set exception handler
 set_exception_handler(function($e) {
-    header("Content-Type: application/json");
-    http_response_code(500);
+    if (!headers_sent()) {
+        header("Content-Type: application/json");
+        http_response_code(500);
+    }
     echo json_encode([
         'error' => 'PHP Exception',
         'message' => $e->getMessage(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine()
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString()
     ]);
     exit;
 });
+
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+ini_set('log_errors', 1);
 
 require_once 'session_config.php';
 
