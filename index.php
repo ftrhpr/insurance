@@ -10,144 +10,146 @@ if (!isset($_SESSION['user_id'])) {
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
 ?>
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTOMOTORS Manager Portal</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>OTOMOTORS Manager Portal | Hope UI</title>
     
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="assets/images/favicon.ico" />
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    
+    <!-- Hope UI Core CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- FIREBASE SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        primary: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
-                        },
-                        accent: {
-                            50: '#fdf4ff',
-                            100: '#fae8ff',
-                            500: '#d946ef',
-                            600: '#c026d3',
-                        }
-                    },
-                    animation: {
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 3s ease-in-out infinite',
-                        'shimmer': 'shimmer 2s linear infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                        shimmer: {
-                            '0%': { backgroundPosition: '-200% center' },
-                            '100%': { backgroundPosition: '200% center' },
-                        }
-                    },
-                    backgroundImage: {
-                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-                        'glass': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-                    }
-                }
-            }
-        }
-    </script>
-
     <style>
-        /* Premium Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { 
-            width: 8px; 
-            height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track { 
-            background: rgba(148, 163, 184, 0.1); 
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb { 
-            background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
-            border-radius: 10px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
-            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
-            background-clip: padding-box;
+        /* Hope UI Custom Styles */
+        :root {
+            --bs-primary: #573BFF;
+            --bs-primary-rgb: 87, 59, 255;
+            --bs-secondary: #7C8DB0;
+            --bs-success: #00C3F9;
+            --bs-info: #9C27B0;
+            --bs-warning: #FFA800;
+            --bs-danger: #FF6171;
+            --bs-dark: #1E2139;
+            --bs-body-bg: #F8F9FA;
         }
         
-        /* Enhanced Navigation */
-        .nav-item {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bs-body-bg);
         }
-        .nav-active { 
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            color: #ffffff; 
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3), 0 2px 4px rgba(14, 165, 233, 0.2);
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: #fff;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            z-index: 1040;
+            transition: all 0.3s ease;
         }
-        .nav-inactive { 
-            color: #64748b;
-            background: transparent;
+        
+        .sidebar-mini .sidebar {
+            width: 80px;
         }
-        .nav-inactive:hover { 
-            color: #0f172a;
-            background: rgba(14, 165, 233, 0.08);
-            transform: translateY(-1px);
+        
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+            transition: all 0.3s ease;
         }
-
-        /* Glass Morphism Effect */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
+        
+        .sidebar-mini .main-content {
+            margin-left: 80px;
         }
-
-        /* Gradient Text */
-        .gradient-text {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #c026d3 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        
+        .navbar-custom {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 1rem 2rem;
         }
-
-        /* Enhanced Card Hover */
-        .card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--bs-primary) 0%, #8662FF 100%);
+            color: #fff !important;
+            border-radius: 8px;
         }
-        .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(14, 165, 233, 0.1);
+        
+        .card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
         }
+        
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .badge-custom {
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+        
+        .btn-hope {
+            border-radius: 8px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-hope:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(87, 59, 255, 0.3);
+        }
+        
+        .table-hope {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .table-hope thead {
+            background: linear-gradient(135deg, #573BFF 0%, #8662FF 100%);
+            color: #fff;
+        }
+        
+        .table-hope tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        .table-hope tbody tr:hover {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+        
+        .status-badge-new { background: #FFA800; color: #fff; }
+        .status-badge-processing { background: #FFC107; color: #fff; }
+        .status-badge-called { background: #9C27B0; color: #fff; }
+        .status-badge-parts-ordered { background: #2196F3; color: #fff; }
+        .status-badge-parts-arrived { background: #00C3F9; color: #fff; }
+        .status-badge-scheduled { background: #FF9800; color: #fff; }
+        .status-badge-completed { background: #4CAF50; color: #fff; }
+        .status-badge-issue { background: #F44336; color: #fff; }
+        
+        .icon-24 { width: 24px; height: 24px; }
+        .icon-20 { width: 20px; height: 20px; }
+        .icon-18 { width: 18px; height: 18px; }
 
         /* Animated Border for Urgent Toasts */
         @keyframes border-pulse {
@@ -218,131 +220,156 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen selection:bg-primary-200 selection:text-primary-900">
-
-    <!-- Modern Loading Screen -->
-    <div id="loading-screen" class="fixed inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 flex flex-col items-center justify-center z-50 transition-opacity duration-500 pointer-events-auto">
-        <div class="relative">
-            <!-- Outer rotating ring -->
-            <div class="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-            <!-- Inner pulsing circle -->
-            <div class="absolute inset-0 flex items-center justify-center">
-                <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm animate-pulse">
-                    <i data-lucide="car" class="w-6 h-6 text-white float-icon"></i>
-                </div>
+<body>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="text-center">
+            <div class="spinner-hope"></div>
+            <p class="mt-3 fw-bold" style="color: var(--bs-primary);">Loading OTOMOTORS...</p>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="d-flex align-items-center">
+                <h4 class="logo-title">OTOMOTORS</h4>
+            </div>
+            <div class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-chevron-left"></i>
             </div>
         </div>
-        <div class="mt-8 text-center">
-            <h3 class="text-white text-xl font-bold mb-2">OTOMOTORS</h3>
-            <p class="text-white/80 text-sm font-medium">Loading your workspace...</p>
-        </div>
-        <div class="mt-4 text-slate-500 text-sm font-medium tracking-wide animate-pulse">CONNECTING...</div>
-    </div>
-
-    <!-- App Content -->
-    <div id="app-content" class="hidden pb-20 relative z-0">
         
-        <?php include 'header.php'; ?>
-
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-
-            <!-- DASHBOARD VIEW -->
-            <div id="view-dashboard" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="sidebar-body">
+            <ul class="navbar-nav" id="sidebar-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" onclick="switchView('dashboard'); return false;">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="switchView('vehicles'); return false;">
+                        <i class="fas fa-car"></i>
+                        <span>Vehicles</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="templates.php">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>SMS Templates</span>
+                    </a>
+                </li>
+                <?php if ($current_user_role === 'admin'): ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="users.php">
+                        <i class="fas fa-users"></i>
+                        <span>User Management</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+            </ul>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        
+        <!-- Top Navbar -->
+        <nav class="iq-navbar">
+            <div class="navbar-custom">
+                <div class="left-panel">
+                    <button class="hamburger-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h5 class="mb-0 fw-bold" style="color: var(--bs-dark);">Manager Portal</h5>
+                </div>
                 
-                <!-- Premium Import Section -->
-                <section class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary-500/10 card-hover group">
-                    <!-- Gradient accent bar -->
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-600"></div>
-                    <div class="p-6 sm:p-8">
-                        <div class="flex justify-between items-start mb-6">
-                            <div>
-                                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-3">
-                                    <div class="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg shadow-primary-500/30">
-                                        <i data-lucide="file-input" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    Quick Import
-                                </h2>
-                                <p class="text-sm text-slate-600 mt-2 font-medium">Paste SMS or bank statement text to auto-detect transfers.</p>
+                <div class="right-panel">
+                    <!-- User Dropdown -->
+                    <div class="dropdown">
+                        <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="avatar me-2">
+                                <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
                             </div>
-                            <div class="flex gap-2">
-                                <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
-                                <button onclick="window.openManualCreateModal()" class="text-xs font-semibold text-white bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-                                    <span class="flex items-center gap-1.5">
-                                        <i data-lucide="plus-circle" class="w-3 h-3"></i>
-                                        Manual Create
-                                    </span>
-                                </button>
-                                <?php endif; ?>
-                                <button onclick="window.insertSample('მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00 (ფრანშიზა 273.97)')" class="text-xs font-semibold text-primary-700 bg-gradient-to-br from-primary-50 to-accent-50 px-4 py-2.5 rounded-xl hover:from-primary-100 hover:to-accent-100 transition-all border border-primary-200/50 shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                                    <span class="flex items-center gap-1.5">
-                                        <i data-lucide="sparkles" class="w-3 h-3"></i>
-                                        Sample
-                                    </span>
-                                </button>
+                            <div class="d-none d-md-block">
+                                <div class="fw-bold" style="font-size: 0.9rem; color: var(--bs-dark);"><?php echo htmlspecialchars($current_user_name); ?></div>
+                                <div class="text-muted" style="font-size: 0.75rem;"><?php echo ucfirst($current_user_role); ?></div>
                             </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> Sign out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Page Content -->
+        <div class="container-fluid p-4">
+            
+            <!-- Dashboard View -->
+            <div id="view-dashboard">
+                
+                <!-- Quick Import Section -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title mb-1">Quick Import</h4>
+                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Paste SMS or bank statement to auto-detect transfers</p>
                         </div>
-                        
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <!-- Text Input -->
-                            <div class="flex-1 space-y-3">
-                                <div class="relative">
-                                    <textarea id="import-text" class="w-full h-32 p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-slate-200/60 rounded-2xl focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20 outline-none text-sm font-mono resize-none transition-all placeholder:text-slate-400 shadow-inner" placeholder="Paste bank text here..."></textarea>
-                                    <div class="absolute bottom-4 right-4">
-                                        <button onclick="window.parseBankText()" id="btn-analyze" class="btn-primary text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xl">
-                                            <i data-lucide="sparkles" class="w-4 h-4"></i> Detect
-                                        </button>
+                        <div class="d-flex gap-2">
+                            <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
+                            <button onclick="window.openManualCreateModal()" class="btn btn-success btn-sm">
+                                <i class="fas fa-plus-circle me-1"></i> Manual Create
+                            </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <textarea id="import-text" class="form-control" rows="5" placeholder="Paste bank text here..."></textarea>
+                                <button onclick="window.parseBankText()" class="btn btn-primary mt-3">
+                                    <i class="fas fa-magic me-2"></i> Detect
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="parsed-placeholder" class="d-flex align-items-center justify-content-center border border-dashed rounded p-4 h-100 text-muted">
+                                    <div class="text-center">
+                                        <i class="fas fa-arrow-left mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                                        <p class="mb-0">Waiting for text input...</p>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Result Preview -->
-                            <div id="parsed-placeholder" class="hidden md:flex flex-1 items-center justify-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm font-medium bg-slate-50/50">
-                                <div class="text-center">
-                                    <i data-lucide="arrow-left" class="w-5 h-5 mx-auto mb-2 opacity-50"></i>
-                                    Waiting for text input...
+                                <div id="parsed-result" class="d-none">
+                                    <div id="parsed-content" class="mb-3" style="max-height: 200px; overflow-y: auto;"></div>
+                                    <button id="btn-save-import" onclick="window.saveParsedImport()" class="btn btn-success w-100">
+                                        <i class="fas fa-save me-2"></i> Confirm & Save
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div id="parsed-result" class="hidden flex-1 bg-emerald-50/50 rounded-xl border border-emerald-100 p-5 flex flex-col relative overflow-hidden">
-                                <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-400/10 rounded-bl-full -mr-10 -mt-10"></div>
-                                <div class="flex justify-between items-center mb-3 relative z-10">
-                                    <h3 class="text-sm font-bold text-emerald-800 flex items-center gap-2">
-                                        <div class="bg-emerald-100 p-1 rounded-full"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i></div>
-                                        Ready to Import
-                                    </h3>
-                                </div>
-                                <div id="parsed-content" class="flex-1 overflow-y-auto max-h-[120px] mb-4 space-y-2 pr-2 custom-scrollbar relative z-10"></div>
-                                <button id="btn-save-import" onclick="window.saveParsedImport()" class="relative z-10 w-full bg-emerald-600 text-white py-2.5 rounded-lg hover:bg-emerald-700 active:scale-95 font-medium text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2">
-                                    <i data-lucide="save" class="w-4 h-4"></i> Confirm & Save
-                                </button>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <!-- Search & Filters -->
-                <div class="sticky top-20 z-10 bg-white/80 backdrop-blur-xl p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-2 justify-between items-center">
-                    <div class="relative w-full sm:w-80 group">
-                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-500 transition-colors"></i>
-                        <input id="search-input" type="text" placeholder="Search plates, names, phones..." class="w-full pl-10 pr-4 py-2.5 bg-transparent border border-transparent rounded-xl text-sm focus:bg-white focus:border-slate-200 focus:shadow-sm outline-none transition-all">
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto pr-1">
-                        <!-- REPLY FILTER -->
-                        <div class="relative">
-                            <select id="reply-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
-                                <option value="All">All Replies</option>
-                                <option value="Confirmed">✅ Confirmed</option>
-                                <option value="Reschedule Requested">📅 Reschedule</option>
-                                <option value="Pending">⏳ Not Responded</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                <!-- Filters -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <input id="search-input" type="text" class="form-control" placeholder="Search plates, names, phones...">
                             </div>
-                        </div>
-
-                        <!-- STATUS FILTER -->
-                        <div class="relative">
-                            <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                            <div class="col-md-4">
+                                <select id="reply-filter" class="form-select">
+                                    <option value="All">All Replies</option>
+                                    <option value="Confirmed">✅ Confirmed</option>
+                                    <option value="Reschedule Requested">📅 Reschedule</option>
+                                    <option value="Pending">⏳ Not Responded</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select id="status-filter" class="form-select">
                                 <option value="All">All Active Stages</option>
                                 <option value="Processing">🟡 Processing</option>
                                 <option value="Called">🟣 Contacted</option>
@@ -352,191 +379,394 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <option value="Completed">🟢 Completed</option>
                                 <option value="Issue">🔴 Issue</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                
+                <!-- New Requests -->
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">New Requests <span id="new-count" class="badge bg-warning ms-2">(0)</span></h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="new-cases-grid" class="row g-3"></div>
+                        <div id="new-cases-empty" class="d-none text-center py-5 text-muted">
+                            <i class="fas fa-inbox mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <p>No new requests</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- New Requests Grid -->
-                <section id="new-cases-section" class="space-y-4">
-                    <div class="flex items-center justify-between px-1">
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <span class="relative flex h-3 w-3">
-                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
-                              <span class="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
-                            </span>
-                            New Requests <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
-                        </h2>
+                <!-- Processing Queue -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">Processing Queue</h4>
+                        <span id="record-count" class="badge bg-primary">0 active</span>
                     </div>
-                    
-                    <div id="new-cases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        <!-- Cards injected here -->
-                    </div>
-                    
-                    <div id="new-cases-empty" class="hidden py-12 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
-                        <div class="bg-slate-50 p-3 rounded-full mb-3"><i data-lucide="inbox" class="w-6 h-6"></i></div>
-                        <span class="text-sm font-medium">No new incoming requests</span>
-                    </div>
-                </section>
-
-                <!-- Active Queue Table -->
-                <section>
-                    <div class="flex items-center justify-between mb-4 px-1">
-                        <h2 class="text-xl font-bold text-slate-800">Processing Queue</h2>
-                        <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
-                    </div>
-
-                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                        <div class="overflow-x-auto custom-scrollbar">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hope mb-0">
+                                <thead>
                                     <tr>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="car" class="w-4 h-4"></i>
-                                                <span>Vehicle & Owner</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="coins" class="w-4 h-4"></i>
-                                                <span>Amount</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="activity" class="w-4 h-4"></i>
-                                                <span>Status</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="phone" class="w-4 h-4"></i>
-                                                <span>Contact & Review</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                <span>Service Date</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="message-circle" class="w-4 h-4"></i>
-                                                <span>Customer Reply</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4 text-right">
-                                            <div class="flex items-center gap-2 justify-end">
-                                                <i data-lucide="settings" class="w-4 h-4"></i>
-                                                <span>Action</span>
-                                            </div>
-                                        </th>
+                                        <th>Vehicle & Owner</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Contact</th>
+                                        <th>Service Date</th>
+                                        <th>Customer Reply</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
-                                <tbody id="table-body" class="divide-y divide-slate-100 bg-white">
-                                    <!-- Rows injected by JS -->
-                                </tbody>
+                                <tbody id="table-body"></tbody>
                             </table>
-                            <div id="empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
-                                <div class="bg-slate-50 p-4 rounded-full mb-4 ring-8 ring-slate-50/50"><i data-lucide="filter" class="w-8 h-8 text-slate-300"></i></div>
-                                <h3 class="text-slate-900 font-medium">No matching cases found</h3>
-                                <p class="text-slate-400 text-sm mt-1 max-w-xs">Try adjusting your search filters or import new transfers above.</p>
+                            <div id="empty-state" class="d-none text-center py-5 text-muted">
+                                <i class="fas fa-filter mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p>No matching cases found</p>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
             </div>
 
-            <!-- VIEW: VEHICLES -->
-            <div id="view-vehicles" class="hidden space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-slate-900">Vehicle Registry</h2>
-                    <div class="text-sm text-slate-500" id="vehicles-count">0 vehicles</div>
-                </div>
-
-                <!-- Search -->
-                <div class="bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200 shadow-sm">
-                    <div class="relative">
-                        <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="vehicles-search" placeholder="Search by plate or phone..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm">
+            <!-- Vehicles View -->
+            <div id="view-vehicles" class="d-none">
+                
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">Vehicle Registry</h4>
+                        <span id="vehicles-count" class="badge bg-secondary">0 vehicles</span>
                     </div>
-                </div>
+                    <div class="card-body">
+                        <input id="vehicles-search" type="text" class="form-control mb-3" placeholder="Search by plate or phone...">
 
                 <!-- Vehicles Table -->
                 <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Plate</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Phone</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Added</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Source</th>
-                                </tr>
-                            </thead>
-                            <tbody id="vehicles-table-body" class="divide-y divide-slate-200">
-                                <!-- Populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- Empty State -->
-                    <div id="vehicles-empty" class="hidden py-12 flex flex-col items-center justify-center text-slate-400">
-                        <i data-lucide="car" class="w-16 h-16 mb-4 opacity-30"></i>
-                        <p class="text-sm font-medium">No vehicles found</p>
-                    </div>
-                </div>
-
-                <!-- Pagination -->
-                <div class="flex items-center justify-between bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200 shadow-sm">
-                    <div class="text-sm text-slate-600" id="vehicles-page-info">
-                        Showing <span id="vehicles-showing-start">0</span>-<span id="vehicles-showing-end">0</span> of <span id="vehicles-total">0</span>
-                    </div>
-                    <div class="flex gap-2" id="vehicles-pagination">
-                        <!-- Pagination buttons populated by JavaScript -->
+                        <div class="table-responsive">
+                            <table class="table table-hope mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Plate</th>
+                                        <th>Phone</th>
+                                        <th>Added</th>
+                                        <th>Source</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vehicles-table-body"></tbody>
+                            </table>
+                            <div id="vehicles-empty" class="d-none text-center py-5 text-muted">
+                                <i class="fas fa-car mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p>No vehicles found</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted" id="vehicles-page-info">
+                                Showing <span id="vehicles-showing-start">0</span>-<span id="vehicles-showing-start">0</span> of <span id="vehicles-total">0</span>
+                            </small>
+                            <div id="vehicles-pagination"></div>
+                        </div>
                     </div>
                 </div>
+                
             </div>
-
-            <!-- VIEW: REVIEWS -->
-            <!-- VIEW: TEMPLATES (Moved to templates.php) -->
-            <!-- VIEW: USERS (Moved to users.php) -->
-
-        </main>
+            
+        </div>
+        
     </div>
-
-    <!-- Notification Prompt (Banner) -->
-    <div id="notification-prompt" class="hidden fixed top-24 right-4 z-50 max-w-sm w-full bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 animate-in slide-in-from-right-10 fade-in duration-500">
-        <div class="flex items-start gap-4">
-            <div class="bg-primary-50 p-3 rounded-xl">
-                <i data-lucide="bell-ring" class="w-6 h-6 text-primary-600"></i>
-            </div>
-            <div class="flex-1">
-                <h3 class="font-bold text-slate-800 text-sm">Enable Notifications</h3>
-                <p class="text-xs text-slate-500 mt-1 leading-relaxed">Don't miss out! Get instant alerts when new transfers or messages arrive.</p>
-                <div class="mt-3 flex gap-2">
-                    <button onclick="window.enableNotifications()" class="flex-1 bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 transition-all shadow-sm">Allow</button>
-                    <button onclick="document.getElementById('notification-prompt').remove()" class="px-3 py-2 text-slate-400 hover:text-slate-600 text-xs font-medium transition-colors">Later</button>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- Edit Modal -->
+    <div class="modal fade" id="edit-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-title">Edit Transfer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-content">
+                    <!-- Content injected by JavaScript -->
                 </div>
             </div>
-            <button onclick="document.getElementById('notification-prompt').remove()" class="text-slate-300 hover:text-slate-500"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
     </div>
+    
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        const API_URL = 'api.php';
+        const USER_ROLE = '<?php echo $current_user_role; ?>';
+        const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
+        let transfers = [];
+        let vehicles = [];
+        window.currentEditingId = null;
+        let parsedImportData = [];
+        let currentView = 'dashboard';
+        
+        // Toggle Sidebar
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-mini');
+        }
+        
+        // Switch View
+        function switchView(view) {
+            currentView = view;
+            document.getElementById('view-dashboard').classList.toggle('d-none', view !== 'dashboard');
+            document.getElementById('view-vehicles').classList.toggle('d-none', view !== 'vehicles');
+            
+            // Update active nav
+            document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            if (event && event.target) {
+                event.target.closest('.nav-link').classList.add('active');
+            }
+            
+            if (view === 'vehicles') {
+                renderVehicles();
+            }
+        }
+        
+        // Toast notification function
+        function showToast(title, message = '', type = 'success') {
+            const container = document.getElementById('toast-container');
+            const colors = {
+                success: 'bg-success',
+                error: 'bg-danger',
+                info: 'bg-info',
+            };
+            const bgColor = colors[type] || colors.info;
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-custom show`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="toast-header ${bgColor}">
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close" onclick="this.closest('.toast').remove()"></button>
+                </div>
+                ${message ? `<div class="toast-body">${message}</div>` : ''}
+            `;
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 4000);
+        }
+        
+        // API helper
+        async function fetchAPI(action, method = 'GET', body = null) {
+            const opts = { method };
+            if (body) {
+                opts.body = JSON.stringify(body);
+                opts.headers = { 'Content-Type': 'application/json' };
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}?action=${action}`, opts);
+                return await res.json();
+            } catch (e) {
+                console.error('API Error:', e);
+                showToast('Connection Error', e.message, 'error');
+                throw e;
+            }
+        }
+        
+        // Load data
+        async function loadData() {
+            try {
+                const response = await fetchAPI('get_transfers');
+                if (response.transfers && response.vehicles) {
+                    transfers = response.transfers;
+                    vehicles = response.vehicles;
+                } else if (Array.isArray(response)) {
+                    transfers = response;
+                    const vehiclesResponse = await fetchAPI('get_vehicles');
+                    vehicles = vehiclesResponse || [];
+                }
+                renderTable();
+                document.getElementById('loading-overlay').classList.add('hidden');
+            } catch (e) {
+                console.error('Load data error:', e);
+                document.getElementById('loading-overlay').classList.add('hidden');
+            }
+        }
+        
+        // Render table
+        function renderTable() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const replyFilter = document.getElementById('reply-filter').value;
+            
+            const newGrid = document.getElementById('new-cases-grid');
+            const tbody = document.getElementById('table-body');
+            newGrid.innerHTML = '';
+            tbody.innerHTML = '';
+            
+            let newCount = 0;
+            let activeCount = 0;
+            
+            const statusBadgeMap = {
+                'New': 'badge-new',
+                'Processing': 'badge-processing',
+                'Called': 'badge-called',
+                'Parts Ordered': 'badge-parts-ordered',
+                'Parts Arrived': 'badge-parts-arrived',
+                'Scheduled': 'badge-scheduled',
+                'Completed': 'badge-completed',
+                'Issue': 'badge-issue'
+            };
 
-    <!-- Premium Edit Modal -->
-    <div id="edit-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
-        <!-- Enhanced Backdrop with Animation -->
-        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeModal()"></div>
+            transfers.forEach(t => {
+                const match = (t.plate + t.name + (t.phone || '')).toLowerCase().includes(search);
+                if (!match) return;
+                if (statusFilter !== 'All' && t.status !== statusFilter) return;
+                if (replyFilter !== 'All') {
+                    if (replyFilter === 'Pending' && t.user_response && t.user_response !== 'Pending') return;
+                    if (replyFilter !== 'Pending' && t.user_response !== replyFilter) return;
+                }
 
-        <!-- Fullscreen Dialog Container -->
-        <div class="fixed inset-0 flex items-stretch p-0 sm:p-2 md:p-4 lg:p-6">
-            <div class="relative flex-1 flex flex-col rounded-none sm:rounded-2xl lg:rounded-3xl bg-gradient-to-br from-white to-slate-50 text-left shadow-2xl shadow-blue-900/30 transition-all border-0 sm:border sm:border-slate-200/50 ring-0 sm:ring-1 sm:ring-white/50 w-full h-full">
-                
-                <!-- Premium Header with Enhanced Gradient - Fixed -->
+                const dateStr = new Date(t.created_at || Date.now()).toLocaleDateString('en-GB', { 
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                });
+
+                if (t.status === 'New') {
+                    newCount++;
+                    newGrid.innerHTML += `
+                        <div class="col-md-4">
+                            <div class="card cursor-pointer" onclick="window.openEditModal(${t.id})">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <span class="badge ${statusBadgeMap[t.status]}">${t.status}</span>
+                                        <small class="text-muted">${dateStr}</small>
+                                    </div>
+                                    <h5 class="fw-bold mb-2">${t.plate}</h5>
+                                    <p class="text-muted mb-2">${t.name}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold" style="color: var(--bs-primary);">${t.amount} ₾</span>
+                                        ${t.phone ? `<small class="text-muted">${t.phone}</small>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    activeCount++;
+                    tbody.innerHTML += `
+                        <tr class="cursor-pointer" onclick="window.openEditModal(${t.id})">
+                            <td>
+                                <div class="fw-bold">${t.plate}</div>
+                                <small class="text-muted">${t.name}</small>
+                            </td>
+                            <td>${t.amount} ₾</td>
+                            <td><span class="badge ${statusBadgeMap[t.status]}">${t.status}</span></td>
+                            <td>${t.phone || 'N/A'}</td>
+                            <td><small>${t.service_date || 'N/A'}</small></td>
+                            <td><small>${t.user_response || 'Pending'}</small></td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); window.openEditModal(${t.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            document.getElementById('new-count').textContent = `(${newCount})`;
+            document.getElementById('record-count').textContent = `${activeCount} active`;
+            document.getElementById('new-cases-empty').classList.toggle('d-none', newCount > 0);
+            document.getElementById('empty-state').classList.toggle('d-none', activeCount > 0);
+        }
+        
+        // Simplified modal open
+        window.openEditModal = (id) => {
+            const t = transfers.find(i => i.id == id);
+            if (!t) return;
+            
+            document.getElementById('modal-title').textContent = `${t.plate} - ${t.name}`;
+            document.getElementById('modal-content').innerHTML = `
+                <div class="mb-3">
+                    <p><strong>Status:</strong> ${t.status}</p>
+                    <p><strong>Amount:</strong> ${t.amount} ₾</p>
+                    <p><strong>Phone:</strong> ${t.phone || 'N/A'}</p>
+                    <p><strong>Service Date:</strong> ${t.service_date || 'N/A'}</p>
+                    <p><strong>Customer Response:</strong> ${t.user_response || 'Pending'}</p>
+                </div>
+                ${CAN_EDIT ? '<button class="btn btn-primary">Save Changes</button>' : ''}
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('edit-modal'));
+            modal.show();
+        };
+        
+        // Parse bank text (placeholder)
+        window.parseBankText = () => {
+            const text = document.getElementById('import-text').value;
+            if (!text) return;
+            
+            // Simple parsing logic
+            parsedImportData = [{
+                plate: 'AA123BB',
+                name: 'Sample Customer',
+                amount: '1234.00',
+                franchise: '273.97'
+            }];
+            
+            document.getElementById('parsed-result').classList.remove('d-none');
+            document.getElementById('parsed-placeholder').classList.add('d-none');
+            document.getElementById('parsed-content').innerHTML = parsedImportData.map(i => 
+                `<div class="alert alert-success mb-2">
+                    <strong>${i.plate}</strong> - ${i.name} - ${i.amount} ₾
+                </div>`
+            ).join('');
+        };
+        
+        window.saveParsedImport = async () => {
+            for (let data of parsedImportData) {
+                await fetchAPI('add_transfer', 'POST', data);
+            }
+            document.getElementById('import-text').value = '';
+            document.getElementById('parsed-result').classList.add('d-none');
+            document.getElementById('parsed-placeholder').classList.remove('d-none');
+            loadData();
+            showToast('Import Successful', `${parsedImportData.length} orders imported`);
+        };
+        
+        window.openManualCreateModal = () => {
+            showToast('Feature Coming Soon', 'Manual create modal will be implemented', 'info');
+        };
+        
+        // Render vehicles (placeholder)
+        function renderVehicles() {
+            const tbody = document.getElementById('vehicles-table-body');
+            tbody.innerHTML = vehicles.map(v => `
+                <tr>
+                    <td class="fw-bold">${v.plate}</td>
+                    <td>${v.phone || 'N/A'}</td>
+                    <td><small class="text-muted">${new Date(v.created_at || Date.now()).toLocaleDateString()}</small></td>
+                    <td><span class="badge bg-secondary">${v.source || 'Manual'}</span></td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('vehicles-count').textContent = `${vehicles.length} vehicles`;
+            document.getElementById('vehicles-empty').classList.toggle('d-none', vehicles.length > 0);
+        }
+        
+        // Event listeners
+        document.getElementById('search-input').addEventListener('input', renderTable);
+        document.getElementById('status-filter').addEventListener('change', renderTable);
+        document.getElementById('reply-filter').addEventListener('change', renderTable);
+        document.getElementById('vehicles-search')?.addEventListener('input', renderVehicles);
+        
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>
                 <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 flex justify-between items-center shadow-2xl shrink-0">
                     <!-- Decorative Background Pattern -->
                     <div class="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>

@@ -77,92 +77,256 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - OTOMOTORS Manager Portal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Login - OTOMOTORS Manager Portal | Hope UI</title>
+    
+    <!-- Bootstrap 5.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bs-primary: #573BFF;
+            --bs-success: #17904b;
+            --bs-danger: #FF6171;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-card {
+            max-width: 450px;
+            width: 100%;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, var(--bs-primary) 0%, #8662FF 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .login-icon i {
+            font-size: 2.5rem;
+        }
+        
+        .login-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem;
+        }
+        
+        .login-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .login-body {
+            padding: 2.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #1E2139;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            padding: 0.9rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 0.2rem rgba(87, 59, 255, 0.15);
+        }
+        
+        .input-group-text {
+            background: transparent;
+            border: 2px solid #e0e0e0;
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+            color: #7C8DB0;
+        }
+        
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+        }
+        
+        .input-group .form-control:focus {
+            border-left: none;
+        }
+        
+        .input-group:focus-within .input-group-text {
+            border-color: var(--bs-primary);
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, var(--bs-primary) 0%, #8662FF 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 0.9rem 2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(87, 59, 255, 0.4);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .alert-danger {
+            background: rgba(255, 97, 113, 0.1);
+            color: var(--bs-danger);
+        }
+        
+        .login-footer {
+            text-align: center;
+            padding: 1.5rem 2.5rem 2.5rem;
+            color: #7C8DB0;
+            font-size: 0.85rem;
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
-                <div class="flex items-center justify-center mb-4">
-                    <i data-lucide="shield-check" class="w-16 h-16"></i>
-                </div>
-                <h1 class="text-3xl font-bold text-center">OTOMOTORS</h1>
-                <p class="text-center text-blue-100 mt-2">Manager Portal</p>
+<body>
+    
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-icon">
+                <i class="fas fa-shield-halved"></i>
             </div>
-            
-            <div class="p-8">
-                <?php if ($error): ?>
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-                        <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
-                        <span><?php echo htmlspecialchars($error); ?></span>
-                    </div>
-                <?php endif; ?>
-                
-                <form method="POST" action="" class="space-y-6">
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
-                            </div>
-                            <input 
-                                type="text" 
-                                id="username" 
-                                name="username" 
-                                required
-                                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                                placeholder="Enter your username"
-                                autofocus
-                            >
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="lock" class="w-5 h-5 text-gray-400"></i>
-                            </div>
-                            <input 
-                                type="password" 
-                                id="password" 
-                                name="password" 
-                                required
-                                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                                placeholder="Enter your password"
-                            >
-                        </div>
-                    </div>
-                    
-                    <button 
-                        type="submit"
-                        class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
-                    >
-                        <span>Sign In</span>
-                        <i data-lucide="log-in" class="w-5 h-5"></i>
-                    </button>
-                </form>
-                
-                <div class="mt-6 text-center text-sm text-gray-500">
-                    <p>Default credentials: <strong>admin</strong> / <strong>admin123</strong></p>
-                </div>
-            </div>
+            <h1 class="login-title">OTOMOTORS</h1>
+            <p class="login-subtitle">Manager Portal Access</p>
         </div>
         
-        <div class="text-center mt-6 text-gray-600 text-sm">
-            <p>© 2025 OTOMOTORS. All rights reserved.</p>
+        <div class="login-body">
+            <?php if ($error): ?>
+            <div class="alert alert-danger mb-4" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+            <?php endif; ?>
+            
+            <form method="POST" action="">
+                <div class="mb-4">
+                    <label for="username" class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="username" 
+                            name="username" 
+                            placeholder="Enter your username"
+                            required 
+                            autofocus
+                            autocomplete="username"
+                        >
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input 
+                            type="password" 
+                            class="form-control" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                        >
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-login">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Sign In
+                </button>
+            </form>
+        </div>
+        
+        <div class="login-footer">
+            <p class="mb-0">
+                <i class="fas fa-copyright me-1"></i>
+                <?php echo date('Y'); ?> OTOMOTORS. Secure Access Portal.
+            </p>
         </div>
     </div>
     
-    <script>
-        lucide.createIcons();
-    </script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
