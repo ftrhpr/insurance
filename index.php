@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once 'session_config.php';
 
 // Redirect to login if not authenticated
 if (!isset($_SESSION['user_id'])) {
@@ -994,8 +994,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         let parsedImportData = [];
         const currentUser = { uid: "manager", name: "Manager" }; 
 
-        // Helper
-        const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+        // Helper - Enhanced plate normalization
+        const normalizePlate = (p) => {
+            if (!p) return '';
+            // Normalize Georgian characters (ა-ჰ), Latin, and numbers (including full-width)
+            // Remove RTL marks, zero-width spaces, and special characters
+            return p
+                .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E]/g, '') // Remove invisible chars
+                .normalize('NFKC') // Normalize full-width to ASCII
+                .replace(/[^a-zA-Z0-9ა-ჰ]/gi, '') // Keep Latin, Georgian, numbers
+                .toUpperCase();
+        };
 
         // --- API HELPERS ---
         const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
@@ -1100,19 +1109,34 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 // Squelch load errors to prevent loop spam, alert user once via status
             }
 
-            document.getElementById('loading-screen').classList.add('opacity-0', 'pointer-events-none');
+            const loadingScreen = document.getElementById('loading-screen');
+            const appContent = document.getElementById('app-content');
+            
+            loadingScreen?.classList.add('opacity-0', 'pointer-events-none');
             setTimeout(() => {
-                document.getElementById('loading-screen').classList.add('hidden');
-                document.getElementById('app-content').classList.remove('hidden');
+                loadingScreen?.classList.add('hidden');
+                appContent?.classList.remove('hidden');
             }, 500);
         }
 
         // Poll for updates every 10 seconds
-        setInterval(loadData, 10000);
+        let pollInterval = setInterval(loadData, 10000);
+        
+        // Cleanup function for page unload
+        window.addEventListener('beforeunload', () => {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        });
 
         // Premium Toast Notifications
         function showToast(title, message = '', type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
+            if (!container) {
+                console.error('Toast container not found');
+                return;
+            }
             
             // Handle legacy calls
             if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
@@ -1183,11 +1207,27 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             });
 
             // Auto Dismiss (unless persistent/urgent)
+            let dismissTimeout, removeTimeout;
             if (duration > 0 && type !== 'urgent') {
-                setTimeout(() => {
+                dismissTimeout = setTimeout(() => {
                     toast.classList.add('translate-y-4', 'opacity-0');
-                    setTimeout(() => toast.remove(), 500);
+                    removeTimeout = setTimeout(() => {
+                        toast.remove();
+                        // Clean up timeout references
+                        dismissTimeout = null;
+                        removeTimeout = null;
+                    }, 500);
                 }, duration);
+            }
+            
+            // Add cleanup to manual close button
+            const closeBtn = toast.querySelector('button');
+            if (closeBtn) {
+                closeBtn.onclick = () => {
+                    if (dismissTimeout) clearTimeout(dismissTimeout);
+                    if (removeTimeout) clearTimeout(removeTimeout);
+                    toast.remove();
+                };
             }
         }
 
@@ -1224,11 +1264,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         function renderVehicles(page = 1) {
             if (!vehicles || vehicles.length === 0) {
-                document.getElementById('vehicles-table-body').innerHTML = '';
-                document.getElementById('vehicles-empty').classList.remove('hidden');
-                document.getElementById('vehicles-count').textContent = '0 vehicles';
-                document.getElementById('vehicles-page-info').classList.add('hidden');
-                document.getElementById('vehicles-pagination').innerHTML = '';
+                const tbody = document.getElementById('vehicles-table-body');
+                const emptyState = document.getElementById('vehicles-empty');
+                const countEl = document.getElementById('vehicles-count');
+                const pageInfo = document.getElementById('vehicles-page-info');
+                const pagination = document.getElementById('vehicles-pagination');
+                
+                if (tbody) tbody.innerHTML = '';
+                emptyState?.classList.remove('hidden');
+                if (countEl) countEl.textContent = '0 vehicles';
+                pageInfo?.classList.add('hidden');
+                if (pagination) pagination.innerHTML = '';
                 return;
             }
 
@@ -1258,15 +1304,20 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const pageVehicles = filtered.slice(startIndex, endIndex);
 
             // Update count
-            document.getElementById('vehicles-count').textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
+            const countEl = document.getElementById('vehicles-count');
+            if (countEl) countEl.textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
 
             // Render table
             const tbody = document.getElementById('vehicles-table-body');
+            const emptyState = document.getElementById('vehicles-empty');
+            
+            if (!tbody) return; // Critical element missing
+            
             if (pageVehicles.length === 0) {
                 tbody.innerHTML = '';
-                document.getElementById('vehicles-empty').classList.remove('hidden');
+                emptyState?.classList.remove('hidden');
             } else {
-                document.getElementById('vehicles-empty').classList.add('hidden');
+                emptyState?.classList.add('hidden');
                 tbody.innerHTML = pageVehicles.map(v => {
                     const addedDate = v.created_at ? new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
                     const source = v.source || 'Manual';
@@ -1275,13 +1326,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-2">
                                     <i data-lucide="car" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="font-mono font-bold text-slate-900">${v.plate || 'N/A'}</span>
+                                    <span class="font-mono font-bold text-slate-900">${escapeHtml(v.plate || 'N/A')}</span>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-2">
                                     <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="text-slate-700">${v.phone || 'N/A'}</span>
+                                    <span class="text-slate-700">${escapeHtml(v.phone || 'N/A')}</span>
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-slate-600 text-sm">${addedDate}</td>
@@ -1296,13 +1347,20 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
 
             // Update pagination info
+            const pageInfo = document.getElementById('vehicles-page-info');
+            
             if (totalVehicles > 0) {
-                document.getElementById('vehicles-page-info').classList.remove('hidden');
-                document.getElementById('vehicles-showing-start').textContent = startIndex + 1;
-                document.getElementById('vehicles-showing-end').textContent = endIndex;
-                document.getElementById('vehicles-total').textContent = totalVehicles;
+                pageInfo?.classList.remove('hidden');
+                
+                const showingStart = document.getElementById('vehicles-showing-start');
+                const showingEnd = document.getElementById('vehicles-showing-end');
+                const totalEl = document.getElementById('vehicles-total');
+                
+                if (showingStart) showingStart.textContent = startIndex + 1;
+                if (showingEnd) showingEnd.textContent = endIndex;
+                if (totalEl) totalEl.textContent = totalVehicles;
             } else {
-                document.getElementById('vehicles-page-info').classList.add('hidden');
+                pageInfo?.classList.add('hidden');
             }
 
             // Render pagination buttons
@@ -1314,6 +1372,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         function renderVehiclesPagination(totalPages) {
             const container = document.getElementById('vehicles-pagination');
+            if (!container) return;
+            
             if (totalPages <= 1) {
                 container.innerHTML = '';
                 return;
@@ -1386,16 +1446,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (window.lucide) lucide.createIcons();
         }
 
-        // Search handler for vehicles
-        document.addEventListener('DOMContentLoaded', () => {
-            const vehiclesSearch = document.getElementById('vehicles-search');
-            if (vehiclesSearch) {
-                vehiclesSearch.addEventListener('input', () => {
-                    currentVehiclesPage = 1; // Reset to first page on search
-                    renderVehicles(1);
-                });
-            }
-        });
+        // Search handler for vehicles (initialized at bottom with other listeners)
 
         // --- SMS TEMPLATE LOGIC (Template editing moved to templates.php) ---
         const defaultTemplates = {
@@ -1438,14 +1489,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '');
         }
 
-        // Notification Prompt & Load Templates
-        document.addEventListener('DOMContentLoaded', () => {
-            if ('Notification' in window && Notification.permission === 'default') {
-                const prompt = document.getElementById('notification-prompt');
-                if(prompt) setTimeout(() => prompt.classList.remove('hidden'), 2000);
-            }
-            loadSMSTemplates(); // Load templates from API on start
-        });
+        // Notification Prompt & Load Templates (initialized at bottom)
+
+        // --- HTML ESCAPING FUNCTION ---
+        const escapeHtml = (text) => {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        };
 
         // --- TRANSFERS ---
         window.parseBankText = () => {
@@ -1478,21 +1530,34 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         const fMatch = line.match(franchiseRegex);
                         if(fMatch) franchise = fMatch[1];
 
-                        parsedImportData.push({ 
-                            plate: plate.trim(), 
-                            name: name.trim(), 
-                            amount: amount.trim(), 
-                            franchise: franchise,
-                            rawText: line 
-                        });
+                        // Validate parsed numbers before adding
+                        const amountNum = parseFloat(amount);
+                        const franchiseNum = parseFloat(franchise || '0');
+                        
+                        // Only add if amounts are valid and within bounds
+                        if (isFinite(amountNum) && amountNum > 0 && amountNum <= 999999999 &&
+                            isFinite(franchiseNum) && franchiseNum >= 0 && franchiseNum <= 999999999) {
+                            parsedImportData.push({ 
+                                plate: plate.trim().substring(0, 20), // Limit plate length
+                                name: name.trim().substring(0, 100),  // Limit name length
+                                amount: amountNum.toFixed(2),  // Format to 2 decimals
+                                franchise: franchiseNum.toFixed(2),
+                                rawText: line 
+                            });
+                        }
                         break;
                     }
                 }
             });
 
             if(parsedImportData.length > 0) {
-                document.getElementById('parsed-result').classList.remove('hidden');
-                document.getElementById('parsed-placeholder').classList.add('hidden');
+                const parsedResult = document.getElementById('parsed-result');
+                const parsedPlaceholder = document.getElementById('parsed-placeholder');
+                const parsedContent = document.getElementById('parsed-content');
+                const saveBtn = document.getElementById('btn-save-import');
+                
+                parsedResult?.classList.remove('hidden');
+                parsedPlaceholder?.classList.add('hidden');
                 
                 // Escape HTML to prevent XSS
                 const escapeHtml = (text) => {
@@ -1501,7 +1566,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     return div.innerHTML;
                 };
                 
-                document.getElementById('parsed-content').innerHTML = parsedImportData.map(i => 
+                if (parsedContent) {
+                    parsedContent.innerHTML = parsedImportData.map(i => 
                     `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
                         <div class="flex items-center gap-2">
                             <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
@@ -1510,9 +1576,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                         <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
                     </div>`
-                ).join('');
-                document.getElementById('btn-save-import').innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
-                lucide.createIcons();
+                    ).join('');
+                }
+                if (saveBtn) saveBtn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
+                if (window.lucide) lucide.createIcons();
             } else {
                 showToast("No matches found", "Could not parse any transfers from the text", "error");
             }
@@ -1520,7 +1587,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         window.saveParsedImport = async () => {
             const btn = document.getElementById('btn-save-import');
-            btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
+            if (!btn) return;
+            
+            btn.disabled = true; 
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
             
             let successCount = 0;
             let failCount = 0;
@@ -1545,7 +1615,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             if(MANAGER_PHONE && successCount > 0) {
                 const msg = `System Alert: ${successCount} new transfer(s) added to OTOMOTORS portal.`;
-                window.sendSMS(MANAGER_PHONE, msg, 'system');
+                window.sendSMS(MANAGER_PHONE, msg, 'system').catch(err => console.error('Failed to send SMS:', err));
             }
             
             if (successCount > 0) {
@@ -1555,10 +1625,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 });
             }
 
-            document.getElementById('import-text').value = '';
-            document.getElementById('parsed-result').classList.add('hidden');
-            document.getElementById('parsed-placeholder').classList.remove('hidden');
-            loadData();
+            const importText = document.getElementById('import-text');
+            const parsedResult = document.getElementById('parsed-result');
+            const parsedPlaceholder = document.getElementById('parsed-placeholder');
+            
+            if (importText) importText.value = '';
+            parsedResult?.classList.add('hidden');
+            parsedPlaceholder?.classList.remove('hidden');
+            loadData().catch(err => console.error('Failed to reload data:', err));
             
             if (failCount > 0) {
                 showToast("Import Completed with Errors", `${successCount} succeeded, ${failCount} failed`, "error");
@@ -1572,13 +1646,24 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         function renderTable() {
-            const search = document.getElementById('search-input').value.toLowerCase();
-            const filter = document.getElementById('status-filter').value;
-            const replyFilter = document.getElementById('reply-filter').value;
+            const searchInput = document.getElementById('search-input');
+            const statusFilter = document.getElementById('status-filter');
+            const replyFilterEl = document.getElementById('reply-filter');
+            
+            const search = searchInput?.value.toLowerCase() || '';
+            const filter = statusFilter?.value || 'All';
+            const replyFilter = replyFilterEl?.value || 'All';
             
             const newContainer = document.getElementById('new-cases-grid');
             const activeContainer = document.getElementById('table-body');
-            newContainer.innerHTML = ''; activeContainer.innerHTML = '';
+            
+            if (!newContainer || !activeContainer) {
+                console.error('Required table containers not found');
+                return;
+            }
+            
+            newContainer.innerHTML = ''; 
+            activeContainer.innerHTML = '';
             
             let newCount = 0;
             let activeCount = 0;
@@ -1619,16 +1704,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <span class="bg-primary-50 text-primary-700 border border-primary-100 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1 w-fit"><i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}</span>
                                     <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
                                 </div>
-                                <span class="text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">${t.amount} ₾</span>
+                                <span class="text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">${escapeHtml(t.amount)} ₾</span>
                             </div>
                             <div class="pl-3 mb-5">
-                                <h3 class="font-bold text-lg text-slate-800">${t.plate}</h3>
-                                <p class="text-xs text-slate-500 font-medium">${t.name}</p>
-                                ${displayPhone ? `<div class="flex items-center gap-1.5 mt-2 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${displayPhone}</div>` : ''}
-                                ${t.franchise ? `<p class="text-[10px] text-orange-500 mt-1">Franchise: ${t.franchise}</p>` : ''}
+                                <h3 class="font-bold text-lg text-slate-800">${escapeHtml(t.plate)}</h3>
+                                <p class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</p>
+                                ${displayPhone ? `<div class="flex items-center gap-1.5 mt-2 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(displayPhone)}</div>` : ''}
+                                ${t.franchise ? `<p class="text-[10px] text-orange-500 mt-1">Franchise: ${escapeHtml(t.franchise)}</p>` : ''}
                             </div>
                             <div class="pl-3 text-right">
-                                <button onclick="window.openEditModal(${t.id})" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 ml-auto group-hover:bg-primary-50">
+                                <button class="btn-process-case bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 ml-auto group-hover:bg-primary-50" data-transfer-id="${t.id}">
                                     Process Case <i data-lucide="arrow-right" class="w-3 h-3"></i>
                                 </button>
                             </div>
@@ -1648,7 +1733,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     const badgeClass = statusColors[t.status] || 'bg-slate-100 text-slate-600 border-slate-200';
                     
                     const hasPhone = t.phone ? 
-                        `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${t.phone}</span>` : 
+                        `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(t.phone)}</span>` : 
                         `<span class="text-red-400 text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Missing</span>`;
                     
                     // USER RESPONSE LOGIC
@@ -1687,18 +1772,22 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>`;
                     }
                     
-                    // Review stars display
+                    // Review stars display with bounds checking
                     let reviewDisplay = '';
                     if (t.reviewStars && t.reviewStars > 0) {
-                        const stars = '⭐'.repeat(parseInt(t.reviewStars));
-                        reviewDisplay = `<div class="flex items-center gap-1 mt-1">
-                            <span class="text-xs">${stars}</span>
-                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
-                        </div>`;
+                        const starCount = parseInt(t.reviewStars) || 0;
+                        // Validate star count to prevent RangeError and excessive memory usage
+                        if (starCount >= 1 && starCount <= 5) {
+                            const stars = '⭐'.repeat(starCount);
+                            reviewDisplay = `<div class="flex items-center gap-1 mt-1">
+                                <span class="text-xs">${stars}</span>
+                                ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
+                            </div>`;
+                        }
                     }
 
                     activeContainer.innerHTML += `
-                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.openEditModal(${t.id})">
+                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" data-transfer-id="${t.id}">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all">
@@ -1706,16 +1795,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     </div>
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-1">
-                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${t.plate}</span>
+                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(t.plate)}</span>
                                             <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
                                         </div>
-                                        <div class="font-semibold text-xs text-slate-700">${t.name}</div>
+                                        <div class="font-semibold text-xs text-slate-700">${escapeHtml(t.name)}</div>
                                         <div class="flex items-center gap-2 mt-1 flex-wrap">
                                             <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                                                 <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
                                             </span>
                                             ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${t.franchise}₾
+                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
                                             </span>` : ''}
                                         </div>
                                     </div>
@@ -1724,7 +1813,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-2">
                                     <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
-                                    <span class="font-bold text-emerald-600 text-base">${t.amount}₾</span>
+                                    <span class="font-bold text-emerald-600 text-base">${escapeHtml(t.amount)}₾</span>
                                 </div>
                             </td>
                             <td class="px-5 py-4">
@@ -1743,12 +1832,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <td class="px-5 py-4">
                                 ${replyBadge}
                             </td>
-                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                            <td class="px-5 py-4 text-right">
                                 ${CAN_EDIT ? 
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2.5 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95 group-hover:bg-white">
+                                    `<button class="btn-edit-transfer text-slate-400 hover:text-primary-600 p-2.5 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95 group-hover:bg-white" data-transfer-id="${t.id}">
                                         <i data-lucide="edit-2" class="w-4 h-4"></i>
                                     </button>` :
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-blue-600 p-2.5 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
+                                    `<button class="btn-edit-transfer text-slate-400 hover:text-blue-600 p-2.5 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" data-transfer-id="${t.id}" title="View Only">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </button>`
                                 }
@@ -1757,43 +1846,69 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
             });
 
-            document.getElementById('new-count').innerText = `${newCount}`;
-            document.getElementById('record-count').innerText = `${activeCount} active`;
-            document.getElementById('new-cases-empty').classList.toggle('hidden', newCount > 0);
-            document.getElementById('empty-state').classList.toggle('hidden', activeCount > 0);
-            lucide.createIcons();
+            const newCountEl = document.getElementById('new-count');
+            const recordCountEl = document.getElementById('record-count');
+            const newCasesEmpty = document.getElementById('new-cases-empty');
+            const emptyState = document.getElementById('empty-state');
+            
+            if (newCountEl) newCountEl.innerText = `${newCount}`;
+            if (recordCountEl) recordCountEl.innerText = `${activeCount} active`;
+            newCasesEmpty?.classList.toggle('hidden', newCount > 0);
+            emptyState?.classList.toggle('hidden', activeCount > 0);
+            
+            if (window.lucide) lucide.createIcons();
         }
 
         window.openEditModal = (id) => {
+            if (!transfers || !Array.isArray(transfers)) {
+                console.error('Transfers array not available');
+                return;
+            }
+            
             const t = transfers.find(i => i.id == id);
-            if(!t) return;
+            if (!t) {
+                console.warn(`Transfer with id ${id} not found`);
+                return;
+            }
             window.currentEditingId = id; // Ensure global scope assignment
             
             // Auto-fill phone from registry if missing in transfer
             const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
             const phoneToFill = t.phone || (linkedVehicle ? linkedVehicle.phone : '');
 
-            document.getElementById('modal-title-ref').innerText = t.plate;
-            document.getElementById('modal-title-name').innerText = t.name;
-            document.getElementById('modal-order-id').innerText = `#${t.id}`;
-            document.getElementById('modal-amount').innerText = t.amount || '0';
-            document.getElementById('input-phone').value = phoneToFill;
-            document.getElementById('input-service-date').value = t.serviceDate ? t.serviceDate.replace(' ', 'T') : ''; 
-            document.getElementById('input-franchise').value = t.franchise || '';
-            document.getElementById('input-status').value = t.status;
+            const modalTitleRef = document.getElementById('modal-title-ref');
+            const modalTitleName = document.getElementById('modal-title-name');
+            const modalOrderId = document.getElementById('modal-order-id');
+            const modalAmount = document.getElementById('modal-amount');
+            const inputPhone = document.getElementById('input-phone');
+            const inputServiceDate = document.getElementById('input-service-date');
+            const inputFranchise = document.getElementById('input-franchise');
+            const inputStatus = document.getElementById('input-status');
+            
+            if (modalTitleRef) modalTitleRef.innerText = t.plate || '';
+            if (modalTitleName) modalTitleName.innerText = t.name || '';
+            if (modalOrderId) modalOrderId.innerText = `#${t.id}`;
+            if (modalAmount) modalAmount.innerText = t.amount || '0';
+            if (inputPhone) inputPhone.value = phoneToFill;
+            if (inputServiceDate) inputServiceDate.value = t.serviceDate ? t.serviceDate.replace(' ', 'T') : ''; 
+            if (inputFranchise) inputFranchise.value = t.franchise || '';
+            if (inputStatus) inputStatus.value = t.status || 'New';
             
             // Format and display created date
-            if (t.created_at) {
-                const createdDate = new Date(t.created_at);
-                document.getElementById('modal-created-date').innerText = createdDate.toLocaleString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric',
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            } else {
-                document.getElementById('modal-created-date').innerText = 'N/A';
+            const modalCreatedDate = document.getElementById('modal-created-date');
+            if (modalCreatedDate) {
+                if (t.created_at) {
+                    const createdDate = new Date(t.created_at);
+                    modalCreatedDate.innerText = createdDate.toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                } else {
+                    modalCreatedDate.innerText = 'N/A';
+                }
             }
             
             document.getElementById('btn-call-real').href = t.phone ? `tel:${t.phone}` : '#';
@@ -1807,7 +1922,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     serviceDate: document.getElementById('input-service-date').value 
                 };
                 const msg = getFormattedMessage('registered', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'registered');
+                window.sendSMS(document.getElementById('input-phone').value, msg, 'registered')
+                    .catch(err => console.error('Failed to send SMS:', err));
             };
 
             document.getElementById('btn-sms-arrived').onclick = () => {
@@ -1820,9 +1936,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     plate: t.plate, 
                     amount: t.amount, 
                     serviceDate: date 
-                };
                 const msg = getFormattedMessage('parts_arrived', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived');
+                window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived')
+                    .catch(err => console.error('Failed to send SMS:', err));
+            };  window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived');
             };
 
             document.getElementById('btn-sms-schedule').onclick = () => {
@@ -1842,66 +1959,103 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             const logHTML = (t.systemLogs || []).map(l => `
                 <div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600">
-                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>
-                    ${l.message}
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp?.split('T')[0] || ''}</div>
+                    ${escapeHtml(l.message)}
                 </div>`).join('');
-            document.getElementById('activity-log-container').innerHTML = logHTML || '<div class="text-center py-4"><span class="italic text-slate-300 text-xs">No system activity recorded</span></div>';
+            
+            const activityLogContainer = document.getElementById('activity-log-container');
+            if (activityLogContainer) {
+                activityLogContainer.innerHTML = logHTML || '<div class="text-center py-4"><span class="italic text-slate-300 text-xs">No system activity recorded</span></div>';
+            }
             
             const noteHTML = (t.internalNotes || []).map(n => `
                 <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3">
-                    <p class="text-sm text-slate-700">${n.text}</p>
-                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${n.authorName}</span></div>
+                    <p class="text-sm text-slate-700">${escapeHtml(n.text || '')}</p>
+                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName || '')}</span></div>
                 </div>`).join('');
-            document.getElementById('notes-list').innerHTML = noteHTML || '<div class="h-full flex items-center justify-center text-slate-400 text-xs italic">No team notes yet</div>';
+            
+            const notesList = document.getElementById('notes-list');
+            if (notesList) {
+                notesList.innerHTML = noteHTML || '<div class="h-full flex items-center justify-center text-slate-400 text-xs italic">No team notes yet</div>';
+            }
 
             // Display customer review if exists
             const reviewSection = document.getElementById('modal-review-section');
-            if (t.reviewStars && t.reviewStars > 0) {
-                reviewSection.classList.remove('hidden');
-                document.getElementById('modal-review-rating').innerText = t.reviewStars;
-                
-                // Render stars
-                const starsHTML = Array(5).fill(0).map((_, i) => 
-                    `<i data-lucide="star" class="w-5 h-5 ${i < t.reviewStars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}"></i>`
-                ).join('');
-                document.getElementById('modal-review-stars').innerHTML = starsHTML;
-                
-                // Display comment
-                const comment = t.reviewComment || 'No comment provided';
-                document.getElementById('modal-review-comment').innerText = comment;
-            } else {
-                reviewSection.classList.add('hidden');
+            if (reviewSection) {
+                const starCount = parseInt(t.reviewStars) || 0;
+                // Validate star count (1-5 range)
+                if (starCount >= 1 && starCount <= 5) {
+                    reviewSection.classList.remove('hidden');
+                    
+                    const reviewRating = document.getElementById('modal-review-rating');
+                    if (reviewRating) reviewRating.innerText = starCount;
+                    
+                    // Render stars with validated count
+                    const starsHTML = Array(5).fill(0).map((_, i) => 
+                        `<i data-lucide="star" class="w-5 h-5 ${i < starCount ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}"></i>`
+                    ).join('');
+                    
+                    const reviewStars = document.getElementById('modal-review-stars');
+                    if (reviewStars) reviewStars.innerHTML = starsHTML;
+                    
+                    // Display comment
+                    const comment = t.reviewComment || 'No comment provided';
+                    const reviewComment = document.getElementById('modal-review-comment');
+                    if (reviewComment) reviewComment.innerText = comment;
+                } else {
+                    reviewSection.classList.add('hidden');
+                }
             }
 
             // Display reschedule request if exists
             const rescheduleSection = document.getElementById('modal-reschedule-section');
-            if (t.userResponse === 'Reschedule Requested' && (t.rescheduleDate || t.rescheduleComment)) {
-                rescheduleSection.classList.remove('hidden');
-                
-                if (t.rescheduleDate) {
-                    const requestedDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                    document.getElementById('modal-reschedule-date').innerText = requestedDate.toLocaleString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                    });
+            if (rescheduleSection) {
+                if (t.userResponse === 'Reschedule Requested' && (t.rescheduleDate || t.rescheduleComment)) {
+                    const rescheduleDateEl = document.getElementById('modal-reschedule-date');
+                    if (rescheduleDateEl) {
+                        if (t.rescheduleDate) {
+                            // Validate date string before parsing
+                            const dateStr = String(t.rescheduleDate).replace(' ', 'T');
+                            const requestedDate = new Date(dateStr);
+                            
+                            // Check if date is valid
+                            if (!isNaN(requestedDate.getTime())) {
+                                rescheduleDateEl.innerText = requestedDate.toLocaleString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric', 
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit'
+                                });
+                            } else {
+                                rescheduleDateEl.innerText = 'Invalid date format';
+                            }
+                        } else {
+                            rescheduleDateEl.innerText = 'Not specified';
+                        }
+                    }       rescheduleDateEl.innerText = 'Not specified';
+                        }
+                    }
+                    
+                    const rescheduleComment = t.rescheduleComment || 'No additional comments';
+                    const rescheduleCommentEl = document.getElementById('modal-reschedule-comment');
+                    if (rescheduleCommentEl) rescheduleCommentEl.innerText = rescheduleComment;
                 } else {
-                    document.getElementById('modal-reschedule-date').innerText = 'Not specified';
+                    rescheduleSection.classList.add('hidden');
                 }
-                
-                const rescheduleComment = t.rescheduleComment || 'No additional comments';
-                document.getElementById('modal-reschedule-comment').innerText = rescheduleComment;
-            } else {
-                rescheduleSection.classList.add('hidden');
             }
 
-            document.getElementById('edit-modal').classList.remove('hidden');
-            lucide.createIcons();
+            const editModal = document.getElementById('edit-modal');
+            if (editModal) editModal.classList.remove('hidden');
+            
+            if (window.lucide) lucide.createIcons();
         };
 
-        window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
+        window.closeModal = () => { 
+            const editModal = document.getElementById('edit-modal');
+            if (editModal) editModal.classList.add('hidden'); 
+            window.currentEditingId = null; 
+        };
 
         // Manual Create Modal Functions
         window.openManualCreateModal = async () => {
@@ -1912,24 +2066,36 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
             
             const modal = document.getElementById('manual-create-modal');
+            if (!modal) return;
+            
             modal.classList.remove('hidden');
             
-            // Clear all inputs
-            document.getElementById('manual-plate').value = '';
-            document.getElementById('manual-name').value = '';
-            document.getElementById('manual-phone').value = '';
-            document.getElementById('manual-amount').value = '';
-            document.getElementById('manual-franchise').value = '';
-            document.getElementById('manual-status').value = 'New';
-            document.getElementById('manual-notes').value = '';
-            lucide.createIcons();
+            // Clear all inputs with null checks
+            const plateInput = document.getElementById('manual-plate');
+            const nameInput = document.getElementById('manual-name');
+            const phoneInput = document.getElementById('manual-phone');
+            const amountInput = document.getElementById('manual-amount');
+            const franchiseInput = document.getElementById('manual-franchise');
+            const statusInput = document.getElementById('manual-status');
+            const notesInput = document.getElementById('manual-notes');
+            
+            if (plateInput) plateInput.value = '';
+            if (nameInput) nameInput.value = '';
+            if (phoneInput) phoneInput.value = '';
+            if (amountInput) amountInput.value = '';
+            if (franchiseInput) franchiseInput.value = '';
+            if (statusInput) statusInput.value = 'New';
+            if (notesInput) notesInput.value = '';
+            
+            if (window.lucide) lucide.createIcons();
             
             // Focus on first input
-            setTimeout(() => document.getElementById('manual-plate').focus(), 100);
+            setTimeout(() => plateInput?.focus(), 100);
         };
 
         window.closeManualCreateModal = () => {
-            document.getElementById('manual-create-modal').classList.add('hidden');
+            const modal = document.getElementById('manual-create-modal');
+            if (modal) modal.classList.add('hidden');
         };
 
         window.saveManualOrder = async () => {
@@ -1939,33 +2105,76 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 return;
             }
             
-            const plate = document.getElementById('manual-plate').value.trim();
-            const name = document.getElementById('manual-name').value.trim();
-            const phone = document.getElementById('manual-phone').value.trim();
-            const amount = parseFloat(document.getElementById('manual-amount').value) || 0;
-            const franchise = parseFloat(document.getElementById('manual-franchise').value) || 0;
-            const status = document.getElementById('manual-status').value;
-            const notes = document.getElementById('manual-notes').value.trim();
+            const plateInput = document.getElementById('manual-plate');
+            const nameInput = document.getElementById('manual-name');
+            const phoneInput = document.getElementById('manual-phone');
+            const amountInput = document.getElementById('manual-amount');
+            const franchiseInput = document.getElementById('manual-franchise');
+            const statusInput = document.getElementById('manual-status');
+            const notesInput = document.getElementById('manual-notes');
+            
+            if (!plateInput || !nameInput || !phoneInput || !amountInput) {
+                showToast('Error', 'Required form fields not found', 'error');
+                return;
+            }
+            
+            // Remove zero-width spaces and other invisible Unicode characters from text inputs
+            const cleanText = (text) => text.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '').trim();
+            
+            const plate = cleanText(plateInput.value);
+            const name = cleanText(nameInput.value);
+            const phone = phoneInput.value.trim();
+            
+            // Parse numbers with validation
+            const amountRaw = parseFloat(amountInput.value);
+            const franchiseRaw = parseFloat(franchiseInput?.value || '0');
+            
+            // Handle -0, Infinity, NaN, and apply bounds
+            const amount = (amountRaw && isFinite(amountRaw) && Object.is(amountRaw, -0) === false) ? amountRaw : 0;
+            const franchise = (franchiseRaw && isFinite(franchiseRaw)) ? franchiseRaw : 0;
+            
+            const status = statusInput?.value || 'New';
+            const notes = notesInput?.value ? cleanText(notesInput.value) : '';
 
             // Validation
-            if (!plate) {
+            if (!plate || plate.length === 0) {
                 showToast('Validation Error', 'Vehicle plate number is required', 'error');
-                document.getElementById('manual-plate').focus();
+                plateInput?.focus();
                 return;
             }
-            if (!name) {
+            if (plate.length > 20) {
+                showToast('Validation Error', 'Plate number too long (max 20 characters)', 'error');
+                plateInput?.focus();
+                return;
+            }
+            if (!name || name.length === 0) {
                 showToast('Validation Error', 'Customer name is required', 'error');
-                document.getElementById('manual-name').focus();
+                nameInput?.focus();
                 return;
             }
-            if (isNaN(amount) || amount <= 0) {
-                showToast('Validation Error', 'Amount must be a valid number greater than 0', 'error');
-                document.getElementById('manual-amount').focus();
+            if (name.length > 100) {
+                showToast('Validation Error', 'Name too long (max 100 characters)', 'error');
+                nameInput?.focus();
                 return;
             }
-            if (franchise < 0) {
-                showToast('Validation Error', 'Franchise cannot be negative', 'error');
-                document.getElementById('manual-franchise').focus();
+            if (phone && !/^[0-9+\-\s()]{7,20}$/.test(phone)) {
+                showToast('Validation Error', 'Invalid phone number format', 'error');
+                phoneInput?.focus();
+                return;
+            }
+            if (amount <= 0 || amount > 999999999) {
+                showToast('Validation Error', 'Amount must be between 0.01 and 999,999,999', 'error');
+                amountInput?.focus();
+                return;
+            }
+            if (amount < 0.01) {
+                showToast('Validation Error', 'Amount must be at least 0.01', 'error');
+                amountInput?.focus();
+                return;
+            }
+            if (franchise < 0 || franchise > 999999999) {
+                showToast('Validation Error', 'Franchise must be between 0 and 999,999,999', 'error');
+                franchiseInput?.focus();
                 return;
             }
 
@@ -1998,7 +2207,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     window.closeManualCreateModal();
                     
                     // Refresh the table
-                    await loadData();
+                    await loadData().catch(err => console.error('Failed to reload data:', err));
                     
                     // Open the newly created order
                     if (result.id) {
@@ -2050,22 +2259,24 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 return showToast("Scheduling Required", "Please select a service date to save 'Parts Arrived' status.", "error");
             }
 
+            const franchiseInput = document.getElementById('input-franchise');
+            
             const updates = {
                 status,
                 phone,
                 serviceDate: serviceDate || null,
-                franchise: document.getElementById('input-franchise').value,
+                franchise: franchiseInput?.value || t.franchise || '',
                 internalNotes: t.internalNotes || [],
                 systemLogs: t.systemLogs || []
             };
 
             // AUTO-RESCHEDULE LOGIC (Existing)
             const currentDateStr = t.serviceDate ? t.serviceDate.replace(' ', 'T').slice(0, 16) : '';
-            if (t.user_response === 'Reschedule Requested' && serviceDate && serviceDate !== currentDateStr) {
-                updates.user_response = 'Pending';
                 updates.systemLogs.push({ message: `Rescheduled to ${serviceDate.replace('T', ' ')}`, timestamp: new Date().toISOString(), type: 'info' });
                 const templateData = { id: t.id, name: t.name, plate: t.plate, amount: t.amount, serviceDate: serviceDate };
                 const msg = getFormattedMessage('rescheduled', templateData);
+                window.sendSMS(phone, msg, 'rescheduled').catch(err => console.error('Failed to send SMS:', err));
+            }   const msg = getFormattedMessage('rescheduled', templateData);
                 window.sendSMS(phone, msg, 'rescheduled');
             }
 
@@ -2080,55 +2291,56 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         plate: t.plate, 
                         amount: t.amount, 
                         serviceDate: serviceDate || t.serviceDate // Use new date if set, else old
-                    };
-
                     // 1. Processing -> Welcome SMS
                     if (status === 'Processing') {
                         const msg = getFormattedMessage('registered', templateData);
-                        window.sendSMS(phone, msg, 'welcome_sms');
+                        window.sendSMS(phone, msg, 'welcome_sms').catch(err => console.error('Failed to send SMS:', err));
                     }
                     
                     // 2. Scheduled -> Service Schedule SMS
                     else if (status === 'Scheduled') {
                         if(!serviceDate) showToast("Note", "Status set to Scheduled without a date.", "info");
                         const msg = getFormattedMessage('schedule', templateData);
-                        window.sendSMS(phone, msg, 'schedule_sms');
+                        window.sendSMS(phone, msg, 'schedule_sms').catch(err => console.error('Failed to send SMS:', err));
                     }
 
                     // 3. Contacted -> Called SMS
                     else if (status === 'Called') {
                         const msg = getFormattedMessage('called', templateData);
-                        window.sendSMS(phone, msg, 'contacted_sms');
+                        window.sendSMS(phone, msg, 'contacted_sms').catch(err => console.error('Failed to send SMS:', err));
                     }
 
                     // 4. Parts Ordered -> Parts Ordered SMS
                     else if (status === 'Parts Ordered') {
                         const msg = getFormattedMessage('parts_ordered', templateData);
-                        window.sendSMS(phone, msg, 'parts_ordered_sms');
+                        window.sendSMS(phone, msg, 'parts_ordered_sms').catch(err => console.error('Failed to send SMS:', err));
                     }
 
                     // 5. Parts Arrived -> Parts Arrived SMS
                     else if (status === 'Parts Arrived') {
                         const msg = getFormattedMessage('parts_arrived', templateData);
-                        window.sendSMS(phone, msg, 'parts_arrived_sms');
+                        window.sendSMS(phone, msg, 'parts_arrived_sms').catch(err => console.error('Failed to send SMS:', err));
                     }
 
                     // 6. Completed -> Completed SMS with review link
                     else if (status === 'Completed') {
                         const msg = getFormattedMessage('completed', templateData);
-                        window.sendSMS(phone, msg, 'completed_sms');
+                        window.sendSMS(phone, msg, 'completed_sms').catch(err => console.error('Failed to send SMS:', err));
                     }
 
                     // 7. Issue -> Issue SMS
                     else if (status === 'Issue') {
                         const msg = getFormattedMessage('issue', templateData);
+                        window.sendSMS(phone, msg, 'issue_sms').catch(err => console.error('Failed to send SMS:', err));
+                    }   const msg = getFormattedMessage('issue', templateData);
                         window.sendSMS(phone, msg, 'issue_sms');
                     }
                 }
             }
 
             if(phone) {
-                if (document.getElementById('connection-status').innerText.includes('Offline')) {
+                const connectionStatus = document.getElementById('connection-status');
+                if (connectionStatus?.innerText.includes('Offline')) {
                     const v = vehicles.find(v => v.plate === t.plate);
                     if(v) v.phone = phone;
                 } else {
@@ -2136,22 +2348,38 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
             }
 
-            if (document.getElementById('connection-status').innerText.includes('Offline')) {
-                Object.assign(t, updates);
+            const connectionStatus = document.getElementById('connection-status');
+            if (connectionStatus?.innerText.includes('Offline')) {
+                // Prototype pollution protection: only copy safe properties
+                const safeKeys = ['status', 'phone', 'serviceDate', 'franchise', 'internalNotes', 'systemLogs', 'user_response'];
+                safeKeys.forEach(key => {
+                    if (updates.hasOwnProperty(key) && key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+                        t[key] = updates[key];
+                    }
+                });
             } else {
                 await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', updates);
             }
             
-            loadData();
+            loadData().catch(err => console.error('Failed to reload data:', err));
             showToast("Changes Saved", "success");
         };
 
         window.addNote = async () => {
-            const text = document.getElementById('new-note-input').value;
-            if(!text) return;
+            const noteInput = document.getElementById('new-note-input');
+            const text = noteInput?.value;
+            if (!text) return;
+            
+            if (!transfers || !Array.isArray(transfers)) {
+                console.error('Transfers array not available');
+                return;
+            }
             const t = transfers.find(i => i.id == window.currentEditingId);
+            if (!t) return;
             const newNote = { text, authorName: 'Manager', timestamp: new Date().toISOString() };
             
+            const connectionStatus = document.getElementById('connection-status');
+            if (connectionStatus?.innerText.includes('Offline')) {
             if (document.getElementById('connection-status').innerText.includes('Offline')) {
                 if(!t.internalNotes) t.internalNotes = [];
                 t.internalNotes.push(newNote);
@@ -2161,18 +2389,22 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 t.internalNotes = notes;
             }
             
-            document.getElementById('new-note-input').value = '';
+            if (noteInput) noteInput.value = '';
             
             // Re-render notes
             const noteHTML = (t.internalNotes || []).map(n => `
                 <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3 animate-in slide-in-from-bottom-2 fade-in">
-                    <p class="text-sm text-slate-700">${n.text}</p>
-                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${n.authorName}</span></div>
+                    <p class="text-sm text-slate-700">${escapeHtml(n.text || '')}</p>
+                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName || '')}</span></div>
                 </div>`).join('');
-            document.getElementById('notes-list').innerHTML = noteHTML;
+            
+            const notesList = document.getElementById('notes-list');
+            if (notesList) notesList.innerHTML = noteHTML;
         };
 
         window.quickAcceptReschedule = async (id) => {
+            if (!transfers || !Array.isArray(transfers)) return;
+            
             const t = transfers.find(i => i.id == id);
             if (!t || !t.rescheduleDate) return;
 
@@ -2197,7 +2429,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 t.rescheduleComment = null;
                 
                 showToast("Reschedule Accepted", `Appointment updated and SMS sent to ${t.name}`, "success");
-                loadData();
+                loadData().catch(err => console.error('Failed to reload data:', err));
             } catch(e) {
                 console.error('Quick accept reschedule error:', e);
                 showToast("Error", "Failed to accept reschedule request", "error");
@@ -2252,7 +2484,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 
                 showToast("Request Declined", "Reschedule request removed", "info");
                 window.closeModal();
-                loadData();
+                loadData().catch(err => console.error('Failed to reload data:', err));
             } catch(e) {
                 console.error('Decline reschedule error:', e);
                 showToast("Error", "Failed to decline request", "error");
@@ -2271,7 +2503,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     await fetchAPI(`delete_transfer&id=${id}`, 'POST');
                 }
                 window.closeModal();
-                loadData(); 
+                loadData().catch(err => console.error('Failed to reload data:', err)); 
                 showToast("Deleted", "error");
             }
         };
@@ -2295,31 +2527,84 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     }
                     // Refresh Logs
                     const logsToRender = document.getElementById('connection-status').innerText.includes('Offline') ? t.systemLogs : [...(t.systemLogs || []), newLog];
-                    const logHTML = logsToRender.map(l => `<div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600"><div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>${l.message}</div>`).join('');
+                    const logHTML = logsToRender.map(l => `<div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600"><div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>${escapeHtml(l.message)}</div>`).join('');
                     document.getElementById('activity-log-container').innerHTML = logHTML;
                 }
                 showToast("SMS Sent", "success");
             } catch(e) { console.error(e); showToast("SMS Failed", "error"); }
         };
 
-        document.getElementById('search-input').addEventListener('input', renderTable);
-        document.getElementById('status-filter').addEventListener('change', renderTable);
-        document.getElementById('reply-filter').addEventListener('change', renderTable);
-        document.getElementById('new-note-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') window.addNote(); });
+        // Consolidate all event listeners in one place
+        document.addEventListener('DOMContentLoaded', () => {
+            // Filter and search listeners
+            document.getElementById('search-input')?.addEventListener('input', renderTable);
+            document.getElementById('status-filter')?.addEventListener('change', renderTable);
+            document.getElementById('reply-filter')?.addEventListener('change', renderTable);
+            document.getElementById('new-note-input')?.addEventListener('keypress', (e) => { 
+                if(e.key === 'Enter') window.addNote(); 
+            });
+            
+            // Vehicle search handler
+            const vehiclesSearch = document.getElementById('vehicles-search');
+            if (vehiclesSearch) {
+                vehiclesSearch.addEventListener('input', () => {
+                    currentVehiclesPage = 1;
+                    renderVehicles(1);
+                });
+            }
+            
+            // Event delegation for dynamic transfer rows
+            const tableBody = document.getElementById('table-body');
+            if (tableBody) {
+                tableBody.addEventListener('click', (e) => {
+                    const row = e.target.closest('tr[data-transfer-id]');
+                    const editBtn = e.target.closest('.btn-edit-transfer');
+                    
+                    if (editBtn) {
+                        e.stopPropagation();
+                        const id = editBtn.dataset.transferId;
+                        if (id) window.openEditModal(parseInt(id));
+                    } else if (row) {
+                        const id = row.dataset.transferId;
+                        if (id) window.openEditModal(parseInt(id));
+                    }
+                });
+            }
+            
+            // Event delegation for new cases grid
+            const newCasesGrid = document.getElementById('new-cases-grid');
+            if (newCasesGrid) {
+                newCasesGrid.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.btn-process-case');
+                    if (btn) {
+                        const id = btn.dataset.transferId;
+                        if (id) window.openEditModal(parseInt(id));
+                    }
+                });
+            }
+            
+            // Notification prompt
+            if ('Notification' in window && Notification.permission === 'default') {
+                const prompt = document.getElementById('notification-prompt');
+                if(prompt) setTimeout(() => prompt.classList.remove('hidden'), 2000);
+            }
+            
+            // Load SMS templates
+            loadSMSTemplates();
+            
+            // Ensure all modals are hidden
+            document.getElementById('edit-modal')?.classList.add('hidden');
+            
+            // Initialize data and icons
+            loadData().catch(err => {
+                console.error('Error loading initial data:', err);
+                showToast('Error', 'Failed to load data. Please refresh the page.', 'error');
+            });
+            
+            if(window.lucide) lucide.createIcons();
+        });
+        
         window.insertSample = (t) => document.getElementById('import-text').value = t;
-
-        // Ensure all modals are hidden on page load
-        document.getElementById('edit-modal')?.classList.add('hidden');
-        
-        // Initialize data and icons
-        try {
-            loadData();
-        } catch (e) {
-            console.error('Error loading initial data:', e);
-            showToast('Error', 'Failed to load data. Please refresh the page.', 'error');
-        }
-        
-        if(window.lucide) lucide.createIcons();
 
     </script>
 </body>

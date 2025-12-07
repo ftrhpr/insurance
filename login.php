@@ -1,5 +1,13 @@
 <?php
-session_start();
+// Start session with secure configuration
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_secure', 0); // Set to 1 in production with HTTPS
+    ini_set('session.use_strict_mode', 1);
+    ini_set('session.cookie_samesite', 'Lax');
+    ini_set('session.use_only_cookies', 1);
+    session_start();
+}
 
 // If already logged in, redirect to dashboard
 if (isset($_SESSION['user_id'])) {
@@ -8,6 +16,15 @@ if (isset($_SESSION['user_id'])) {
 }
 
 $error = '';
+
+// Check for session timeout or invalid session error messages
+if (isset($_GET['error'])) {
+    if ($_GET['error'] === 'timeout') {
+        $error = 'Your session has expired due to inactivity. Please log in again.';
+    } elseif ($_GET['error'] === 'session_invalid') {
+        $error = 'Session validation failed. Please log in again for security reasons.';
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once 'config.php';
@@ -44,21 +61,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userData = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($userData && password_verify($password, $userData['password'])) {
-                // Regenerate session ID to prevent session fixation attacks
-                session_regenerate_id(true);
+                // Destroy old session completely to prevent fixation
+                session_unset();
+                session_destroy();
                 
-                // Clear failed login attempts on success
-                $_SESSION['login_attempts'] = [];
+                // Start new session with new ID
+                session_start();
+                session_regenerate_id(true);
                 
                 // Update last login
                 $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
                 $updateStmt->execute([$userData['id']]);
                 
-                // Set session
+                // Set session data
                 $_SESSION['user_id'] = $userData['id'];
                 $_SESSION['username'] = $userData['username'];
                 $_SESSION['full_name'] = $userData['full_name'];
                 $_SESSION['role'] = $userData['role'];
+                $_SESSION['created'] = time();
+                $_SESSION['last_activity'] = time();
+                $_SESSION['fingerprint'] = md5($_SERVER['HTTP_USER_AGENT'] ?? '');
+                $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
                 
                 header('Location: index.php');
                 exit();
