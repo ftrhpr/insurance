@@ -36,8 +36,17 @@ if (session_status() === PHP_SESSION_NONE) {
             session_destroy();
             session_start();
             session_regenerate_id(true);
-            header('Location: login.php?error=timeout');
-            exit();
+            // If API request, return JSON error instead of redirect
+            if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], 'api.php') !== false) {
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode(['error' => 'Session timeout']);
+                exit();
+            } else {
+                header('Location: login.php?error=timeout');
+                exit();
+            }
+        }
         }
         $_SESSION['last_activity'] = time();
         
