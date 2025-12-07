@@ -2535,6 +2535,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         // Consolidate all event listeners in one place
+        // Failsafe: Hide loading screen after 5 seconds if data doesn't load
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            const appContent = document.getElementById('app-content');
+            if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+                console.warn('Loading timeout - forcing UI display');
+                loadingScreen.classList.add('opacity-0', 'pointer-events-none', 'hidden');
+                if (appContent) appContent.classList.remove('hidden');
+                showToast('Loading Issue', 'Data may not have loaded. Check browser console for errors.', 'error');
+            }
+        }, 5000);
+
         document.addEventListener('DOMContentLoaded', () => {
             // Filter and search listeners
             document.getElementById('search-input')?.addEventListener('input', renderTable);
