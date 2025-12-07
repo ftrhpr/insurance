@@ -1936,10 +1936,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     plate: t.plate, 
                     amount: t.amount, 
                     serviceDate: date 
+                };
                 const msg = getFormattedMessage('parts_arrived', templateData);
                 window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived')
                     .catch(err => console.error('Failed to send SMS:', err));
-            };  window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived');
             };
 
             document.getElementById('btn-sms-schedule').onclick = () => {
@@ -2011,6 +2011,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const rescheduleSection = document.getElementById('modal-reschedule-section');
             if (rescheduleSection) {
                 if (t.userResponse === 'Reschedule Requested' && (t.rescheduleDate || t.rescheduleComment)) {
+                    rescheduleSection.classList.remove('hidden');
+                    
                     const rescheduleDateEl = document.getElementById('modal-reschedule-date');
                     if (rescheduleDateEl) {
                         if (t.rescheduleDate) {
@@ -2032,8 +2034,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             }
                         } else {
                             rescheduleDateEl.innerText = 'Not specified';
-                        }
-                    }       rescheduleDateEl.innerText = 'Not specified';
                         }
                     }
                     
