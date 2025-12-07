@@ -31,10 +31,11 @@ set_exception_handler(function($e) {
     exit;
 });
 
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
+ini_set('display_errors', 1); // Force display errors for debugging
+ini_set('display_startup_errors', 1);
 ini_set('log_errors', 1);
 
 require_once 'session_config.php';
