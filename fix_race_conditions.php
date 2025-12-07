@@ -24,6 +24,7 @@ try {
     foreach ($tables as $table) {
         $stmt = $pdo->query("SHOW TABLE STATUS WHERE Name = '$table'");
         $info = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->closeCursor(); // Close cursor to free result set
         
         if ($info) {
             $engine = $info['Engine'];
@@ -49,11 +50,11 @@ try {
     // Check if unique constraint exists
     $stmt = $pdo->query("SHOW INDEX FROM vehicles WHERE Key_name = 'unique_plate'");
     $uniqueExists = $stmt->fetch();
+    $stmt->closeCursor(); // Close cursor to free result set
     
     if (!$uniqueExists) {
         echo "Adding UNIQUE constraint on vehicles.plate... ";
         
-        try {
             // First, check for duplicate plates
             $stmt = $pdo->query("
                 SELECT plate, COUNT(*) as count 
@@ -61,8 +62,10 @@ try {
                 GROUP BY plate 
                 HAVING count > 1
             ");
-            $duplicates = $stmt->fetchAll();
+            $duplicates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $stmt->closeCursor(); // Close cursor to free result set
             
+            if (count($duplicates) > 0) {
             if (count($duplicates) > 0) {
                 echo "\n⚠️ WARNING: Duplicate plates found:\n";
                 foreach ($duplicates as $dup) {
@@ -100,11 +103,10 @@ try {
     echo "\n";
     
     // 3. Verify transaction support
-    echo "=== VERIFYING TRANSACTION SUPPORT ===\n";
-    
     try {
         $pdo->beginTransaction();
-        $pdo->exec("SELECT 1");
+        $testStmt = $pdo->query("SELECT 1");
+        $testStmt->closeCursor(); // Close cursor
         $pdo->commit();
         echo "✓ Transactions supported and working\n";
     } catch (Exception $e) {
@@ -117,6 +119,7 @@ try {
     echo "=== TRANSACTION ISOLATION LEVEL ===\n";
     $stmt = $pdo->query("SELECT @@transaction_isolation");
     $isolation = $stmt->fetchColumn();
+    $stmt->closeCursor(); // Close cursor to free result set
     echo "Current isolation level: $isolation\n";
     
     if (strtoupper($isolation) === 'REPEATABLE-READ') {
@@ -135,12 +138,11 @@ try {
         'innodb_lock_wait_timeout' => 50,
         'max_connections' => 151,
         'innodb_buffer_pool_size' => null // Don't check (varies by server)
-    ];
-    
     foreach ($configs as $var => $recommended) {
         if ($recommended !== null) {
             $stmt = $pdo->query("SHOW VARIABLES LIKE '$var'");
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->closeCursor(); // Close cursor to free result set
             $current = $result['Value'] ?? 'N/A';
             
             echo "$var: $current";
@@ -148,6 +150,8 @@ try {
                 echo " (recommended: $recommended)";
             }
             echo "\n";
+        }
+    }       echo "\n";
         }
     }
     
