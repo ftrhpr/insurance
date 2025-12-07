@@ -55,6 +55,7 @@ try {
     if (!$uniqueExists) {
         echo "Adding UNIQUE constraint on vehicles.plate... ";
         
+        try {
             // First, check for duplicate plates
             $stmt = $pdo->query("
                 SELECT plate, COUNT(*) as count 
@@ -65,7 +66,6 @@ try {
             $duplicates = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $stmt->closeCursor(); // Close cursor to free result set
             
-            if (count($duplicates) > 0) {
             if (count($duplicates) > 0) {
                 echo "\n⚠️ WARNING: Duplicate plates found:\n";
                 foreach ($duplicates as $dup) {
@@ -138,6 +138,8 @@ try {
         'innodb_lock_wait_timeout' => 50,
         'max_connections' => 151,
         'innodb_buffer_pool_size' => null // Don't check (varies by server)
+    ];
+    
     foreach ($configs as $var => $recommended) {
         if ($recommended !== null) {
             $stmt = $pdo->query("SHOW VARIABLES LIKE '$var'");
@@ -150,8 +152,6 @@ try {
                 echo " (recommended: $recommended)";
             }
             echo "\n";
-        }
-    }       echo "\n";
         }
     }
     
