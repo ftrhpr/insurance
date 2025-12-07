@@ -2380,7 +2380,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             const connectionStatus = document.getElementById('connection-status');
             if (connectionStatus?.innerText.includes('Offline')) {
-            if (document.getElementById('connection-status').innerText.includes('Offline')) {
                 if(!t.internalNotes) t.internalNotes = [];
                 t.internalNotes.push(newNote);
             } else {
