@@ -2272,12 +2272,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             // AUTO-RESCHEDULE LOGIC (Existing)
             const currentDateStr = t.serviceDate ? t.serviceDate.replace(' ', 'T').slice(0, 16) : '';
+            if (currentDateStr && serviceDate && currentDateStr !== serviceDate) {
                 updates.systemLogs.push({ message: `Rescheduled to ${serviceDate.replace('T', ' ')}`, timestamp: new Date().toISOString(), type: 'info' });
                 const templateData = { id: t.id, name: t.name, plate: t.plate, amount: t.amount, serviceDate: serviceDate };
                 const msg = getFormattedMessage('rescheduled', templateData);
                 window.sendSMS(phone, msg, 'rescheduled').catch(err => console.error('Failed to send SMS:', err));
-            }   const msg = getFormattedMessage('rescheduled', templateData);
-                window.sendSMS(phone, msg, 'rescheduled');
             }
 
             // --- NEW AUTOMATED SMS LOGIC ---
@@ -2291,6 +2290,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         plate: t.plate, 
                         amount: t.amount, 
                         serviceDate: serviceDate || t.serviceDate // Use new date if set, else old
+                    };
+                    
                     // 1. Processing -> Welcome SMS
                     if (status === 'Processing') {
                         const msg = getFormattedMessage('registered', templateData);
