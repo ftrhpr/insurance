@@ -18,7 +18,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>OTOMOTORS Manager Portal</title>
+    <title>OTOMOTORS Manager Portal v<?php echo time(); ?></title>
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
