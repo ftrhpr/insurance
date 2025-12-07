@@ -943,10 +943,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </div>
 
     <script>
+        console.log('[INIT] Script starting...');
         const API_URL = 'api.php';
         const MANAGER_PHONE = "511144486";
         const USER_ROLE = '<?php echo $current_user_role; ?>';
         const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
+        console.log('[INIT] Constants loaded, USER_ROLE:', USER_ROLE);
         
         // 1. FIREBASE CONFIG (REPLACE WITH YOURS)
         const firebaseConfig = {
@@ -2336,8 +2338,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     else if (status === 'Issue') {
                         const msg = getFormattedMessage('issue', templateData);
                         window.sendSMS(phone, msg, 'issue_sms').catch(err => console.error('Failed to send SMS:', err));
-                    }   const msg = getFormattedMessage('issue', templateData);
-                        window.sendSMS(phone, msg, 'issue_sms');
                     }
                 }
             }
