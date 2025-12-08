@@ -585,6 +585,9 @@ try {
     if ($action === 'save_templates' && $method === 'POST') {
         $data = getJsonInput();
 
+        // Debug: log incoming payload to help diagnose 500 errors
+        error_log('save_templates payload: ' . json_encode($data));
+
         // Validate input data
         if (empty($data) || !is_array($data)) {
             http_response_code(400);
@@ -595,13 +598,15 @@ try {
         try {
             $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (:slug, :content) ON DUPLICATE KEY UPDATE content = :content");
             foreach ($data as $slug => $content) {
+                // Log each insert attempt for debugging
+                error_log("save_templates inserting slug={$slug} len=" . strlen($content));
                 $stmt->execute([':slug' => $slug, ':content' => $content]);
             }
             jsonResponse(['status' => 'saved']);
         } catch (Exception $e) {
             error_log("Database error in save_templates: " . $e->getMessage());
             http_response_code(500);
-            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+            jsonResponse(['message' => 'Database error: ' . $e->getMessage(), 'error' => true]);
         }
     }
 
