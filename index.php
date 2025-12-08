@@ -1468,7 +1468,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
                 /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
                 /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
-                /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.*?),\s*([\d\.]+)(?:\s*\(ფრანშიზა\s*([\d\.]+)\))?/i,
+                /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.*?)[\s,]*([\d\.]+)(?:\s*\(ფრანშიზა\s*([\d\.]+)\))?/i,
                 // Ardi insurance: "სახ. ნომ AA123BC 507.40"
                 /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
                 // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10"
