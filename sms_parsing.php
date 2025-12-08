@@ -44,6 +44,36 @@ try {
     if ($templateCount == 0) {
         $sampleTemplates = [
             [
+                'name' => 'Transfer Format',
+                'insurance_company' => 'Generic Transfer',
+                'template_pattern' => 'Transfer from [NAME], Plate: [PLATE], Amt: [AMOUNT]',
+                'field_mappings' => json_encode([
+                    ['field' => 'name', 'pattern' => 'Transfer from', 'description' => 'Customer name after "Transfer from"'],
+                    ['field' => 'plate', 'pattern' => 'Plate:', 'description' => 'Plate number after "Plate:"'],
+                    ['field' => 'amount', 'pattern' => 'Amt:', 'description' => 'Amount after "Amt:"']
+                ])
+            ],
+            [
+                'name' => 'Insurance Pay Format',
+                'insurance_company' => 'Generic Insurance',
+                'template_pattern' => 'INSURANCE PAY | [PLATE] | [NAME] | [AMOUNT]',
+                'field_mappings' => json_encode([
+                    ['field' => 'plate', 'pattern' => 'INSURANCE PAY |', 'description' => 'Plate number after INSURANCE PAY |'],
+                    ['field' => 'name', 'pattern' => '|', 'description' => 'Customer name between pipes'],
+                    ['field' => 'amount', 'pattern' => '|', 'description' => 'Amount after last pipe']
+                ])
+            ],
+            [
+                'name' => 'User Format',
+                'insurance_company' => 'Generic User',
+                'template_pattern' => 'User: [NAME] Car: [PLATE] Sum: [AMOUNT]',
+                'field_mappings' => json_encode([
+                    ['field' => 'name', 'pattern' => 'User:', 'description' => 'Customer name after "User:"'],
+                    ['field' => 'plate', 'pattern' => 'Car:', 'description' => 'Plate number after "Car:"'],
+                    ['field' => 'amount', 'pattern' => 'Sum:', 'description' => 'Amount after "Sum:"']
+                ])
+            ],
+            [
                 'name' => 'Aldagi Standard',
                 'insurance_company' => 'Aldagi Insurance',
                 'template_pattern' => 'მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT]',
@@ -210,9 +240,18 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                     <p class="font-medium mb-1">How SMS Parsing Works:</p>
                     <ul class="list-disc list-inside space-y-1 text-blue-700">
                         <li>Each template defines how to extract data from SMS messages from a specific insurance company</li>
-                        <li>Field mappings use patterns to locate data in the SMS text (e.g., "მანქანის ნომერი:" for plate numbers)</li>
+                        <li>Field mappings use patterns to locate data in the SMS text</li>
                         <li>The system automatically matches incoming SMS against these templates</li>
-                        <li>Sample templates for Aldagi, Ardi, and Imedi L are created automatically</li>
+                        <li><strong>Supported formats include:</strong></li>
+                        <ul class="list-disc list-inside ml-4 space-y-1">
+                            <li><code class="bg-blue-100 px-1 rounded">Transfer from [NAME], Plate: [PLATE], Amt: [AMOUNT]</code></li>
+                            <li><code class="bg-blue-100 px-1 rounded">INSURANCE PAY | [PLATE] | [NAME] | [AMOUNT]</code></li>
+                            <li><code class="bg-blue-100 px-1 rounded">User: [NAME] Car: [PLATE] Sum: [AMOUNT]</code></li>
+                            <li><code class="bg-blue-100 px-1 rounded">მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT]</code> (Aldagi)</li>
+                            <li><code class="bg-blue-100 px-1 rounded">სახ. ნომ [PLATE] [AMOUNT]</code> (Ardi)</li>
+                            <li><code class="bg-blue-100 px-1 rounded">[MAKE] ([PLATE]) [AMOUNT]</code> (Imedi L)</li>
+                        </ul>
+                        <li>Sample templates for all formats are created automatically</li>
                     </ul>
                 </div>
             </div>
