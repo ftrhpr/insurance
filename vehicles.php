@@ -7,18 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-require_once 'language.php';
-
-// Simple language function for vehicles
-function __($key, $default = '') {
-    $fallbacks = [
-        'vehicles.title' => 'Vehicle Registry',
-        'vehicles.add_vehicle' => 'Add Vehicle',
-        'vehicles.plate' => 'Plate Number'
-    ];
-    return $fallbacks[$key] ?? $default ?: $key;
-}
-
 // Include database configuration
 require_once 'config.php';
 
@@ -48,7 +36,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('vehicles.title', 'Vehicles'); ?> - OTOMOTORS</title>
+    <title>Customer DB - OTOMOTORS</title>
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -125,12 +113,12 @@ try {
             <!-- Header -->
             <div class="flex justify-between items-center">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800"><?php echo __('vehicles.title', 'Vehicles'); ?></h2>
-                    <p class="text-slate-500 text-sm"><?php echo __('vehicles.description', 'Manage customer vehicles and their service records.'); ?></p>
+                    <h2 class="text-2xl font-bold text-slate-800">Customer Database</h2>
+                    <p class="text-slate-500 text-sm">Centralized database of all customers, vehicles and service history.</p>
                 </div>
                 <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
                 <button onclick="window.openVehicleModal()" class="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg active:scale-95 transition-all">
-                    <i data-lucide="plus" class="w-4 h-4"></i> <?php echo __('vehicles.add_customer', 'Add Customer'); ?>
+                    <i data-lucide="plus" class="w-4 h-4"></i> Add Customer
                 </button>
                 <?php endif; ?>
             </div>
@@ -141,7 +129,7 @@ try {
                     <!-- Search -->
                     <div class="flex-1 flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5">
                         <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
-                        <input id="vehicle-search" type="text" placeholder="<?php echo __('vehicles.search_placeholder', 'Search vehicles...'); ?>" class="w-full bg-transparent outline-none text-sm ml-3">
+                        <input id="vehicle-search" type="text" placeholder="Search by plate, owner or model..." class="w-full bg-transparent outline-none text-sm ml-3">
                     </div>
                     
                     <!-- Status Filter -->
@@ -149,7 +137,7 @@ try {
                         <div class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5 min-w-[200px]">
                             <i data-lucide="filter" class="w-5 h-5 text-slate-400"></i>
                             <select id="status-filter" class="w-full bg-transparent outline-none text-sm ml-3 cursor-pointer">
-                                <option value=""><?php echo __('vehicles.all_status', 'All Status'); ?></option>
+                                <option value="">All Status</option>
                                 <option value="New">New</option>
                                 <option value="Processing">Processing</option>
                                 <option value="Called">Called</option>

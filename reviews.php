@@ -7,18 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-require_once 'language.php';
-
-// Simple language function for reviews
-function __($key, $default = '') {
-    $fallbacks = [
-        'reviews.title' => 'Customer Reviews',
-        'reviews.approve' => 'Approve',
-        'reviews.reject' => 'Reject'
-    ];
-    return $fallbacks[$key] ?? $default ?: $key;
-}
-
 // Include database configuration
 require_once 'config.php';
 
@@ -53,7 +41,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('reviews.title', 'Customer Reviews'); ?> - OTOMOTORS</title>
+    <title>Customer Reviews - OTOMOTORS</title>
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,7 +111,7 @@ try {
             <!-- Header -->
             <div class="flex justify-between items-center">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800"><?php echo __('reviews.title', 'Customer Reviews'); ?></h2>
+                    <h2 class="text-2xl font-bold text-slate-800">Customer Reviews</h2>
                     <p class="text-slate-500 text-sm">Manage and approve customer feedback.</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -132,7 +120,7 @@ try {
                         <span id="avg-rating"><?php echo $avg_rating; ?></span>
                     </div>
                     <div class="bg-white border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600">
-                        <span id="total-reviews"><?php echo $total; ?></span> <?php echo __('reviews.total_reviews', 'Total Reviews'); ?>
+                        <span id="total-reviews"><?php echo $total; ?></span> Total Reviews
                     </div>
                 </div>
             </div>
@@ -140,16 +128,16 @@ try {
             <!-- Filter Tabs -->
             <div class="bg-white rounded-2xl border border-slate-200 p-2 flex gap-2">
                 <button onclick="window.filterReviews('all')" id="filter-all" class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 text-white transition-all">
-                    <?php echo __('reviews.all_reviews', 'All Reviews'); ?>
+                    All Reviews
                 </button>
                 <button onclick="window.filterReviews('pending')" id="filter-pending" class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
-                    <?php echo __('reviews.pending', 'Pending'); ?> <span id="pending-count" class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs ml-1">0</span>
+                    Pending <span id="pending-count" class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs ml-1">0</span>
                 </button>
                 <button onclick="window.filterReviews('approved')" id="filter-approved" class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
-                    <?php echo __('reviews.approved', 'Approved'); ?>
+                    Approved
                 </button>
                 <button onclick="window.filterReviews('rejected')" id="filter-rejected" class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
-                    <?php echo __('reviews.rejected', 'Rejected'); ?>
+                    Rejected
                 </button>
             </div>
 
