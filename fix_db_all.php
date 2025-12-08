@@ -144,6 +144,45 @@ try {
     echo " - Table structure verified.\n";
 
     // ---------------------------------------------------------
+    // 4.7. TABLE: bank_templates (Bank Statement Parsing Templates)
+    // ---------------------------------------------------------
+    echo "\nChecking table 'bank_templates'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS bank_templates (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        regex_pattern TEXT NOT NULL,
+        field_order VARCHAR(255) NOT NULL COMMENT 'Comma-separated: plate,name,amount,franchise',
+        description TEXT,
+        active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_active (active),
+        INDEX idx_name (name)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
+    // Insert default templates if table is empty
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM bank_templates");
+    $result = $stmt->fetch();
+    if ($result['count'] == 0) {
+        $defaultTemplates = [
+            ['name' => 'Transfer from', 'regex_pattern' => '/Transfer from ([\\w\\s]+), Plate: ([\\w\\d]+), Amt: (\\d+)/i', 'field_order' => 'name,plate,amount', 'description' => 'Standard transfer format'],
+            ['name' => 'Insurance Pay', 'regex_pattern' => '/INSURANCE PAY \\| ([\\w\\d]+) \\| ([\\w\\s]+) \\| (\\d+)/i', 'field_order' => 'plate,name,amount', 'description' => 'Insurance payment format'],
+            ['name' => 'User Car Sum', 'regex_pattern' => '/User: ([\\w\\s]+) Car: ([\\w\\d]+) Sum: ([\\w\\d\\.]+)/i', 'field_order' => 'name,plate,amount', 'description' => 'User car sum format'],
+            ['name' => 'Aldagi Georgian', 'regex_pattern' => '/მანქანის ნომერი:\\s*([A-Za-z0-9]+)\\s*დამზღვევი:\\s*(.*?)[\\s,]*([\\d\\.]+)(?:\\s*\\(ფრანშიზა\\s*([\\d\\.]+)\\))?/i', 'field_order' => 'plate,name,amount,franchise', 'description' => 'Aldagi insurance Georgian format'],
+            ['name' => 'Ardi Insurance', 'regex_pattern' => '/სახ\\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\\d\\.,]+)/i', 'field_order' => 'plate,amount', 'description' => 'Ardi insurance format'],
+            ['name' => 'Imedi L Insurance', 'regex_pattern' => '/([A-Z\\s\\-]+)\\s*\\(([A-Za-z0-9]+)\\)\\s*([\\d\\.,]+)/i', 'field_order' => 'name,plate,amount', 'description' => 'Imedi L insurance format']
+        ];
+        
+        $stmt = $pdo->prepare("INSERT INTO bank_templates (name, regex_pattern, field_order, description) VALUES (?, ?, ?, ?)");
+        foreach ($defaultTemplates as $tpl) {
+            $stmt->execute([$tpl['name'], $tpl['regex_pattern'], $tpl['field_order'], $tpl['description']]);
+        }
+        echo " - Default bank templates inserted.\n";
+    }
+
+    // ---------------------------------------------------------
     // 5. TABLE: customer_reviews
     // ---------------------------------------------------------
     echo "\nChecking table 'customer_reviews'...\n";

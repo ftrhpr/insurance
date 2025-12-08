@@ -11,6 +11,26 @@ require_once 'language.php';
 
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
+
+// Database connection for bank templates
+require_once 'config.php';
+$bankTemplates = [];
+try {
+    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $stmt = $pdo->query("SELECT * FROM bank_templates WHERE active = 1 ORDER BY name");
+    $bankTemplates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Fallback to hardcoded templates if database fails
+    $bankTemplates = [
+        ['name' => 'Transfer from', 'regex_pattern' => '/Transfer from ([\\w\\s]+), Plate: ([\\w\\d]+), Amt: (\\d+)/i', 'field_order' => 'name,plate,amount'],
+        ['name' => 'Insurance Pay', 'regex_pattern' => '/INSURANCE PAY \\| ([\\w\\d]+) \\| ([\\w\\s]+) \\| (\\d+)/i', 'field_order' => 'plate,name,amount'],
+        ['name' => 'User Car Sum', 'regex_pattern' => '/User: ([\\w\\s]+) Car: ([\\w\\d]+) Sum: ([\\w\\d\\.]+)/i', 'field_order' => 'name,plate,amount'],
+        ['name' => 'Aldagi Georgian', 'regex_pattern' => '/მანქანის ნომერი:\\s*([A-Za-z0-9]+)\\s*დამზღვევი:\\s*(.*?)[\s,]*([\\d\\.]+)(?:\\s*\\(ფრანშიზა\\s*([\\d\\.]+)\\))?/i', 'field_order' => 'plate,name,amount,franchise'],
+        ['name' => 'Ardi Insurance', 'regex_pattern' => '/სახ\\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\\d\\.,]+)/i', 'field_order' => 'plate,amount'],
+        ['name' => 'Imedi L Insurance', 'regex_pattern' => '/([A-Z\\s\\-]+)\\s*\\(([A-Za-z0-9]+)\\)\\s*([\\d\\.,]+)/i', 'field_order' => 'name,plate,amount']
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1463,50 +1483,54 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const lines = text.split(/\r?\n/);
             parsedImportData = [];
             
-            // Patterns
-            const regexes = [
-                /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
-                /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
-                /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
-                /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.*?)[\s,]*([\d\.]+)(?:\s*\(ფრანშიზა\s*([\d\.]+)\))?/i,
-                // Ardi insurance: "სახ. ნომ AA123BC 507.40"
-                /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
-                // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10"
-                /([A-Z\s\-]+)\s*\(([A-Za-z0-9]+)\)\s*([\d\.,]+)/i
-            ];
+            // Load templates from PHP
+            const templates = <?php echo json_encode($bankTemplates); ?>;
             
             const franchiseRegex = /\(ფრანშიზა\s*([\d\.]+)\)/i;
 
             lines.forEach(line => {
                 let franchise = '';
-                for(let r of regexes) {
-                    const m = line.match(r);
-                    if(m) {
-                        let plate, name, amount;
-                        if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                        else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                        else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                        else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; } // Ardi insurance
-                        else if(r.source.includes('(') && r.source.includes(')')) { plate=m[2]; amount=m[3]; name='imedi L Customer'; } // imedi L insurance
-                        else if(r.source.includes('მანქანის ნომერი')) {
-                            plate = m[1]; name = m[2].trim(); amount = m[3];
-                            franchise = m[4] ? m[4] : '';
+                for(let template of templates) {
+                    try {
+                        const regex = new RegExp(template.regex_pattern);
+                        const m = line.match(regex);
+                        if(m) {
+                            let plate = '', name = '', amount = '';
+                            const fields = template.field_order.split(',');
+                            
+                            // Map capture groups to fields
+                            for(let i = 0; i < fields.length && i < m.length - 1; i++) {
+                                const field = fields[i].trim();
+                                const value = m[i + 1] ? m[i + 1].trim() : '';
+                                
+                                if(field === 'plate') plate = value;
+                                else if(field === 'name') name = value;
+                                else if(field === 'amount') amount = value;
+                                else if(field === 'franchise') franchise = value;
+                            }
+                            
+                            // Special handling for templates without name
+                            if(!name && template.name.includes('Ardi')) name = 'Ardi Customer';
+                            if(!name && template.name.includes('Imedi L')) name = 'Imedi L Customer';
+                            
+                            // If no franchise from template, try fallback
+                            if(!franchise) {
+                                const fMatch = line.match(franchiseRegex);
+                                if(fMatch) franchise = fMatch[1];
+                            }
+                            
+                            parsedImportData.push({ 
+                                plate: plate, 
+                                name: name, 
+                                amount: amount, 
+                                franchise: franchise,
+                                rawText: line,
+                                template: template.name
+                            });
+                            break;
                         }
-                        else { plate=m[1]; name=m[2]; amount=m[3]; } 
-                        
-                        // If Aldagi regex didn't match franchise, try fallback
-                        if(!franchise) {
-                            const fMatch = line.match(franchiseRegex);
-                            if(fMatch) franchise = fMatch[1];
-                        }
-                        parsedImportData.push({ 
-                            plate: plate.trim(), 
-                            name: name.trim(), 
-                            amount: amount.trim(), 
-                            franchise: franchise,
-                            rawText: line 
-                        });
-                        break;
+                    } catch(e) {
+                        console.error('Invalid regex in template:', template.name, e);
                     }
                 }
             });
@@ -1524,12 +1548,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 
                 document.getElementById('parsed-content').innerHTML = parsedImportData.map(i => 
                     `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-1">
                             <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
-                            <span class="text-slate-500">${escapeHtml(i.name)}</span>
+                            <span class="text-slate-500 flex-1">${escapeHtml(i.name)}</span>
+                            <span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-xs">${escapeHtml(i.template || 'Unknown')}</span>
                             ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${escapeHtml(i.franchise)}</span>` : ''}
                         </div>
-                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
+                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded ml-2">${escapeHtml(i.amount)} ₾</div>
                     </div>`
                 ).join('');
                 document.getElementById('btn-save-import').innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
