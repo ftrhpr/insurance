@@ -23,22 +23,23 @@ if ($_SESSION['role'] !== 'admin') {
     exit();
 }
 
-// ...existing code...
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Main Content -->
-    <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-slate-800"><?php echo __('users.user_accounts', 'User Accounts'); ?></h2>
-            <button onclick="window.openCreateUserModal()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
-                <i data-lucide="user-plus" class="w-4 h-4"></i>
-                <?php echo __('users.add_user', 'Add User'); ?>
-            </button>
-        </div>
+// Get user info from session
+$current_user_name = $_SESSION['full_name'] ?? 'User';
+$current_user_role = $_SESSION['role'];
 
-        <!-- Users Table -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+// Database connection
+require_once 'config.php';
+
+// Add current logged-in user as default
+$defaultUser = [
+    'id' => $_SESSION['user_id'] ?? 1,
+    'username' => $_SESSION['username'] ?? 'admin',
+    'full_name' => $_SESSION['full_name'] ?? 'System Administrator',
+    'email' => $_SESSION['email'] ?? 'admin@otoexpress.ge',
+    'role' => $_SESSION['role'] ?? 'admin',
+    'status' => 'active',
+    'last_login' => date('Y-m-d H:i:s'),
+    'created_at' => date('Y-m-d H:i:s')
 ];
 
 try {
@@ -411,6 +412,22 @@ document.addEventListener('DOMContentLoaded', function() {
 </head>
 
 // ...existing code...
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Main Content -->
+    <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-slate-800"><?php echo __('users.user_accounts', 'User Accounts'); ?></h2>
+            <button onclick="window.openCreateUserModal()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <?php echo __('users.add_user', 'Add User'); ?>
+            </button>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
                     <tr>
                         <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">User</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Username</th>
