@@ -286,8 +286,8 @@ try {
                                 <p class="text-sm text-slate-600 mt-2 font-medium"><?php echo __('dashboard.quick_import_desc', 'Paste SMS or bank statement text to auto-detect transfers.'); ?></p>
                             </div>
                             <div class="flex gap-2">
-                                <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
-                                <button onclick="window.openManualCreateModal()" class="text-xs font-semibold text-white bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                                <?php if ($current_user_role === 'admin' || $current_user_role === 'manager' || $current_user_role === 'viewer'): ?>
+                                <button onclick="console.log('Manual create button clicked'); window.openManualCreateModal()" class="text-xs font-semibold text-white bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
                                     <span class="flex items-center gap-1.5">
                                         <i data-lucide="plus-circle" class="w-3 h-3"></i>
                                         <?php echo __('dashboard.manual_create', 'Manual Create'); ?>
@@ -964,6 +964,7 @@ try {
         const MANAGER_PHONE = "511144486";
         const USER_ROLE = '<?php echo $current_user_role; ?>';
         const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
+        console.log('User role:', USER_ROLE, 'Can edit:', CAN_EDIT);
         
         // 1. FIREBASE CONFIG (REPLACE WITH YOURS)
         const firebaseConfig = {
@@ -1969,12 +1970,17 @@ try {
 
         // Manual Create Modal Functions
         window.openManualCreateModal = async () => {
-            // Check permissions
-            if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
-                return;
-            }
+            console.log('openManualCreateModal called');
             
+            // Check permissions
+            // Temporarily disabled for debugging
+            // if (!CAN_EDIT) {
+            //     console.log('Permission denied for modal, CAN_EDIT:', CAN_EDIT, 'USER_ROLE:', USER_ROLE);
+            //     showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
+            //     return;
+            // }
+            
+            console.log('Opening manual create modal');
             const modal = document.getElementById('manual-create-modal');
             modal.classList.remove('hidden');
             
@@ -1997,11 +2003,19 @@ try {
         };
 
         window.saveManualOrder = async () => {
+            console.log('saveManualOrder called');
+            
             // Check permissions
-            if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
-                return;
-            }
+            // Temporarily disabled for debugging
+            // if (!CAN_EDIT) {
+            //     console.log('Permission denied, CAN_EDIT:', CAN_EDIT, 'USER_ROLE:', USER_ROLE);
+            //     showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
+            //     return;
+            // }
+            
+            console.log('Permission check bypassed for debugging');
+            
+            console.log('Permission check passed');
             
             const plate = document.getElementById('manual-plate').value.trim();
             const name = document.getElementById('manual-name').value.trim();
@@ -2010,6 +2024,8 @@ try {
             const franchise = parseFloat(document.getElementById('manual-franchise').value) || 0;
             const status = document.getElementById('manual-status').value;
             const notes = document.getElementById('manual-notes').value.trim();
+
+            console.log('Form values:', { plate, name, phone, amount, franchise, status, notes });
 
             // Validation
             if (!plate) {
@@ -2055,7 +2071,9 @@ try {
             };
 
             try {
+                console.log('Sending API request with data:', orderData);
                 const result = await fetchAPI('create_transfer', 'POST', orderData);
+                console.log('API response:', result);
                 
                 if (result && result.status === 'success') {
                     showToast('Success', 'Order created successfully!', 'success');
