@@ -458,6 +458,14 @@ try {
         jsonResponse(['id' => $pdo->lastInsertId(), 'status' => 'success']);
     }
     if ($action === 'delete_transfer' && $method === 'POST') {
+        // Check permissions - only admin and manager can delete
+        $userRole = $_SESSION['role'] ?? 'viewer';
+        if ($userRole !== 'admin' && $userRole !== 'manager') {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Permission denied. Only managers and admins can delete orders.']);
+            exit;
+        }
+
         $id = intval($_GET['id'] ?? 0);
         if ($id > 0) {
             $pdo->prepare("DELETE FROM transfers WHERE id = ?")->execute([$id]);

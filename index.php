@@ -807,10 +807,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                 <!-- Premium Footer with Actions - Fixed/Floating -->
                 <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-1.5 sm:gap-2 rounded-b-xl shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] shrink-0 backdrop-blur-sm">
+                    <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
                     <button type="button" onclick="window.deleteRecord(window.currentEditingId)" class="group text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 text-sm font-bold flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-lg sm:rounded-xl transition-all border-2 border-red-200 hover:border-red-600 shadow-lg hover:shadow-2xl hover:shadow-red-600/50 active:scale-95 w-full sm:w-auto hover:scale-105">
                         <i data-lucide="trash-2" class="w-4 h-4"></i> 
                         <span>Delete Order</span>
                     </button>
+                    <?php endif; ?>
                     <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
                         <button type="button" onclick="window.closeModal()" class="flex-1 sm:flex-initial px-4 sm:px-6 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg sm:rounded-xl font-bold text-sm transition-all border-2 border-slate-200 hover:border-slate-300 shadow-lg hover:shadow-xl active:scale-95 hover:scale-105">
                             <i data-lucide="x" class="w-4 h-4 inline mr-1"></i> Cancel
@@ -2385,12 +2387,24 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if(confirm("Delete this case permanently?")) {
                 if (document.getElementById('connection-status').innerText.includes('Offline')) {
                     transfers = transfers.filter(t => t.id !== id);
+                    window.closeModal();
+                    loadData(); 
+                    showToast("Deleted", "error");
                 } else {
-                    await fetchAPI(`delete_transfer&id=${id}`, 'POST');
+                    try {
+                        const result = await fetchAPI(`delete_transfer&id=${id}`, 'POST');
+                        if (result.status === 'deleted') {
+                            window.closeModal();
+                            loadData(); 
+                            showToast("Order deleted successfully", "success");
+                        } else {
+                            showToast(result.message || "Failed to delete order", "error");
+                        }
+                    } catch (error) {
+                        console.error('Delete error:', error);
+                        showToast("Failed to delete order", "error");
+                    }
                 }
-                window.closeModal();
-                loadData(); 
-                showToast("Deleted", "error");
             }
         };
 
