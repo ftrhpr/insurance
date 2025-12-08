@@ -125,7 +125,6 @@ if (!isset($users) || !is_array($users)) {
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
 
 <?php include 'header.php'; ?>
 
@@ -411,9 +410,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
 
-<?php include 'header.php'; ?>
+// ...existing code...
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Main Content -->
