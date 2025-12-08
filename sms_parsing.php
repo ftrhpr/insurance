@@ -103,6 +103,14 @@ try {
                     ['field' => 'amount', 'pattern' => ')', 'description' => 'Amount after closing parenthesis'],
                     ['field' => 'franchise', 'pattern' => '(ფრანშიზა', 'description' => 'Franchise amount in parentheses after Georgian text']
                 ])
+            ],
+            [
+                'name' => 'Franchise Parser',
+                'insurance_company' => 'Generic Franchise',
+                'template_pattern' => '[TEXT] (ფრანშიზა [FRANCHISE])',
+                'field_mappings' => json_encode([
+                    ['field' => 'franchise', 'pattern' => '(ფრანშიზა', 'description' => 'Franchise amount in parentheses after Georgian text']
+                ])
             ]
         ];
         
@@ -254,6 +262,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                             <li><code class="bg-blue-100 px-1 rounded">მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT] (ფრანშიზა [FRANCHISE])</code> (Aldagi with franchise)</li>
                             <li><code class="bg-blue-100 px-1 rounded">სახ. ნომ [PLATE] [AMOUNT] (ფრანშიზა [FRANCHISE])</code> (Ardi with franchise)</li>
                             <li><code class="bg-blue-100 px-1 rounded">[MAKE] ([PLATE]) [AMOUNT] (ფრანშიზა [FRANCHISE])</code> (Imedi L with franchise)</li>
+                            <li><code class="bg-blue-100 px-1 rounded">[TEXT] (ფრანშიზა [FRANCHISE])</code> (Generic franchise parser)</li>
                         </ul>
                         <li>Sample templates for all formats are created automatically</li>
                     </ul>
@@ -310,6 +319,16 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                                 <div class="text-sm text-slate-600 mb-2">
                                     <strong>Pattern:</strong> <?php echo htmlspecialchars(substr($template['template_pattern'], 0, 100)); ?><?php echo strlen($template['template_pattern']) > 100 ? '...' : ''; ?>
                                 </div>
+                                <?php if (!empty($template['field_mappings'])): ?>
+                                    <div class="text-sm text-slate-600 mb-2">
+                                        <strong>Fields:</strong> 
+                                        <?php 
+                                        $mappings = json_decode($template['field_mappings'], true);
+                                        $fieldNames = array_column($mappings, 'field');
+                                        echo htmlspecialchars(implode(', ', $fieldNames));
+                                        ?>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="text-xs text-slate-500">
                                     Updated: <?php echo date('M j, Y H:i', strtotime($template['updated_at'])); ?>
                                 </div>
@@ -432,7 +451,7 @@ function addFieldMapping(field = '', pattern = '', description = '') {
                 </button>
             </div>
             <div class="grid grid-cols-1 gap-2">
-                <input type="text" name="field_name[]" value="${field}" placeholder="Field name (e.g., plate, name, amount)"
+                <input type="text" name="field_name[]" value="${field}" placeholder="Field name (e.g., plate, name, amount, franchise)"
                        class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <input type="text" name="field_pattern[]" value="${pattern}" placeholder="Pattern/keyword (e.g., plate:, amount:)"
                        class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
