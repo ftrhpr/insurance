@@ -16,8 +16,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 require_once 'config.php';
 $bankTemplates = [];
 try {
-    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = getDBConnection();
     $stmt = $pdo->query("SELECT * FROM bank_templates WHERE active = 1 ORDER BY name");
     $bankTemplates = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

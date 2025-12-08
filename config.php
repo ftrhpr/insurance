@@ -8,6 +8,12 @@ define('DB_NAME', 'otoexpre_userdb');
 define('DB_USER', 'otoexpre_userdb');
 define('DB_PASS', 'p52DSsthB}=0AeZ#');
 
+// For backward compatibility with existing code that uses variables
+$db_host = DB_HOST;
+$db_name = DB_NAME;
+$db_user = DB_USER;
+$db_pass = DB_PASS;
+
 // SMS API configuration
 define('SMS_API_KEY', '5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1');
 
