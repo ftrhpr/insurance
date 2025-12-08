@@ -127,13 +127,7 @@ if (!isset($users) || !is_array($users)) {
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
 
-<?php // include 'header.php'; ?>
-
-<!-- TEMPORARILY REPLACED HEADER WITH SIMPLE HTML -->
-<nav style="background: blue; color: white; padding: 20px;">
-    <h1>TEMP HEADER - User Management</h1>
-    <p>Current user: <?php echo $current_user_name; ?> (<?php echo $current_user_role; ?>)</p>
-</nav>
+<?php include 'header.php'; ?>
 
 <!-- DEBUG: After header include -->
 <div style="background: yellow; color: red; padding: 20px; margin: 20px; border: 2px solid black;">
