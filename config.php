@@ -11,6 +11,10 @@ define('DB_PASS', 'p52DSsthB}=0AeZ#');
 // SMS API configuration
 define('SMS_API_KEY', '5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1');
 
+// RO App API configuration
+define('RO_APP_API_URL', 'https://api.roapp.ge/v1/orders');
+define('RO_APP_API_TOKEN', '568f4ff46dd64c5ea9e18039f1915230');
+
 // Create PDO connection function with timeout and retry
 function getDBConnection($retries = 3) {
     $lastException = null;
