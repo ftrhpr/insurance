@@ -1,5 +1,7 @@
 <?php
+echo "<!-- DEBUG: PHP started executing -->";
 require_once 'session_config.php';
+echo "<!-- DEBUG: session_config loaded -->";
 
 // TEMPORARY: Set session for testing if not logged in
 if (!isset($_SESSION['user_id'])) {
@@ -7,6 +9,7 @@ if (!isset($_SESSION['user_id'])) {
     $_SESSION['username'] = 'admin';
     $_SESSION['full_name'] = 'System Administrator';
     $_SESSION['role'] = 'admin';
+    echo "<!-- DEBUG: Session variables set -->";
 }
 
 // Check authentication
