@@ -3,20 +3,16 @@
 // Usage: include 'header.php'; before any HTML output
 // Make sure $current_user_name and $current_user_role are set before including
 
-// Safely include language functionality
+// Check for language functionality (only if already loaded by the main page)
 $language_available = false;
 $current_lang = 'en'; // default
 $LANGUAGES = ['en' => 'English', 'ka' => 'ქართული', 'ru' => 'Русский']; // fallback
 
-try {
-    if (file_exists('language.php')) {
-        require_once 'language.php';
-        $current_lang = get_current_language();
-        $language_available = true;
-    }
-} catch (Exception $e) {
-    // Language system not available, use defaults
-    $language_available = false;
+// Only use language system if functions are already available
+if (function_exists('get_current_language') && isset($GLOBALS['LANGUAGES'])) {
+    $current_lang = get_current_language();
+    $LANGUAGES = $GLOBALS['LANGUAGES'];
+    $language_available = true;
 }
 
 // Ensure required variables are set
