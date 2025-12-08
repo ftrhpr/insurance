@@ -848,13 +848,13 @@ try {
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- Manual Create Order Modal -->
-    <div id="manual-create-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
+    <div id="manual-create-modal" class="hidden fixed inset-0" style="z-index: 10000;" role="dialog" aria-modal="true">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-emerald-900/40 to-teal-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-emerald-900/40 to-teal-900/50 backdrop-blur-lg transition-all duration-300" style="z-index: 10000;" onclick="window.closeManualCreateModal()"></div>
 
         <!-- Modal Container -->
-        <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
-            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl z-[10001]">
+        <div class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 10001;">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl" style="z-index: 10002;">
                 
                 <!-- Header -->
                 <div class="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
@@ -1981,6 +1981,18 @@ try {
             // }
             
             console.log('Opening manual create modal');
+            
+            // Close any other open modals first
+            const modalsToClose = ['edit-modal']; // Don't close manual-create-modal if it's the target
+            modalsToClose.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.style.display = 'none'; // Force hide
+                }
+            });
+            window.currentEditingId = null;
+            
             const modal = document.getElementById('manual-create-modal');
             modal.classList.remove('hidden');
             
