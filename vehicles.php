@@ -336,14 +336,6 @@ try {
         let vehicles = <?php echo json_encode($vehicles_data); ?>;
         let transfers = <?php echo json_encode($transfers_data); ?>;
         
-        // Debug logs
-        console.log('Initial data loaded:');
-        console.log('Vehicles count:', vehicles.length);
-        console.log('Vehicles data:', vehicles);
-        console.log('Transfers count:', transfers.length);
-        console.log('User role:', USER_ROLE);
-        console.log('Can edit:', CAN_EDIT);
-
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
@@ -437,16 +429,11 @@ try {
         // Load Data
         async function loadData() {
             try {
-                console.log('loadData: Fetching from API...');
                 const data = await fetchAPI('get_transfers');
-                console.log('loadData: API response:', data);
-                console.log('loadData: Transfers from API:', data.transfers?.length || 0);
-                console.log('loadData: Vehicles from API:', data.vehicles?.length || 0);
                 
                 transfers = data.transfers || [];
                 vehicles = data.vehicles || [];
                 
-                console.log('loadData: Updated arrays - Transfers:', transfers.length, 'Vehicles:', vehicles.length);
                 renderVehicleTable();
             } catch (err) {
                 console.error('Load error:', err);
@@ -460,9 +447,6 @@ try {
 
         // Render Vehicle Table
         function renderVehicleTable(page = 1) {
-            console.log('renderVehicleTable called');
-            console.log('Current vehicles array:', vehicles);
-            
             currentVehiclesPage = page;
             const term = document.getElementById('vehicle-search').value.toLowerCase();
             const statusFilter = document.getElementById('status-filter').value;
@@ -499,8 +483,6 @@ try {
                     default: return 0;
                 }
             });
-            
-            console.log('Filtered rows:', rows.length);
             
             // Pagination logic
             const totalVehicles = rows.length;
@@ -607,14 +589,8 @@ try {
                 </tr>`;
             }).join('');
             
-            console.log('Generated HTML length:', html.length);
-            console.log('Updating table body...');
-            
             document.getElementById('vehicle-table-body').innerHTML = html;
             document.getElementById('vehicle-empty').classList.toggle('hidden', rows.length > 0);
-            
-            console.log('Empty state visible:', rows.length === 0);
-            console.log('Reinitializing icons...');
             
             // Render pagination
             renderVehiclesPagination(totalPages);
@@ -726,7 +702,6 @@ try {
             
             // If not found in local cache, try fetching from API
             if (!order) {
-                console.log('Order not in cache, fetching from API...');
                 try {
                     await loadData();
                     order = transfers.find(t => t.id == orderId);
@@ -1267,14 +1242,12 @@ try {
         }
 
         // Initialize - Ensure modal is hidden and render table
-        console.log('Starting initialization...');
         
         // Ensure vehicle modal is hidden on page load
         document.getElementById('vehicle-modal')?.classList.add('hidden');
         
         try {
             renderVehicleTable();
-            console.log('Initial render complete');
         } catch(e) {
             console.error('Render error:', e);
         }

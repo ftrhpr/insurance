@@ -324,10 +324,8 @@ try {
                 `;
             }).join('');
             
-            console.log('Generated HTML length:', html.length);
             container.innerHTML = html;
             
-            console.log('Reinitializing icons...');
             if (window.lucide) lucide.createIcons();
         }
 
@@ -448,7 +446,6 @@ try {
         }
 
         // Initialize
-        console.log('Starting initialization...');
         
         // Update pending count
         const pendingCount = customerReviews.filter(r => r.status === 'pending').length;
@@ -456,7 +453,6 @@ try {
         
         try {
             renderReviews();
-            console.log('Initial render complete');
         } catch(e) {
             console.error('Render error:', e);
         }
