@@ -1,6 +1,7 @@
 <?php
-echo "<!-- DEBUG: PHP started executing -->";
+header("Content-Type: text/html; charset=UTF-8");
 header("Content-Security-Policy: script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;");
+echo "<!-- DEBUG: PHP started executing -->";
 require_once 'session_config.php';
 echo "<!-- DEBUG: session_config loaded -->";
 
@@ -102,10 +103,7 @@ try {
 if (!isset($users) || !is_array($users)) {
     $users = [$defaultUser];
 }
-echo "<!-- DEBUG: PHP users count: " . count($users) . " -->";
-echo "<!-- DEBUG: PHP users data: " . htmlspecialchars(json_encode($users)) . " -->";
 echo "<!-- DEBUG: About to output HTML -->";
-echo "<!-- DEBUG: Creating simple HTML version -->";
 ?>
 <!DOCTYPE html>
 <html>
