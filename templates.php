@@ -1,5 +1,5 @@
 <?php
-require_once 'session_config.php';
+session_start();
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {

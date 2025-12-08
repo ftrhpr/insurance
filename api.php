@@ -1,5 +1,5 @@
 <?php
-require_once 'session_config.php';
+session_start();
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
@@ -72,72 +72,6 @@ function jsonResponse($data) {
 function getJsonInput() {
     $input = json_decode(file_get_contents('php://input'), true);
     return (json_last_error() === JSON_ERROR_NONE) ? $input : [];
-}
-
-/**
- * Secure SMS sending function using cURL with proper validation
- * @param string $to Phone number (validated)
- * @param string $text Message text
- * @param string $api_key API key
- * @return array Response with status and optional error
- */
-function sendSecureSMS($to, $text, $api_key) {
-    // Validate phone number format (Georgian format: +995XXXXXXXXX or 5XXXXXXXX)
-    $to = preg_replace('/[^0-9+]/', '', $to);
-    if (empty($to) || (strlen($to) < 9)) {
-        return ['success' => false, 'error' => 'Invalid phone number format'];
-    }
-    
-    // Validate API key format (hex string)
-    if (!preg_match('/^[a-f0-9]{64}$/i', $api_key)) {
-        return ['success' => false, 'error' => 'Invalid API key format'];
-    }
-    
-    // Validate text length (SMS limits)
-    if (empty($text) || strlen($text) > 1600) {
-        return ['success' => false, 'error' => 'Message text invalid or too long'];
-    }
-    
-    // Build URL with proper encoding
-    $params = http_build_query([
-        'api_key' => $api_key,
-        'to' => $to,
-        'from' => 'OTOMOTORS',
-        'text' => $text
-    ]);
-    
-    $url = 'https://api.gosms.ge/api/sendsms?' . $params;
-    
-    // Use cURL for secure HTTP request
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 10,
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_FOLLOWLOCATION => false, // Prevent redirects
-        CURLOPT_MAXREDIRS => 0,
-        CURLOPT_PROTOCOLS => CURLPROTO_HTTPS, // Only allow HTTPS
-    ]);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
-    
-    if ($response === false) {
-        error_log("SMS sending failed: $error");
-        return ['success' => false, 'error' => 'Network error'];
-    }
-    
-    if ($httpCode !== 200) {
-        error_log("SMS API returned HTTP $httpCode: $response");
-        return ['success' => false, 'error' => 'API error', 'http_code' => $httpCode];
-    }
-    
-    return ['success' => true, 'response' => $response];
 }
 
 // --- HELPER: GET ACCESS TOKEN (V1) ---
@@ -264,53 +198,24 @@ try {
         }
         
         if($id > 0) {
-            // Use transaction with row-level locking to prevent race conditions
-            try {
-                $pdo->beginTransaction();
-                
-                // Lock the row for update to prevent concurrent modifications
-                $stmt = $pdo->prepare("SELECT user_response, name, plate FROM transfers WHERE id = ? FOR UPDATE");
-                $stmt->execute([$id]);
-                $transfer = $stmt->fetch();
-                
-                if (!$transfer) {
-                    $pdo->rollBack();
-                    http_response_code(404);
-                    jsonResponse(['status' => 'error', 'message' => 'Transfer not found']);
-                }
-                
-                // Prevent duplicate responses (idempotency check)
-                if ($transfer['user_response'] === $response && $response !== 'Reschedule Requested') {
-                    $pdo->rollBack();
-                    jsonResponse(['status' => 'success', 'message' => 'Response already recorded']);
-                }
-                
-                // Atomic update of user response
-                if ($response === 'Reschedule Requested' && $rescheduleDate) {
-                    $pdo->prepare("UPDATE transfers SET user_response = ?, reschedule_date = ?, reschedule_comment = ? WHERE id = ?")
-                        ->execute([$response, $rescheduleDate, $rescheduleComment, $id]);
-                } else {
-                    $pdo->prepare("UPDATE transfers SET user_response = ? WHERE id = ?")->execute([$response, $id]);
-                }
-                
-                $pdo->commit();
-                
-                // Send notification after commit (outside transaction)
-                $notificationBody = "{$transfer['name']} ({$transfer['plate']}) marked as: $response";
+            // Update user response
+            $pdo->prepare("UPDATE transfers SET user_response = ? WHERE id = ?")->execute([$response, $id]);
+            
+            // If reschedule request, store the desired date and comment
+            if ($response === 'Reschedule Requested' && $rescheduleDate) {
+                $pdo->prepare("UPDATE transfers SET reschedule_date = ?, reschedule_comment = ? WHERE id = ?")
+                    ->execute([$rescheduleDate, $rescheduleComment, $id]);
+            }
+            
+            $stmt = $pdo->prepare("SELECT name, plate FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+            $tr = $stmt->fetch();
+            if($tr) {
+                $notificationBody = "{$tr['name']} ({$tr['plate']}) marked as: $response";
                 if ($rescheduleDate) {
                     $notificationBody .= " - Requested: " . date('M d, Y H:i', strtotime($rescheduleDate));
                 }
                 sendFCM_V1($pdo, $service_account_file, "Customer Responded", $notificationBody);
-            } catch (Exception $e) {
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
-                error_log("Race condition in user_respond: " . $e->getMessage());
-                http_response_code(500);
-                jsonResponse(['status' => 'error', 'message' => 'Failed to process response']);
-            }
-            } else {
-                jsonResponse(['status' => 'error', 'message' => 'Invalid transfer ID']);
             }
         }
         jsonResponse(['status' => 'success']);
@@ -335,50 +240,26 @@ try {
 
         if($id > 0) {
             try {
-                $pdo->beginTransaction();
-                
-                // Lock row and check if review already exists (prevent duplicates)
-                $stmt = $pdo->prepare("SELECT name, plate, review_stars FROM transfers WHERE id = ? FOR UPDATE");
+                // Get transfer details
+                $stmt = $pdo->prepare("SELECT name, plate FROM transfers WHERE id = ?");
                 $stmt->execute([$id]);
                 $tr = $stmt->fetch();
                 
-                if(!$tr) {
-                    $pdo->rollBack();
-                    http_response_code(404);
-                    jsonResponse(['status' => 'error', 'message' => 'Transfer not found']);
-                }
-                
-                // Check if review already submitted (idempotency)
-                if ($tr['review_stars'] !== null && $tr['review_stars'] > 0) {
-                    $pdo->rollBack();
-                    jsonResponse(['status' => 'success', 'message' => 'Review already submitted']);
-                }
-                
-                // Save to customer_reviews table
-                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-                try {
+                if($tr) {
+                    // Save to customer_reviews table
+                    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
                     $pdo->prepare("INSERT INTO customer_reviews (order_id, customer_name, rating, comment, status, ip_address) VALUES (?, ?, ?, ?, 'pending', ?)")
                         ->execute([$id, $tr['name'], $stars, $comment, $ip]);
-                } catch (PDOException $e) {
-                    // Table might not exist yet, continue anyway
-                    error_log("customer_reviews table issue: " . $e->getMessage());
+                    
+                    // Also update transfers table for backward compatibility
+                    $pdo->prepare("UPDATE transfers SET review_stars = ?, review_comment = ? WHERE id = ?")->execute([$stars, $comment, $id]);
+                    
+                    // Notify Manager
+                    sendFCM_V1($pdo, $service_account_file, "New Customer Review!", "{$tr['name']} ({$tr['plate']}) rated: $stars Stars");
                 }
-                
-                // Update transfers table atomically
+            } catch (PDOException $e) {
+                // Table might not exist, just save to transfers table
                 $pdo->prepare("UPDATE transfers SET review_stars = ?, review_comment = ? WHERE id = ?")->execute([$stars, $comment, $id]);
-                
-                $pdo->commit();
-                
-                // Send notification after commit
-                sendFCM_V1($pdo, $service_account_file, "New Customer Review!", "{$tr['name']} ({$tr['plate']}) rated: $stars Stars");
-                
-            } catch (Exception $e) {
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
-                error_log("Race condition in submit_review: " . $e->getMessage());
-                http_response_code(500);
-                jsonResponse(['status' => 'error', 'message' => 'Failed to submit review']);
             }
         }
         jsonResponse(['status' => 'success']);
@@ -406,11 +287,8 @@ try {
                 $smsText = "Hello {$tr['name']}, your reschedule request has been approved! New appointment: {$formattedDate}. Ref: {$tr['plate']}. - OTOMOTORS";
                 
                 $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
-                $smsResult = sendSecureSMS($tr['phone'], $smsText, $api_key);
-                
-                if (!$smsResult['success']) {
-                    error_log("Failed to send reschedule SMS to {$tr['phone']}: {$smsResult['error']}");
-                }
+                $to = $tr['phone'];
+                @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText));
             }
 
             jsonResponse(['status' => 'success', 'message' => 'Reschedule accepted and SMS sent']);
@@ -542,73 +420,37 @@ try {
     
     // 4. UPDATE EXISTING TRANSFER
     if ($action === 'update_transfer' && $method === 'POST') {
-        // Authorization: Only managers and admins can update transfers
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions to update transfers']);
-        }
-        
         $data = getJsonInput();
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
         }
-        
-        try {
-            $pdo->beginTransaction();
-            
-            // Lock the row to prevent concurrent modifications (pessimistic locking)
-            $stmt = $pdo->prepare("SELECT id FROM transfers WHERE id = ? FOR UPDATE");
-            $stmt->execute([$id]);
-            if (!$stmt->fetch()) {
-                $pdo->rollBack();
-                http_response_code(404);
-                jsonResponse(['status' => 'error', 'message' => 'Transfer not found']);
-            }
-            
-            $fields = []; $params = [':id' => $id];
-            foreach ($data as $key => $val) {
-                if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
-                    if ($key === 'serviceDate') {
-                        if(empty($val)) $val = null;
-                        $fields[] = "service_date = :serviceDate";
-                        $params[":serviceDate"] = $val;
-                    } else {
-                        $fields[] = "$key = :$key";
-                        $params[":$key"] = $val;
-                    }
-                }
-                if ($key === 'internalNotes' || $key === 'systemLogs') {
-                    $dbColumn = $key === 'internalNotes' ? 'internal_notes' : 'system_logs';
-                    $fields[] = "$dbColumn = :$key";
-                    $params[":$key"] = json_encode($val);
+        $fields = []; $params = [':id' => $id];
+        foreach ($data as $key => $val) {
+            if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
+                if ($key === 'serviceDate') {
+                    if(empty($val)) $val = null;
+                    $fields[] = "service_date = :serviceDate";
+                    $params[":serviceDate"] = $val;
+                } else {
+                    $fields[] = "$key = :$key";
+                    $params[":$key"] = $val;
                 }
             }
-            
-            if (!empty($fields)) {
-                $pdo->prepare("UPDATE transfers SET " . implode(', ', $fields) . " WHERE id = :id")->execute($params);
+            if ($key === 'internalNotes' || $key === 'systemLogs') {
+                $dbColumn = $key === 'internalNotes' ? 'internal_notes' : 'system_logs';
+                $fields[] = "$dbColumn = :$key";
+                $params[":$key"] = json_encode($val);
             }
-            
-            $pdo->commit();
-            jsonResponse(['status' => 'success']);
-        } catch (Exception $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            error_log("Race condition in update_transfer: " . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => 'Failed to update transfer']);
         }
+        if (!empty($fields)) {
+            $pdo->prepare("UPDATE transfers SET " . implode(', ', $fields) . " WHERE id = :id")->execute($params);
+        }
+        jsonResponse(['status' => 'success']);
     }
     
     // ... Include get_vehicles, sync_vehicle, etc. from previous version ...
     if ($action === 'add_transfer' && $method === 'POST') {
-        // Authorization: Only managers and admins can add transfers
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions to add transfers']);
-        }
-        
         $data = getJsonInput();
         $sql = "INSERT INTO transfers (plate, name, amount, status, phone, rawText, internal_notes, system_logs, user_response) VALUES (:plate, :name, :amount, 'New', '', :rawText, '[]', '[]', 'Pending')";
         $stmt = $pdo->prepare($sql);
@@ -616,22 +458,8 @@ try {
         jsonResponse(['id' => $pdo->lastInsertId(), 'status' => 'success']);
     }
     if ($action === 'delete_transfer' && $method === 'POST') {
-        // Authorization: Only managers and admins can delete transfers
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions to delete transfers']);
-        }
-        
         $id = intval($_GET['id'] ?? 0);
         if ($id > 0) {
-            // Verify transfer exists before deleting
-            $stmt = $pdo->prepare("SELECT id FROM transfers WHERE id = ?");
-            $stmt->execute([$id]);
-            if (!$stmt->fetch()) {
-                http_response_code(404);
-                jsonResponse(['status' => 'error', 'message' => 'Transfer not found']);
-            }
-            
             $pdo->prepare("DELETE FROM transfers WHERE id = ?")->execute([$id]);
             jsonResponse(['status' => 'deleted']);
         } else {
@@ -647,41 +475,16 @@ try {
         $data = getJsonInput();
         $plate = $data['plate'] ?? '';
         if ($plate) {
-            try {
-                $pdo->beginTransaction();
-                
-                // Use row-level locking to prevent race conditions
-                $stmt = $pdo->prepare("SELECT id, ownerName, phone FROM vehicles WHERE plate = ? FOR UPDATE");
-                $stmt->execute([$plate]);
-                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($existing) {
-                    $updates = []; $params = [':id' => $existing['id']];
-                    if (!empty($data['phone']) && $data['phone'] !== $existing['phone']) { 
-                        $updates[] = "phone = :phone"; 
-                        $params[':phone'] = $data['phone']; 
-                    }
-                    if (!empty($data['ownerName']) && empty($existing['ownerName'])) { 
-                        $updates[] = "ownerName = :ownerName"; 
-                        $params[':ownerName'] = $data['ownerName']; 
-                    }
-                    if (!empty($updates)) {
-                        $pdo->prepare("UPDATE vehicles SET " . implode(', ', $updates) . " WHERE id = :id")->execute($params);
-                    }
-                } else {
-                    // Use INSERT IGNORE to handle race condition where another request inserts same plate
-                    $pdo->prepare("INSERT IGNORE INTO vehicles (plate, ownerName, phone) VALUES (?, ?, ?)")
-                        ->execute([$plate, $data['ownerName'] ?? '', $data['phone'] ?? '']);
-                }
-                
-                $pdo->commit();
-            } catch (Exception $e) {
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
-                error_log("Race condition in sync_vehicle: " . $e->getMessage());
-                http_response_code(500);
-                jsonResponse(['status' => 'error', 'message' => 'Failed to sync vehicle']);
+            $stmt = $pdo->prepare("SELECT id, ownerName, phone FROM vehicles WHERE plate = ?");
+            $stmt->execute([$plate]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($existing) {
+                $updates = []; $params = [':id' => $existing['id']];
+                if (!empty($data['phone']) && $data['phone'] !== $existing['phone']) { $updates[] = "phone = :phone"; $params[':phone'] = $data['phone']; }
+                if (!empty($data['ownerName']) && empty($existing['ownerName'])) { $updates[] = "ownerName = :ownerName"; $params[':ownerName'] = $data['ownerName']; }
+                if (!empty($updates)) $pdo->prepare("UPDATE vehicles SET " . implode(', ', $updates) . " WHERE id = :id")->execute($params);
+            } else {
+                $pdo->prepare("INSERT INTO vehicles (plate, ownerName, phone) VALUES (?, ?, ?)")->execute([$plate, $data['ownerName'] ?? '', $data['phone'] ?? '']);
             }
         }
         jsonResponse(['status' => 'synced']);
@@ -699,45 +502,17 @@ try {
         $phone = trim($data['phone'] ?? '');
         $model = trim($data['model'] ?? '');
         
-        try {
-            if (isset($_GET['id']) && $_GET['id']) {
-                $id = intval($_GET['id']);
-                // Update existing vehicle
-                $stmt = $pdo->prepare("UPDATE vehicles SET plate=?, ownerName=?, phone=?, model=? WHERE id=?");
-                $stmt->execute([$plate, $ownerName, $phone, $model, $id]);
-            } else {
-                // Use INSERT ... ON DUPLICATE KEY UPDATE to handle race conditions
-                // Assumes 'plate' has a UNIQUE constraint
-                $stmt = $pdo->prepare(
-                    "INSERT INTO vehicles (plate, ownerName, phone, model) VALUES (?, ?, ?, ?) 
-                     ON DUPLICATE KEY UPDATE ownerName=VALUES(ownerName), phone=VALUES(phone), model=VALUES(model)"
-                );
-                $stmt->execute([$plate, $ownerName, $phone, $model]);
-            }
-            jsonResponse(['status' => 'saved']);
-        } catch (PDOException $e) {
-            error_log("Vehicle save error: " . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => 'Failed to save vehicle. Plate may already exist.']);
+        if (isset($_GET['id']) && $_GET['id']) {
+            $id = intval($_GET['id']);
+            $pdo->prepare("UPDATE vehicles SET plate=?, ownerName=?, phone=?, model=? WHERE id=?")->execute([$plate, $ownerName, $phone, $model, $id]);
+        } else {
+            $pdo->prepare("INSERT INTO vehicles (plate, ownerName, phone, model) VALUES (?, ?, ?, ?)")->execute([$plate, $ownerName, $phone, $model]);
         }
+        jsonResponse(['status' => 'saved']);
     }
     if ($action === 'delete_vehicle' && $method === 'POST') {
-        // Authorization: Only managers and admins can delete vehicles
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions to delete vehicles']);
-        }
-        
         $id = intval($_GET['id'] ?? 0);
         if ($id > 0) {
-            // Verify vehicle exists before deleting
-            $stmt = $pdo->prepare("SELECT id FROM vehicles WHERE id = ?");
-            $stmt->execute([$id]);
-            if (!$stmt->fetch()) {
-                http_response_code(404);
-                jsonResponse(['status' => 'error', 'message' => 'Vehicle not found']);
-            }
-            
             $pdo->prepare("DELETE FROM vehicles WHERE id=?")->execute([$id]);
             jsonResponse(['status' => 'deleted']);
         } else {
@@ -745,29 +520,12 @@ try {
         }
     }
     if ($action === 'send_sms' && $method === 'POST') {
-        // Authorization: Only managers and admins can send SMS
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions to send SMS']);
-        }
-        
         $data = getJsonInput();
-        $to = $data['to'] ?? ''; 
-        $text = $data['text'] ?? '';
-        
-        if (empty($to) || empty($text)) {
-            jsonResponse(['status' => 'error', 'message' => 'Missing phone number or message text']);
-        }
-        
+        $to = $data['to'] ?? ''; $text = $data['text'] ?? '';
+        if (empty($to) || empty($text)) jsonResponse(['status' => 'error', 'message' => 'Missing data']);
         $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
-        $result = sendSecureSMS($to, $text, $api_key);
-        
-        if ($result['success']) {
-            jsonResponse(['status' => 'success', 'response' => $result['response']]);
-        } else {
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => $result['error']]);
-        }
+        echo @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($text));
+        exit;
     }
     if ($action === 'register_token' && $method === 'POST') {
         $data = getJsonInput();
@@ -782,12 +540,6 @@ try {
         jsonResponse(['status' => 'registered']);
     }
     if ($action === 'send_broadcast' && $method === 'POST') {
-        // Authorization: Only managers and admins can send broadcast notifications
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions to send broadcasts']);
-        }
-        
         $data = getJsonInput();
         $title = $data['title'] ?? 'New Notification';
         $body = $data['body'] ?? '';
@@ -801,12 +553,6 @@ try {
         jsonResponse($rows ?: new stdClass());
     }
     if ($action === 'save_templates' && $method === 'POST') {
-        // Authorization: Only admins can modify SMS templates
-        if (!checkPermission('admin')) {
-            http_response_code(403);
-            jsonResponse(['status' => 'error', 'message' => 'Admin access required to modify templates']);
-        }
-        
         $data = getJsonInput();
         $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (:slug, :content) ON DUPLICATE KEY UPDATE content = :content");
         foreach ($data as $slug => $content) {
@@ -847,26 +593,12 @@ try {
     }
 
     if ($action === 'update_review_status' && $method === 'POST') {
-        // Authorization: Only managers and admins can moderate reviews
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions to moderate reviews']);
-        }
-        
         $data = getJsonInput();
         $id = intval($_GET['id'] ?? 0);
         $status = $data['status'] ?? 'pending';
         
         if ($id > 0 && in_array($status, ['pending', 'approved', 'rejected'])) {
             try {
-                // Verify review exists before updating
-                $stmt = $pdo->prepare("SELECT id FROM customer_reviews WHERE id = ?");
-                $stmt->execute([$id]);
-                if (!$stmt->fetch()) {
-                    http_response_code(404);
-                    jsonResponse(['status' => 'error', 'message' => 'Review not found']);
-                }
-                
                 $pdo->prepare("UPDATE customer_reviews SET status = ? WHERE id = ?")->execute([$status, $id]);
                 jsonResponse(['status' => 'success']);
             } catch (PDOException $e) {
@@ -948,21 +680,6 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'User ID and full name are required']);
         }
         
-        // Verify user exists and prevent self-demotion from admin
-        $stmt = $pdo->prepare("SELECT id, role FROM users WHERE id = ?");
-        $stmt->execute([$id]);
-        $targetUser = $stmt->fetch();
-        
-        if (!$targetUser) {
-            http_response_code(404);
-            jsonResponse(['status' => 'error', 'message' => 'User not found']);
-        }
-        
-        // Prevent admin from demoting themselves
-        if ($id == getCurrentUserId() && $role && $role !== 'admin') {
-            jsonResponse(['status' => 'error', 'message' => 'Cannot demote your own admin role']);
-        }
-        
         $updates = [];
         $params = [];
         
@@ -1035,46 +752,21 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Cannot delete your own account']);
         }
         
-        // Use transaction with locking to atomically check and delete
-        try {
-            $pdo->beginTransaction();
-            
-            // Lock the user row and get role
-            $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ? FOR UPDATE");
-            $stmt->execute([$id]);
-            $user = $stmt->fetch();
-            
-            if (!$user) {
-                $pdo->rollBack();
-                http_response_code(404);
-                jsonResponse(['status' => 'error', 'message' => 'User not found']);
-            }
-            
-            // If deleting an admin, lock all admin rows and count them
-            if ($user['role'] === 'admin') {
-                $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND status = 'active' FOR UPDATE");
-                $stmt->execute();
-                $result = $stmt->fetch();
-                
-                if ($result['count'] <= 1) {
-                    $pdo->rollBack();
-                    jsonResponse(['status' => 'error', 'message' => 'Cannot delete the last admin user']);
-                }
-            }
-            
-            // Safe to delete now
-            $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-            $stmt->execute([$id]);
-            
-            $pdo->commit();
-        } catch (Exception $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            error_log("Race condition in delete_user: " . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => 'Failed to delete user']);
+        // Check if this is the last admin
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND status = 'active'");
+        $stmt->execute();
+        $result = $stmt->fetch();
+        
+        $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        $user = $stmt->fetch();
+        
+        if ($user['role'] === 'admin' && $result['count'] <= 1) {
+            jsonResponse(['status' => 'error', 'message' => 'Cannot delete the last admin user']);
         }
+        
+        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$id]);
         
         jsonResponse(['status' => 'success']);
     }
