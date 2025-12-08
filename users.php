@@ -64,7 +64,7 @@ try {
         )";
         $pdo->exec($sql);
 
-        // Create default admin user
+        
         $defaultPassword = password_hash('admin123', PASSWORD_DEFAULT);
         $pdo->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'admin', 'active')")
             ->execute(['admin', $defaultPassword, 'System Administrator']);
