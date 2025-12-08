@@ -29,13 +29,34 @@ if ($current_user_role === 'admin') {
     $nav_items['translations'] = ['icon' => 'languages', 'label' => 'Translations', 'url' => 'translations.php'];
 }
 ?>
-<!-- Simple header for debugging -->
-<nav style="background: lightblue; padding: 10px; border-bottom: 1px solid #ccc;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="margin: 0; color: #333;">OTOMOTORS - <?php echo ucfirst($current_page); ?></h1>
-        <div style="color: #666;">
-            Welcome, <?php echo htmlspecialchars($current_user_name); ?> (<?php echo htmlspecialchars($current_user_role); ?>)
-            <a href="logout.php" style="margin-left: 20px; color: #d00;">Logout</a>
+<style>
+/* Basic styles to avoid CSP issues */
+body { margin: 0; font-family: Arial, sans-serif; }
+nav { background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 1rem; }
+.nav-link { display: inline-block; padding: 0.5rem 1rem; text-decoration: none; color: #007bff; }
+.nav-link:hover { color: #0056b3; }
+</style>
+
+<nav>
+    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
+        <div>
+            <a href="index.php" style="text-decoration: none; color: #007bff; font-weight: bold; font-size: 1.2em;">
+                OTOMOTORS
+            </a>
+            <span style="margin-left: 1rem; color: #6c757d;">Service Manager</span>
+        </div>
+
+        <div>
+            <?php foreach ($nav_items as $page => $item): ?>
+                <a href="<?php echo $item['url']; ?>" class="nav-link <?php echo ($current_page === $page) ? 'fw-bold' : ''; ?>">
+                    <?php echo $item['label']; ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span>Welcome, <?php echo htmlspecialchars($current_user_name); ?> (<?php echo htmlspecialchars($current_user_role); ?>)</span>
+            <a href="logout.php" style="color: #dc3545; text-decoration: none;">Logout</a>
         </div>
     </div>
 </nav>
