@@ -80,6 +80,12 @@ try {
     </script>
     <style>
         * { font-family: 'Inter', -apple-system, system-ui, sans-serif; }
+        .gradient-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        }
+        .gradient-primary:hover {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
