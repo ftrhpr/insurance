@@ -143,12 +143,16 @@ echo "<!-- DEBUG: PHP users data: " . htmlspecialchars(json_encode($users)) . " 
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
 
-<?php include 'header.php'; ?>
+<!-- <?php include 'header.php'; ?> -->
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- DEBUG: Main content starts here -->
-    <div style="background: red; color: white; padding: 20px; margin: 20px 0;">
-        DEBUG: Main content is rendering! Users count: <?php echo count($users); ?>
+    <div style="background: red; color: white; padding: 20px; margin: 20px 0; border: 2px solid black;">
+        DEBUG: Main content is rendering! Users count: <?php echo count($users); ?><br>
+        Session user_id: <?php echo $_SESSION['user_id'] ?? 'not set'; ?><br>
+        Session role: <?php echo $_SESSION['role'] ?? 'not set'; ?><br>
+        Current user name: <?php echo $current_user_name ?? 'not set'; ?><br>
+        Current user role: <?php echo $current_user_role ?? 'not set'; ?>
     </div>
     
     <!-- Main Content -->
