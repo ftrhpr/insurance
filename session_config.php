@@ -1,7 +1,6 @@
-// TEST: Confirm session_config.php is loaded
+// DEBUG: Confirm session_config.php is loaded
+echo "SESSION_CONFIG_LOADED";
 file_put_contents(__DIR__ . '/error_log', date('Y-m-d H:i:s') . " SESSION_CONFIG_LOADED\n", FILE_APPEND);
-// Uncomment the next line for visible output (for debugging only)
-// echo "SESSION_CONFIG_LOADED";
 <?php
 // Debug: log and display all errors in session_config.php
 error_reporting(E_ALL);
