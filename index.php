@@ -551,7 +551,7 @@ try {
     <!-- Premium Edit Modal -->
     <div id="edit-modal" class="hidden fixed inset-0" role="dialog" aria-modal="true">
         <!-- Enhanced Backdrop with Animation -->
-        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeModal()"></div>
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 transition-all duration-300" onclick="window.closeModal()"></div>
 
         <!-- Fullscreen Dialog Container -->
         <div class="fixed inset-0 flex items-stretch p-0 sm:p-2 md:p-4 lg:p-6">
@@ -850,11 +850,11 @@ try {
     <!-- Manual Create Order Modal -->
     <div id="manual-create-modal" class="hidden fixed inset-0" role="dialog" aria-modal="true">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black/80 backdrop-blur-lg transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
+        <div class="fixed inset-0 bg-black/80 transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
 
         <!-- Modal Container -->
-        <div class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 100000;">
-            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl" style="z-index: 100001;">
+        <div class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 2147483646;">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto" style="z-index: 2147483647; max-width: 42rem;">
                 
                 <!-- Header -->
                 <div class="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
@@ -2012,12 +2012,11 @@ try {
             window.currentEditingId = null;
             
             const modal = document.getElementById('manual-create-modal');
-            // Move modal to end of body to ensure it appears on top
-            document.body.appendChild(modal);
+            // Ensure proper positioning - don't move to end of body as it can cause centering issues
             // Set extreme z-index to guarantee it appears on top
             modal.style.zIndex = '2147483647'; // Maximum possible z-index value
             modal.classList.remove('hidden');
-            modal.style.display = 'block'; // Explicitly set display
+            modal.style.display = 'flex'; // Use flex to ensure centering works
             
             // Also show backdrop elements with maximum z-index
             const backdrops = modal.querySelectorAll('.fixed.inset-0');
@@ -2044,7 +2043,7 @@ try {
             const modal = document.getElementById('manual-create-modal');
             modal.classList.add('hidden');
             modal.style.zIndex = ''; // Reset z-index
-            modal.style.display = 'none'; // Explicitly hide
+            modal.style.display = ''; // Reset display
             // Hide backdrop
             const backdrops = modal.querySelectorAll('.fixed.inset-0');
             backdrops.forEach(backdrop => {
