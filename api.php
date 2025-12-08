@@ -480,7 +480,7 @@ try {
                     $stmt = $pdo->prepare("SELECT name, plate, phone, amount FROM transfers WHERE id = ?");
                     $stmt->execute([$id]);
                     $tr = $stmt->fetch(PDO::FETCH_ASSOC);
-                    if ($tr && !empty($tr['phone'])) {
+                        if ($tr && !empty($tr['phone'])) {
                         // Build review link
                         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
                         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -504,6 +504,32 @@ try {
                         $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : '';
                         $to = $tr['phone'];
                         @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=" . urlencode($to) . "&from=OTOMOTORS&text=" . urlencode($smsText));
+
+                        // Append a system log entry to the transfer record
+                        try {
+                            $logStmt = $pdo->prepare("SELECT system_logs FROM transfers WHERE id = ?");
+                            $logStmt->execute([$id]);
+                            $current = $logStmt->fetchColumn();
+                            $logs = [];
+                            if ($current) {
+                                $decoded = json_decode($current, true);
+                                if (is_array($decoded)) $logs = $decoded;
+                            }
+                            $logs[] = ['message' => 'Completed SMS sent to customer', 'sms_to' => $to, 'timestamp' => date('c')];
+                            $updateLogsStmt = $pdo->prepare("UPDATE transfers SET system_logs = ? WHERE id = ?");
+                            $updateLogsStmt->execute([json_encode($logs), $id]);
+                        } catch (Exception $elog) {
+                            error_log('Failed to append system_logs after completed SMS: ' . $elog->getMessage());
+                        }
+
+                        // Send a manager push notification via FCM
+                        try {
+                            $fcmTitle = 'Order Completed';
+                            $fcmBody = "Order #{$id} ({$tr['plate']}) marked Completed";
+                            sendFCM_V1($pdo, $service_account_file, $fcmTitle, $fcmBody);
+                        } catch (Exception $efcm) {
+                            error_log('Failed to send FCM on completion: ' . $efcm->getMessage());
+                        }
                     }
                 }
             } catch (Exception $e) {
