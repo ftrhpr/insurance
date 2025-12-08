@@ -447,6 +447,10 @@ try {
         if ($id <= 0) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
         }
+        // Fetch existing transfer to detect status changes and get contact info
+        $existingStmt = $pdo->prepare("SELECT name, plate, phone, amount, status FROM transfers WHERE id = ?");
+        $existingStmt->execute([$id]);
+        $existingTransfer = $existingStmt->fetch(PDO::FETCH_ASSOC);
         $fields = []; $params = [':id' => $id];
         foreach ($data as $key => $val) {
             if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
@@ -467,6 +471,44 @@ try {
         }
         if (!empty($fields)) {
             $pdo->prepare("UPDATE transfers SET " . implode(', ', $fields) . " WHERE id = :id")->execute($params);
+            // After update, if status changed to Completed, send review link SMS
+            try {
+                $newStatus = $data['status'] ?? ($existingTransfer['status'] ?? '');
+                $oldStatus = $existingTransfer['status'] ?? '';
+                if ($newStatus === 'Completed' && $oldStatus !== 'Completed') {
+                    // Get latest transfer info
+                    $stmt = $pdo->prepare("SELECT name, plate, phone, amount FROM transfers WHERE id = ?");
+                    $stmt->execute([$id]);
+                    $tr = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($tr && !empty($tr['phone'])) {
+                        // Build review link
+                        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                        $link = $scheme . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/public_view.php?id=' . $id;
+
+                        // Load template
+                        $tstmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'completed'");
+                        $tstmt->execute();
+                        $template = $tstmt->fetchColumn();
+                        if (!$template) {
+                            $template = 'Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}';
+                        }
+
+                        // Replace placeholders
+                        $smsText = str_replace(
+                            ['{name}', '{plate}', '{amount}', '{link}'],
+                            [$tr['name'], $tr['plate'], $tr['amount'], $link],
+                            $template
+                        );
+
+                        $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : '';
+                        $to = $tr['phone'];
+                        @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=" . urlencode($to) . "&from=OTOMOTORS&text=" . urlencode($smsText));
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('Error sending completed SMS after update_transfer: ' . $e->getMessage());
+            }
         }
         jsonResponse(['status' => 'success']);
     }
