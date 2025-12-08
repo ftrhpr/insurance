@@ -1129,10 +1129,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 // Squelch load errors to prevent loop spam, alert user once via status
             }
 
-            document.getElementById('loading-screen').classList.add('opacity-0', 'pointer-events-none');
+            const loadingScreenEl = document.getElementById('loading-screen');
+            const appContentEl = document.getElementById('app-content');
+            
+            if (loadingScreenEl) loadingScreenEl.classList.add('opacity-0', 'pointer-events-none');
             setTimeout(() => {
-                document.getElementById('loading-screen').classList.add('hidden');
-                document.getElementById('app-content').classList.remove('hidden');
+                if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
+                if (appContentEl) appContentEl.classList.remove('hidden');
             }, 500);
         }
 
@@ -1142,6 +1145,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         // Premium Toast Notifications
         function showToast(title, message = '', type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             
             // Handle legacy calls
             if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
@@ -1253,11 +1257,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         function renderVehicles(page = 1) {
             if (!vehicles || vehicles.length === 0) {
-                document.getElementById('vehicles-table-body').innerHTML = '';
-                document.getElementById('vehicles-empty').classList.remove('hidden');
-                document.getElementById('vehicles-count').textContent = '0 vehicles';
-                document.getElementById('vehicles-page-info').classList.add('hidden');
-                document.getElementById('vehicles-pagination').innerHTML = '';
+                const tableBodyEl = document.getElementById('vehicles-table-body');
+                const emptyEl = document.getElementById('vehicles-empty');
+                const countEl = document.getElementById('vehicles-count');
+                const pageInfoEl = document.getElementById('vehicles-page-info');
+                const paginationEl = document.getElementById('vehicles-pagination');
+                
+                if (tableBodyEl) tableBodyEl.innerHTML = '';
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                if (countEl) countEl.textContent = '0 vehicles';
+                if (pageInfoEl) pageInfoEl.classList.add('hidden');
+                if (paginationEl) paginationEl.innerHTML = '';
                 return;
             }
 
@@ -1287,16 +1297,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const pageVehicles = filtered.slice(startIndex, endIndex);
 
             // Update count
-            document.getElementById('vehicles-count').textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
+            const countEl = document.getElementById('vehicles-count');
+            if (countEl) countEl.textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
 
             // Render table
             const tbody = document.getElementById('vehicles-table-body');
+            const emptyEl = document.getElementById('vehicles-empty');
             if (pageVehicles.length === 0) {
-                tbody.innerHTML = '';
-                document.getElementById('vehicles-empty').classList.remove('hidden');
+                if (tbody) tbody.innerHTML = '';
+                if (emptyEl) emptyEl.classList.remove('hidden');
             } else {
-                document.getElementById('vehicles-empty').classList.add('hidden');
-                tbody.innerHTML = pageVehicles.map(v => {
+                if (emptyEl) emptyEl.classList.add('hidden');
+                if (tbody) tbody.innerHTML = pageVehicles.map(v => {
                     const addedDate = v.created_at ? new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
                     const source = v.source || 'Manual';
                     return `
@@ -1326,12 +1338,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             // Update pagination info
             if (totalVehicles > 0) {
-                document.getElementById('vehicles-page-info').classList.remove('hidden');
-                document.getElementById('vehicles-showing-start').textContent = startIndex + 1;
-                document.getElementById('vehicles-showing-end').textContent = endIndex;
-                document.getElementById('vehicles-total').textContent = totalVehicles;
+                const pageInfoEl = document.getElementById('vehicles-page-info');
+                const showingStartEl = document.getElementById('vehicles-showing-start');
+                const showingEndEl = document.getElementById('vehicles-showing-end');
+                const totalEl = document.getElementById('vehicles-total');
+                
+                if (pageInfoEl) pageInfoEl.classList.remove('hidden');
+                if (showingStartEl) showingStartEl.textContent = startIndex + 1;
+                if (showingEndEl) showingEndEl.textContent = endIndex;
+                if (totalEl) totalEl.textContent = totalVehicles;
             } else {
-                document.getElementById('vehicles-page-info').classList.add('hidden');
+                const pageInfoEl = document.getElementById('vehicles-page-info');
+                if (pageInfoEl) pageInfoEl.classList.add('hidden');
             }
 
             // Render pagination buttons
@@ -1343,6 +1361,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         function renderVehiclesPagination(totalPages) {
             const container = document.getElementById('vehicles-pagination');
+            if (!container) return;
             if (totalPages <= 1) {
                 container.innerHTML = '';
                 return;
@@ -1501,7 +1520,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         // --- TRANSFERS ---
         window.parseBankText = () => {
-            const text = document.getElementById('import-text').value;
+            const importTextEl = document.getElementById('import-text');
+            const text = importTextEl ? importTextEl.value : '';
             if(!text) return;
             const lines = text.split(/\r?\n/);
             parsedImportData = [];
@@ -1635,8 +1655,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             });
 
             if(parsedImportData.length > 0) {
-                document.getElementById('parsed-result').classList.remove('hidden');
-                document.getElementById('parsed-placeholder').classList.add('hidden');
+                const parsedResultEl = document.getElementById('parsed-result');
+                const parsedPlaceholderEl = document.getElementById('parsed-placeholder');
+                const parsedContentEl = document.getElementById('parsed-content');
+                const btnSaveImportEl = document.getElementById('btn-save-import');
+                
+                if (parsedResultEl) parsedResultEl.classList.remove('hidden');
+                if (parsedPlaceholderEl) parsedPlaceholderEl.classList.add('hidden');
                 
                 // Escape HTML to prevent XSS
                 const escapeHtml = (text) => {
@@ -1645,7 +1670,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     return div.innerHTML;
                 };
                 
-                document.getElementById('parsed-content').innerHTML = parsedImportData.map(i => 
+                if (parsedContentEl) parsedContentEl.innerHTML = parsedImportData.map(i => 
                     `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
                         <div class="flex items-center gap-2">
                             <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
@@ -1656,7 +1681,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
                     </div>`
                 ).join('');
-                document.getElementById('btn-save-import').innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
+                if (btnSaveImportEl) btnSaveImportEl.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
                 lucide.createIcons();
             } else {
                 showToast("No matches found", "Could not parse any transfers from the text", "error");
@@ -1665,7 +1690,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         window.saveParsedImport = async () => {
             const btn = document.getElementById('btn-save-import');
-            btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
+            if (btn) {
+                btn.disabled = true; 
+                btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
+            }
             
             let successCount = 0;
             let failCount = 0;
@@ -1700,9 +1728,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 });
             }
 
-            document.getElementById('import-text').value = '';
-            document.getElementById('parsed-result').classList.add('hidden');
-            document.getElementById('parsed-placeholder').classList.remove('hidden');
+            const importTextEl = document.getElementById('import-text');
+            const parsedResultEl = document.getElementById('parsed-result');
+            const parsedPlaceholderEl = document.getElementById('parsed-placeholder');
+            
+            if (importTextEl) importTextEl.value = '';
+            if (parsedResultEl) parsedResultEl.classList.add('hidden');
+            if (parsedPlaceholderEl) parsedPlaceholderEl.classList.remove('hidden');
             loadData();
             
             if (failCount > 0) {
@@ -1711,15 +1743,21 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 showToast("<?php echo __('status.import_successful', 'Import Successful'); ?>", `<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>`.replace('{count}', successCount), "success");
             }
             
-            btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Confirm & Save`;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Confirm & Save`;
+            }
             lucide.createIcons();
         };
 
         function renderTable() {
-            const search = document.getElementById('search-input').value.toLowerCase();
-            const filter = document.getElementById('status-filter').value;
-            const replyFilter = document.getElementById('reply-filter').value;
+            const searchInputEl = document.getElementById('search-input');
+            const statusFilterEl = document.getElementById('status-filter');
+            const replyFilterEl = document.getElementById('reply-filter');
+            
+            const search = searchInputEl ? searchInputEl.value.toLowerCase() : '';
+            const filter = statusFilterEl ? statusFilterEl.value : 'All';
+            const replyFilter = replyFilterEl ? replyFilterEl.value : 'All';
             
             const newContainer = document.getElementById('new-cases-grid');
             const activeContainer = document.getElementById('table-body');
@@ -1902,10 +1940,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
             });
 
-            document.getElementById('new-count').innerText = `${newCount}`;
-            document.getElementById('record-count').innerText = `${activeCount} active`;
-            document.getElementById('new-cases-empty').classList.toggle('hidden', newCount > 0);
-            document.getElementById('empty-state').classList.toggle('hidden', activeCount > 0);
+            const newCountEl = document.getElementById('new-count');
+            const recordCountEl = document.getElementById('record-count');
+            const newCasesEmptyEl = document.getElementById('new-cases-empty');
+            const emptyStateEl = document.getElementById('empty-state');
+            
+            if (newCountEl) newCountEl.innerText = `${newCount}`;
+            if (recordCountEl) recordCountEl.innerText = `${activeCount} active`;
+            if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
+            if (emptyStateEl) emptyStateEl.classList.toggle('hidden', activeCount > 0);
             lucide.createIcons();
         }
 
@@ -1918,22 +1961,33 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
             const phoneToFill = t.phone || (linkedVehicle ? linkedVehicle.phone : '');
 
-            document.getElementById('modal-title-ref').innerText = t.plate;
-            document.getElementById('modal-title-name').innerText = t.name;
-            document.getElementById('modal-order-id').innerText = `#${t.id}`;
-            document.getElementById('modal-amount').innerText = t.amount || '0';
-            document.getElementById('input-phone').value = phoneToFill;
-            document.getElementById('input-service-date').value = t.serviceDate ? t.serviceDate.replace(' ', 'T') : ''; 
-            document.getElementById('input-franchise').value = t.franchise || '';
-            document.getElementById('input-status').value = t.status;
+            const titleRefEl = document.getElementById('modal-title-ref');
+            const titleNameEl = document.getElementById('modal-title-name');
+            const orderIdEl = document.getElementById('modal-order-id');
+            const amountEl = document.getElementById('modal-amount');
+            const phoneInputEl = document.getElementById('input-phone');
+            const serviceDateEl = document.getElementById('input-service-date');
+            const franchiseEl = document.getElementById('input-franchise');
+            const statusEl = document.getElementById('input-status');
+
+            if (titleRefEl) titleRefEl.innerText = t.plate;
+            if (titleNameEl) titleNameEl.innerText = t.name;
+            if (orderIdEl) orderIdEl.innerText = `#${t.id}`;
+            if (amountEl) amountEl.innerText = t.amount || '0';
+            if (phoneInputEl) phoneInputEl.value = phoneToFill;
+            if (serviceDateEl) serviceDateEl.value = t.serviceDate ? t.serviceDate.replace(' ', 'T') : '';
+            if (franchiseEl) franchiseEl.value = t.franchise || '';
+            if (statusEl) statusEl.value = t.status;
             
             // Update workflow progress indicator
             const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
             const currentStageIndex = statusStages.indexOf(t.status);
             const progressPercentage = ((currentStageIndex + 1) / statusStages.length) * 100;
             
-            document.getElementById('workflow-stage-number').innerText = currentStageIndex + 1;
-            document.getElementById('workflow-progress-bar').style.width = `${progressPercentage}%`;
+            const stageNumberEl = document.getElementById('workflow-stage-number');
+            const progressBarEl = document.getElementById('workflow-progress-bar');
+            if (stageNumberEl) stageNumberEl.innerText = currentStageIndex + 1;
+            if (progressBarEl) progressBarEl.style.width = `${progressPercentage}%`;
             
             // Update status description
             const statusDescriptions = {
@@ -1946,23 +2000,32 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 'Completed': 'Case has been completed successfully',
                 'Issue': 'Case requires special attention'
             };
-            document.getElementById('status-description').innerText = statusDescriptions[t.status] || 'Unknown status';
+            const statusDescEl = document.getElementById('status-description');
+            if (statusDescEl) statusDescEl.innerText = statusDescriptions[t.status] || 'Unknown status';
             
             // Add status change listener for progress updates
-            document.getElementById('input-status').addEventListener('change', (e) => {
-                const newStatus = e.target.value;
-                const newStageIndex = statusStages.indexOf(newStatus);
-                const newProgressPercentage = ((newStageIndex + 1) / statusStages.length) * 100;
-                
-                document.getElementById('workflow-stage-number').innerText = newStageIndex + 1;
-                document.getElementById('workflow-progress-bar').style.width = `${newProgressPercentage}%`;
-                document.getElementById('status-description').innerText = statusDescriptions[newStatus] || 'Unknown status';
-            });
+            const statusInputEl = document.getElementById('input-status');
+            if (statusInputEl) {
+                statusInputEl.addEventListener('change', (e) => {
+                    const newStatus = e.target.value;
+                    const newStageIndex = statusStages.indexOf(newStatus);
+                    const newProgressPercentage = ((newStageIndex + 1) / statusStages.length) * 100;
+                    
+                    const stageNumberEl = document.getElementById('workflow-stage-number');
+                    const progressBarEl = document.getElementById('workflow-progress-bar');
+                    const statusDescEl = document.getElementById('status-description');
+                    
+                    if (stageNumberEl) stageNumberEl.innerText = newStageIndex + 1;
+                    if (progressBarEl) progressBarEl.style.width = `${newProgressPercentage}%`;
+                    if (statusDescEl) statusDescEl.innerText = statusDescriptions[newStatus] || 'Unknown status';
+                });
+            }
             
             // Format and display created date
+            const createdDateEl = document.getElementById('modal-created-date');
             if (t.created_at) {
                 const createdDate = new Date(t.created_at);
-                document.getElementById('modal-created-date').innerText = createdDate.toLocaleString('en-US', { 
+                if (createdDateEl) createdDateEl.innerText = createdDate.toLocaleString('en-US', { 
                     month: 'short', 
                     day: 'numeric', 
                     year: 'numeric',
@@ -1970,25 +2033,32 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     minute: '2-digit' 
                 });
             } else {
-                document.getElementById('modal-created-date').innerText = 'N/A';
+                if (createdDateEl) createdDateEl.innerText = 'N/A';
             }
             
-            document.getElementById('btn-call-real').href = t.phone ? `tel:${t.phone}` : '#';
-            document.getElementById('btn-sms-register').onclick = () => {
+            const callBtnEl = document.getElementById('btn-call-real');
+            if (callBtnEl) callBtnEl.href = t.phone ? `tel:${t.phone}` : '#';
+            
+            const smsRegisterBtnEl = document.getElementById('btn-sms-register');
+            if (smsRegisterBtnEl) smsRegisterBtnEl.onclick = () => {
                 // Use Template for Welcome SMS
+                const serviceDateEl = document.getElementById('input-service-date');
+                const phoneEl = document.getElementById('input-phone');
                 const templateData = { 
                     id: t.id, // ID needed for link gen
                     name: t.name, 
                     plate: t.plate, 
                     amount: t.amount, 
-                    serviceDate: document.getElementById('input-service-date').value 
+                    serviceDate: serviceDateEl ? serviceDateEl.value : '' 
                 };
                 const msg = getFormattedMessage('registered', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'registered');
+                if (phoneEl) window.sendSMS(phoneEl.value, msg, 'registered');
             };
 
-            document.getElementById('btn-sms-arrived').onclick = () => {
-                const date = document.getElementById('input-service-date').value;
+            const smsArrivedBtnEl = document.getElementById('btn-sms-arrived');
+            if (smsArrivedBtnEl) smsArrivedBtnEl.onclick = () => {
+                const serviceDateEl = document.getElementById('input-service-date');
+                const date = serviceDateEl ? serviceDateEl.value : '';
                 if (!date) return showToast("Time Required", "Please set an Appointment date for Parts Arrived SMS", "error");
                 
                 const templateData = { 
@@ -1999,11 +2069,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     serviceDate: date 
                 };
                 const msg = getFormattedMessage('parts_arrived', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived');
+                const phoneEl = document.getElementById('input-phone');
+                if (phoneEl) window.sendSMS(phoneEl.value, msg, 'parts_arrived');
             };
 
-            document.getElementById('btn-sms-schedule').onclick = () => {
-                const date = document.getElementById('input-service-date').value;
+            const smsScheduleBtnEl = document.getElementById('btn-sms-schedule');
+            if (smsScheduleBtnEl) smsScheduleBtnEl.onclick = () => {
+                const serviceDateEl = document.getElementById('input-service-date');
+                const date = serviceDateEl ? serviceDateEl.value : '';
                 if (!date) return showToast("Please set an Appointment date first", "error");
                 // Use Template for Schedule SMS
                 const templateData = { 
@@ -2014,7 +2087,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     serviceDate: date 
                 };
                 const msg = getFormattedMessage('schedule', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'schedule');
+                const phoneEl = document.getElementById('input-phone');
+                if (phoneEl) window.sendSMS(phoneEl.value, msg, 'schedule');
             };
 
             const logHTML = (t.systemLogs || []).map(l => `
@@ -2029,7 +2103,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                     </div>
                 </div>`).join('');
-            document.getElementById('activity-log-container').innerHTML = logHTML || '<div class="text-center py-8"><div class="bg-slate-100 p-4 rounded-lg"><i data-lucide="inbox" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i><span class="text-slate-500 text-sm">No system activity recorded</span></div></div>';
+            const activityLogEl = document.getElementById('activity-log-container');
+            if (activityLogEl) activityLogEl.innerHTML = logHTML || '<div class="text-center py-8"><div class="bg-slate-100 p-4 rounded-lg"><i data-lucide="inbox" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i><span class="text-slate-500 text-sm">No system activity recorded</span></div></div>';
             
             const noteHTML = (t.internalNotes || []).map(n => `
                 <div class="bg-white p-4 rounded-lg border border-emerald-200 mb-3 last:mb-0 shadow-sm">
@@ -2045,35 +2120,40 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                     </div>
                 </div>`).join('');
-            document.getElementById('notes-list').innerHTML = noteHTML || '<div class="text-center py-8"><div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200"><i data-lucide="sticky-note" class="w-8 h-8 text-emerald-400 mx-auto mb-2"></i><span class="text-emerald-600 text-sm">No team notes yet</span></div></div>';
+            const notesListEl = document.getElementById('notes-list');
+            if (notesListEl) notesListEl.innerHTML = noteHTML || '<div class="text-center py-8"><div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200"><i data-lucide="sticky-note" class="w-8 h-8 text-emerald-400 mx-auto mb-2"></i><span class="text-emerald-600 text-sm">No team notes yet</span></div></div>';
 
             // Display customer review if exists
             const reviewSection = document.getElementById('modal-review-section');
             if (t.reviewStars && t.reviewStars > 0) {
-                reviewSection.classList.remove('hidden');
-                document.getElementById('modal-review-rating').innerText = t.reviewStars;
+                if (reviewSection) reviewSection.classList.remove('hidden');
+                const reviewRatingEl = document.getElementById('modal-review-rating');
+                if (reviewRatingEl) reviewRatingEl.innerText = t.reviewStars;
                 
                 // Render stars
                 const starsHTML = Array(5).fill(0).map((_, i) => 
                     `<i data-lucide="star" class="w-5 h-5 ${i < t.reviewStars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}"></i>`
                 ).join('');
-                document.getElementById('modal-review-stars').innerHTML = starsHTML;
+                const reviewStarsEl = document.getElementById('modal-review-stars');
+                if (reviewStarsEl) reviewStarsEl.innerHTML = starsHTML;
                 
                 // Display comment
                 const comment = t.reviewComment || 'No comment provided';
-                document.getElementById('modal-review-comment').innerText = comment;
+                const reviewCommentEl = document.getElementById('modal-review-comment');
+                if (reviewCommentEl) reviewCommentEl.innerText = comment;
             } else {
-                reviewSection.classList.add('hidden');
+                if (reviewSection) reviewSection.classList.add('hidden');
             }
 
             // Display reschedule request if exists
             const rescheduleSection = document.getElementById('modal-reschedule-section');
             if (t.userResponse === 'Reschedule Requested' && (t.rescheduleDate || t.rescheduleComment)) {
-                rescheduleSection.classList.remove('hidden');
+                if (rescheduleSection) rescheduleSection.classList.remove('hidden');
                 
                 if (t.rescheduleDate) {
                     const requestedDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                    document.getElementById('modal-reschedule-date').innerText = requestedDate.toLocaleString('en-US', { 
+                    const rescheduleDateEl = document.getElementById('modal-reschedule-date');
+                    if (rescheduleDateEl) rescheduleDateEl.innerText = requestedDate.toLocaleString('en-US', { 
                         month: 'short', 
                         day: 'numeric', 
                         year: 'numeric',
@@ -2081,20 +2161,27 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         minute: '2-digit'
                     });
                 } else {
-                    document.getElementById('modal-reschedule-date').innerText = 'Not specified';
+                    const rescheduleDateEl = document.getElementById('modal-reschedule-date');
+                    if (rescheduleDateEl) rescheduleDateEl.innerText = 'Not specified';
                 }
                 
                 const rescheduleComment = t.rescheduleComment || 'No additional comments';
-                document.getElementById('modal-reschedule-comment').innerText = rescheduleComment;
+                const rescheduleCommentEl = document.getElementById('modal-reschedule-comment');
+                if (rescheduleCommentEl) rescheduleCommentEl.innerText = rescheduleComment;
             } else {
-                rescheduleSection.classList.add('hidden');
+                if (rescheduleSection) rescheduleSection.classList.add('hidden');
             }
 
-            document.getElementById('edit-modal').classList.remove('hidden');
+            const editModalEl = document.getElementById('edit-modal');
+            if (editModalEl) editModalEl.classList.remove('hidden');
             lucide.createIcons();
         };
 
-        window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
+        window.closeModal = () => { 
+            const editModalEl = document.getElementById('edit-modal');
+            if (editModalEl) editModalEl.classList.add('hidden'); 
+            window.currentEditingId = null; 
+        };
 
         // Manual Create Modal Functions
         window.openManualCreateModal = async () => {
@@ -2105,24 +2192,36 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
             
             const modal = document.getElementById('manual-create-modal');
-            modal.classList.remove('hidden');
+            if (modal) modal.classList.remove('hidden');
             
             // Clear all inputs
-            document.getElementById('manual-plate').value = '';
-            document.getElementById('manual-name').value = '';
-            document.getElementById('manual-phone').value = '';
-            document.getElementById('manual-amount').value = '';
-            document.getElementById('manual-franchise').value = '';
-            document.getElementById('manual-status').value = 'New';
-            document.getElementById('manual-notes').value = '';
+            const plateEl = document.getElementById('manual-plate');
+            const nameEl = document.getElementById('manual-name');
+            const phoneEl = document.getElementById('manual-phone');
+            const amountEl = document.getElementById('manual-amount');
+            const franchiseEl = document.getElementById('manual-franchise');
+            const statusEl = document.getElementById('manual-status');
+            const notesEl = document.getElementById('manual-notes');
+            
+            if (plateEl) plateEl.value = '';
+            if (nameEl) nameEl.value = '';
+            if (phoneEl) phoneEl.value = '';
+            if (amountEl) amountEl.value = '';
+            if (franchiseEl) franchiseEl.value = '';
+            if (statusEl) statusEl.value = 'New';
+            if (notesEl) notesEl.value = '';
             lucide.createIcons();
             
             // Focus on first input
-            setTimeout(() => document.getElementById('manual-plate').focus(), 100);
+            setTimeout(() => {
+                const plateFocusEl = document.getElementById('manual-plate');
+                if (plateFocusEl) plateFocusEl.focus();
+            }, 100);
         };
 
         window.closeManualCreateModal = () => {
-            document.getElementById('manual-create-modal').classList.add('hidden');
+            const modal = document.getElementById('manual-create-modal');
+            if (modal) modal.classList.add('hidden');
         };
 
         window.saveManualOrder = async () => {
@@ -2132,40 +2231,50 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 return;
             }
             
-            const plate = document.getElementById('manual-plate').value.trim();
-            const name = document.getElementById('manual-name').value.trim();
-            const phone = document.getElementById('manual-phone').value.trim();
-            const amount = parseFloat(document.getElementById('manual-amount').value) || 0;
-            const franchise = parseFloat(document.getElementById('manual-franchise').value) || 0;
-            const status = document.getElementById('manual-status').value;
-            const notes = document.getElementById('manual-notes').value.trim();
+            const plateEl = document.getElementById('manual-plate');
+            const nameEl = document.getElementById('manual-name');
+            const phoneEl = document.getElementById('manual-phone');
+            const amountEl = document.getElementById('manual-amount');
+            const franchiseEl = document.getElementById('manual-franchise');
+            const statusEl = document.getElementById('manual-status');
+            const notesEl = document.getElementById('manual-notes');
+            
+            const plate = plateEl ? plateEl.value.trim() : '';
+            const name = nameEl ? nameEl.value.trim() : '';
+            const phone = phoneEl ? phoneEl.value.trim() : '';
+            const amount = amountEl ? (parseFloat(amountEl.value) || 0) : 0;
+            const franchise = franchiseEl ? (parseFloat(franchiseEl.value) || 0) : 0;
+            const status = statusEl ? statusEl.value : 'New';
+            const notes = notesEl ? notesEl.value.trim() : '';
 
             // Validation
             if (!plate) {
                 showToast('Validation Error', 'Vehicle plate number is required', 'error');
-                document.getElementById('manual-plate').focus();
+                if (plateEl) plateEl.focus();
                 return;
             }
             if (!name) {
                 showToast('Validation Error', 'Customer name is required', 'error');
-                document.getElementById('manual-name').focus();
+                if (nameEl) nameEl.focus();
                 return;
             }
             if (isNaN(amount) || amount <= 0) {
                 showToast('Validation Error', 'Amount must be a valid number greater than 0', 'error');
-                document.getElementById('manual-amount').focus();
+                if (amountEl) amountEl.focus();
                 return;
             }
             if (franchise < 0) {
                 showToast('Validation Error', 'Franchise cannot be negative', 'error');
-                document.getElementById('manual-franchise').focus();
+                if (franchiseEl) franchiseEl.focus();
                 return;
             }
 
             // Disable submit button to prevent double submission
             const submitBtn = document.getElementById('manual-create-submit');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Creating...';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Creating...';
+            }
             
             // Prepare data
             const orderData = {
@@ -2205,8 +2314,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 showToast('Error', error.message || 'Failed to create order', 'error');
             } finally {
                 // Re-enable button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Create Order';
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Create Order';
+                }
                 lucide.createIcons();
             }
         };
@@ -2234,9 +2345,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 return;
             }
             const t = transfers.find(i => i.id == window.currentEditingId);
-            const status = document.getElementById('input-status').value;
-            const phone = document.getElementById('input-phone').value;
-            const serviceDate = document.getElementById('input-service-date').value;
+            const statusEl = document.getElementById('input-status');
+            const phoneEl = document.getElementById('input-phone');
+            const serviceDateEl = document.getElementById('input-service-date');
+            const franchiseEl = document.getElementById('input-franchise');
+            
+            const status = statusEl ? statusEl.value : t.status;
+            const phone = phoneEl ? phoneEl.value : t.phone;
+            const serviceDate = serviceDateEl ? serviceDateEl.value : t.serviceDate;
             
             // VALIDATION: Parts Arrived requires a date
             if (status === 'Parts Arrived' && !serviceDate) {
@@ -2247,7 +2363,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 status,
                 phone,
                 serviceDate: serviceDate || null,
-                franchise: document.getElementById('input-franchise').value,
+                franchise: franchiseEl ? franchiseEl.value : t.franchise,
                 internalNotes: t.internalNotes || [],
                 systemLogs: t.systemLogs || []
             };
@@ -2342,7 +2458,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         window.addNote = async () => {
-            const text = document.getElementById('new-note-input').value;
+            const newNoteInputEl = document.getElementById('new-note-input');
+            const text = newNoteInputEl ? newNoteInputEl.value : '';
             if(!text) return;
             const t = transfers.find(i => i.id == window.currentEditingId);
             const newNote = { text, authorName: 'Manager', timestamp: new Date().toISOString() };
@@ -2357,7 +2474,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 t.internalNotes = notes;
             }
             
-            document.getElementById('new-note-input').value = '';
+            if (newNoteInputEl) newNoteInputEl.value = '';
             
             // Re-render notes
             const noteHTML = (t.internalNotes || []).map(n => `
@@ -2365,7 +2482,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     <p class="text-sm text-slate-700">${escapeHtml(n.text)}</p>
                     <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName)}</span></div>
                 </div>`).join('');
-            document.getElementById('notes-list').innerHTML = noteHTML;
+            const notesListEl = document.getElementById('notes-list');
+            if (notesListEl) notesListEl.innerHTML = noteHTML;
         };
 
         window.quickAcceptReschedule = async (id) => {
@@ -2411,7 +2529,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             try {
                 // Update service date to the requested date
                 const rescheduleDateTime = t.rescheduleDate.replace(' ', 'T');
-                document.getElementById('input-service-date').value = rescheduleDateTime;
+                const serviceDateEl = document.getElementById('input-service-date');
+                if (serviceDateEl) serviceDateEl.value = rescheduleDateTime;
                 
                 // Call API to accept reschedule
                 await fetchAPI(`accept_reschedule&id=${window.currentEditingId}`, 'POST', {
@@ -2506,20 +2625,30 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     // Refresh Logs
                     const logsToRender = statusEl && statusEl.innerText.includes('Offline') ? t.systemLogs : [...(t.systemLogs || []), newLog];
                     const logHTML = logsToRender.map(l => `<div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600"><div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>${escapeHtml(l.message)}</div>`).join('');
-                    document.getElementById('activity-log-container').innerHTML = logHTML;
+                    const activityLogEl = document.getElementById('activity-log-container');
+                    if (activityLogEl) activityLogEl.innerHTML = logHTML;
                 }
                 showToast("SMS Sent", "success");
             } catch(e) { console.error(e); showToast("SMS Failed", "error"); }
         };
 
-        document.getElementById('search-input').addEventListener('input', renderTable);
-        document.getElementById('status-filter').addEventListener('change', renderTable);
-        document.getElementById('reply-filter').addEventListener('change', renderTable);
-        document.getElementById('new-note-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') window.addNote(); });
-        window.insertSample = (t) => document.getElementById('import-text').value = t;
+        const searchInputEl = document.getElementById('search-input');
+        const statusFilterEl = document.getElementById('status-filter');
+        const replyFilterEl = document.getElementById('reply-filter');
+        const newNoteInputEl = document.getElementById('new-note-input');
+        
+        if (searchInputEl) searchInputEl.addEventListener('input', renderTable);
+        if (statusFilterEl) statusFilterEl.addEventListener('change', renderTable);
+        if (replyFilterEl) replyFilterEl.addEventListener('change', renderTable);
+        if (newNoteInputEl) newNoteInputEl.addEventListener('keypress', (e) => { if(e.key === 'Enter') window.addNote(); });
+        window.insertSample = (t) => {
+            const importTextEl = document.getElementById('import-text');
+            if (importTextEl) importTextEl.value = t;
+        };
 
         // Ensure all modals are hidden on page load
-        document.getElementById('edit-modal')?.classList.add('hidden');
+        const editModalEl = document.getElementById('edit-modal');
+        if (editModalEl) editModalEl.classList.add('hidden');
         
         // Initialize data and icons
         try {
