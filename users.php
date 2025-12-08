@@ -45,11 +45,39 @@ $defaultUser = [
 try {
     $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
+
+    // Check if users table exists, create if not
+    $result = $pdo->query("SHOW TABLES LIKE 'users'");
+    if ($result->rowCount() == 0) {
+        echo "<!-- DEBUG: Creating users table -->";
+        $sql = "CREATE TABLE users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            full_name VARCHAR(100) NOT NULL,
+            email VARCHAR(100),
+            role ENUM('admin', 'manager', 'viewer') DEFAULT 'manager',
+            status ENUM('active', 'inactive') DEFAULT 'active',
+            last_login TIMESTAMP NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_by INT DEFAULT NULL,
+            INDEX idx_username (username),
+            INDEX idx_role (role),
+            INDEX idx_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+        $pdo->exec($sql);
+
+        // Create default admin user
+        $defaultPassword = password_hash('admin123', PASSWORD_DEFAULT);
+        $pdo->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'admin', 'active')")
+            ->execute(['admin', $defaultPassword, 'System Administrator']);
+        echo "<!-- DEBUG: Default admin user created -->";
+    }
+
     // Fetch all users
     $stmt = $pdo->query("SELECT id, username, full_name, email, role, status, last_login, created_at FROM users ORDER BY created_at DESC");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
 } catch (PDOException $e) {
     // On error, show at least the current logged-in user
     $users = [$defaultUser];
@@ -343,15 +371,9 @@ try {
         }
 
         // User Management Functions
-        async function loadUsers() {
-            try {
-                const data = await fetchAPI('get_users', 'GET');
-                allUsers = data.users || [];
-                renderUsersTable();
-            } catch (err) {
-                console.error('Error loading users:', err);
-                showToast('Error', 'Failed to load users', 'error');
-            }
+        // Users are loaded server-side, just render the table
+        function loadUsers() {
+            renderUsersTable();
         }
 
         function renderUsersTable() {
