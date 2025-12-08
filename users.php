@@ -30,7 +30,6 @@ if ($_SESSION['role'] !== 'admin') {
     header('Location: index.php');
     exit();
 }
-}
 
 // Get user info from session
 $current_user_name = $_SESSION['full_name'] ?? 'User';
@@ -86,8 +85,12 @@ try {
     $users = [$defaultUser];
     error_log("Database error in users.php: " . $e->getMessage());
 }
+
+// Ensure $users is always an array
+if (!isset($users) || !is_array($users)) {
+    $users = [$defaultUser];
+}
 ?>
-<!-- HTML DEBUG: HTML rendering started -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -304,7 +307,7 @@ try {
         const API_URL = 'api.php';
         const USER_ROLE = '<?php echo $current_user_role; ?>';
         
-        let allUsers = <?php echo json_encode($users); ?>;
+        let allUsers = <?php echo json_encode($users ?: []); ?>;
 
         // Utility Functions
         function showToast(title, message = '', type = 'info') {
