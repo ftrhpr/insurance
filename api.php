@@ -1,4 +1,20 @@
 <?php
+// Log every request for debugging
+file_put_contents(__DIR__ . '/error_log', date('Y-m-d H:i:s') . " REQUEST: " . $_SERVER['REQUEST_URI'] . "\n", FILE_APPEND);
+
+// Catch-all exception handler for any uncaught errors
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        http_response_code(500);
+        echo json_encode([
+            'error' => 'Shutdown',
+            'message' => $error['message'],
+            'file' => $error['file'],
+            'line' => $error['line']
+        ]);
+    }
+});
 // Set error handler FIRST before anything else
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
     if (!headers_sent()) {
