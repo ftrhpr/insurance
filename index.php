@@ -1478,12 +1478,21 @@ try {
         // --- TRANSFERS ---
         window.parseBankText = () => {
             const text = document.getElementById('import-text').value;
-            if(!text) return;
+            if(!text) {
+                showToast('No Text', 'Please enter some text to parse', 'error');
+                return;
+            }
             const lines = text.split(/\r?\n/);
             parsedImportData = [];
             
             // Load templates from PHP
             const templates = <?php echo json_encode($bankTemplates); ?>;
+            console.log('Available templates:', templates);
+            
+            if (templates.length === 0) {
+                showToast('No Templates', 'No parsing templates available. Please check database connection.', 'error');
+                return;
+            }
             
             const franchiseRegex = /\(ფრანშიზა\s*([\d\.]+)\)/i;
 
@@ -1491,7 +1500,17 @@ try {
                 let franchise = '';
                 for(let template of templates) {
                     try {
-                        const regex = new RegExp(template.regex_pattern);
+                        // Parse regex pattern and flags from stored format like /pattern/flags
+                        let pattern = template.regex_pattern;
+                        let flags = 'i'; // default case-insensitive
+                        
+                        if (pattern.startsWith('/') && pattern.includes('/', 1)) {
+                            const lastSlashIndex = pattern.lastIndexOf('/');
+                            flags = pattern.substring(lastSlashIndex + 1);
+                            pattern = pattern.substring(1, lastSlashIndex);
+                        }
+                        
+                        const regex = new RegExp(pattern, flags);
                         const m = line.match(regex);
                         if(m) {
                             let plate = '', name = '', amount = '';
