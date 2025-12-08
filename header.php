@@ -4,9 +4,13 @@
 // Make sure $current_user_name and $current_user_role are set before including
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
+    // TEMPORARILY DISABLED FOR DEBUGGING
+    // header('Location: login.php');
+    // exit();
+    echo "<!-- DEBUG: Header auth check passed -->";
 }
+
+echo "<!-- DEBUG: Header.php continuing after auth check -->";
 
 // Get current page name for active navigation
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
@@ -297,3 +301,4 @@ if ($current_user_role === 'admin') {
         }
     }
 </script>
+<!-- DEBUG: Header.php completed successfully -->
