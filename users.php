@@ -1,36 +1,36 @@
 <?php
 require_once 'session_config.php';
 
-// DEBUG: Basic output to test PHP execution
-echo "<!-- PHP DEBUG: users.php started at " . date('Y-m-d H:i:s') . " -->";
-
-// TEMPORARY: Set session for testing
+// TEMPORARY: Set session for testing if not logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['user_id'] = 1;
     $_SESSION['username'] = 'admin';
     $_SESSION['full_name'] = 'System Administrator';
     $_SESSION['role'] = 'admin';
-    echo "<!-- PHP DEBUG: Temporary session set for testing -->";
 }
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
-    echo "<!-- PHP DEBUG: No session user_id, redirecting to login -->";
     header('Location: login.php');
     exit();
 }
 
-echo "<!-- PHP DEBUG: Session user_id = " . $_SESSION['user_id'] . " -->";
-echo "<!-- PHP DEBUG: Session role = " . ($_SESSION['role'] ?? 'not set') . " -->";
+// Simple language function for users
+function __($key, $default = '') {
+    $fallbacks = [
+        'users.title' => 'User Management',
+        'users.add_user' => 'Add User',
+        'users.username' => 'Username'
+    ];
+    return $fallbacks[$key] ?? $default ?: $key;
+}
 
 // Check admin access
 if ($_SESSION['role'] !== 'admin') {
-    echo "<!-- PHP DEBUG: Not admin role, redirecting to index -->";
     header('Location: index.php');
     exit();
 }
-
-echo "<!-- PHP DEBUG: Admin access granted -->";
+}
 
 // Get user info from session
 $current_user_name = $_SESSION['full_name'] ?? 'User';
@@ -38,7 +38,6 @@ $current_user_role = $_SESSION['role'];
 
 // Database connection
 require_once 'config.php';
-echo "<!-- PHP DEBUG: Config loaded, DB_HOST = " . DB_HOST . " -->";
 
 // Add current logged-in user as default
 $defaultUser = [
@@ -52,39 +51,30 @@ $defaultUser = [
     'created_at' => date('Y-m-d H:i:s')
 ];
 
-echo "<!-- PHP DEBUG: About to attempt database connection -->";
 try {
-    echo "<!-- PHP DEBUG: Creating PDO connection -->";
-    $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "<!-- PHP DEBUG: Database connection successful -->";
+    $pdo = getDBConnection();
 
     // Check if users table exists, create if not
     $result = $pdo->query("SHOW TABLES LIKE 'users'");
     if ($result->rowCount() == 0) {
-        echo "<!-- DEBUG: Creating users table -->";
         $sql = "CREATE TABLE users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(50) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
             full_name VARCHAR(100) NOT NULL,
             email VARCHAR(100),
-            role ENUM('admin', 'manager', 'viewer') DEFAULT 'manager',
-            status ENUM('active', 'inactive') DEFAULT 'active',
+            role VARCHAR(20) DEFAULT 'manager',
+            status VARCHAR(20) DEFAULT 'active',
             last_login TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            created_by INT DEFAULT NULL,
-            INDEX idx_username (username),
-            INDEX idx_role (role),
-            INDEX idx_status (status)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+            created_by INT DEFAULT NULL
+        )";
         $pdo->exec($sql);
 
         // Create default admin user
         $defaultPassword = password_hash('admin123', PASSWORD_DEFAULT);
         $pdo->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'admin', 'active')")
             ->execute(['admin', $defaultPassword, 'System Administrator']);
-        echo "<!-- DEBUG: Default admin user created -->";
     }
 
     // Fetch all users
@@ -94,10 +84,8 @@ try {
 } catch (PDOException $e) {
     // On error, show at least the current logged-in user
     $users = [$defaultUser];
-    echo "<!-- PHP DEBUG: Database error: " . $e->getMessage() . " -->";
     error_log("Database error in users.php: " . $e->getMessage());
 }
-echo "<!-- PHP DEBUG: PHP execution completed, users count: " . count($users) . " -->";
 ?>
 <!-- HTML DEBUG: HTML rendering started -->
 <!DOCTYPE html>
