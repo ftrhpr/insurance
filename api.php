@@ -794,6 +794,141 @@ try {
         ]);
     }
 
+    // --- LANGUAGE MANAGEMENT ENDPOINTS ---
+
+    if ($action === 'get_languages' && $method === 'GET') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        require_once 'language.php';
+        $languages = Language::getAvailableLanguages();
+        $current = Language::getCurrentLanguage();
+
+        jsonResponse([
+            'languages' => $languages,
+            'current' => $current
+        ]);
+    }
+
+    if ($action === 'get_language_strings' && $method === 'GET') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        $language = $_GET['lang'] ?? 'en';
+        require_once 'language.php';
+
+        // Temporarily switch to requested language
+        $originalLang = Language::getCurrentLanguage();
+        Language::init($language);
+        $strings = Language::getAllStrings();
+        Language::init($originalLang); // Switch back
+
+        jsonResponse([
+            'language' => $language,
+            'strings' => $strings
+        ]);
+    }
+
+    if ($action === 'save_language_string' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        $data = getJsonInput();
+        $language = $data['language'] ?? 'en';
+        $key = $data['key'] ?? '';
+        $value = $data['value'] ?? '';
+
+        if (empty($key)) {
+            jsonResponse(['status' => 'error', 'message' => 'Key is required']);
+        }
+
+        require_once 'language.php';
+
+        // Temporarily switch to target language
+        $originalLang = Language::getCurrentLanguage();
+        Language::init($language);
+
+        Language::setString($key, $value);
+
+        // Switch back
+        Language::init($originalLang);
+
+        jsonResponse(['status' => 'success']);
+    }
+
+    if ($action === 'create_language' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        $data = getJsonInput();
+        $code = trim($data['code'] ?? '');
+        $name = trim($data['name'] ?? '');
+
+        if (empty($code) || empty($name)) {
+            jsonResponse(['status' => 'error', 'message' => 'Code and name are required']);
+        }
+
+        if (!preg_match('/^[a-z]{2,3}$/', $code)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid language code format']);
+        }
+
+        require_once 'language.php';
+
+        // Create new language file based on English
+        $enStrings = json_decode(file_get_contents(__DIR__ . '/languages/en.json'), true);
+        $enStrings['app']['language_name'] = $name;
+
+        if (Language::saveLanguage($code, $enStrings)) {
+            jsonResponse(['status' => 'success']);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Failed to create language file']);
+        }
+    }
+
+    if ($action === 'delete_language' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        $data = getJsonInput();
+        $code = $data['code'] ?? '';
+
+        if (empty($code) || $code === 'en') {
+            jsonResponse(['status' => 'error', 'message' => 'Cannot delete English language']);
+        }
+
+        require_once 'language.php';
+
+        if (Language::deleteLanguage($code)) {
+            jsonResponse(['status' => 'success']);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Failed to delete language']);
+        }
+    }
+
+    if ($action === 'switch_language' && $method === 'POST') {
+        $data = getJsonInput();
+        $language = $data['language'] ?? 'en';
+
+        require_once 'language.php';
+
+        if (Language::saveLanguage($language, Language::getAllStrings())) {
+            $_SESSION['language'] = $language;
+            jsonResponse(['status' => 'success']);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Failed to switch language']);
+        }
+    }
+
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(['error' => $e->getMessage()]);

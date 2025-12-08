@@ -7,6 +7,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+require_once 'language.php';
+
 // Check admin access
 if ($_SESSION['role'] !== 'admin') {
     header('Location: index.php');
@@ -51,7 +53,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - OTOMOTORS</title>
+    <title><?php echo Language::get('users.title'); ?> - OTOMOTORS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -94,10 +96,10 @@ try {
     <!-- Main Content -->
     <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-slate-800">User Accounts</h2>
+            <h2 class="text-2xl font-bold text-slate-800"><?php echo Language::get('users.user_accounts'); ?></h2>
             <button onclick="window.openCreateUserModal()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
                 <i data-lucide="user-plus" class="w-4 h-4"></i>
-                Add User
+                <?php echo Language::get('users.add_user'); ?>
             </button>
         </div>
 

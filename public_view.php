@@ -1,9 +1,12 @@
 <!DOCTYPE html>
+<?php
+require_once 'language.php';
+?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service Status | OTOMOTORS</title>
+    <title><?php echo Language::get('app.title'); ?> | Service Status</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +53,7 @@
     <!-- Loading State -->
     <div id="loader" class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p class="mt-3 text-gray-500 font-medium">Loading...</p>
+        <p class="mt-3 text-gray-500 font-medium"><?php echo Language::get('public_view.loading'); ?></p>
     </div>
 
     <!-- Main Card -->
@@ -61,22 +64,22 @@
                 <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm" id="header-icon-container">
                     <i data-lucide="calendar-check" class="w-8 h-8"></i>
                 </div>
-                <h1 id="header-title" class="text-2xl font-bold mb-1">Service Appointment</h1>
-                <p class="opacity-90 text-sm">OTOMOTORS Service Center</p>
+                <h1 id="header-title" class="text-2xl font-bold mb-1"><?php echo Language::get('public_view.service_appointment'); ?></h1>
+                <p class="opacity-90 text-sm"><?php echo Language::get('public_view.otomotors_service_center'); ?></p>
             </div>
         </div>
 
         <!-- Content -->
         <div class="p-6">
             <div class="text-center mb-6">
-                <h2 id="user-name" class="text-xl font-bold text-gray-800">Customer</h2>
+                <h2 id="user-name" class="text-xl font-bold text-gray-800"><?php echo Language::get('public_view.customer'); ?></h2>
                 <div class="flex flex-col items-center gap-2 mt-3">
                     <div class="bg-gray-100 px-4 py-2 rounded-full border-2 border-gray-200 flex items-center gap-2">
                         <i data-lucide="car" class="w-4 h-4 text-gray-600"></i>
                         <span id="plate" class="font-bold text-gray-700">---</span>
                     </div>
                     <small class="text-gray-500">
-                        Order ID: <span id="order-id" class="font-bold">#0</span>
+                        <?php echo Language::get('public_view.order_id'); ?>: <span id="order-id" class="font-bold">#0</span>
                     </small>
                 </div>
             </div>
@@ -90,7 +93,7 @@
                         <div id="date-day" class="text-3xl font-bold text-sky-600">--</div>
                     </div>
                     <div>
-                        <small class="block text-xs uppercase font-bold text-sky-600 mb-1">Scheduled Time</small>
+                        <small class="block text-xs uppercase font-bold text-sky-600 mb-1"><?php echo Language::get('public_view.scheduled_time'); ?></small>
                         <div id="date-time" class="text-2xl font-bold text-gray-800">--:--</div>
                     </div>
                 </div>
@@ -99,10 +102,10 @@
                 <div id="action-area" class="space-y-3">
                     <button onclick="submitResponse('Confirmed')" class="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-4 rounded-xl font-bold hover:from-sky-600 hover:to-sky-700 transition-all flex items-center justify-center gap-2">
                         <i data-lucide="check-circle" class="w-5 h-5"></i>
-                        <span>Confirm & Accept</span>
+                        <span><?php echo Language::get('public_view.confirm_accept'); ?></span>
                     </button>
                     <button onclick="openRescheduleModal()" class="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-50 transition-all">
-                        Request Another Time
+                        <?php echo Language::get('public_view.request_another_time'); ?>
                     </button>
                 </div>
 
@@ -111,24 +114,24 @@
                     <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="check" class="w-10 h-10 text-green-500"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">Response Recorded</h3>
-                    <p class="text-gray-500">Thank you for letting us know.</p>
+                    <h3 class="text-xl font-bold mb-2"><?php echo Language::get('public_view.response_recorded'); ?></h3>
+                    <p class="text-gray-500"><?php echo Language::get('public_view.thank_you_response'); ?></p>
                     
                     <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <small class="block text-xs uppercase font-bold text-gray-500 mb-1">Current Status</small>
+                        <small class="block text-xs uppercase font-bold text-gray-500 mb-1"><?php echo Language::get('public_view.current_status'); ?></small>
                         <p id="response-status" class="font-bold text-gray-800"></p>
                     </div>
 
                     <!-- Location Button & Map (Shows only if Confirmed) -->
                     <div id="location-box" class="hidden mt-4 pt-4 border-t border-gray-200">
-                        <p class="text-gray-500 mb-3">See you soon! Get directions here:</p>
+                        <p class="text-gray-500 mb-3"><?php echo Language::get('public_view.see_you_soon'); ?></p>
                         <!-- Embedded Map -->
                         <div class="aspect-video mb-3 rounded-xl overflow-hidden border border-gray-200">
                             <iframe class="w-full h-full" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?q=OTOMOTORS+Tbilisi&t=&z=15&ie=UTF8&iwloc=&output=embed"></iframe>
                         </div>
                         <a href="https://maps.app.goo.gl/4im27hK1oo1v65H2A" target="_blank" class="w-full inline-flex items-center justify-center gap-2 border-2 border-sky-500 text-sky-600 py-3 px-4 rounded-xl font-bold hover:bg-sky-50 transition-all">
                             <i data-lucide="map-pin" class="w-5 h-5"></i>
-                            Open in Google Maps App
+                            <?php echo Language::get('public_view.open_google_maps'); ?>
                         </a>
                     </div>
                 </div>
@@ -138,7 +141,7 @@
             <div id="review-section" class="hidden">
                 <!-- Review Form -->
                 <div id="review-form">
-                    <p class="text-center text-gray-500 mb-4">Your service is complete. How did we do?</p>
+                    <p class="text-center text-gray-500 mb-4"><?php echo Language::get('public_view.service_complete'); ?></p>
                     
                     <div class="flex justify-center gap-2 mb-4 star-rating">
                         <i data-lucide="star" class="w-10 h-10 text-gray-300 fill-gray-300 cursor-pointer hover:text-yellow-400 hover:fill-yellow-400" onclick="setRating(1)" data-rating="1"></i>
@@ -149,11 +152,11 @@
                     </div>
                     <input type="hidden" id="rating-value" value="0">
 
-                    <textarea id="review-comment" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-3 focus:border-sky-500 focus:outline-none" rows="4" placeholder="Tell us about your experience..."></textarea>
+                    <textarea id="review-comment" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-3 focus:border-sky-500 focus:outline-none" rows="4" placeholder="<?php echo Language::get('public_view.tell_us_experience'); ?>"></textarea>
 
                     <button onclick="submitReview()" class="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-4 rounded-xl font-bold hover:from-sky-600 hover:to-sky-700 transition-all flex items-center justify-center gap-2">
                         <i data-lucide="send" class="w-5 h-5"></i>
-                        Submit Review
+                        <?php echo Language::get('public_view.submit_review'); ?>
                     </button>
                 </div>
 
@@ -162,8 +165,8 @@
                     <div class="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="star" class="w-10 h-10 text-yellow-500 fill-yellow-500"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">Thank You!</h3>
-                    <p class="text-gray-500">We appreciate your feedback.</p>
+                    <h3 class="text-xl font-bold mb-2"><?php echo Language::get('public_view.thank_you'); ?></h3>
+                    <p class="text-gray-500"><?php echo Language::get('public_view.appreciate_feedback'); ?></p>
                 </div>
             </div>
 
@@ -173,7 +176,7 @@
         <div class="bg-gray-50 text-center py-4 border-t border-gray-200">
             <a href="tel:+995511144486" class="inline-flex items-center gap-2 text-sky-600 font-bold hover:text-sky-700 transition-colors">
                 <i data-lucide="phone" class="w-5 h-5"></i>
-                Call Support
+                <?php echo Language::get('public_view.call_support'); ?>
             </a>
         </div>
     </div>
@@ -184,8 +187,8 @@
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-start justify-between">
                     <div>
-                        <h5 class="text-lg font-bold">Request Reschedule</h5>
-                        <p class="text-gray-500 text-sm mt-1">Tell us your preferred date and time</p>
+                        <h5 class="text-lg font-bold"><?php echo Language::get('public_view.request_reschedule'); ?></h5>
+                        <p class="text-gray-500 text-sm mt-1"><?php echo Language::get('public_view.preferred_date_time'); ?></p>
                     </div>
                     <button onclick="closeRescheduleModal()" class="text-gray-400 hover:text-gray-600">
                         <i data-lucide="x" class="w-5 h-5"></i>
@@ -194,17 +197,17 @@
             </div>
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="reschedule-date" class="block font-bold text-gray-700 mb-2">Preferred Date & Time</label>
+                    <label for="reschedule-date" class="block font-bold text-gray-700 mb-2"><?php echo Language::get('public_view.preferred_date_time_label'); ?></label>
                     <input id="reschedule-date" type="datetime-local" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-sky-500 focus:outline-none">
                 </div>
                 <div>
-                    <label for="reschedule-comment" class="block font-bold text-gray-700 mb-2">Additional Comments (Optional)</label>
-                    <textarea id="reschedule-comment" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-sky-500 focus:outline-none" rows="4" placeholder="Let us know any specific requirements or reasons for rescheduling..."></textarea>
+                    <label for="reschedule-comment" class="block font-bold text-gray-700 mb-2"><?php echo Language::get('public_view.additional_comments'); ?></label>
+                    <textarea id="reschedule-comment" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-sky-500 focus:outline-none" rows="4" placeholder="<?php echo Language::get('public_view.let_us_know'); ?>"></textarea>
                 </div>
             </div>
             <div class="p-6 border-t border-gray-200 flex gap-3">
-                <button onclick="closeRescheduleModal()" class="flex-1 bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-50">Cancel</button>
-                <button onclick="submitReschedule()" class="flex-1 bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-4 rounded-xl font-bold hover:from-sky-600 hover:to-sky-700">Submit Request</button>
+                <button onclick="closeRescheduleModal()" class="flex-1 bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-50"><?php echo Language::get('public_view.cancel'); ?></button>
+                <button onclick="submitReschedule()" class="flex-1 bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-4 rounded-xl font-bold hover:from-sky-600 hover:to-sky-700"><?php echo Language::get('public_view.submit_request'); ?></button>
             </div>
         </div>
     </div>
@@ -214,8 +217,8 @@
         <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500"></i>
         </div>
-        <h3 class="text-xl font-bold mb-2">Appointment Not Found</h3>
-        <p class="text-gray-500">This link may be expired or invalid.</p>
+        <h3 class="text-xl font-bold mb-2"><?php echo Language::get('public_view.appointment_not_found'); ?></h3>
+        <p class="text-gray-500"><?php echo Language::get('public_view.link_expired'); ?></p>
     </div>
 
     <script>
@@ -223,6 +226,18 @@
         const urlParams = new URLSearchParams(window.location.search);
         const id = urlParams.get('id');
         let currentStars = 0;
+
+        // Language strings for JavaScript
+        const lang = {
+            connection_error: '<?php echo addslashes(Language::get('public_view.connection_error')); ?>',
+            select_star_rating: '<?php echo addslashes(Language::get('public_view.select_star_rating')); ?>',
+            error_submitting_review: '<?php echo addslashes(Language::get('public_view.error_submitting_review')); ?>',
+            status_confirmed: '<?php echo addslashes(Language::get('public_view.status_confirmed')); ?>',
+            status_reschedule_requested: '<?php echo addslashes(Language::get('public_view.status_reschedule_requested')); ?>',
+            status_pending: '<?php echo addslashes(Language::get('public_view.status_pending')); ?>',
+            sending: '<?php echo addslashes(Language::get('public_view.sending')); ?>',
+            select_date_time: '<?php echo addslashes(Language::get('public_view.select_date_time')); ?>'
+        };
 
         async function init() {
             if(!id || !/^\d+$/.test(id)) {
@@ -265,7 +280,7 @@
             }, 100);
 
             // Sanitize and set text content (prevents XSS)
-            document.getElementById('user-name').textContent = String(data.name || 'Valued Customer').substring(0, 100);
+            document.getElementById('user-name').textContent = String(data.name || '<?php echo Language::get('public_view.valued_customer'); ?>').substring(0, 100);
             document.getElementById('plate').textContent = String(data.plate || '---').substring(0, 20);
             document.getElementById('order-id').textContent = '#' + (parseInt(data.id) || '0');
 
@@ -289,7 +304,7 @@
                 document.getElementById('date-day').innerText = date.getDate();
                 document.getElementById('date-time').innerText = date.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
             } else {
-                document.getElementById('date-time').innerText = "TBD";
+                document.getElementById('date-time').innerText = "<?php echo Language::get('public_view.to_be_determined'); ?>";
             }
 
             if(data.userResponse && data.userResponse !== 'Pending') {
@@ -301,7 +316,7 @@
             // Change Header to Green/Success Style
             const header = document.getElementById('header-bg');
             header.className = 'bg-gradient-to-br from-green-500 to-green-600 text-white px-6 py-10 text-center relative';
-            document.getElementById('header-title').innerText = "Service Completed";
+            document.getElementById('header-title').innerText = "<?php echo Language::get('public_view.service_completed'); ?>";
             
             // Replace Icon
             const iconContainer = document.getElementById('header-icon-container');
@@ -353,7 +368,7 @@
             const comment = document.getElementById('reschedule-comment').value;
 
             if (!desiredDate) {
-                alert('Please select your preferred date and time');
+                alert(lang.select_date_time);
                 return;
             }
 
@@ -361,7 +376,7 @@
             const submitBtn = modal.querySelector('button[onclick="submitReschedule()"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-2"></i> Sending...';
+            submitBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-2"></i> ${lang.sending}`;
             lucide.createIcons();
 
             try {
@@ -378,7 +393,7 @@
                 closeRescheduleModal();
                 showSuccess('Reschedule Requested');
             } catch(e) {
-                alert("Connection error.");
+                alert(lang.connection_error);
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
                 lucide.createIcons();
@@ -399,7 +414,7 @@
                 });
                 showSuccess(status);
             } catch(e) {
-                alert("Connection error.");
+                alert(lang.connection_error);
                 btnArea.innerHTML = originalContent;
                 lucide.createIcons();
             }
@@ -408,7 +423,7 @@
         function showSuccess(status) {
             document.getElementById('action-area').classList.add('hidden');
             document.getElementById('success-message').classList.remove('hidden');
-            const statusMap = { 'Confirmed': '✅ Confirmed', 'Reschedule Requested': '📅 Reschedule Requested', 'Pending': '⏳ Pending' };
+            const statusMap = { 'Confirmed': lang.status_confirmed, 'Reschedule Requested': lang.status_reschedule_requested, 'Pending': lang.status_pending };
             document.getElementById('response-status').innerText = statusMap[status] || status;
             if (status === 'Confirmed') document.getElementById('location-box').classList.remove('hidden');
             else document.getElementById('location-box').classList.add('hidden');
@@ -432,12 +447,12 @@
         }
 
         async function submitReview() {
-            if (currentStars === 0) return alert("Please select a star rating.");
+            if (currentStars === 0) return alert(lang.select_star_rating);
             const comment = document.getElementById('review-comment').value;
             const btn = document.querySelector('#review-form button');
             
             btn.disabled = true;
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline mr-2"></i> Sending...`;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline mr-2"></i> ${lang.sending}`;
             lucide.createIcons();
 
             try {
@@ -450,9 +465,9 @@
                 document.getElementById('review-success').classList.remove('hidden');
                 lucide.createIcons();
             } catch(e) {
-                alert("Error submitting review.");
+                alert(lang.error_submitting_review);
                 btn.disabled = false;
-                btn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submit Review';
+                btn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> <?php echo Language::get('public_view.submit_review'); ?>';
                 lucide.createIcons();
             }
         }

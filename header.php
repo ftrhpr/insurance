@@ -22,6 +22,7 @@ $nav_items = [
 // Add Users page only for admins
 if ($current_user_role === 'admin') {
     $nav_items['users'] = ['icon' => 'users', 'label' => 'Users', 'url' => 'users.php'];
+    $nav_items['languages'] = ['icon' => 'languages', 'label' => 'Languages', 'url' => 'languages.php'];
 }
 ?>
 <style>

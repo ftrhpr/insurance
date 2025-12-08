@@ -7,6 +7,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+require_once 'language.php';
+
 // Include database configuration
 require_once 'config.php';
 
@@ -36,7 +38,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer DB - OTOMOTORS</title>
+    <title><?php echo Language::get('vehicles.title'); ?> - OTOMOTORS</title>
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -113,12 +115,12 @@ try {
             <!-- Header -->
             <div class="flex justify-between items-center">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800">Customer Database</h2>
-                    <p class="text-slate-500 text-sm">Centralized database of all customers, vehicles and service history.</p>
+                    <h2 class="text-2xl font-bold text-slate-800"><?php echo Language::get('vehicles.title'); ?></h2>
+                    <p class="text-slate-500 text-sm"><?php echo Language::get('vehicles.description'); ?></p>
                 </div>
                 <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
                 <button onclick="window.openVehicleModal()" class="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg active:scale-95 transition-all">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Add Customer
+                    <i data-lucide="plus" class="w-4 h-4"></i> <?php echo Language::get('vehicles.add_customer'); ?>
                 </button>
                 <?php endif; ?>
             </div>
@@ -129,7 +131,7 @@ try {
                     <!-- Search -->
                     <div class="flex-1 flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5">
                         <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
-                        <input id="vehicle-search" type="text" placeholder="Search by plate, owner or model..." class="w-full bg-transparent outline-none text-sm ml-3">
+                        <input id="vehicle-search" type="text" placeholder="<?php echo Language::get('vehicles.search_placeholder'); ?>" class="w-full bg-transparent outline-none text-sm ml-3">
                     </div>
                     
                     <!-- Status Filter -->
@@ -137,7 +139,7 @@ try {
                         <div class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5 min-w-[200px]">
                             <i data-lucide="filter" class="w-5 h-5 text-slate-400"></i>
                             <select id="status-filter" class="w-full bg-transparent outline-none text-sm ml-3 cursor-pointer">
-                                <option value="">All Status</option>
+                                <option value=""><?php echo Language::get('vehicles.all_status'); ?></option>
                                 <option value="New">New</option>
                                 <option value="Processing">Processing</option>
                                 <option value="Called">Called</option>
