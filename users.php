@@ -1,6 +1,5 @@
 <?php
 require_once 'session_config.php';
-echo "<!-- DEBUG: session_config loaded -->";
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
@@ -45,12 +44,10 @@ $defaultUser = [
 
 try {
     $pdo = getDBConnection();
-    echo "<!-- DEBUG: Database connected successfully -->";
 
     // Check if users table exists, create if not
     $result = $pdo->query("SHOW TABLES LIKE 'users'");
     $tableExists = $result->rowCount() > 0;
-    echo "<!-- DEBUG: Users table exists: " . ($tableExists ? 'yes' : 'no') . " -->";
     
     if (!$tableExists) {
         $sql = "CREATE TABLE users (
@@ -66,24 +63,20 @@ try {
             created_by INT DEFAULT NULL
         )";
         $pdo->exec($sql);
-        echo "<!-- DEBUG: Users table created -->";
 
         // Create default admin user
         $defaultPassword = password_hash('admin123', PASSWORD_DEFAULT);
         $pdo->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'admin', 'active')")
             ->execute(['admin', $defaultPassword, 'System Administrator']);
-        echo "<!-- DEBUG: Default admin user created -->";
     }
 
     // Fetch all users
     $stmt = $pdo->query("SELECT id, username, full_name, email, role, status, last_login, created_at FROM users ORDER BY created_at DESC");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo "<!-- DEBUG: Fetched " . count($users) . " users from database -->";
 
 } catch (PDOException $e) {
     // On error, show at least the current logged-in user
     $users = [$defaultUser];
-    echo "<!-- DEBUG: Database error: " . $e->getMessage() . " -->";
     error_log("Database error in users.php: " . $e->getMessage());
 }
 
@@ -91,7 +84,6 @@ try {
 if (!isset($users) || !is_array($users)) {
     $users = [$defaultUser];
 }
-echo "<!-- DEBUG: About to output HTML -->";
 ?>
 <!DOCTYPE html>
 <html lang="en">
