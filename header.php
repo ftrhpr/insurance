@@ -3,6 +3,10 @@
 // Usage: include 'header.php'; before any HTML output
 // Make sure $current_user_name and $current_user_role are set before including
 
+require_once 'language.php';
+
+$current_lang = get_current_language();
+
 // Ensure required variables are set
 if (!isset($current_user_name)) $current_user_name = $_SESSION['full_name'] ?? 'User';
 if (!isset($current_user_role)) $current_user_role = $_SESSION['role'] ?? 'user';
@@ -206,6 +210,55 @@ if ($current_user_role === 'admin') {
     color: #b91c1c;
 }
 
+/* Language Selector */
+.language-selector {
+    position: relative;
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .language-selector {
+        display: block;
+    }
+}
+
+.language-select {
+    appearance: none;
+    background: rgba(241,245,249,0.8);
+    border: 1px solid rgba(226,232,240,0.6);
+    border-radius: 0.5rem;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+.language-select:hover {
+    background: rgba(14,165,233,0.05);
+    border-color: rgba(14,165,233,0.3);
+}
+
+.language-select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: rgba(14,165,233,0.2);
+    border-color: #0ea5e9;
+}
+
+.language-icon {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #64748b;
+    width: 1rem;
+    height: 1rem;
+}
+
 /* Mobile menu button */
 .mobile-menu-btn {
     display: block;
@@ -276,6 +329,20 @@ if ($current_user_role === 'admin') {
 
             <!-- User Section -->
             <div class="user-section">
+                <div class="language-selector">
+                    <select class="language-select" onchange="changeLanguage(this.value)">
+                        <?php foreach ($LANGUAGES as $code => $name): ?>
+                            <option value="<?php echo $code; ?>" <?php echo $code === $current_lang ? 'selected' : ''; ?>>
+                                <?php echo $code === 'en' ? 'EN' : ($code === 'ka' ? 'KA' : 'RU'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <svg class="language-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        <path d="M2 12h20"/>
+                    </svg>
+                </div>
                 <div class="user-avatar">
                     <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
                 </div>
@@ -298,6 +365,18 @@ if ($current_user_role === 'admin') {
     <!-- Mobile Menu -->
     <div id="mobile-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e2e8f0; border-radius: 0 0 0.75rem 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
         <div style="padding: 1rem;">
+            <!-- Mobile Language Selector -->
+            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Language</label>
+                <select class="language-select" onchange="changeLanguage(this.value)" style="width: 100%;">
+                    <?php foreach ($LANGUAGES as $code => $name): ?>
+                        <option value="<?php echo $code; ?>" <?php echo $code === $current_lang ? 'selected' : ''; ?>>
+                            <?php echo $name; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
             <?php foreach ($nav_items as $page => $item): ?>
                 <?php $is_active = ($current_page === $page); ?>
                 <a href="<?php echo $item['url']; ?>" style="display: block; padding: 0.75rem; text-decoration: none; color: <?php echo $is_active ? '#0ea5e9' : '#475569'; ?>; font-weight: <?php echo $is_active ? '600' : '500'; ?>; border-radius: 0.375rem; margin-bottom: 0.25rem; <?php echo $is_active ? 'background: rgba(14,165,233,0.1);' : ''; ?>">
@@ -312,6 +391,36 @@ if ($current_user_role === 'admin') {
 function toggleMobileMenu() {
     const menu = document.getElementById('mobile-menu');
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function changeLanguage(lang) {
+    // Create form data for POST request
+    const formData = new FormData();
+    formData.append('language', lang);
+
+    // Use XMLHttpRequest instead of fetch for better compatibility
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'api.php?action=set_language', true);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const result = JSON.parse(xhr.responseText);
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    console.error('Failed to change language:', result.message);
+                }
+            } catch (e) {
+                console.error('Invalid response:', xhr.responseText);
+            }
+        } else {
+            console.error('Request failed:', xhr.status);
+        }
+    };
+    xhr.onerror = function() {
+        console.error('Network error');
+    };
+    xhr.send(formData);
 }
 
 // Close mobile menu when clicking outside
