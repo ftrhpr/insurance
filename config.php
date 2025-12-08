@@ -1,6 +1,3 @@
-// RO App API base config for data sync
-define('ROAPP_API_BASE', 'https://api.roapp.io');
-define('ROAPP_API_KEY', '568f4ff46dd64c5ea9e18039f1915230');
 <?php
 // config.php - Centralized database configuration
 // Include this file in all PHP files that need database access

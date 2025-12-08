@@ -1,31 +1,3 @@
-// --- RO App API Sync Functions ---
-function fetchROAppOrders($page = 1) {
-    require_once 'config.php';
-    $url = ROAPP_API_BASE . '/orders?page=' . intval($page);
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . ROAPP_API_KEY,
-        'Content-Type: application/json'
-    ]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($httpCode >= 200 && $httpCode < 300) {
-        return json_decode($response, true);
-    }
-    return null;
-}
-
-if ($action === 'sync_roapp_orders' && $method === 'GET') {
-    $page = intval($_GET['page'] ?? 1);
-    $orders = fetchROAppOrders($page);
-    if ($orders) {
-        jsonResponse(['status' => 'success', 'orders' => $orders]);
-    } else {
-        jsonResponse(['status' => 'error', 'message' => 'Failed to fetch RO App orders']);
-    }
-}
 <?php
 require_once 'session_config.php';
 
@@ -474,56 +446,6 @@ try {
         if (!empty($fields)) {
             $pdo->prepare("UPDATE transfers SET " . implode(', ', $fields) . " WHERE id = :id")->execute($params);
         }
-            // RO App API integration: create order in RO App when status changes to 'Processing'
-            if (isset($data['status']) && $data['status'] === 'Processing') {
-                require_once 'config.php';
-                // Fetch transfer details for payload
-                $stmt = $pdo->prepare("SELECT * FROM transfers WHERE id = ?");
-                $stmt->execute([$id]);
-                $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($transfer) {
-                    // Prepare RO App API payload
-                    $roPayload = [
-                        'plate' => $transfer['plate'],
-                        'name' => $transfer['name'],
-                        'phone' => $transfer['phone'],
-                        'amount' => $transfer['amount'],
-                        'franchise' => $transfer['franchise'],
-                        'order_id' => $transfer['id'],
-                        // Add other required fields as needed
-                    ];
-                    // RO App API endpoint and token from config
-                    $roApiUrl = RO_APP_API_URL;
-                    $roApiToken = RO_APP_API_TOKEN;
-                    // Send POST request
-                    $ch = curl_init($roApiUrl);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_POST, true);
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($roPayload));
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                        'Content-Type: application/json',
-                        'Authorization: Bearer ' . $roApiToken
-                    ]);
-                    $roResponse = curl_exec($ch);
-                    $roHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    curl_close($ch);
-                    // Optionally log or handle response
-                    if ($roHttpCode >= 200 && $roHttpCode < 300) {
-                        // Success: log to systemLogs
-                        $logMsg = 'RO App order created successfully.';
-                    } else {
-                        $logMsg = 'RO App order creation failed: ' . $roResponse;
-                    }
-                    // Update systemLogs
-                    $logs = json_decode($transfer['system_logs'] ?? '[]', true);
-                    $logs[] = [
-                        'message' => $logMsg,
-                        'timestamp' => date('c'),
-                        'type' => 'external_api'
-                    ];
-                    $pdo->prepare("UPDATE transfers SET system_logs = ? WHERE id = ?")->execute([json_encode($logs), $id]);
-                }
-            }
         jsonResponse(['status' => 'success']);
     }
     
