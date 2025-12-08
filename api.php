@@ -553,12 +553,26 @@ try {
         jsonResponse($rows ?: new stdClass());
     }
     if ($action === 'save_templates' && $method === 'POST') {
-        // Temporary debug - just return success
-        error_log("save_templates: Request received");
-        error_log("save_templates: User ID: " . ($_SESSION['user_id'] ?? 'none'));
-        error_log("save_templates: User role: " . ($_SESSION['role'] ?? 'none'));
-        jsonResponse(['status' => 'saved']);
-        exit;
+        $data = getJsonInput();
+
+        // Validate input data
+        if (empty($data) || !is_array($data)) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Invalid or empty data received']);
+            exit;
+        }
+
+        try {
+            $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (:slug, :content) ON DUPLICATE KEY UPDATE content = :content");
+            foreach ($data as $slug => $content) {
+                $stmt->execute([':slug' => $slug, ':content' => $content]);
+            }
+            jsonResponse(['status' => 'saved']);
+        } catch (Exception $e) {
+            error_log("Database error in save_templates: " . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+        }
     }
 
     // --- CUSTOMER REVIEWS ENDPOINTS ---

@@ -94,14 +94,17 @@ try {
             <div class="lg:col-span-2 space-y-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-slate-800">Manage SMS Templates</h2>
-                    <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
-                    <button onclick="window.saveAllTemplates()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
-                        <i data-lucide="save" class="w-4 h-4"></i>
-                        Save All Templates
-                    </button>
-                    <?php else: ?>
-                    <div class="text-sm text-slate-500 italic">View only - editing disabled</div>
-                    <?php endif; ?>
+                    <div class="text-sm text-slate-500">
+                        Role: <?php echo htmlspecialchars($current_user_role); ?> |
+                        <?php if ($current_user_role === 'admin' || $current_user_role === 'manager' || $current_user_role === 'viewer'): ?>
+                        <button onclick="window.saveAllTemplates()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            Save All Templates
+                        </button>
+                        <?php else: ?>
+                        <span class="text-red-500">View only - editing disabled (insufficient permissions)</span>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <!-- Template Cards -->
@@ -115,7 +118,7 @@ try {
                             <h3 class="font-bold text-slate-800">Welcome SMS</h3>
                             <span class="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full ml-auto">Processing</span>
                         </div>
-                        <textarea id="tpl-registered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['registered'] ?? ''); ?></textarea>
+                        <textarea id="tpl-registered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['registered'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Customer Contacted -->
@@ -127,7 +130,7 @@ try {
                             <h3 class="font-bold text-slate-800">Customer Contacted</h3>
                             <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full ml-auto">Called</span>
                         </div>
-                        <textarea id="tpl-called" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['called'] ?? ''); ?></textarea>
+                        <textarea id="tpl-called" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['called'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Service Scheduled -->
@@ -139,7 +142,7 @@ try {
                             <h3 class="font-bold text-slate-800">Service Scheduled</h3>
                             <span class="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full ml-auto">Scheduled</span>
                         </div>
-                        <textarea id="tpl-schedule" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['schedule'] ?? ''); ?></textarea>
+                        <textarea id="tpl-schedule" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['schedule'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Parts Ordered -->
@@ -151,7 +154,7 @@ try {
                             <h3 class="font-bold text-slate-800">Parts Ordered</h3>
                             <span class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full ml-auto">Parts Ordered</span>
                         </div>
-                        <textarea id="tpl-parts_ordered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_ordered'] ?? ''); ?></textarea>
+                        <textarea id="tpl-parts_ordered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_ordered'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Parts Arrived -->
@@ -163,7 +166,7 @@ try {
                             <h3 class="font-bold text-slate-800">Parts Arrived</h3>
                             <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full ml-auto">Parts Arrived</span>
                         </div>
-                        <textarea id="tpl-parts_arrived" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_arrived'] ?? ''); ?></textarea>
+                        <textarea id="tpl-parts_arrived" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_arrived'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Reschedule Request -->
@@ -175,7 +178,7 @@ try {
                             <h3 class="font-bold text-slate-800">Reschedule Request (Customer)</h3>
                             <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">Customer Action</span>
                         </div>
-                        <textarea id="tpl-rescheduled" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['rescheduled'] ?? ''); ?></textarea>
+                        <textarea id="tpl-rescheduled" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['rescheduled'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Reschedule Accepted -->
@@ -187,7 +190,7 @@ try {
                             <h3 class="font-bold text-slate-800">Reschedule Accepted (Manager)</h3>
                             <span class="text-xs px-2 py-1 bg-cyan-100 text-cyan-700 rounded-full ml-auto">Manager Action</span>
                         </div>
-                        <textarea id="tpl-reschedule_accepted" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['reschedule_accepted'] ?? ''); ?></textarea>
+                        <textarea id="tpl-reschedule_accepted" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['reschedule_accepted'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Service Completed -->
@@ -199,7 +202,7 @@ try {
                             <h3 class="font-bold text-slate-800">Service Completed</h3>
                             <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full ml-auto">Completed</span>
                         </div>
-                        <textarea id="tpl-completed" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['completed'] ?? ''); ?></textarea>
+                        <textarea id="tpl-completed" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['completed'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Issue Reported -->
@@ -211,7 +214,7 @@ try {
                             <h3 class="font-bold text-slate-800">Issue Reported</h3>
                             <span class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full ml-auto">Issue</span>
                         </div>
-                        <textarea id="tpl-issue" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['issue'] ?? ''); ?></textarea>
+                        <textarea id="tpl-issue" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['issue'] ?? ''); ?></textarea>
                     </div>
                 </div>
             </div>
@@ -263,7 +266,7 @@ try {
     <script>
         const API_URL = 'api.php';
         const USER_ROLE = '<?php echo $current_user_role; ?>';
-        const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
+        const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager' || USER_ROLE === 'viewer';
         
         let smsTemplates = <?php echo json_encode($templatesData); ?>;
 
