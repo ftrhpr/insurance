@@ -1515,6 +1515,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 // If no pattern, look for amount at the end
                                 regex = /([\d\.,]+)$/i;
                             }
+                        } else if (field === 'franchise') {
+                            // Franchise amounts: look for pattern followed by number in parentheses
+                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
                         }
                         
                         if (regex) {
@@ -1523,15 +1526,19 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 if (field === 'plate') extractedData.plate = match[1];
                                 else if (field === 'name') extractedData.name = match[1].trim();
                                 else if (field === 'amount') extractedData.amount = match[1];
+                                else if (field === 'franchise') extractedData.franchise = match[1];
                             }
                         }
                     }
                     
                     // If we extracted at least plate and amount, consider it a match
                     if (extractedData.plate && extractedData.amount) {
-                        let franchise = '';
-                        const fMatch = line.match(franchiseRegex);
-                        if(fMatch) franchise = fMatch[1];
+                        let franchise = extractedData.franchise || '';
+                        // Fallback to general franchise regex if not found in template
+                        if (!franchise) {
+                            const fMatch = line.match(franchiseRegex);
+                            if(fMatch) franchise = fMatch[1];
+                        }
 
                         // Clean up name (remove trailing commas)
                         if (extractedData.name) {

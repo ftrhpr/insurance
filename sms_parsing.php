@@ -76,11 +76,12 @@ try {
             [
                 'name' => 'Aldagi Standard',
                 'insurance_company' => 'Aldagi Insurance',
-                'template_pattern' => 'მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT]',
+                'template_pattern' => 'მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT] (ფრანშიზა [FRANCHISE])',
                 'field_mappings' => json_encode([
                     ['field' => 'plate', 'pattern' => 'მანქანის ნომერი:', 'description' => 'Plate number after Georgian text'],
                     ['field' => 'name', 'pattern' => 'დამზღვევი:', 'description' => 'Customer name after Georgian text'],
-                    ['field' => 'amount', 'pattern' => ',', 'description' => 'Amount after comma']
+                    ['field' => 'amount', 'pattern' => ',', 'description' => 'Amount after comma'],
+                    ['field' => 'franchise', 'pattern' => '(ფრანშიზა', 'description' => 'Franchise amount in parentheses after Georgian text']
                 ])
             ],
             [
@@ -242,12 +243,13 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                         <li>Each template defines how to extract data from SMS messages from a specific insurance company</li>
                         <li>Field mappings use patterns to locate data in the SMS text</li>
                         <li>The system automatically matches incoming SMS against these templates</li>
+                        <li><strong>Supported fields:</strong> plate number, customer name, amount, and franchise amounts</li>
                         <li><strong>Supported formats include:</strong></li>
                         <ul class="list-disc list-inside ml-4 space-y-1">
                             <li><code class="bg-blue-100 px-1 rounded">Transfer from [NAME], Plate: [PLATE], Amt: [AMOUNT]</code></li>
                             <li><code class="bg-blue-100 px-1 rounded">INSURANCE PAY | [PLATE] | [NAME] | [AMOUNT]</code></li>
                             <li><code class="bg-blue-100 px-1 rounded">User: [NAME] Car: [PLATE] Sum: [AMOUNT]</code></li>
-                            <li><code class="bg-blue-100 px-1 rounded">მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT]</code> (Aldagi)</li>
+                            <li><code class="bg-blue-100 px-1 rounded">მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT] (ფრანშიზა [FRANCHISE])</code> (Aldagi with franchise)</li>
                             <li><code class="bg-blue-100 px-1 rounded">სახ. ნომ [PLATE] [AMOUNT]</code> (Ardi)</li>
                             <li><code class="bg-blue-100 px-1 rounded">[MAKE] ([PLATE]) [AMOUNT]</code> (Imedi L)</li>
                         </ul>
