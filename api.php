@@ -353,13 +353,10 @@ try {
     if ($action === 'create_transfer' && $method === 'POST') {
         error_log("Create transfer request from user: " . ($_SESSION['user_id'] ?? 'unknown') . ", role: " . ($_SESSION['role'] ?? 'unknown'));
         
-        // Temporarily disabled for debugging
-        // if (!checkPermission('manager')) {
-        //     error_log("Permission denied for create_transfer. User role: " . ($_SESSION['role'] ?? 'none'));
-        //     jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions. Manager or Admin role required.', 'current_role' => $_SESSION['role'] ?? 'none']);
-        // }
-        
-        error_log("Permission check bypassed for debugging");
+        if (!checkPermission('manager')) {
+            error_log("Permission denied for create_transfer. User role: " . ($_SESSION['role'] ?? 'none'));
+            jsonResponse(['status' => 'error', 'message' => 'Insufficient permissions. Manager or Admin role required.', 'current_role' => $_SESSION['role'] ?? 'none']);
+        }
         
         $data = getJsonInput();
         error_log("Create transfer data: " . json_encode($data));
