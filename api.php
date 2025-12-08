@@ -596,6 +596,13 @@ try {
         }
 
         try {
+            // Ensure table exists (defensive migration) to avoid missing-table 500 errors
+            $createSql = "CREATE TABLE IF NOT EXISTS sms_templates (
+                slug VARCHAR(50) PRIMARY KEY,
+                content TEXT
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+            $pdo->exec($createSql);
+
             $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (:slug, :content) ON DUPLICATE KEY UPDATE content = :content");
             foreach ($data as $slug => $content) {
                 // Log each insert attempt for debugging
