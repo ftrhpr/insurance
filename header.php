@@ -222,41 +222,75 @@ if ($current_user_role === 'admin') {
     }
 }
 
-.language-select {
-    appearance: none;
+.language-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
     background: rgba(241,245,249,0.8);
     border: 1px solid rgba(226,232,240,0.6);
     border-radius: 0.5rem;
     color: #475569;
-    font-size: 0.875rem;
-    font-weight: 500;
-    padding: 0.5rem 2rem 0.5rem 0.75rem;
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 80px;
 }
 
-.language-select:hover {
-    background: rgba(14,165,233,0.05);
+.language-btn:hover {
+    background: rgba(14,165,233,0.1);
     border-color: rgba(14,165,233,0.3);
+    color: #0ea5e9;
 }
 
-.language-select:focus {
-    outline: none;
-    ring: 2px;
-    ring-color: rgba(14,165,233,0.2);
-    border-color: #0ea5e9;
-}
-
-.language-icon {
+.language-dropdown {
     position: absolute;
-    right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    color: #64748b;
-    width: 1rem;
-    height: 1rem;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    min-width: 120px;
+    display: none;
+    z-index: 50;
+}
+
+.language-option {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    background: none;
+    border: none;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.language-option:hover {
+    background: rgba(14,165,233,0.05);
+    color: #0ea5e9;
+}
+
+.language-option.active {
+    background: rgba(14,165,233,0.1);
+    color: #0ea5e9;
+    font-weight: 600;
+}
+
+.language-option:first-child {
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.language-option:last-child {
+    border-radius: 0 0 0.375rem 0.375rem;
+}
+
+.language-option:only-child {
+    border-radius: 0.375rem;
 }
 
 /* Mobile menu button */
@@ -330,18 +364,22 @@ if ($current_user_role === 'admin') {
             <!-- User Section -->
             <div class="user-section">
                 <div class="language-selector">
-                    <select class="language-select" onchange="changeLanguage(this.value)">
-                        <?php foreach ($LANGUAGES as $code => $name): ?>
-                            <option value="<?php echo $code; ?>" <?php echo $code === $current_lang ? 'selected' : ''; ?>>
-                                <?php echo $code === 'en' ? 'EN' : ($code === 'ka' ? 'KA' : 'RU'); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <svg class="language-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                        <path d="M2 12h20"/>
-                    </svg>
+                    <div style="position: relative;">
+                        <button onclick="toggleLanguageMenu()" class="language-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                <path d="M2 12h20"/>
+                            </svg>
+                        </button>
+                        <div id="language-dropdown" class="language-dropdown">
+                            <?php foreach ($LANGUAGES as $code => $name): ?>
+                                <button onclick="changeLanguage('<?php echo $code; ?>')" class="language-option <?php echo $code === $current_lang ? 'active' : ''; ?>">
+                                    <?php echo $name; ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
                 <div class="user-avatar">
                     <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
@@ -393,7 +431,15 @@ function toggleMobileMenu() {
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
+function toggleLanguageMenu() {
+    const dropdown = document.getElementById('language-dropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
 function changeLanguage(lang) {
+    // Hide dropdown
+    document.getElementById('language-dropdown').style.display = 'none';
+
     // Create form data for POST request
     const formData = new FormData();
     formData.append('language', lang);
@@ -423,12 +469,18 @@ function changeLanguage(lang) {
     xhr.send(formData);
 }
 
-// Close mobile menu when clicking outside
+// Close dropdowns when clicking outside
 document.addEventListener('click', function(e) {
     const menu = document.getElementById('mobile-menu');
-    const button = e.target.closest('.mobile-menu-btn');
-    if (!button && !menu.contains(e.target)) {
+    const mobileButton = e.target.closest('.mobile-menu-btn');
+    if (!mobileButton && !menu.contains(e.target)) {
         menu.style.display = 'none';
+    }
+
+    const langDropdown = document.getElementById('language-dropdown');
+    const langButton = e.target.closest('.language-btn');
+    if (!langButton && !langDropdown.contains(e.target)) {
+        langDropdown.style.display = 'none';
     }
 });
 </script>
