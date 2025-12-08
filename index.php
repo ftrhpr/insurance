@@ -549,7 +549,7 @@ try {
     </div>
 
     <!-- Premium Edit Modal -->
-    <div id="edit-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+    <div id="edit-modal" class="hidden fixed inset-0" role="dialog" aria-modal="true">
         <!-- Enhanced Backdrop with Animation -->
         <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeModal()"></div>
 
@@ -848,9 +848,9 @@ try {
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- Manual Create Order Modal -->
-    <div id="manual-create-modal" class="hidden fixed inset-0" style="z-index: 99999;" role="dialog" aria-modal="true">
+    <div id="manual-create-modal" class="hidden fixed inset-0" role="dialog" aria-modal="true">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black/80 backdrop-blur-lg transition-all duration-300" style="z-index: 99999;" onclick="window.closeManualCreateModal()"></div>
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-lg transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
 
         <!-- Modal Container -->
         <div class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 100000;">
@@ -1961,19 +1961,33 @@ try {
             }
 
             document.getElementById('edit-modal').classList.remove('hidden');
-            document.getElementById('edit-modal').style.display = ''; // Reset display
+            document.getElementById('edit-modal').style.display = 'block'; // Explicitly set display
+            document.getElementById('edit-modal').style.zIndex = '1000'; // Reasonable z-index for edit modal
             
             // Also show the backdrop
             const editModal = document.getElementById('edit-modal');
             const backdrop = editModal.querySelector('.fixed.inset-0');
             if (backdrop) {
-                backdrop.style.display = '';
+                backdrop.style.display = 'block';
+                backdrop.style.zIndex = '999'; // Below modal
             }
             
             lucide.createIcons();
         };
 
-        window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
+        window.closeModal = () => { 
+            const modal = document.getElementById('edit-modal');
+            modal.classList.add('hidden'); 
+            modal.style.display = 'none'; // Explicitly hide
+            modal.style.zIndex = ''; // Reset z-index
+            // Hide backdrop
+            const backdrop = modal.querySelector('.fixed.inset-0');
+            if (backdrop) {
+                backdrop.style.display = 'none';
+                backdrop.style.zIndex = '';
+            }
+            window.currentEditingId = null; 
+        };
 
         // Manual Create Modal Functions
         window.openManualCreateModal = async () => {
@@ -1983,29 +1997,33 @@ try {
                 return;
             }
             
-            // Close any other open modals first
-            const modalsToClose = ['edit-modal']; // Don't close manual-create-modal if it's the target
-            modalsToClose.forEach(modalId => {
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.classList.add('hidden');
-                    // Explicitly hide the backdrop
-                    const backdrop = modal.querySelector('.fixed.inset-0');
-                    if (backdrop) {
-                        backdrop.style.display = 'none';
-                    }
+            // Close any other open modals first - aggressive approach
+            const editModal = document.getElementById('edit-modal');
+            if (editModal) {
+                // Ensure edit modal is completely hidden
+                editModal.classList.add('hidden');
+                editModal.style.display = 'none';
+                // Hide its backdrop
+                const editBackdrop = editModal.querySelector('.fixed.inset-0');
+                if (editBackdrop) {
+                    editBackdrop.style.display = 'none';
                 }
-            });
+            }
             window.currentEditingId = null;
             
             const modal = document.getElementById('manual-create-modal');
+            // Move modal to end of body to ensure it appears on top
+            document.body.appendChild(modal);
+            // Set extreme z-index to guarantee it appears on top
+            modal.style.zIndex = '2147483647'; // Maximum possible z-index value
             modal.classList.remove('hidden');
-            modal.style.display = ''; // Reset display
+            modal.style.display = 'block'; // Explicitly set display
             
-            // Also show backdrop elements
+            // Also show backdrop elements with maximum z-index
             const backdrops = modal.querySelectorAll('.fixed.inset-0');
             backdrops.forEach(backdrop => {
-                backdrop.style.display = '';
+                backdrop.style.display = 'block';
+                backdrop.style.zIndex = '2147483646'; // Just below modal
             });
             
             // Clear all inputs
@@ -2023,7 +2041,16 @@ try {
         };
 
         window.closeManualCreateModal = () => {
-            document.getElementById('manual-create-modal').classList.add('hidden');
+            const modal = document.getElementById('manual-create-modal');
+            modal.classList.add('hidden');
+            modal.style.zIndex = ''; // Reset z-index
+            modal.style.display = 'none'; // Explicitly hide
+            // Hide backdrop
+            const backdrops = modal.querySelectorAll('.fixed.inset-0');
+            backdrops.forEach(backdrop => {
+                backdrop.style.display = 'none';
+                backdrop.style.zIndex = ''; // Reset z-index
+            });
         };
 
         window.saveManualOrder = async () => {
