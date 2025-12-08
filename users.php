@@ -129,11 +129,6 @@ if (!isset($users) || !is_array($users)) {
 
 <?php include 'header.php'; ?>
 
-<!-- DEBUG: After header include -->
-<div style="background: yellow; color: red; padding: 20px; margin: 20px; border: 2px solid black;">
-    DEBUG: Main content should appear here! PHP is executing after header.
-</div>
-
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Main Content -->
     <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
