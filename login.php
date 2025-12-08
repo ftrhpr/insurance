@@ -7,8 +7,6 @@ if (isset($_SESSION['user_id'])) {
     exit();
 }
 
-require_once 'language.php';
-
 // Simple language function for login
 function __($key, $default = '') {
     $fallbacks = [
