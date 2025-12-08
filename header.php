@@ -4,10 +4,8 @@
 // Make sure $current_user_name and $current_user_role are set before including
 
 if (!isset($_SESSION['user_id'])) {
-    // TEMPORARILY DISABLED FOR TESTING
-    // header('Location: login.php');
-    // exit();
-    echo "<!-- DEBUG: Header would redirect but disabled for testing -->";
+    header('Location: login.php');
+    exit();
 }
 
 // Get current page name for active navigation

@@ -27,8 +27,6 @@ if (session_status() === PHP_SESSION_NONE) {
     }
     
     // Check for session hijacking - validate IP and user agent
-    // TEMPORARILY DISABLED FOR TESTING
-    /*
     if (isset($_SESSION['user_id'])) {
         // Store fingerprint on first login
         if (!isset($_SESSION['fingerprint'])) {
@@ -45,5 +43,4 @@ if (session_status() === PHP_SESSION_NONE) {
             exit();
         }
     }
-    */
 }
