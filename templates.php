@@ -18,6 +18,7 @@ require_once 'config.php';
 $defaultTemplatesData = [
     'registered' => 'გამარჯობა {name}, თქვენი სერვისის რეგისტრაცია მოხდა. ავტომობილი: {plate}. თანხა: {amount}₾',
     'called' => 'გამარჯობა {name}, დაგიკავშირდით ჩვენი მენეჯერი. ავტომობილი: {plate}',
+    'contacted' => 'გამარჯობა {name}, თქვენ დაგიკავშირდით. ავტომობილი: {plate}. მალე მოგაწვდით დეტალურ ინფორმაციას.',
     'schedule' => 'გამარჯობა {name}, თქვენი სერვისის თარიღი: {date}. ავტომობილი: {plate}',
     'parts_ordered' => 'გამარჯობა {name}, თქვენი ნაწილები შეკვეთილია. ავტომობილი: {plate}',
     'parts_arrived' => 'გამარჯობა {name}, თქვენი ნაწილები მივიდა. დაადასტურეთ თქვენი ვიზიტი: {link}',
@@ -135,6 +136,18 @@ try {
                             <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full ml-auto">Called</span>
                         </div>
                         <textarea id="tpl-called" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['called'] ?? ''); ?></textarea>
+                    </div>
+
+                    <!-- Customer Contacted (Alternative) -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
+                                <i data-lucide="phone" class="w-4 h-4 text-cyan-600"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-800">Contacted Notification</h3>
+                            <span class="text-xs px-2 py-1 bg-cyan-100 text-cyan-700 rounded-full ml-auto">Contacted</span>
+                        </div>
+                        <textarea id="tpl-contacted" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['contacted'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Service Scheduled -->
@@ -294,6 +307,7 @@ try {
         const defaultTemplates = {
             registered: 'გამარჯობა {name}, თქვენი სერვისის რეგისტრაცია მოხდა. ავტომობილი: {plate}. თანხა: {amount}₾',
             called: 'გამარჯობა {name}, დაგიკავშირდით ჩვენი მენეჯერი. ავტომობილი: {plate}',
+            contacted: 'გამარჯობა {name}, თქვენ დაგიკავშირდით. ავტომობილი: {plate}. მალე მოგაწვდით დეტალურ ინფორმაციას.',
             schedule: 'გამარჯობა {name}, თქვენი სერვისის თარიღი: {date}. ავტომობილი: {plate}',
             parts_ordered: 'გამარჯობა {name}, თქვენი ნაწილები შეკვეთილია. ავტომობილი: {plate}',
             parts_arrived: 'გამარჯობა {name}, თქვენი ნაწილები მივიდა. დაადასტურეთ თქვენი ვიზიტი: {link}',
@@ -387,6 +401,7 @@ try {
             try {
                 smsTemplates.registered = getVal('tpl-registered');
                 smsTemplates.called = getVal('tpl-called');
+                smsTemplates.contacted = getVal('tpl-contacted');
                 smsTemplates.schedule = getVal('tpl-schedule');
                 smsTemplates.parts_ordered = getVal('tpl-parts_ordered');
                 smsTemplates.parts_arrived = getVal('tpl-parts_arrived');

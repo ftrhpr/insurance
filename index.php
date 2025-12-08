@@ -1449,6 +1449,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         const defaultTemplates = {
             'registered': "<?php echo __('sms.registered'); ?>",
             'called': "<?php echo __('sms.called', 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'); ?>",
+            'contacted': "<?php echo __('sms.contacted', 'Hello {name}, we have contacted you about your {plate} service. Please check your messages.'); ?>",
             'schedule': "<?php echo __('sms.schedule'); ?>",
             'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
             'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
