@@ -577,9 +577,34 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     </button>
                 </div>
 
-                <!-- Enhanced Body with Responsive Columns - Compact Layout -->
-                <div class="flex-1 overflow-y-auto custom-scrollbar px-1.5 sm:px-2 md:px-3 py-1.5 sm:py-2 md:py-2.5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5 sm:gap-2 md:gap-2.5">
+                <!-- Enhanced Body with Structured Workflow Layout -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar">
+                    <!-- Workflow Progress Indicator -->
+                    <div class="px-3 sm:px-4 md:px-6 py-3 bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Case Progress</h4>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <div class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                <div id="workflow-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500" style="width: 12.5%"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-1 text-[10px] text-slate-500 font-medium">
+                            <span>New</span>
+                            <span>Processing</span>
+                            <span>Contacted</span>
+                            <span>Parts Ordered</span>
+                            <span>Parts Arrived</span>
+                            <span>Scheduled</span>
+                            <span>Completed</span>
+                            <span>Issue</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Content Grid -->
+                    <div class="p-3 sm:p-4 md:p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                     
                     <!-- Left Column: Order Details & Status -->
                     <div class="space-y-1.5 sm:space-y-2">
@@ -1902,6 +1927,38 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             document.getElementById('input-franchise').value = t.franchise || '';
             document.getElementById('input-status').value = t.status;
             
+            // Update workflow progress indicator
+            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
+            const currentStageIndex = statusStages.indexOf(t.status);
+            const progressPercentage = ((currentStageIndex + 1) / statusStages.length) * 100;
+            
+            document.getElementById('workflow-stage-number').innerText = currentStageIndex + 1;
+            document.getElementById('workflow-progress-bar').style.width = `${progressPercentage}%`;
+            
+            // Update status description
+            const statusDescriptions = {
+                'New': 'Initial case import - awaiting processing',
+                'Processing': 'Case is being reviewed and processed',
+                'Called': 'Customer has been contacted',
+                'Parts Ordered': 'Parts have been ordered for repair',
+                'Parts Arrived': 'Parts are ready for service',
+                'Scheduled': 'Service appointment is scheduled',
+                'Completed': 'Case has been completed successfully',
+                'Issue': 'Case requires special attention'
+            };
+            document.getElementById('status-description').innerText = statusDescriptions[t.status] || 'Unknown status';
+            
+            // Add status change listener for progress updates
+            document.getElementById('input-status').addEventListener('change', (e) => {
+                const newStatus = e.target.value;
+                const newStageIndex = statusStages.indexOf(newStatus);
+                const newProgressPercentage = ((newStageIndex + 1) / statusStages.length) * 100;
+                
+                document.getElementById('workflow-stage-number').innerText = newStageIndex + 1;
+                document.getElementById('workflow-progress-bar').style.width = `${newProgressPercentage}%`;
+                document.getElementById('status-description').innerText = statusDescriptions[newStatus] || 'Unknown status';
+            });
+            
             // Format and display created date
             if (t.created_at) {
                 const createdDate = new Date(t.created_at);
@@ -1961,18 +2018,34 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             };
 
             const logHTML = (t.systemLogs || []).map(l => `
-                <div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600">
-                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>
-                    ${escapeHtml(l.message)}
+                <div class="bg-white p-3 rounded-lg border border-slate-200 mb-2 last:mb-0">
+                    <div class="flex items-start gap-3">
+                        <div class="bg-slate-100 p-2 rounded-lg flex-shrink-0">
+                            <i data-lucide="clock" class="w-4 h-4 text-slate-500"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs text-slate-400 font-medium mb-1">${l.timestamp.split('T')[0]}</div>
+                            <div class="text-sm text-slate-700 leading-relaxed">${escapeHtml(l.message)}</div>
+                        </div>
+                    </div>
                 </div>`).join('');
-            document.getElementById('activity-log-container').innerHTML = logHTML || '<div class="text-center py-4"><span class="italic text-slate-300 text-xs">No system activity recorded</span></div>';
+            document.getElementById('activity-log-container').innerHTML = logHTML || '<div class="text-center py-8"><div class="bg-slate-100 p-4 rounded-lg"><i data-lucide="inbox" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i><span class="text-slate-500 text-sm">No system activity recorded</span></div></div>';
             
             const noteHTML = (t.internalNotes || []).map(n => `
-                <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3">
-                    <p class="text-sm text-slate-700">${escapeHtml(n.text)}</p>
-                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName)}</span></div>
+                <div class="bg-white p-4 rounded-lg border border-emerald-200 mb-3 last:mb-0 shadow-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="bg-emerald-100 p-2 rounded-lg flex-shrink-0">
+                            <i data-lucide="user" class="w-4 h-4 text-emerald-600"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm text-slate-700 leading-relaxed mb-2">${escapeHtml(n.text)}</div>
+                            <div class="flex justify-end">
+                                <span class="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded-full font-medium">${escapeHtml(n.authorName)}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>`).join('');
-            document.getElementById('notes-list').innerHTML = noteHTML || '<div class="h-full flex items-center justify-center text-slate-400 text-xs italic">No team notes yet</div>';
+            document.getElementById('notes-list').innerHTML = noteHTML || '<div class="text-center py-8"><div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200"><i data-lucide="sticky-note" class="w-8 h-8 text-emerald-400 mx-auto mb-2"></i><span class="text-emerald-600 text-sm">No team notes yet</span></div></div>';
 
             // Display customer review if exists
             const reviewSection = document.getElementById('modal-review-section');
