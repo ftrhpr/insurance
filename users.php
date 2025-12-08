@@ -52,10 +52,14 @@ $defaultUser = [
 
 try {
     $pdo = getDBConnection();
+    echo "<!-- DEBUG: Database connected successfully -->";
 
     // Check if users table exists, create if not
     $result = $pdo->query("SHOW TABLES LIKE 'users'");
-    if ($result->rowCount() == 0) {
+    $tableExists = $result->rowCount() > 0;
+    echo "<!-- DEBUG: Users table exists: " . ($tableExists ? 'yes' : 'no') . " -->";
+    
+    if (!$tableExists) {
         $sql = "CREATE TABLE users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(50) UNIQUE NOT NULL,
@@ -69,20 +73,24 @@ try {
             created_by INT DEFAULT NULL
         )";
         $pdo->exec($sql);
+        echo "<!-- DEBUG: Users table created -->";
 
         // Create default admin user
         $defaultPassword = password_hash('admin123', PASSWORD_DEFAULT);
         $pdo->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'admin', 'active')")
             ->execute(['admin', $defaultPassword, 'System Administrator']);
+        echo "<!-- DEBUG: Default admin user created -->";
     }
 
     // Fetch all users
     $stmt = $pdo->query("SELECT id, username, full_name, email, role, status, last_login, created_at FROM users ORDER BY created_at DESC");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo "<!-- DEBUG: Fetched " . count($users) . " users from database -->";
 
 } catch (PDOException $e) {
     // On error, show at least the current logged-in user
     $users = [$defaultUser];
+    echo "<!-- DEBUG: Database error: " . $e->getMessage() . " -->";
     error_log("Database error in users.php: " . $e->getMessage());
 }
 
@@ -90,6 +98,8 @@ try {
 if (!isset($users) || !is_array($users)) {
     $users = [$defaultUser];
 }
+echo "<!-- DEBUG: PHP users count: " . count($users) . " -->";
+echo "<!-- DEBUG: PHP users data: " . htmlspecialchars(json_encode($users)) . " -->";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -136,6 +146,11 @@ if (!isset($users) || !is_array($users)) {
 <?php include 'header.php'; ?>
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- DEBUG: Main content starts here -->
+    <div style="background: red; color: white; padding: 20px; margin: 20px 0;">
+        DEBUG: Main content is rendering! Users count: <?php echo count($users); ?>
+    </div>
+    
     <!-- Main Content -->
     <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
         <div class="flex justify-between items-center mb-6">
@@ -308,6 +323,8 @@ if (!isset($users) || !is_array($users)) {
         const USER_ROLE = '<?php echo $current_user_role; ?>';
         
         let allUsers = <?php echo json_encode($users ?: []); ?>;
+        console.log('DEBUG: allUsers loaded:', allUsers);
+        console.log('DEBUG: allUsers length:', allUsers.length);
 
         // Utility Functions
         function showToast(title, message = '', type = 'info') {
@@ -384,8 +401,14 @@ if (!isset($users) || !is_array($users)) {
         }
 
         function renderUsersTable() {
+            console.log('DEBUG: renderUsersTable called');
+            console.log('DEBUG: allUsers in render:', allUsers);
             const tbody = document.getElementById('users-table-body');
-            if (!tbody) return;
+            console.log('DEBUG: tbody element:', tbody);
+            if (!tbody) {
+                console.log('DEBUG: tbody not found!');
+                return;
+            }
             
             if (allUsers.length === 0) {
                 tbody.innerHTML = `
