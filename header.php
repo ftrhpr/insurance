@@ -228,12 +228,17 @@ if ($current_user_role === 'admin') {
     justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
-    background: rgba(241,245,249,0.8);
-    border: 1px solid rgba(226,232,240,0.6);
-    border-radius: 0.5rem;
-    color: #475569;
+    background: transparent;
+    border: none;
+    color: #64748b;
     cursor: pointer;
     transition: all 0.2s;
+    border-radius: 0.375rem;
+}
+
+.language-btn:hover {
+    background: rgba(14,165,233,0.1);
+    color: #0ea5e9;
 }
 
 .language-btn:hover {
@@ -437,36 +442,47 @@ function toggleLanguageMenu() {
 }
 
 function changeLanguage(lang) {
+    console.log('Changing language to:', lang);
+
     // Hide dropdown
     document.getElementById('language-dropdown').style.display = 'none';
 
-    // Create form data for POST request
-    const formData = new FormData();
-    formData.append('language', lang);
-
-    // Use XMLHttpRequest instead of fetch for better compatibility
+    // Send JSON data as expected by the API
     const xhr = new XMLHttpRequest();
     xhr.open('POST', 'api.php?action=set_language', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function() {
+        console.log('Response status:', xhr.status);
+        console.log('Response text:', xhr.responseText);
+
         if (xhr.status === 200) {
             try {
                 const result = JSON.parse(xhr.responseText);
+                console.log('Parsed result:', result);
+
                 if (result.success) {
+                    console.log('Language changed successfully, reloading...');
                     window.location.reload();
                 } else {
                     console.error('Failed to change language:', result.message);
+                    alert('Failed to change language: ' + (result.message || 'Unknown error'));
                 }
             } catch (e) {
-                console.error('Invalid response:', xhr.responseText);
+                console.error('Invalid JSON response:', xhr.responseText);
+                alert('Invalid response from server');
             }
         } else {
-            console.error('Request failed:', xhr.status);
+            console.error('Request failed with status:', xhr.status);
+            alert('Request failed with status: ' + xhr.status);
         }
     };
     xhr.onerror = function() {
         console.error('Network error');
+        alert('Network error occurred');
     };
-    xhr.send(formData);
+
+    // Send JSON data
+    xhr.send(JSON.stringify({ language: lang }));
 }
 
 // Close dropdowns when clicking outside
