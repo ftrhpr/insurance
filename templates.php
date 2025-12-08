@@ -94,17 +94,14 @@ try {
             <div class="lg:col-span-2 space-y-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-slate-800">Manage SMS Templates</h2>
-                    <div class="text-sm text-slate-500">
-                        Role: <?php echo htmlspecialchars($current_user_role); ?> |
-                        <?php if ($current_user_role === 'admin' || $current_user_role === 'manager' || $current_user_role === 'viewer'): ?>
-                        <button onclick="window.saveAllTemplates()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
-                            <i data-lucide="save" class="w-4 h-4"></i>
-                            Save All Templates
-                        </button>
-                        <?php else: ?>
-                        <span class="text-red-500">View only - editing disabled (insufficient permissions)</span>
-                        <?php endif; ?>
-                    </div>
+                    <?php if ($current_user_role === 'admin' || $current_user_role === 'manager' || $current_user_role === 'viewer'): ?>
+                    <button onclick="window.saveAllTemplates()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Save All Templates
+                    </button>
+                    <?php else: ?>
+                    <div class="text-sm text-slate-500 italic">View only - editing disabled</div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Template Cards -->
