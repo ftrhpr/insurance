@@ -2300,7 +2300,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const noteInput = document.getElementById('new-note-input');
             const text = noteInput?.value;
             if (!text) return;
-            
+
             if (!transfers || !Array.isArray(transfers)) {
                 console.error('Transfers array not available');
                 return;
@@ -2308,10 +2308,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const t = transfers.find(i => i.id == window.currentEditingId);
             if (!t) return;
             const newNote = { text, authorName: 'Manager', timestamp: new Date().toISOString() };
-            
+
             const connectionStatus = document.getElementById('connection-status');
             if (connectionStatus?.innerText.includes('Offline')) {
-            if (document.getElementById('connection-status').innerText.includes('Offline')) {
                 if(!t.internalNotes) t.internalNotes = [];
                 t.internalNotes.push(newNote);
             } else {
@@ -2319,16 +2318,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', { internalNotes: notes });
                 t.internalNotes = notes;
             }
-            
+
             if (noteInput) noteInput.value = '';
-            
+
             // Re-render notes
             const noteHTML = (t.internalNotes || []).map(n => `
                 <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3 animate-in slide-in-from-bottom-2 fade-in">
                     <p class="text-sm text-slate-700">${escapeHtml(n.text || '')}</p>
                     <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName || '')}</span></div>
                 </div>`).join('');
-            
+
             const notesList = document.getElementById('notes-list');
             if (notesList) notesList.innerHTML = noteHTML;
         };
