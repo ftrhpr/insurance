@@ -7,38 +7,35 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-require_once 'language.php';
+// Temporarily disable language system to isolate the issue
+// require_once 'language.php';
 
-// Fallback language function in case the class fails
-if (!class_exists('Language') || !method_exists('Language', 'get')) {
-    class Language {
-        public static function get($key, $default = '') {
-            $fallbacks = [
-                'app.title' => 'OTOMOTORS Manager Portal',
-                'app.loading' => 'Loading your workspace...',
-                'app.connecting' => 'CONNECTING...',
-                'app.brand_name' => 'OTOMOTORS',
-                'navigation.dashboard' => 'Dashboard',
-                'navigation.templates' => 'SMS Templates',
-                'navigation.reviews' => 'Reviews',
-                'navigation.vehicles' => 'Vehicles',
-                'navigation.users' => 'Users',
-                'navigation.languages' => 'Languages',
-                'dashboard.import_title' => 'Import Transfers',
-                'dashboard.import_description' => 'Paste SMS or bank statement text to auto-detect transfers.',
-                'dashboard.import_button' => 'Import & Save',
-                'dashboard.import_confirm' => 'Confirm & Save',
-                'dashboard.search_placeholder' => 'Search by plate, name, or phone...',
-                'dashboard.no_new_requests' => 'No new incoming requests',
-                'dashboard.processing_queue' => 'Processing Queue',
-                'dashboard.vehicle_owner' => 'Vehicle & Owner',
-                'dashboard.amount' => 'Amount',
-                'dashboard.status' => 'Status',
-                'dashboard.action' => 'Action'
-            ];
-            return $fallbacks[$key] ?? $default ?: $key;
-        }
-    }
+// Simple language function
+function __($key, $default = '') {
+    $fallbacks = [
+        'app.title' => 'OTOMOTORS Manager Portal',
+        'app.loading' => 'Loading your workspace...',
+        'app.connecting' => 'CONNECTING...',
+        'app.brand_name' => 'OTOMOTORS',
+        'navigation.dashboard' => 'Dashboard',
+        'navigation.templates' => 'SMS Templates',
+        'navigation.reviews' => 'Reviews',
+        'navigation.vehicles' => 'Vehicles',
+        'navigation.users' => 'Users',
+        'navigation.languages' => 'Languages',
+        'dashboard.import_title' => 'Import Transfers',
+        'dashboard.import_description' => 'Paste SMS or bank statement text to auto-detect transfers.',
+        'dashboard.import_button' => 'Import & Save',
+        'dashboard.import_confirm' => 'Confirm & Save',
+        'dashboard.search_placeholder' => 'Search by plate, name, or phone...',
+        'dashboard.no_new_requests' => 'No new incoming requests',
+        'dashboard.processing_queue' => 'Processing Queue',
+        'dashboard.vehicle_owner' => 'Vehicle & Owner',
+        'dashboard.amount' => 'Amount',
+        'dashboard.status' => 'Status',
+        'dashboard.action' => 'Action'
+    ];
+    return $fallbacks[$key] ?? $default ?: $key;
 }
 
 $current_user_name = $_SESSION['full_name'] ?? 'User';
@@ -49,7 +46,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo Language::get('app.title'); ?></title>
+    <title><?php echo __('app.title'); ?></title>
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -267,10 +264,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             </div>
         </div>
         <div class="mt-8 text-center">
-            <h3 class="text-white text-xl font-bold mb-2"><?php echo Language::get('app.brand_name'); ?></h3>
-            <p class="text-white/80 text-sm font-medium"><?php echo Language::get('app.loading'); ?></p>
+            <h3 class="text-white text-xl font-bold mb-2"><?php echo __('app.brand_name'); ?></h3>
+            <p class="text-white/80 text-sm font-medium"><?php echo __('app.loading'); ?></p>
         </div>
-        <div class="mt-4 text-slate-500 text-sm font-medium tracking-wide animate-pulse"><?php echo Language::get('app.connecting'); ?></div>
+        <div class="mt-4 text-slate-500 text-sm font-medium tracking-wide animate-pulse"><?php echo __('app.connecting'); ?></div>
     </div>
 
     <!-- App Content -->
@@ -296,7 +293,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     </div>
                                     Quick Import
                                 </h2>
-                                <p class="text-sm text-slate-600 mt-2 font-medium"><?php echo Language::get('dashboard.import_description'); ?></p>
+                                <p class="text-sm text-slate-600 mt-2 font-medium"><?php echo __('dashboard.import_description'); ?></p>
                             </div>
                             <div class="flex gap-2">
                                 <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
@@ -364,7 +361,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <!-- REPLY FILTER -->
                         <div class="relative">
                             <select id="reply-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
-                                <option value="All"><?php echo Language::get('dashboard.filter_all_replies'); ?></option>
+                                <option value="All"><?php echo __('dashboard.filter_all_replies'); ?></option>
                                 <option value="Confirmed">✅ Confirmed</option>
                                 <option value="Reschedule Requested">📅 Reschedule</option>
                                 <option value="Pending">⏳ Not Responded</option>
@@ -377,7 +374,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <!-- STATUS FILTER -->
                         <div class="relative">
                             <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
-                                <option value="All"><?php echo Language::get('dashboard.filter_all_stages'); ?></option>
+                                <option value="All"><?php echo __('dashboard.filter_all_stages'); ?></option>
                                 <option value="Processing">🟡 Processing</option>
                                 <option value="Called">🟣 Contacted</option>
                                 <option value="Parts Ordered">📦 Parts Ordered</option>
@@ -411,14 +408,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     
                     <div id="new-cases-empty" class="hidden py-12 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
                         <div class="bg-slate-50 p-3 rounded-full mb-3"><i data-lucide="inbox" class="w-6 h-6"></i></div>
-                        <span class="text-sm font-medium"><?php echo Language::get('dashboard.no_new_requests'); ?></span>
+                        <span class="text-sm font-medium"><?php echo __('dashboard.no_new_requests'); ?></span>
                     </div>
                 </section>
 
                 <!-- Active Queue Table -->
                 <section>
                     <div class="flex items-center justify-between mb-4 px-1">
-                        <h2 class="text-xl font-bold text-slate-800"><?php echo Language::get('dashboard.processing_queue'); ?></h2>
+                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('dashboard.processing_queue'); ?></h2>
                         <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
                     </div>
 
@@ -430,43 +427,43 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="car" class="w-4 h-4"></i>
-                                                <span><?php echo Language::get('dashboard.vehicle_owner'); ?></span>
+                                                <span><?php echo __('dashboard.vehicle_owner'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="coins" class="w-4 h-4"></i>
-                                                <span><?php echo Language::get('dashboard.amount'); ?></span>
+                                                <span><?php echo __('dashboard.amount'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="activity" class="w-4 h-4"></i>
-                                                <span><?php echo Language::get('dashboard.status'); ?></span>
+                                                <span><?php echo __('dashboard.status'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="phone" class="w-4 h-4"></i>
-                                                <span><?php echo Language::get('dashboard.contact_review'); ?></span>
+                                                <span><?php echo __('dashboard.contact_review'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                <span><?php echo Language::get('dashboard.service_date'); ?></span>
+                                                <span><?php echo __('dashboard.service_date'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="message-circle" class="w-4 h-4"></i>
-                                                <span><?php echo Language::get('dashboard.customer_reply'); ?></span>
+                                                <span><?php echo __('dashboard.customer_reply'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4 text-right">
                                             <div class="flex items-center gap-2 justify-end">
                                                 <i data-lucide="settings" class="w-4 h-4"></i>
-                                                <span><?php echo Language::get('dashboard.action'); ?></span>
+                                                <span><?php echo __('dashboard.action'); ?></span>
                                             </div>
                                         </th>
                                     </tr>
@@ -477,8 +474,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </table>
                             <div id="empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
                                 <div class="bg-slate-50 p-4 rounded-full mb-4 ring-8 ring-slate-50/50"><i data-lucide="filter" class="w-8 h-8 text-slate-300"></i></div>
-                                <h3 class="text-slate-900 font-medium"><?php echo Language::get('dashboard.no_matching_cases'); ?></h3>
-                                <p class="text-slate-400 text-sm mt-1 max-w-xs"><?php echo Language::get('dashboard.no_matching_description'); ?></p>
+                                <h3 class="text-slate-900 font-medium"><?php echo __('dashboard.no_matching_cases'); ?></h3>
+                                <p class="text-slate-400 text-sm mt-1 max-w-xs"><?php echo __('dashboard.no_matching_description'); ?></p>
                             </div>
                         </div>
                     </div>
@@ -488,7 +485,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             <!-- VIEW: VEHICLES -->
             <div id="view-vehicles" class="hidden space-y-6">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-slate-900"><?php echo Language::get('dashboard.vehicle_registry'); ?></h2>
+                    <h2 class="text-2xl font-bold text-slate-900"><?php echo __('dashboard.vehicle_registry'); ?></h2>
                     <div class="text-sm text-slate-500" id="vehicles-count">0 vehicles</div>
                 </div>
 
