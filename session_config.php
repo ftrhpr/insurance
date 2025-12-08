@@ -1,4 +1,9 @@
 <?php
+// Debug: log and display all errors in session_config.php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+file_put_contents(__DIR__ . '/error_log', date('Y-m-d H:i:s') . " SESSION_CONFIG: " . json_encode($_SERVER) . "\n", FILE_APPEND);
 // session_config.php - Secure session configuration
 // Include this at the start of every page BEFORE session_start()
 
