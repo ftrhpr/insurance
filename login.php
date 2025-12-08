@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once 'session_config.php';
 
 // If already logged in, redirect to dashboard
 if (isset($_SESSION['user_id'])) {

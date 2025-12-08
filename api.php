@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once 'session_config.php';
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
