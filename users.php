@@ -150,12 +150,14 @@ echo "<!-- DEBUG: PHP users data: " . htmlspecialchars(json_encode($users)) . " 
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- DEBUG: Main content starts here -->
-    <div style="background: red; color: white; padding: 20px; margin: 20px 0; border: 2px solid black;">
-        DEBUG: Main content is rendering! Users count: <?php echo count($users); ?><br>
+    <div style="background: red; color: white; padding: 50px; margin: 50px 0; border: 5px solid black; font-size: 24px; font-weight: bold; text-align: center;">
+        🚨 DEBUG: Main content is rendering! 🚨<br><br>
+        Users count: <?php echo count($users); ?><br>
         Session user_id: <?php echo $_SESSION['user_id'] ?? 'not set'; ?><br>
         Session role: <?php echo $_SESSION['role'] ?? 'not set'; ?><br>
         Current user name: <?php echo $current_user_name ?? 'not set'; ?><br>
-        Current user role: <?php echo $current_user_role ?? 'not set'; ?>
+        Current user role: <?php echo $current_user_role ?? 'not set'; ?><br><br>
+        If you can see this BIG RED BOX, the main content is working!
     </div>
     
     <!-- Main Content -->
