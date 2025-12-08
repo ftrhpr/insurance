@@ -785,6 +785,56 @@ try {
         jsonResponse(['status' => 'success']);
     }
 
+    // Translation Management Endpoints
+    if ($action === 'save_translation' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        $data = getJsonInput();
+        $key = trim($data['key'] ?? '');
+        $text = trim($data['text'] ?? '');
+        $lang = trim($data['lang'] ?? '');
+
+        if (!$key || !$text || !$lang) {
+            jsonResponse(['success' => false, 'message' => 'Missing required fields']);
+        }
+
+        require_once 'language.php';
+        $success = save_translation($key, $text, $lang);
+
+        jsonResponse(['success' => $success]);
+    }
+
+    if ($action === 'export_translations' && $method === 'GET') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        $lang = $_GET['lang'] ?? get_current_language();
+
+        require_once 'language.php';
+        $translations = get_all_translations($lang);
+
+        jsonResponse([
+            'success' => true,
+            'translations' => $translations,
+            'language' => $lang
+        ]);
+    }
+
+    if ($action === 'set_language' && $method === 'POST') {
+        $data = getJsonInput();
+        $lang = trim($data['language'] ?? '');
+
+        require_once 'language.php';
+        $success = set_language($lang);
+
+        jsonResponse(['success' => $success]);
+    }
+
     if ($action === 'get_current_user' && $method === 'GET') {
         jsonResponse([
             'user_id' => $_SESSION['user_id'] ?? null,

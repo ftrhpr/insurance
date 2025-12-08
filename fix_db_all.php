@@ -126,6 +126,24 @@ try {
     }
 
     // ---------------------------------------------------------
+    // 4.6. TABLE: translations (Multilanguage System)
+    // ---------------------------------------------------------
+    echo "\nChecking table 'translations'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS translations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        translation_key VARCHAR(255) NOT NULL,
+        language_code VARCHAR(5) NOT NULL,
+        translation_text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_key_lang (translation_key, language_code),
+        INDEX idx_language (language_code),
+        INDEX idx_key (translation_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
+    // ---------------------------------------------------------
     // 5. TABLE: customer_reviews
     // ---------------------------------------------------------
     echo "\nChecking table 'customer_reviews'...\n";

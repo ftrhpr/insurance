@@ -7,6 +7,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+require_once 'language.php';
+
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
 ?>
@@ -15,7 +17,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTOMOTORS Manager Portal</title>
+    <title><?php echo __('dashboard.title', 'OTOMOTORS Manager Portal'); ?></title>
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -233,10 +235,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             </div>
         </div>
         <div class="mt-8 text-center">
-            <h3 class="text-white text-xl font-bold mb-2">OTOMOTORS</h3>
-            <p class="text-white/80 text-sm font-medium">Loading your workspace...</p>
+            <h3 class="text-white text-xl font-bold mb-2"><?php echo __('dashboard.title', 'OTOMOTORS'); ?></h3>
+            <p class="text-white/80 text-sm font-medium"><?php echo __('dashboard.loading', 'Loading your workspace...'); ?></p>
         </div>
-        <div class="mt-4 text-slate-500 text-sm font-medium tracking-wide animate-pulse">CONNECTING...</div>
+        <div class="mt-4 text-slate-500 text-sm font-medium tracking-wide animate-pulse"><?php echo __('dashboard.connecting', 'CONNECTING...'); ?></div>
     </div>
 
     <!-- App Content -->
@@ -260,23 +262,23 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <div class="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg shadow-primary-500/30">
                                         <i data-lucide="file-input" class="w-5 h-5 text-white"></i>
                                     </div>
-                                    Quick Import
+                                    <?php echo __('dashboard.quick_import', 'Quick Import'); ?>
                                 </h2>
-                                <p class="text-sm text-slate-600 mt-2 font-medium">Paste SMS or bank statement text to auto-detect transfers.</p>
+                                <p class="text-sm text-slate-600 mt-2 font-medium"><?php echo __('dashboard.quick_import_desc', 'Paste SMS or bank statement text to auto-detect transfers.'); ?></p>
                             </div>
                             <div class="flex gap-2">
                                 <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
                                 <button onclick="window.openManualCreateModal()" class="text-xs font-semibold text-white bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
                                     <span class="flex items-center gap-1.5">
                                         <i data-lucide="plus-circle" class="w-3 h-3"></i>
-                                        Manual Create
+                                        <?php echo __('dashboard.manual_create', 'Manual Create'); ?>
                                     </span>
                                 </button>
                                 <?php endif; ?>
                                 <button onclick="window.insertSample('მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00 (ფრანშიზა 273.97)')" class="text-xs font-semibold text-primary-700 bg-gradient-to-br from-primary-50 to-accent-50 px-4 py-2.5 rounded-xl hover:from-primary-100 hover:to-accent-100 transition-all border border-primary-200/50 shadow-sm hover:shadow-md hover:-translate-y-0.5">
                                     <span class="flex items-center gap-1.5">
                                         <i data-lucide="sparkles" class="w-3 h-3"></i>
-                                        Sample
+                                        <?php echo __('dashboard.sample', 'Sample'); ?>
                                     </span>
                                 </button>
                             </div>
@@ -286,10 +288,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <!-- Text Input -->
                             <div class="flex-1 space-y-3">
                                 <div class="relative">
-                                    <textarea id="import-text" class="w-full h-32 p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-slate-200/60 rounded-2xl focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20 outline-none text-sm font-mono resize-none transition-all placeholder:text-slate-400 shadow-inner" placeholder="Paste bank text here..."></textarea>
+                                    <textarea id="import-text" class="w-full h-32 p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-slate-200/60 rounded-2xl focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20 outline-none text-sm font-mono resize-none transition-all placeholder:text-slate-400 shadow-inner" placeholder="<?php echo __('dashboard.search_placeholder', 'Paste bank text here...'); ?>"></textarea>
                                     <div class="absolute bottom-4 right-4">
                                         <button onclick="window.parseBankText()" id="btn-analyze" class="btn-primary text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xl">
-                                            <i data-lucide="sparkles" class="w-4 h-4"></i> Detect
+                                            <i data-lucide="sparkles" class="w-4 h-4"></i> <?php echo __('dashboard.detect', 'Detect'); ?>
                                         </button>
                                     </div>
                                 </div>
@@ -308,12 +310,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <div class="flex justify-between items-center mb-3 relative z-10">
                                     <h3 class="text-sm font-bold text-emerald-800 flex items-center gap-2">
                                         <div class="bg-emerald-100 p-1 rounded-full"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i></div>
-                                        Ready to Import
+                                        <?php echo __('dashboard.ready_to_import', 'Ready to Import'); ?>
                                     </h3>
                                 </div>
                                 <div id="parsed-content" class="flex-1 overflow-y-auto max-h-[120px] mb-4 space-y-2 pr-2 custom-scrollbar relative z-10"></div>
                                 <button id="btn-save-import" onclick="window.saveParsedImport()" class="relative z-10 w-full bg-emerald-600 text-white py-2.5 rounded-lg hover:bg-emerald-700 active:scale-95 font-medium text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2">
-                                    <i data-lucide="save" class="w-4 h-4"></i> Confirm & Save
+                                    <i data-lucide="save" class="w-4 h-4"></i> <?php echo __('dashboard.confirm_save', 'Confirm & Save'); ?>
                                 </button>
                             </div>
                         </div>
@@ -324,16 +326,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 <div class="sticky top-20 z-10 bg-white/80 backdrop-blur-xl p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-2 justify-between items-center">
                     <div class="relative w-full sm:w-80 group">
                         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-500 transition-colors"></i>
-                        <input id="search-input" type="text" placeholder="Search plates, names, phones..." class="w-full pl-10 pr-4 py-2.5 bg-transparent border border-transparent rounded-xl text-sm focus:bg-white focus:border-slate-200 focus:shadow-sm outline-none transition-all">
+                        <input id="search-input" type="text" placeholder="<?php echo __('dashboard.search_placeholder', 'Search plates, names, phones...'); ?>" class="w-full pl-10 pr-4 py-2.5 bg-transparent border border-transparent rounded-xl text-sm focus:bg-white focus:border-slate-200 focus:shadow-sm outline-none transition-all">
                     </div>
                     <div class="flex items-center gap-2 w-full sm:w-auto pr-1">
                         <!-- REPLY FILTER -->
                         <div class="relative">
                             <select id="reply-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
-                                <option value="All">All Replies</option>
-                                <option value="Confirmed">✅ Confirmed</option>
-                                <option value="Reschedule Requested">📅 Reschedule</option>
-                                <option value="Pending">⏳ Not Responded</option>
+                                <option value="All"><?php echo __('dashboard.all_replies', 'All Replies'); ?></option>
+                                <option value="Confirmed">✅ <?php echo __('dashboard.confirmed', 'Confirmed'); ?></option>
+                                <option value="Reschedule Requested">📅 <?php echo __('dashboard.reschedule', 'Reschedule'); ?></option>
+                                <option value="Pending">⏳ <?php echo __('dashboard.pending', 'Not Responded'); ?></option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                                 <i data-lucide="chevron-down" class="w-4 h-4"></i>
@@ -343,14 +345,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <!-- STATUS FILTER -->
                         <div class="relative">
                             <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
-                                <option value="All">All Active Stages</option>
-                                <option value="Processing">🟡 Processing</option>
-                                <option value="Called">🟣 Contacted</option>
-                                <option value="Parts Ordered">📦 Parts Ordered</option>
-                                <option value="Parts Arrived">🏁 Parts Arrived</option>
-                                <option value="Scheduled">🟠 Scheduled</option>
-                                <option value="Completed">🟢 Completed</option>
-                                <option value="Issue">🔴 Issue</option>
+                                <option value="All"><?php echo __('dashboard.all_active_stages', 'All Active Stages'); ?></option>
+                                <option value="Processing">🟡 <?php echo __('dashboard.processing', 'Processing'); ?></option>
+                                <option value="Called">🟣 <?php echo __('dashboard.called', 'Contacted'); ?></option>
+                                <option value="Parts Ordered">📦 <?php echo __('dashboard.parts_ordered', 'Parts Ordered'); ?></option>
+                                <option value="Parts Arrived">🏁 <?php echo __('dashboard.parts_arrived', 'Parts Arrived'); ?></option>
+                                <option value="Scheduled">🟠 <?php echo __('dashboard.scheduled', 'Scheduled'); ?></option>
+                                <option value="Completed">🟢 <?php echo __('dashboard.completed', 'Completed'); ?></option>
+                                <option value="Issue">🔴 <?php echo __('dashboard.issue', 'Issue'); ?></option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                                 <i data-lucide="chevron-down" class="w-4 h-4"></i>
@@ -367,7 +369,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
                               <span class="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
                             </span>
-                            New Requests <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                            <?php echo __('dashboard.new_requests', 'New Requests'); ?> <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
                         </h2>
                     </div>
                     
@@ -377,14 +379,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     
                     <div id="new-cases-empty" class="hidden py-12 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
                         <div class="bg-slate-50 p-3 rounded-full mb-3"><i data-lucide="inbox" class="w-6 h-6"></i></div>
-                        <span class="text-sm font-medium">No new incoming requests</span>
+                        <span class="text-sm font-medium"><?php echo __('dashboard.no_new_requests', 'No new incoming requests'); ?></span>
                     </div>
                 </section>
 
                 <!-- Active Queue Table -->
                 <section>
                     <div class="flex items-center justify-between mb-4 px-1">
-                        <h2 class="text-xl font-bold text-slate-800">Processing Queue</h2>
+                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('dashboard.processing_queue', 'Processing Queue'); ?></h2>
                         <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
                     </div>
 
@@ -396,25 +398,25 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="car" class="w-4 h-4"></i>
-                                                <span>Vehicle & Owner</span>
+                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="coins" class="w-4 h-4"></i>
-                                                <span>Amount</span>
+                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="activity" class="w-4 h-4"></i>
-                                                <span>Status</span>
+                                                <span><?php echo __('dashboard.status', 'Status'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
                                                 <i data-lucide="phone" class="w-4 h-4"></i>
-                                                <span>Contact & Review</span>
+                                                <span><?php echo __('dashboard.phone', 'Phone'); ?></span>
                                             </div>
                                         </th>
                                         <th class="px-5 py-4">
@@ -432,7 +434,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         <th class="px-5 py-4 text-right">
                                             <div class="flex items-center gap-2 justify-end">
                                                 <i data-lucide="settings" class="w-4 h-4"></i>
-                                                <span>Action</span>
+                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
                                             </div>
                                         </th>
                                     </tr>
@@ -1399,13 +1401,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         // --- SMS TEMPLATE LOGIC (Template editing moved to templates.php) ---
         const defaultTemplates = {
-            'registered': "Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service.",
-            'called': "Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.",
-            'schedule': "Hello {name}, service scheduled for {date}. Ref: {plate}.",
-            'parts_ordered': "Parts ordered for {plate}. We will notify you when ready.",
-            'parts_arrived': "Hello {name}, your parts have arrived! Please confirm your visit here: {link}",
-            'rescheduled': "Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}",
-            'reschedule_accepted': "Hello {name}, your reschedule request has been approved! New appointment: {date}. Ref: {plate}. - OTOMOTORS",
+            'registered': "<?php echo __('sms.registered'); ?>",
+            'called': "<?php echo __('sms.called', 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'); ?>",
+            'schedule': "<?php echo __('sms.schedule'); ?>",
+            'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
+            'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
+            'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
+            'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
             'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
             'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly."
         };
@@ -1558,14 +1560,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
             
             if(MANAGER_PHONE && successCount > 0) {
-                const msg = `System Alert: ${successCount} new transfer(s) added to OTOMOTORS portal.`;
+                const msg = `<?php echo __('status.system_alert', 'System Alert: {count} new transfer(s) added to OTOMOTORS portal.'); ?>`.replace('{count}', successCount);
                 window.sendSMS(MANAGER_PHONE, msg, 'system');
             }
             
             if (successCount > 0) {
                 await fetchAPI('send_broadcast', 'POST', { 
                     title: 'New Transfers Imported', 
-                    body: `${successCount} new cases added.` 
+                    body: `<?php echo __('status.new_cases_added', '{count} new cases added.'); ?>`.replace('{count}', successCount) 
                 });
             }
 
@@ -1575,9 +1577,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             loadData();
             
             if (failCount > 0) {
-                showToast("Import Completed with Errors", `${successCount} succeeded, ${failCount} failed`, "error");
+                showToast("Import Completed with Errors", `<?php echo __('status.import_errors', '{success} succeeded, {failed} failed'); ?>`.replace('{success}', successCount).replace('{failed}', failCount), "error");
             } else {
-                showToast("Import Successful", `${successCount} orders imported successfully`, "success");
+                showToast("<?php echo __('status.import_successful', 'Import Successful'); ?>", `<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>`.replace('{count}', successCount), "success");
             }
             
             btn.disabled = false;

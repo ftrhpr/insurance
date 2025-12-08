@@ -22,6 +22,7 @@ $nav_items = [
 // Add Users page only for admins
 if ($current_user_role === 'admin') {
     $nav_items['users'] = ['icon' => 'users', 'label' => 'Users', 'url' => 'users.php'];
+    $nav_items['translations'] = ['icon' => 'languages', 'label' => 'Translations', 'url' => 'translations.php'];
 }
 ?>
 <style>
@@ -105,6 +106,22 @@ if ($current_user_role === 'admin') {
 
             <!-- Premium User Status Section -->
             <div class="flex items-center gap-3">
+                <!-- Language Selector -->
+                <div class="relative">
+                    <select onchange="changeLanguage(this.value)" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2 pl-3 pr-8 rounded-lg text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                        <?php
+                        require_once 'language.php';
+                        $current_lang = get_current_language();
+                        foreach ($LANGUAGES as $code => $name): ?>
+                            <option value="<?php echo $code; ?>" <?php echo $code === $current_lang ? 'selected' : ''; ?>>
+                                <?php echo $name; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        <i data-lucide="globe" class="w-4 h-4"></i>
+                    </div>
+                </div>
                 <?php if ($current_page === 'index'): ?>
                 <!-- Enhanced Notification Bell (only on dashboard) -->
                 <button id="btn-notify" onclick="window.requestNotificationPermission()" class="relative text-slate-400 hover:text-primary-600 transition-all p-2.5 bg-slate-50 hover:bg-primary-50 rounded-xl group shadow-sm hover:shadow-md" title="Enable Notifications">
@@ -190,4 +207,26 @@ if ($current_user_role === 'admin') {
             dropdown.classList.add('hidden');
         }
     });
+
+    // Language change function
+    async function changeLanguage(lang) {
+        try {
+            const response = await fetch('api.php?action=set_language', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ language: lang })
+            });
+            const result = await response.json();
+            if (result.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to change language');
+            }
+        } catch (error) {
+            console.error('Error changing language:', error);
+            alert('Failed to change language');
+        }
+    }
 </script>
