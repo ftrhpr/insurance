@@ -498,8 +498,9 @@ try {
 
         if ($id > 0 && $serviceDate) {
             // Update service date and clear reschedule request, mark as confirmed
+            $safeServiceDate = (empty($serviceDate) || $serviceDate === '') ? null : $serviceDate;
             $pdo->prepare("UPDATE transfers SET service_date = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
-                ->execute([$serviceDate, $id]);
+                ->execute([$safeServiceDate, $id]);
 
             // Get transfer details for SMS
             $stmt = $pdo->prepare("SELECT name, plate, phone, amount FROM transfers WHERE id = ?");
