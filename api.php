@@ -603,11 +603,21 @@ try {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
             $pdo->exec($createSql);
 
-            $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (:slug, :content) ON DUPLICATE KEY UPDATE content = :content");
+            // Use distinct parameter names for the UPDATE clause to avoid PDO native-prep bug
+            $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (:slug, :content) ON DUPLICATE KEY UPDATE content = :content_update");
             foreach ($data as $slug => $content) {
                 // Log each insert attempt for debugging
                 error_log("save_templates inserting slug={$slug} len=" . strlen($content));
-                $stmt->execute([':slug' => $slug, ':content' => $content]);
+                $params = [':slug' => $slug, ':content' => $content, ':content_update' => $content];
+                try {
+                    $stmt->execute($params);
+                } catch (Exception $ex) {
+                    // Log detailed context for debugging parameter issues
+                    error_log("save_templates execute failed for slug={$slug}: " . $ex->getMessage());
+                    error_log("Query: " . $stmt->queryString);
+                    error_log("Params: " . var_export($params, true));
+                    throw $ex; // rethrow to be caught by outer catch
+                }
             }
             jsonResponse(['status' => 'saved']);
         } catch (Exception $e) {
