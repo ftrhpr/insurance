@@ -451,6 +451,453 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                     </div>
                 </section>
+
+                <!-- RO App Orders Section -->
+                <section class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-blue-200/80 overflow-hidden transition-all hover:shadow-2xl hover:shadow-blue-500/10 card-hover group mt-8">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-600"></div>
+                    <div class="p-6 sm:p-8">
+                        <h2 class="text-xl font-bold text-blue-900 flex items-center gap-3 mb-4">
+                            <div class="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/30">
+                                <i data-lucide="database" class="w-5 h-5 text-white"></i>
+                            </div>
+                            RO App Orders
+                        </h2>
+                        <div id="roapp-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                    </div>
+                </section>
+                <!-- End RO App Orders Section -->
+
+                <!-- Premium Import Section -->
+                <section class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary-500/10 card-hover group">
+                    <!-- Gradient accent bar -->
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-600"></div>
+                    <div class="p-6 sm:p-8">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-3">
+                                    <div class="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg shadow-primary-500/30">
+                                        <i data-lucide="file-input" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    <?php echo __('dashboard.quick_import', 'Quick Import'); ?>
+                                </h2>
+                                <p class="text-sm text-slate-600 mt-2 font-medium"><?php echo __('dashboard.quick_import_desc', 'Paste SMS or bank statement text to auto-detect transfers.'); ?></p>
+                            </div>
+                            <div class="flex gap-2">
+                                <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
+                                <button onclick="window.openManualCreateModal()" class="text-xs font-semibold text-white bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="plus-circle" class="w-3 h-3"></i>
+                                        <?php echo __('dashboard.manual_create', 'Manual Create'); ?>
+                                    </span>
+                                </button>
+                                <?php endif; ?>
+                                <button onclick="window.insertSample('მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00 (ფრანშიზა 273.97)')" class="text-xs font-semibold text-primary-700 bg-gradient-to-br from-primary-50 to-accent-50 px-4 py-2.5 rounded-xl hover:from-primary-100 hover:to-accent-100 transition-all border border-primary-200/50 shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="sparkles" class="w-3 h-3"></i>
+                                        <?php echo __('dashboard.sample', 'Sample'); ?>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <!-- Text Input -->
+                            <div class="flex-1 space-y-3">
+                                <div class="relative">
+                                    <textarea id="import-text" class="w-full h-32 p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-slate-200/60 rounded-2xl focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20 outline-none text-sm font-mono resize-none transition-all placeholder:text-slate-400 shadow-inner" placeholder="<?php echo __('dashboard.search_placeholder', 'Paste bank text here...'); ?>"></textarea>
+                                    <div class="absolute bottom-4 right-4">
+                                        <button onclick="window.parseBankText()" id="btn-analyze" class="btn-primary text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xl">
+                                            <i data-lucide="sparkles" class="w-4 h-4"></i> <?php echo __('dashboard.detect', 'Detect'); ?>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Result Preview -->
+                            <div id="parsed-placeholder" class="hidden md:flex flex-1 items-center justify-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm font-medium bg-slate-50/50">
+                                <div class="text-center">
+                                    <i data-lucide="arrow-left" class="w-5 h-5 mx-auto mb-2 opacity-50"></i>
+                                    Waiting for text input...
+                                </div>
+                            </div>
+
+                            <div id="parsed-result" class="hidden flex-1 bg-emerald-50/50 rounded-xl border border-emerald-100 p-5 flex flex-col relative overflow-hidden">
+                                <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-400/10 rounded-bl-full -mr-10 -mt-10"></div>
+                                <div class="flex justify-between items-center mb-3 relative z-10">
+                                    <h3 class="text-sm font-bold text-emerald-800 flex items-center gap-2">
+                                        <div class="bg-emerald-100 p-1 rounded-full"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i></div>
+                                        <?php echo __('dashboard.ready_to_import', 'Ready to Import'); ?>
+                                    </h3>
+                                </div>
+                                <div id="parsed-content" class="flex-1 overflow-y-auto max-h-[120px] mb-4 space-y-2 pr-2 custom-scrollbar relative z-10"></div>
+                                <button id="btn-save-import" onclick="window.saveParsedImport()" class="relative z-10 w-full bg-emerald-600 text-white py-2.5 rounded-lg hover:bg-emerald-700 active:scale-95 font-medium text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2">
+                                    <i data-lucide="save" class="w-4 h-4"></i> <?php echo __('dashboard.confirm_save', 'Confirm & Save'); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Search & Filters -->
+                <div class="sticky top-20 z-10 bg-white/80 backdrop-blur-xl p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-2 justify-between items-center">
+                    <div class="relative w-full sm:w-80 group">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-500 transition-colors"></i>
+                        <input id="search-input" type="text" placeholder="<?php echo __('dashboard.search_placeholder', 'Search plates, names, phones...'); ?>" class="w-full pl-10 pr-4 py-2.5 bg-transparent border border-transparent rounded-xl text-sm focus:bg-white focus:border-slate-200 focus:shadow-sm outline-none transition-all">
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto pr-1">
+                        <!-- REPLY FILTER -->
+                        <div class="relative">
+                            <select id="reply-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                                <option value="All"><?php echo __('dashboard.all_replies', 'All Replies'); ?></option>
+                                <option value="Confirmed">✅ <?php echo __('dashboard.confirmed', 'Confirmed'); ?></option>
+                                <option value="Reschedule Requested">📅 <?php echo __('dashboard.reschedule', 'Reschedule'); ?></option>
+                                <option value="Pending">⏳ <?php echo __('dashboard.pending', 'Not Responded'); ?></option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+
+                        <!-- STATUS FILTER -->
+                        <div class="relative">
+                            <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                                <option value="All"><?php echo __('dashboard.all_active_stages', 'All Active Stages'); ?></option>
+                                <option value="Processing">🟡 <?php echo __('dashboard.processing', 'Processing'); ?></option>
+                                <option value="Called">🟣 <?php echo __('dashboard.called', 'Contacted'); ?></option>
+                                <option value="Parts Ordered">📦 <?php echo __('dashboard.parts_ordered', 'Parts Ordered'); ?></option>
+                                <option value="Parts Arrived">🏁 <?php echo __('dashboard.parts_arrived', 'Parts Arrived'); ?></option>
+                                <option value="Scheduled">🟠 <?php echo __('dashboard.scheduled', 'Scheduled'); ?></option>
+                                <option value="Completed">🟢 <?php echo __('dashboard.completed', 'Completed'); ?></option>
+                                <option value="Issue">🔴 <?php echo __('dashboard.issue', 'Issue'); ?></option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Requests Grid -->
+                <section id="new-cases-section" class="space-y-4">
+                    <div class="flex items-center justify-between px-1">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span class="relative flex h-3 w-3">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
+                            </span>
+                            <?php echo __('dashboard.new_requests', 'New Requests'); ?> <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                        </h2>
+                    </div>
+                    
+                    <div id="new-cases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Cards injected here -->
+                    </div>
+                    
+                    <div id="new-cases-empty" class="hidden py-12 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+                        <div class="bg-slate-50 p-3 rounded-full mb-3"><i data-lucide="inbox" class="w-6 h-6"></i></div>
+                        <span class="text-sm font-medium"><?php echo __('dashboard.no_new_requests', 'No new incoming requests'); ?></span>
+                    </div>
+                </section>
+
+                <!-- Active Queue Table -->
+                <section>
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('dashboard.processing_queue', 'Processing Queue'); ?></h2>
+                        <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
+                    </div>
+
+                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                    <tr>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="car" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="coins" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="activity" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.status', 'Status'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="phone" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.phone', 'Phone'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                <span>Service Date</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                                <span>Customer Reply</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4 text-right">
+                                            <div class="flex items-center gap-2 justify-end">
+                                                <i data-lucide="settings" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="divide-y divide-slate-100 bg-white">
+                                    <!-- Rows injected by JS -->
+                                </tbody>
+                            </table>
+                            <div id="empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                <div class="bg-slate-50 p-4 rounded-full mb-4 ring-8 ring-slate-50/50"><i data-lucide="filter" class="w-8 h-8 text-slate-300"></i></div>
+                                <h3 class="text-slate-900 font-medium">No matching cases found</h3>
+                                <p class="text-slate-400 text-sm mt-1 max-w-xs">Try adjusting your search filters or import new transfers above.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- RO App Orders Section -->
+                <section class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-blue-200/80 overflow-hidden transition-all hover:shadow-2xl hover:shadow-blue-500/10 card-hover group mt-8">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-600"></div>
+                    <div class="p-6 sm:p-8">
+                        <h2 class="text-xl font-bold text-blue-900 flex items-center gap-3 mb-4">
+                            <div class="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/30">
+                                <i data-lucide="database" class="w-5 h-5 text-white"></i>
+                            </div>
+                            RO App Orders
+                        </h2>
+                        <div id="roapp-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                    </div>
+                </section>
+                <!-- End RO App Orders Section -->
+
+                <!-- Premium Import Section -->
+                <section class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary-500/10 card-hover group">
+                    <!-- Gradient accent bar -->
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-600"></div>
+                    <div class="p-6 sm:p-8">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-3">
+                                    <div class="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg shadow-primary-500/30">
+                                        <i data-lucide="file-input" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    <?php echo __('dashboard.quick_import', 'Quick Import'); ?>
+                                </h2>
+                                <p class="text-sm text-slate-600 mt-2 font-medium"><?php echo __('dashboard.quick_import_desc', 'Paste SMS or bank statement text to auto-detect transfers.'); ?></p>
+                            </div>
+                            <div class="flex gap-2">
+                                <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
+                                <button onclick="window.openManualCreateModal()" class="text-xs font-semibold text-white bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="plus-circle" class="w-3 h-3"></i>
+                                        <?php echo __('dashboard.manual_create', 'Manual Create'); ?>
+                                    </span>
+                                </button>
+                                <?php endif; ?>
+                                <button onclick="window.insertSample('მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00 (ფრანშიზა 273.97)')" class="text-xs font-semibold text-primary-700 bg-gradient-to-br from-primary-50 to-accent-50 px-4 py-2.5 rounded-xl hover:from-primary-100 hover:to-accent-100 transition-all border border-primary-200/50 shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="sparkles" class="w-3 h-3"></i>
+                                        <?php echo __('dashboard.sample', 'Sample'); ?>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <!-- Text Input -->
+                            <div class="flex-1 space-y-3">
+                                <div class="relative">
+                                    <textarea id="import-text" class="w-full h-32 p-5 bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-slate-200/60 rounded-2xl focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20 outline-none text-sm font-mono resize-none transition-all placeholder:text-slate-400 shadow-inner" placeholder="<?php echo __('dashboard.search_placeholder', 'Paste bank text here...'); ?>"></textarea>
+                                    <div class="absolute bottom-4 right-4">
+                                        <button onclick="window.parseBankText()" id="btn-analyze" class="btn-primary text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xl">
+                                            <i data-lucide="sparkles" class="w-4 h-4"></i> <?php echo __('dashboard.detect', 'Detect'); ?>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Result Preview -->
+                            <div id="parsed-placeholder" class="hidden md:flex flex-1 items-center justify-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm font-medium bg-slate-50/50">
+                                <div class="text-center">
+                                    <i data-lucide="arrow-left" class="w-5 h-5 mx-auto mb-2 opacity-50"></i>
+                                    Waiting for text input...
+                                </div>
+                            </div>
+
+                            <div id="parsed-result" class="hidden flex-1 bg-emerald-50/50 rounded-xl border border-emerald-100 p-5 flex flex-col relative overflow-hidden">
+                                <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-400/10 rounded-bl-full -mr-10 -mt-10"></div>
+                                <div class="flex justify-between items-center mb-3 relative z-10">
+                                    <h3 class="text-sm font-bold text-emerald-800 flex items-center gap-2">
+                                        <div class="bg-emerald-100 p-1 rounded-full"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i></div>
+                                        <?php echo __('dashboard.ready_to_import', 'Ready to Import'); ?>
+                                    </h3>
+                                </div>
+                                <div id="parsed-content" class="flex-1 overflow-y-auto max-h-[120px] mb-4 space-y-2 pr-2 custom-scrollbar relative z-10"></div>
+                                <button id="btn-save-import" onclick="window.saveParsedImport()" class="relative z-10 w-full bg-emerald-600 text-white py-2.5 rounded-lg hover:bg-emerald-700 active:scale-95 font-medium text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2">
+                                    <i data-lucide="save" class="w-4 h-4"></i> <?php echo __('dashboard.confirm_save', 'Confirm & Save'); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Search & Filters -->
+                <div class="sticky top-20 z-10 bg-white/80 backdrop-blur-xl p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-2 justify-between items-center">
+                    <div class="relative w-full sm:w-80 group">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-500 transition-colors"></i>
+                        <input id="search-input" type="text" placeholder="<?php echo __('dashboard.search_placeholder', 'Search plates, names, phones...'); ?>" class="w-full pl-10 pr-4 py-2.5 bg-transparent border border-transparent rounded-xl text-sm focus:bg-white focus:border-slate-200 focus:shadow-sm outline-none transition-all">
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto pr-1">
+                        <!-- REPLY FILTER -->
+                        <div class="relative">
+                            <select id="reply-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                                <option value="All"><?php echo __('dashboard.all_replies', 'All Replies'); ?></option>
+                                <option value="Confirmed">✅ <?php echo __('dashboard.confirmed', 'Confirmed'); ?></option>
+                                <option value="Reschedule Requested">📅 <?php echo __('dashboard.reschedule', 'Reschedule'); ?></option>
+                                <option value="Pending">⏳ <?php echo __('dashboard.pending', 'Not Responded'); ?></option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+
+                        <!-- STATUS FILTER -->
+                        <div class="relative">
+                            <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                                <option value="All"><?php echo __('dashboard.all_active_stages', 'All Active Stages'); ?></option>
+                                <option value="Processing">🟡 <?php echo __('dashboard.processing', 'Processing'); ?></option>
+                                <option value="Called">🟣 <?php echo __('dashboard.called', 'Contacted'); ?></option>
+                                <option value="Parts Ordered">📦 <?php echo __('dashboard.parts_ordered', 'Parts Ordered'); ?></option>
+                                <option value="Parts Arrived">🏁 <?php echo __('dashboard.parts_arrived', 'Parts Arrived'); ?></option>
+                                <option value="Scheduled">🟠 <?php echo __('dashboard.scheduled', 'Scheduled'); ?></option>
+                                <option value="Completed">🟢 <?php echo __('dashboard.completed', 'Completed'); ?></option>
+                                <option value="Issue">🔴 <?php echo __('dashboard.issue', 'Issue'); ?></option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Requests Grid -->
+                <section id="new-cases-section" class="space-y-4">
+                    <div class="flex items-center justify-between px-1">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span class="relative flex h-3 w-3">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
+                            </span>
+                            <?php echo __('dashboard.new_requests', 'New Requests'); ?> <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                        </h2>
+                    </div>
+                    
+                    <div id="new-cases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Cards injected here -->
+                    </div>
+                    
+                    <div id="new-cases-empty" class="hidden py-12 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+                        <div class="bg-slate-50 p-3 rounded-full mb-3"><i data-lucide="inbox" class="w-6 h-6"></i></div>
+                        <span class="text-sm font-medium"><?php echo __('dashboard.no_new_requests', 'No new incoming requests'); ?></span>
+                    </div>
+                </section>
+
+                <!-- Active Queue Table -->
+                <section>
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('dashboard.processing_queue', 'Processing Queue'); ?></h2>
+                        <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
+                    </div>
+
+                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                    <tr>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="car" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="coins" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="activity" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.status', 'Status'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="phone" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.phone', 'Phone'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                <span>Service Date</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                                <span>Customer Reply</span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4 text-right">
+                                            <div class="flex items-center gap-2 justify-end">
+                                                <i data-lucide="settings" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="divide-y divide-slate-100 bg-white">
+                                    <!-- Rows injected by JS -->
+                                </tbody>
+                            </table>
+                            <div id="empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                <div class="bg-slate-50 p-4 rounded-full mb-4 ring-8 ring-slate-50/50"><i data-lucide="filter" class="w-8 h-8 text-slate-300"></i></div>
+                                <h3 class="text-slate-900 font-medium">No matching cases found</h3>
+                                <p class="text-slate-400 text-sm mt-1 max-w-xs">Try adjusting your search filters or import new transfers above.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- RO App Orders Section -->
+                <section class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-blue-200/80 overflow-hidden transition-all hover:shadow-2xl hover:shadow-blue-500/10 card-hover group mt-8">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-600"></div>
+                    <div class="p-6 sm:p-8">
+                        <h2 class="text-xl font-bold text-blue-900 flex items-center gap-3 mb-4">
+                            <div class="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/30">
+                                <i data-lucide="database" class="w-5 h-5 text-white"></i>
+                            </div>
+                            RO App Orders
+                        </h2>
+                        <div id="roapp-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                    </div>
+                </section>
+                <!-- End RO App Orders Section -->
             </div>
 
             <!-- VIEW: VEHICLES -->
@@ -823,7 +1270,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 </div>
             </div>
         </div>
-    </div>
     </div>
 
     <!-- Toast Notification Container -->
@@ -1837,385 +2283,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     amount: t.amount, 
                     serviceDate: date 
                 };
-                const msg = getFormattedMessage('parts_arrived', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived');
-            };
-
-            document.getElementById('btn-sms-schedule').onclick = () => {
-                const date = document.getElementById('input-service-date').value;
-                if (!date) return showToast("Please set an Appointment date first", "error");
-                // Use Template for Schedule SMS
-                const templateData = { 
-                    id: t.id,
-                    name: t.name, 
-                    plate: t.plate, 
-                    amount: t.amount, 
-                    serviceDate: date 
-                };
-                const msg = getFormattedMessage('schedule', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'schedule');
-            };
-
-            const logHTML = (t.systemLogs || []).map(l => `
-                <div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600">
-                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>
-                    ${escapeHtml(l.message)}
-                </div>`).join('');
-            document.getElementById('activity-log-container').innerHTML = logHTML || '<div class="text-center py-4"><span class="italic text-slate-300 text-xs">No system activity recorded</span></div>';
-            
-            const noteHTML = (t.internalNotes || []).map(n => `
-                <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3">
-                    <p class="text-sm text-slate-700">${escapeHtml(n.text)}</p>
-                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName)}</span></div>
-                </div>`).join('');
-            document.getElementById('notes-list').innerHTML = noteHTML || '<div class="h-full flex items-center justify-center text-slate-400 text-xs italic">No team notes yet</div>';
-
-            // Display customer review if exists
-            const reviewSection = document.getElementById('modal-review-section');
-            if (t.reviewStars && t.reviewStars > 0) {
-                reviewSection.classList.remove('hidden');
-                document.getElementById('modal-review-rating').innerText = t.reviewStars;
-                
-                // Render stars
-                const starsHTML = Array(5).fill(0).map((_, i) => 
-                    `<i data-lucide="star" class="w-5 h-5 ${i < t.reviewStars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}"></i>`
-                ).join('');
-                document.getElementById('modal-review-stars').innerHTML = starsHTML;
-                
-                // Display comment
-                const comment = t.reviewComment || 'No comment provided';
-                document.getElementById('modal-review-comment').innerText = comment;
-            } else {
-                reviewSection.classList.add('hidden');
-            }
-
-            // Display reschedule request if exists
-            const rescheduleSection = document.getElementById('modal-reschedule-section');
-            if (t.userResponse === 'Reschedule Requested' && (t.rescheduleDate || t.rescheduleComment)) {
-                rescheduleSection.classList.remove('hidden');
-                
-                if (t.rescheduleDate) {
-                    const requestedDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                    document.getElementById('modal-reschedule-date').innerText = requestedDate.toLocaleString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                    });
-                } else {
-                    document.getElementById('modal-reschedule-date').innerText = 'Not specified';
-                }
-                
-                const rescheduleComment = t.rescheduleComment || 'No additional comments';
-                document.getElementById('modal-reschedule-comment').innerText = rescheduleComment;
-            } else {
-                rescheduleSection.classList.add('hidden');
-            }
-
-            document.getElementById('edit-modal').classList.remove('hidden');
-            lucide.createIcons();
-        };
-
-        window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
-
-        // Manual Create Modal Functions
-        window.openManualCreateModal = async () => {
-            // Check permissions
-            if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
-                return;
-            }
-            
-            const modal = document.getElementById('manual-create-modal');
-            modal.classList.remove('hidden');
-            
-            // Clear all inputs
-            document.getElementById('manual-plate').value = '';
-            document.getElementById('manual-name').value = '';
-            document.getElementById('manual-phone').value = '';
-            document.getElementById('manual-amount').value = '';
-            document.getElementById('manual-franchise').value = '';
-            document.getElementById('manual-status').value = 'New';
-            document.getElementById('manual-notes').value = '';
-            lucide.createIcons();
-            
-            // Focus on first input
-            setTimeout(() => document.getElementById('manual-plate').focus(), 100);
-        };
-
-        window.closeManualCreateModal = () => {
-            document.getElementById('manual-create-modal').classList.add('hidden');
-        };
-
-        window.saveManualOrder = async () => {
-            // Check permissions
-            if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
-                return;
-            }
-            
-            const plate = document.getElementById('manual-plate').value.trim();
-            const name = document.getElementById('manual-name').value.trim();
-            const phone = document.getElementById('manual-phone').value.trim();
-            const amount = parseFloat(document.getElementById('manual-amount').value) || 0;
-            const franchise = parseFloat(document.getElementById('manual-franchise').value) || 0;
-            const status = document.getElementById('manual-status').value;
-            const notes = document.getElementById('manual-notes').value.trim();
-
-            // Validation
-            if (!plate) {
-                showToast('Validation Error', 'Vehicle plate number is required', 'error');
-                document.getElementById('manual-plate').focus();
-                return;
-            }
-            if (!name) {
-                showToast('Validation Error', 'Customer name is required', 'error');
-                document.getElementById('manual-name').focus();
-                return;
-            }
-            if (isNaN(amount) || amount <= 0) {
-                showToast('Validation Error', 'Amount must be a valid number greater than 0', 'error');
-                document.getElementById('manual-amount').focus();
-                return;
-            }
-            if (franchise < 0) {
-                showToast('Validation Error', 'Franchise cannot be negative', 'error');
-                document.getElementById('manual-franchise').focus();
-                return;
-            }
-
-            // Disable submit button to prevent double submission
-            const submitBtn = document.getElementById('manual-create-submit');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Creating...';
-            
-            // Prepare data
-            const orderData = {
-                plate: plate.toUpperCase(),
-                name: name,
-                phone: phone,
-                amount: amount,
-                franchise: franchise,
-                status: status,
-                internalNotes: notes ? [{ note: notes, timestamp: new Date().toISOString(), user: '<?php echo $current_user_name; ?>' }] : [],
-                systemLogs: [{ 
-                    message: `Order manually created by <?php echo $current_user_name; ?>`, 
-                    timestamp: new Date().toISOString(), 
-                    type: 'info' 
-                }]
-            };
-
-            try {
-                const result = await fetchAPI('create_transfer', 'POST', orderData);
-                
-                if (result && result.status === 'success') {
-                    showToast('Success', 'Order created successfully!', 'success');
-                    window.closeManualCreateModal();
-                    
-                    // Refresh the table
-                    await loadData();
-                    
-                    // Open the newly created order
-                    if (result.id) {
-                        setTimeout(() => window.openEditModal(result.id), 500);
-                    }
-                } else {
-                    const errorMsg = result?.message || 'Failed to create order';
-                    showToast('Error', errorMsg, 'error');
-                }
-            } catch (error) {
-                showToast('Error', error.message || 'Failed to create order', 'error');
-            } finally {
-                // Re-enable button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Create Order';
-                lucide.createIcons();
-            }
-        };
-
-        window.viewCase = function(id) {
-            window.openEditModal(id);
-            // Disable all form inputs for viewers
-            if (!CAN_EDIT) {
-                const modal = document.getElementById('edit-modal');
-                modal.querySelectorAll('input, select, textarea, button[onclick*="save"]').forEach(el => {
-                    el.disabled = true;
-                });
-                // Change save button to close
-                const saveBtn = modal.querySelector('button[onclick*="saveEdit"]');
-                if (saveBtn) {
-                    saveBtn.textContent = 'Close';
-                    saveBtn.onclick = window.closeModal;
-                }
-            }
-        };
-
-        window.saveEdit = async () => {
-            if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You do not have permission to edit cases', 'error');
-                return;
-            }
-            const t = transfers.find(i => i.id == window.currentEditingId);
-            const status = document.getElementById('input-status').value;
-            const phone = document.getElementById('input-phone').value;
-            const serviceDate = document.getElementById('input-service-date').value;
-            
-            // VALIDATION: Parts Arrived requires a date
-            if (status === 'Parts Arrived' && !serviceDate) {
-                return showToast("Scheduling Required", "Please select a service date to save 'Parts Arrived' status.", "error");
-            }
-
-            const updates = {
-                status,
-                phone,
-                serviceDate: serviceDate || null,
-                franchise: document.getElementById('input-franchise').value,
-                internalNotes: t.internalNotes || [],
-                systemLogs: t.systemLogs || []
-            };
-
-            // AUTO-RESCHEDULE LOGIC (Existing)
-            const currentDateStr = t.serviceDate ? t.serviceDate.replace(' ', 'T').slice(0, 16) : '';
-            if (t.user_response === 'Reschedule Requested' && serviceDate && serviceDate !== currentDateStr) {
-                updates.user_response = 'Pending';
-                updates.systemLogs.push({ message: `Rescheduled to ${serviceDate.replace('T', ' ')}`, timestamp: new Date().toISOString(), type: 'info' });
-                const templateData = { id: t.id, name: t.name, plate: t.plate, amount: t.amount, serviceDate: serviceDate };
-                const msg = getFormattedMessage('rescheduled', templateData);
-                window.sendSMS(phone, msg, 'rescheduled');
-            }
-
-            // --- NEW AUTOMATED SMS LOGIC ---
-            if(status !== t.status) {
-                updates.systemLogs.push({ message: `Status: ${t.status} -> ${status}`, timestamp: new Date().toISOString(), type: 'status' });
-                
-                if (phone) {
-                    const templateData = { 
-                        id: t.id, 
-                        name: t.name, 
-                        plate: t.plate, 
-                        amount: t.amount, 
-                        serviceDate: serviceDate || t.serviceDate // Use new date if set, else old
-                    };
-
-                    // 1. Processing -> Welcome SMS
-                    if (status === 'Processing') {
-                        const msg = getFormattedMessage('registered', templateData);
-                        window.sendSMS(phone, msg, 'welcome_sms');
-                    }
-                    
-                    // 2. Scheduled -> Service Schedule SMS
-                    else if (status === 'Scheduled') {
-                        if(!serviceDate) showToast("Note", "Status set to Scheduled without a date.", "info");
-                        const msg = getFormattedMessage('schedule', templateData);
-                        window.sendSMS(phone, msg, 'schedule_sms');
-                    }
-
-                    // 3. Contacted -> Called SMS
-                    else if (status === 'Called') {
-                        const msg = getFormattedMessage('called', templateData);
-                        window.sendSMS(phone, msg, 'contacted_sms');
-                    }
-
-                    // 4. Parts Ordered -> Parts Ordered SMS
-                    else if (status === 'Parts Ordered') {
-                        const msg = getFormattedMessage('parts_ordered', templateData);
-                        window.sendSMS(phone, msg, 'parts_ordered_sms');
-                    }
-
-                    // 5. Parts Arrived -> Parts Arrived SMS
-                    else if (status === 'Parts Arrived') {
-                        const msg = getFormattedMessage('parts_arrived', templateData);
-                        window.sendSMS(phone, msg, 'parts_arrived_sms');
-                    }
-
-                    // 6. Completed -> Completed SMS with review link
-                    else if (status === 'Completed') {
-                        const msg = getFormattedMessage('completed', templateData);
-                        window.sendSMS(phone, msg, 'completed_sms');
-                    }
-
-                    // 7. Issue -> Issue SMS
-                    else if (status === 'Issue') {
-                        const msg = getFormattedMessage('issue', templateData);
-                        window.sendSMS(phone, msg, 'issue_sms');
-                    }
-                }
-            }
-
-            if(phone) {
-                if (document.getElementById('connection-status').innerText.includes('Offline')) {
-                    const v = vehicles.find(v => v.plate === t.plate);
-                    if(v) v.phone = phone;
-                } else {
-                    await fetchAPI('sync_vehicle', 'POST', { plate: t.plate, phone: phone });
-                }
-            }
-
-            if (document.getElementById('connection-status').innerText.includes('Offline')) {
-                Object.assign(t, updates);
-            } else {
-                await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', updates);
-            }
-            
-            loadData();
-            showToast("Changes Saved", "success");
-        };
-
-        window.addNote = async () => {
-            const text = document.getElementById('new-note-input').value;
-            if(!text) return;
-            const t = transfers.find(i => i.id == window.currentEditingId);
-            const newNote = { text, authorName: 'Manager', timestamp: new Date().toISOString() };
-            
-            if (document.getElementById('connection-status').innerText.includes('Offline')) {
-                if(!t.internalNotes) t.internalNotes = [];
-                t.internalNotes.push(newNote);
-            } else {
-                const notes = [...(t.internalNotes || []), newNote];
-                await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', { internalNotes: notes });
-                t.internalNotes = notes;
-            }
-            
-            document.getElementById('new-note-input').value = '';
-            
-            // Re-render notes
-            const noteHTML = (t.internalNotes || []).map(n => `
-                <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3 animate-in slide-in-from-bottom-2 fade-in">
-                    <p class="text-sm text-slate-700">${escapeHtml(n.text)}</p>
-                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName)}</span></div>
-                </div>`).join('');
-            document.getElementById('notes-list').innerHTML = noteHTML;
-        };
-
-        window.quickAcceptReschedule = async (id) => {
-            const t = transfers.find(i => i.id == id);
-            if (!t || !t.rescheduleDate) return;
-
-            const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-            const dateStr = reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            
-            if (!confirm(`Accept reschedule request for ${t.name} (${t.plate})?\n\nNew appointment: ${dateStr}\n\nCustomer will receive SMS confirmation.`)) {
-                return;
-            }
-
-            try {
-                showToast("Processing...", "Accepting reschedule request", "info");
-                
-                const rescheduleDateTime = t.rescheduleDate.replace(' ', 'T');
-                await fetchAPI(`accept_reschedule&id=${id}`, 'POST', {
-                    service_date: rescheduleDateTime
-                });
-
-                t.serviceDate = rescheduleDateTime;
-                t.userResponse = 'Confirmed';
-                t.rescheduleDate = null;
-                t.rescheduleComment = null;
-                
-                showToast("Reschedule Accepted", `Appointment updated and SMS sent to ${t.name}`, "success");
-                loadData();
-            } catch(e) {
-                console.error('Quick accept reschedule error:', e);
+                const msg = getFormatted
                 showToast("Error", "Failed to accept reschedule request", "error");
             }
         };
@@ -2318,25 +2386,47 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             } catch(e) { console.error(e); showToast("SMS Failed", "error"); }
         };
 
-        document.getElementById('search-input').addEventListener('input', renderTable);
-        document.getElementById('status-filter').addEventListener('change', renderTable);
-        document.getElementById('reply-filter').addEventListener('change', renderTable);
-        document.getElementById('new-note-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') window.addNote(); });
-        window.insertSample = (t) => document.getElementById('import-text').value = t;
+        // --- RO App Orders Sync & Display ---
+        let roAppOrders = [];
 
-        // Ensure all modals are hidden on page load
-        document.getElementById('edit-modal')?.classList.add('hidden');
-        
-        // Initialize data and icons
-        try {
-            loadData();
-        } catch (e) {
-            console.error('Error loading initial data:', e);
-            showToast('Error', 'Failed to load data. Please refresh the page.', 'error');
+        async function loadROAppOrders(page = 1) {
+            try {
+                const res = await fetch(`${API_URL}?action=sync_roapp_orders&page=${page}`);
+                const data = await res.json();
+                if (data.status === 'success' && data.orders && Array.isArray(data.orders.data)) {
+                    roAppOrders = data.orders.data;
+                    renderROAppOrders();
+                } else {
+                    showToast('RO App Sync Error', data.message || 'Failed to fetch RO App orders', 'error');
+                }
+            } catch (e) {
+                showToast('RO App Sync Error', e.message, 'error');
+            }
         }
-        
-        if(window.lucide) lucide.createIcons();
 
+        function renderROAppOrders() {
+            const container = document.getElementById('roapp-orders-grid');
+            if (!container) return;
+            if (!roAppOrders.length) {
+                container.innerHTML = '<div class="text-slate-400 text-sm py-8 text-center">No RO App orders found.</div>';
+                return;
+            }
+            container.innerHTML = roAppOrders.map(o => `
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-mono font-bold text-blue-700">${o.plate || 'N/A'}</span>
+                        <span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">${o.status || 'Unknown'}</span>
+                    </div>
+                    <div class="text-sm text-slate-700 font-semibold">${o.customer_name || o.name || 'No Name'}</div>
+                    <div class="text-xs text-slate-500">${o.phone || 'No Phone'}</div>
+                    <div class="mt-2 text-xs text-slate-400">Amount: <span class="font-bold text-emerald-600">${o.amount || '0'}₾</span></div>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadROAppOrders();
+        });
     </script>
 </body>
 </html>

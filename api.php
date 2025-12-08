@@ -1,3 +1,31 @@
+// --- RO App API Sync Functions ---
+function fetchROAppOrders($page = 1) {
+    require_once 'config.php';
+    $url = ROAPP_API_BASE . '/orders?page=' . intval($page);
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . ROAPP_API_KEY,
+        'Content-Type: application/json'
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($httpCode >= 200 && $httpCode < 300) {
+        return json_decode($response, true);
+    }
+    return null;
+}
+
+if ($action === 'sync_roapp_orders' && $method === 'GET') {
+    $page = intval($_GET['page'] ?? 1);
+    $orders = fetchROAppOrders($page);
+    if ($orders) {
+        jsonResponse(['status' => 'success', 'orders' => $orders]);
+    } else {
+        jsonResponse(['status' => 'error', 'message' => 'Failed to fetch RO App orders']);
+    }
+}
 <?php
 require_once 'session_config.php';
 
