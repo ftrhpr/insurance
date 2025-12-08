@@ -1478,6 +1478,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const franchiseRegex = /\(ფრანშიზა\s*([\d\.]+)\)/i;
 
             lines.forEach(line => {
+                let franchise = '';
                 for(let r of regexes) {
                     const m = line.match(r);
                     if(m) {
@@ -1485,18 +1486,19 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
                         else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
                         else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
+                        else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; } // Ardi insurance
+                        else if(r.source.includes('(') && r.source.includes(')')) { plate=m[2]; amount=m[3]; name='imedi L Customer'; } // imedi L insurance
                         else if(r.source.includes('მანქანის ნომერი')) {
                             plate = m[1]; name = m[2]; amount = m[3];
                             franchise = m[4] ? m[4] : '';
                         }
-                        else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; } // Ardi insurance
-                        else if(r.source.includes('(') && r.source.includes(')')) { plate=m[2]; amount=m[3]; name='imedi L Customer'; } // imedi L insurance
                         else { plate=m[1]; name=m[2]; amount=m[3]; } 
                         
-                        let franchise = '';
-                        const fMatch = line.match(franchiseRegex);
-                        if(fMatch) franchise = fMatch[1];
-
+                        // If Aldagi regex didn't match franchise, try fallback
+                        if(!franchise) {
+                            const fMatch = line.match(franchiseRegex);
+                            if(fMatch) franchise = fMatch[1];
+                        }
                         parsedImportData.push({ 
                             plate: plate.trim(), 
                             name: name.trim(), 
@@ -2196,7 +2198,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (!t || !t.rescheduleDate) return;
 
             const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-            const dateStr = reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const dateStr = reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
             
             if (!confirm(`Accept reschedule request for ${t.name} (${t.plate})?\n\nNew appointment: ${dateStr}\n\nCustomer will receive SMS confirmation.`)) {
                 return;
