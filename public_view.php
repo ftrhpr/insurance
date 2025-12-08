@@ -1,6 +1,53 @@
 <!DOCTYPE html>
 <?php
-require_once 'language.php';
+// Safely include language system with error handling
+try {
+    require_once 'language.php';
+} catch (Exception $e) {
+    // Define fallback function if language system fails
+    if (!function_exists('Language::get')) {
+        class Language {
+            public static function get($key, $default = '') {
+                // Basic fallback translations
+                $fallbacks = [
+                    'app.title' => 'OTOMOTORS Manager Portal',
+                    'public_view.loading' => 'Loading...',
+                    'public_view.service_appointment' => 'Service Appointment',
+                    'public_view.otomotors_service_center' => 'OTOMOTORS Service Center',
+                    'public_view.customer' => 'Customer',
+                    'public_view.order_id' => 'Order ID',
+                    'public_view.scheduled_time' => 'Scheduled Time',
+                    'public_view.confirm_accept' => 'Confirm & Accept',
+                    'public_view.request_another_time' => 'Request Another Time',
+                    'public_view.response_recorded' => 'Response Recorded',
+                    'public_view.thank_you_response' => 'Thank you for letting us know.',
+                    'public_view.current_status' => 'Current Status',
+                    'public_view.see_you_soon' => 'See you soon! Get directions here:',
+                    'public_view.open_google_maps' => 'Open in Google Maps App',
+                    'public_view.service_complete' => 'Your service is complete. How did we do?',
+                    'public_view.tell_us_experience' => 'Tell us about your experience...',
+                    'public_view.submit_review' => 'Submit Review',
+                    'public_view.thank_you' => 'Thank You!',
+                    'public_view.appreciate_feedback' => 'We appreciate your feedback.',
+                    'public_view.call_support' => 'Call Support',
+                    'public_view.request_reschedule' => 'Request Reschedule',
+                    'public_view.preferred_date_time' => 'Tell us your preferred date and time',
+                    'public_view.preferred_date_time_label' => 'Preferred Date & Time',
+                    'public_view.additional_comments' => 'Additional Comments (Optional)',
+                    'public_view.let_us_know' => 'Let us know any specific requirements or reasons for rescheduling...',
+                    'public_view.cancel' => 'Cancel',
+                    'public_view.submit_request' => 'Submit Request',
+                    'public_view.appointment_not_found' => 'Appointment Not Found',
+                    'public_view.link_expired' => 'This link may be expired or invalid.',
+                    'public_view.valued_customer' => 'Valued Customer',
+                    'public_view.to_be_determined' => 'TBD',
+                    'public_view.service_completed' => 'Service Completed'
+                ];
+                return $fallbacks[$key] ?? $default ?: $key;
+            }
+        }
+    }
+}
 ?>
 <html lang="en">
 <head>
@@ -229,14 +276,14 @@ require_once 'language.php';
 
         // Language strings for JavaScript
         const lang = {
-            connection_error: '<?php echo addslashes(Language::get('public_view.connection_error')); ?>',
-            select_star_rating: '<?php echo addslashes(Language::get('public_view.select_star_rating')); ?>',
-            error_submitting_review: '<?php echo addslashes(Language::get('public_view.error_submitting_review')); ?>',
-            status_confirmed: '<?php echo addslashes(Language::get('public_view.status_confirmed')); ?>',
-            status_reschedule_requested: '<?php echo addslashes(Language::get('public_view.status_reschedule_requested')); ?>',
-            status_pending: '<?php echo addslashes(Language::get('public_view.status_pending')); ?>',
-            sending: '<?php echo addslashes(Language::get('public_view.sending')); ?>',
-            select_date_time: '<?php echo addslashes(Language::get('public_view.select_date_time')); ?>'
+            connection_error: '<?php echo addslashes(Language::get('public_view.connection_error', 'Connection error.')); ?>',
+            select_star_rating: '<?php echo addslashes(Language::get('public_view.select_star_rating', 'Please select a star rating.')); ?>',
+            error_submitting_review: '<?php echo addslashes(Language::get('public_view.error_submitting_review', 'Error submitting review.')); ?>',
+            status_confirmed: '<?php echo addslashes(Language::get('public_view.status_confirmed', '✅ Confirmed')); ?>',
+            status_reschedule_requested: '<?php echo addslashes(Language::get('public_view.status_reschedule_requested', '📅 Reschedule Requested')); ?>',
+            status_pending: '<?php echo addslashes(Language::get('public_view.status_pending', '⏳ Pending')); ?>',
+            sending: '<?php echo addslashes(Language::get('public_view.sending', 'Sending...')); ?>',
+            select_date_time: '<?php echo addslashes(Language::get('public_view.select_date_time', 'Please select your preferred date and time')); ?>'
         };
 
         async function init() {

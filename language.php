@@ -15,11 +15,13 @@ class Language {
     public static function init($language = null) {
         if ($language) {
             self::$language = $language;
-        } elseif (isset($_SESSION['language'])) {
+        } elseif (isset($_SESSION) && isset($_SESSION['language'])) {
             self::$language = $_SESSION['language'];
         } elseif (isset($_GET['lang'])) {
             self::$language = $_GET['lang'];
-            $_SESSION['language'] = self::$language;
+            if (isset($_SESSION)) {
+                $_SESSION['language'] = self::$language;
+            }
         }
 
         self::loadLanguage();
@@ -33,21 +35,62 @@ class Language {
 
         if (file_exists($langFile)) {
             $content = file_get_contents($langFile);
-            self::$strings = json_decode($content, true);
+            if ($content === false) {
+                // Use fallback strings
+                self::loadFallbackStrings();
+                return;
+            }
 
+            $data = json_decode($content, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                // Fallback to English if JSON is invalid
-                self::$language = 'en';
-                self::loadLanguage();
+                // Use fallback strings if JSON is invalid
+                error_log('JSON decode error for language ' . self::$language . ': ' . json_last_error_msg());
+                self::loadFallbackStrings();
+                return;
             }
+
+            self::$strings = $data;
         } else {
-            // Fallback to English if language file doesn't exist
-            self::$language = 'en';
-            $fallbackFile = __DIR__ . '/languages/en.json';
-            if (file_exists($fallbackFile)) {
-                self::$strings = json_decode(file_get_contents($fallbackFile), true);
-            }
+            // Use fallback strings if language file doesn't exist
+            self::loadFallbackStrings();
         }
+    }
+
+    /**
+     * Load fallback language strings
+     */
+    private static function loadFallbackStrings() {
+        // Basic English fallback strings
+        self::$strings = [
+            'app' => [
+                'title' => 'OTOMOTORS Manager Portal',
+                'loading' => 'Loading your workspace...',
+                'connecting' => 'CONNECTING...',
+                'brand_name' => 'OTOMOTORS'
+            ],
+            'navigation' => [
+                'dashboard' => 'Dashboard',
+                'templates' => 'SMS Templates',
+                'reviews' => 'Reviews',
+                'vehicles' => 'Vehicles',
+                'users' => 'Users',
+                'languages' => 'Languages'
+            ],
+            'dashboard' => [
+                'import_title' => 'Import Transfers',
+                'import_description' => 'Paste SMS or bank statement text to auto-detect transfers.',
+                'import_button' => 'Import & Save',
+                'import_confirm' => 'Confirm & Save',
+                'search_placeholder' => 'Search by plate, name, or phone...',
+                'no_new_requests' => 'No new incoming requests',
+                'processing_queue' => 'Processing Queue',
+                'vehicle_owner' => 'Vehicle & Owner',
+                'amount' => 'Amount',
+                'status' => 'Status',
+                'action' => 'Action'
+            ]
+        ];
+    }
 
         self::$loaded = true;
     }
@@ -58,7 +101,12 @@ class Language {
      */
     public static function get($key, $default = '') {
         if (!self::$loaded) {
-            self::init();
+            try {
+                self::init();
+            } catch (Exception $e) {
+                error_log('Language system initialization failed: ' . $e->getMessage());
+                return $default ?: $key;
+            }
         }
 
         $keys = explode('.', $key);

@@ -9,6 +9,38 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once 'language.php';
 
+// Fallback language function in case the class fails
+if (!class_exists('Language') || !method_exists('Language', 'get')) {
+    class Language {
+        public static function get($key, $default = '') {
+            $fallbacks = [
+                'app.title' => 'OTOMOTORS Manager Portal',
+                'app.loading' => 'Loading your workspace...',
+                'app.connecting' => 'CONNECTING...',
+                'app.brand_name' => 'OTOMOTORS',
+                'navigation.dashboard' => 'Dashboard',
+                'navigation.templates' => 'SMS Templates',
+                'navigation.reviews' => 'Reviews',
+                'navigation.vehicles' => 'Vehicles',
+                'navigation.users' => 'Users',
+                'navigation.languages' => 'Languages',
+                'dashboard.import_title' => 'Import Transfers',
+                'dashboard.import_description' => 'Paste SMS or bank statement text to auto-detect transfers.',
+                'dashboard.import_button' => 'Import & Save',
+                'dashboard.import_confirm' => 'Confirm & Save',
+                'dashboard.search_placeholder' => 'Search by plate, name, or phone...',
+                'dashboard.no_new_requests' => 'No new incoming requests',
+                'dashboard.processing_queue' => 'Processing Queue',
+                'dashboard.vehicle_owner' => 'Vehicle & Owner',
+                'dashboard.amount' => 'Amount',
+                'dashboard.status' => 'Status',
+                'dashboard.action' => 'Action'
+            ];
+            return $fallbacks[$key] ?? $default ?: $key;
+        }
+    }
+}
+
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
 ?>
