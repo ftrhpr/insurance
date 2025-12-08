@@ -1487,9 +1487,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
                         else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
                         else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                        else if(r.source.includes('(') && r.source.includes(')')) { plate=m[2]; amount=m[3]; name='imedi L Customer'; } // imedi L insurance
+                        else if(r.source.includes('([A-Z') && r.source.includes('A-Za-z0-9]+)')) { plate=m[2]; amount=m[3]; name='imedi L Customer'; } // imedi L insurance
                         else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; } // Ardi insurance
-                        else { plate=m[1]; name=m[2]; amount=m[3]; } // Aldagi insurance 
+                        else if(r.source.includes('მანქანის')) { plate=m[1]; name=m[2]; amount=m[3]; } // Aldagi insurance 
                         
                         let franchise = '';
                         const fMatch = line.match(franchiseRegex);
