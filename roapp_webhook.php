@@ -35,8 +35,25 @@ function normalize_plate($plate) {
 }
 
 // --- Main webhook handler ---
+
 $input = file_get_contents('php://input');
-$data = json_decode($input, true);
+// Log all incoming payloads for debugging
+file_put_contents(__DIR__ . '/roapp_webhook.log', date('c') . "\n" . $input . "\n---\n", FILE_APPEND);
+
+// Webhook signature verification
+$secret = '_x-HQ9WhfeCrMf6_M1kCi';
+$signature = $_SERVER['HTTP_X_SIGNATURE'] ?? '';
+$payloadData = json_decode($input, true);
+$webhookId = $payloadData['id'] ?? '';
+$expectedSignature = hash('sha256', $webhookId . $secret);
+
+if (!$signature || $signature !== $expectedSignature) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Invalid signature']);
+    exit;
+}
+
+$data = $payloadData;
 
 if (!$data || !isset($data['event_name']) || $data['event_name'] !== 'Order.Status.Changed') {
     http_response_code(400);
