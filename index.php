@@ -824,7 +824,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             </div>
         </div>
     </div>
-    </div>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
@@ -1469,7 +1468,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
                 /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
                 /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
-                /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*([^,]+),\s*([\d\.]+)/i,
+                /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*([^,]+),\s*([\d\.]+)(?:\s*\(ფრანშიზა\s*([\d\.]+)\))?/i,
                 // Ardi insurance: "სახ. ნომ AA123BC 507.40"
                 /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
                 // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10"
@@ -1486,6 +1485,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
                         else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
                         else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
+                        else if(r.source.includes('მანქანის ნომერი')) {
+                            plate = m[1]; name = m[2]; amount = m[3];
+                            franchise = m[4] ? m[4] : '';
+                        }
                         else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; } // Ardi insurance
                         else if(r.source.includes('(') && r.source.includes(')')) { plate=m[2]; amount=m[3]; name='imedi L Customer'; } // imedi L insurance
                         else { plate=m[1]; name=m[2]; amount=m[3]; } 
@@ -1619,7 +1622,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
 
                 const dateObj = new Date(t.created_at || Date.now());
-                const dateStr = dateObj.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const dateStr = dateObj.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
                 // Find linked vehicle info for display (Normalized Matching)
                 const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
@@ -1696,7 +1699,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
                     if (t.service_date) {
                         const svcDate = new Date(t.service_date.replace(' ', 'T'));
-                        const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        const svcDateStr = svcDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
                         serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
                             <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
                             <span class="font-semibold">${svcDateStr}</span>
