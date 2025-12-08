@@ -37,6 +37,53 @@ try {
         )
     ");
 
+    // Create sample templates if none exist
+    $countStmt = $pdo->query("SELECT COUNT(*) FROM sms_parsing_templates");
+    $templateCount = $countStmt->fetchColumn();
+    
+    if ($templateCount == 0) {
+        $sampleTemplates = [
+            [
+                'name' => 'Aldagi Standard',
+                'insurance_company' => 'Aldagi Insurance',
+                'template_pattern' => 'მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT]',
+                'field_mappings' => json_encode([
+                    ['field' => 'plate', 'pattern' => 'მანქანის ნომერი:', 'description' => 'Plate number after Georgian text'],
+                    ['field' => 'name', 'pattern' => 'დამზღვევი:', 'description' => 'Customer name after Georgian text'],
+                    ['field' => 'amount', 'pattern' => ',', 'description' => 'Amount after comma']
+                ])
+            ],
+            [
+                'name' => 'Ardi Standard',
+                'insurance_company' => 'Ardi Insurance',
+                'template_pattern' => 'სახ. ნომ [PLATE] [AMOUNT]',
+                'field_mappings' => json_encode([
+                    ['field' => 'plate', 'pattern' => 'სახ. ნომ', 'description' => 'Plate number after Georgian abbreviation'],
+                    ['field' => 'amount', 'pattern' => '', 'description' => 'Amount at the end']
+                ])
+            ],
+            [
+                'name' => 'Imedi L Standard',
+                'insurance_company' => 'Imedi L Insurance',
+                'template_pattern' => '[MAKE] ([PLATE]) [AMOUNT]',
+                'field_mappings' => json_encode([
+                    ['field' => 'plate', 'pattern' => '(', 'description' => 'Plate number in parentheses'],
+                    ['field' => 'amount', 'pattern' => ')', 'description' => 'Amount after closing parenthesis']
+                ])
+            ]
+        ];
+        
+        $insertStmt = $pdo->prepare("INSERT INTO sms_parsing_templates (name, insurance_company, template_pattern, field_mappings) VALUES (?, ?, ?, ?)");
+        foreach ($sampleTemplates as $template) {
+            $insertStmt->execute([
+                $template['name'],
+                $template['insurance_company'],
+                $template['template_pattern'],
+                $template['field_mappings']
+            ]);
+        }
+    }
+
     // Fetch existing templates
     $stmt = $pdo->query("SELECT * FROM sms_parsing_templates ORDER BY insurance_company, name");
     $parsingTemplates = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -154,6 +201,22 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-slate-800 mb-2">SMS Parsing Templates</h1>
         <p class="text-slate-600">Configure how SMS messages from insurance companies are parsed and mapped to database fields.</p>
+        
+        <!-- Info Box -->
+        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-start gap-3">
+                <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"></i>
+                <div class="text-sm text-blue-800">
+                    <p class="font-medium mb-1">How SMS Parsing Works:</p>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700">
+                        <li>Each template defines how to extract data from SMS messages from a specific insurance company</li>
+                        <li>Field mappings use patterns to locate data in the SMS text (e.g., "მანქანის ნომერი:" for plate numbers)</li>
+                        <li>The system automatically matches incoming SMS against these templates</li>
+                        <li>Sample templates for Aldagi, Ardi, and Imedi L are created automatically</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
     <?php if ($message): ?>

@@ -575,6 +575,26 @@ try {
         }
     }
 
+    // --- SMS PARSING TEMPLATES ENDPOINTS ---
+    if ($action === 'get_parsing_templates' && $method === 'GET') {
+        try {
+            $stmt = $pdo->prepare("SELECT id, name, insurance_company, template_pattern, field_mappings, is_active FROM sms_parsing_templates WHERE is_active = 1 ORDER BY insurance_company, name");
+            $stmt->execute();
+            $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Decode JSON field_mappings for each template
+            foreach ($templates as &$template) {
+                $template['field_mappings'] = json_decode($template['field_mappings'], true);
+            }
+            
+            jsonResponse($templates ?: []);
+        } catch (Exception $e) {
+            error_log("Database error in get_parsing_templates: " . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
     // --- CUSTOMER REVIEWS ENDPOINTS ---
     if ($action === 'get_reviews' && $method === 'GET') {
         try {

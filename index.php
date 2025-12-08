@@ -1426,6 +1426,20 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
         }
 
+        // SMS Parsing Templates
+        let smsParsingTemplates = [];
+
+        // Load SMS parsing templates from API
+        async function loadSMSParsingTemplates() {
+            try {
+                smsParsingTemplates = await fetchAPI('get_parsing_templates');
+            } catch (e) {
+                console.error("SMS parsing templates load error:", e);
+                // Fallback to empty array
+                smsParsingTemplates = [];
+            }
+        }
+
         // Format SMS message with template placeholders
         function getFormattedMessage(type, data) {
             let template = smsTemplates[type] || defaultTemplates[type] || "";
@@ -1446,7 +1460,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const prompt = document.getElementById('notification-prompt');
                 if(prompt) setTimeout(() => prompt.classList.remove('hidden'), 2000);
             }
-            loadSMSTemplates(); // Load templates from API on start
+            loadSMSTemplates(); // Load SMS templates from API on start
+            loadSMSParsingTemplates(); // Load SMS parsing templates from API on start
         });
 
         // --- HTML ESCAPING FUNCTION ---
@@ -1464,48 +1479,123 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const lines = text.split(/\r?\n/);
             parsedImportData = [];
             
-            // Patterns - ordered from most specific to least specific
-            const regexes = [
-                /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
-                /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
-                /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
-                // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10" - most specific with parentheses
-                /([A-Z\s\-]+)\s*\(([A-Za-z0-9]+)\)\s*([\d\.,]+)/i,
-                // Ardi insurance: "სახ. ნომ AA123BC 507.40" - Georgian text
-                /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
-                // Aldagi insurance: "მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00" - Georgian text
-                /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.+?)\s+(\d[\d\.,]*)/i
-            ];
-            
             const franchiseRegex = /\(ფრანშიზა\s*([\d\.,]+)\)/i;
 
             lines.forEach(line => {
-                for(let r of regexes) {
-                    const m = line.match(r);
-                    if(m) {
-                        let plate, name, amount;
-                        if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                        else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                        else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                        else if(r.source.includes('[A-Z') && r.source.includes('([A-Za-z0-9]+)\\)')) { plate=m[2]; amount=m[3]; name='imedi L Customer'; } // imedi L insurance
-                        else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; } // Ardi insurance
-                        else if(r.source.includes('მანქანის')) { plate=m[1]; name=m[2]; amount=m[3]; } // Aldagi insurance 
+                if (!line.trim()) return; // Skip empty lines
+                
+                let parsed = false;
+                
+                // Try each SMS parsing template
+                for (let template of smsParsingTemplates) {
+                    if (parsed) break;
+                    
+                    const fieldMappings = template.field_mappings || [];
+                    let extractedData = {};
+                    
+                    // Try to extract each field using its pattern
+                    for (let mapping of fieldMappings) {
+                        const field = mapping.field;
+                        const pattern = mapping.pattern;
                         
+                        if (!pattern) continue;
+                        
+                        let regex;
+                        if (field === 'plate') {
+                            // Plate numbers: look for pattern followed by plate
+                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([A-Za-z0-9]+)', 'i');
+                        } else if (field === 'name') {
+                            // Names: look for pattern followed by name until comma or end
+                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([^,]+)', 'i');
+                        } else if (field === 'amount') {
+                            // Amounts: look for pattern followed by number
+                            if (pattern) {
+                                regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
+                            } else {
+                                // If no pattern, look for amount at the end
+                                regex = /([\d\.,]+)$/i;
+                            }
+                        }
+                        
+                        if (regex) {
+                            const match = line.match(regex);
+                            if (match) {
+                                if (field === 'plate') extractedData.plate = match[1];
+                                else if (field === 'name') extractedData.name = match[1].trim();
+                                else if (field === 'amount') extractedData.amount = match[1];
+                            }
+                        }
+                    }
+                    
+                    // If we extracted at least plate and amount, consider it a match
+                    if (extractedData.plate && extractedData.amount) {
                         let franchise = '';
                         const fMatch = line.match(franchiseRegex);
                         if(fMatch) franchise = fMatch[1];
 
                         // Clean up name (remove trailing commas)
-                        name = name.replace(/,+$/, '').trim();
+                        if (extractedData.name) {
+                            extractedData.name = extractedData.name.replace(/,+$/, '').trim();
+                        } else {
+                            // Default name based on insurance company
+                            extractedData.name = template.insurance_company + ' Customer';
+                        }
 
                         parsedImportData.push({ 
-                            plate: plate.trim(), 
-                            name: name.trim(), 
-                            amount: amount.trim(), 
+                            plate: extractedData.plate.trim(), 
+                            name: extractedData.name.trim(), 
+                            amount: extractedData.amount.trim(), 
                             franchise: franchise,
-                            rawText: line 
+                            rawText: line,
+                            template: template.name
                         });
-                        break;
+                        parsed = true;
+                    }
+                }
+                
+                // Fallback to old hardcoded patterns if no template matched
+                if (!parsed) {
+                    // Keep the old regex patterns as fallback
+                    const regexes = [
+                        /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
+                        /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
+                        /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
+                        // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10" - most specific with parentheses
+                        /([A-Z\s\-]+)\s*\(([A-Za-z0-9]+)\)\s*([\d\.,]+)/i,
+                        // Ardi insurance: "სახ. ნომ AA123BC 507.40" - Georgian text
+                        /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
+                        // Aldagi insurance: "მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00" - Georgian text
+                        /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.+?)\s+(\d[\d\.,]*)/i
+                    ];
+                    
+                    for(let r of regexes) {
+                        const m = line.match(r);
+                        if(m) {
+                            let plate, name, amount;
+                            if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
+                            else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
+                            else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
+                            else if(r.source.includes('[A-Z') && r.source.includes('([A-Za-z0-9]+)\\)')) { plate=m[2]; amount=m[3]; name='Imedi L Customer'; }
+                            else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; }
+                            else if(r.source.includes('მანქანის')) { plate=m[1]; name=m[2]; amount=m[3]; }
+                            
+                            let franchise = '';
+                            const fMatch = line.match(franchiseRegex);
+                            if(fMatch) franchise = fMatch[1];
+
+                            // Clean up name (remove trailing commas)
+                            name = name.replace(/,+$/, '').trim();
+
+                            parsedImportData.push({ 
+                                plate: plate.trim(), 
+                                name: name.trim(), 
+                                amount: amount.trim(), 
+                                franchise: franchise,
+                                rawText: line 
+                            });
+                            parsed = true;
+                            break;
+                        }
                     }
                 }
             });
@@ -1526,6 +1616,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <div class="flex items-center gap-2">
                             <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
                             <span class="text-slate-500">${escapeHtml(i.name)}</span>
+                            ${i.template ? `<span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 text-xs">${escapeHtml(i.template)}</span>` : ''}
                             ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${escapeHtml(i.franchise)}</span>` : ''}
                         </div>
                         <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
