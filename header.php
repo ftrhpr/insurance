@@ -32,7 +32,6 @@ $nav_items = [
     'index' => ['icon' => 'layout-dashboard', 'label' => 'Dashboard', 'url' => 'index.php'],
     'vehicles' => ['icon' => 'database', 'label' => 'Vehicle DB', 'url' => 'vehicles.php'],
     'reviews' => ['icon' => 'star', 'label' => 'Reviews', 'url' => 'reviews.php'],
-    'bank_templates' => ['icon' => 'file-text', 'label' => 'Bank Templates', 'url' => 'bank_templates.php'],
     'templates' => ['icon' => 'message-square-dashed', 'label' => 'SMS Templates', 'url' => 'templates.php']
 ];
 

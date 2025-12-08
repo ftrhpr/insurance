@@ -11,25 +11,6 @@ require_once 'language.php';
 
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
-
-// Database connection for bank templates
-require_once 'config.php';
-$bankTemplates = [];
-try {
-    $pdo = getDBConnection();
-    $stmt = $pdo->query("SELECT * FROM bank_templates WHERE active = 1 ORDER BY name");
-    $bankTemplates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    // Fallback to hardcoded templates if database fails
-    $bankTemplates = [
-        ['name' => 'Transfer from', 'regex_pattern' => '/Transfer from ([\\w\\s]+), Plate: ([\\w\\d]+), Amt: (\\d+)/i', 'field_order' => 'name,plate,amount'],
-        ['name' => 'Insurance Pay', 'regex_pattern' => '/INSURANCE PAY \\| ([\\w\\d]+) \\| ([\\w\\s]+) \\| (\\d+)/i', 'field_order' => 'plate,name,amount'],
-        ['name' => 'User Car Sum', 'regex_pattern' => '/User: ([\\w\\s]+) Car: ([\\w\\d]+) Sum: ([\\w\\d\\.]+)/i', 'field_order' => 'name,plate,amount'],
-        ['name' => 'Aldagi Georgian', 'regex_pattern' => '/მანქანის ნომერი:\\s*([A-Za-z0-9]+)\\s*დამზღვევი:\\s*(.*?)[\s,]*([\\d\\.]+)(?:\\s*\\(ფრანშიზა\\s*([\\d\\.]+)\\))?/i', 'field_order' => 'plate,name,amount,franchise'],
-        ['name' => 'Ardi Insurance', 'regex_pattern' => '/სახ\\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\\d\\.,]+)/i', 'field_order' => 'plate,amount'],
-        ['name' => 'Imedi L Insurance', 'regex_pattern' => '/([A-Z\\s\\-]+)\\s*\\(([A-Za-z0-9]+)\\)\\s*([\\d\\.,]+)/i', 'field_order' => 'name,plate,amount']
-    ];
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -549,9 +530,9 @@ try {
     </div>
 
     <!-- Premium Edit Modal -->
-    <div id="edit-modal" class="hidden fixed inset-0" role="dialog" aria-modal="true">
+    <div id="edit-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
         <!-- Enhanced Backdrop with Animation -->
-        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 transition-all duration-300" onclick="window.closeModal()"></div>
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeModal()"></div>
 
         <!-- Fullscreen Dialog Container -->
         <div class="fixed inset-0 flex items-stretch p-0 sm:p-2 md:p-4 lg:p-6">
@@ -843,18 +824,19 @@ try {
             </div>
         </div>
     </div>
+    </div>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- Manual Create Order Modal -->
-    <div id="manual-create-modal" class="hidden fixed inset-0" role="dialog" aria-modal="true">
+    <div id="manual-create-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black/80 transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-emerald-900/40 to-teal-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
 
         <!-- Modal Container -->
-        <div class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 2147483646;">
-            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto" style="z-index: 2147483647; max-width: 42rem;">
+        <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl z-[10001]">
                 
                 <!-- Header -->
                 <div class="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
@@ -1478,76 +1460,48 @@ try {
         // --- TRANSFERS ---
         window.parseBankText = () => {
             const text = document.getElementById('import-text').value;
-            if(!text) {
-                showToast('No Text', 'Please enter some text to parse', 'error');
-                return;
-            }
+            if(!text) return;
             const lines = text.split(/\r?\n/);
             parsedImportData = [];
             
-            // Load templates from PHP
-            const templates = <?php echo json_encode($bankTemplates); ?>;
-            
-            if (templates.length === 0) {
-                showToast('No Templates', 'No parsing templates available. Please check database connection.', 'error');
-                return;
-            }
+            // Patterns
+            const regexes = [
+                /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
+                /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
+                /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
+                /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*([^,]+),\s*([\d\.]+)/i,
+                // Ardi insurance: "სახ. ნომ AA123BC 507.40"
+                /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
+                // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10"
+                /([A-Z\s\-]+)\s*\(([A-Za-z0-9]+)\)\s*([\d\.,]+)/i
+            ];
             
             const franchiseRegex = /\(ფრანშიზა\s*([\d\.]+)\)/i;
 
             lines.forEach(line => {
-                let franchise = '';
-                for(let template of templates) {
-                    try {
-                        // Parse regex pattern and flags from stored format like /pattern/flags
-                        let pattern = template.regex_pattern;
-                        let flags = 'i'; // default case-insensitive
+                for(let r of regexes) {
+                    const m = line.match(r);
+                    if(m) {
+                        let plate, name, amount;
+                        if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
+                        else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
+                        else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
+                        else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; } // Ardi insurance
+                        else if(r.source.includes('(') && r.source.includes(')')) { plate=m[2]; amount=m[3]; name='imedi L Customer'; } // imedi L insurance
+                        else { plate=m[1]; name=m[2]; amount=m[3]; } 
                         
-                        if (pattern.startsWith('/') && pattern.includes('/', 1)) {
-                            const lastSlashIndex = pattern.lastIndexOf('/');
-                            flags = pattern.substring(lastSlashIndex + 1);
-                            pattern = pattern.substring(1, lastSlashIndex);
-                        }
-                        
-                        const regex = new RegExp(pattern, flags);
-                        const m = line.match(regex);
-                        if(m) {
-                            let plate = '', name = '', amount = '';
-                            const fields = template.field_order.split(',');
-                            
-                            // Map capture groups to fields
-                            for(let i = 0; i < fields.length && i < m.length - 1; i++) {
-                                const field = fields[i].trim();
-                                const value = m[i + 1] ? m[i + 1].trim() : '';
-                                
-                                if(field === 'plate') plate = value;
-                                else if(field === 'name') name = value;
-                                else if(field === 'amount') amount = value;
-                                else if(field === 'franchise') franchise = value;
-                            }
-                            
-                            // Special handling for templates without name
-                            if(!name && template.name.includes('Ardi')) name = 'Ardi Customer';
-                            if(!name && template.name.includes('Imedi L')) name = 'Imedi L Customer';
-                            
-                            // If no franchise from template, try fallback
-                            if(!franchise) {
-                                const fMatch = line.match(franchiseRegex);
-                                if(fMatch) franchise = fMatch[1];
-                            }
-                            
-                            parsedImportData.push({ 
-                                plate: plate, 
-                                name: name, 
-                                amount: amount, 
-                                franchise: franchise,
-                                rawText: line,
-                                template: template.name
-                            });
-                            break;
-                        }
-                    } catch(e) {
-                        console.error('Invalid regex in template:', template.name, e);
+                        let franchise = '';
+                        const fMatch = line.match(franchiseRegex);
+                        if(fMatch) franchise = fMatch[1];
+
+                        parsedImportData.push({ 
+                            plate: plate.trim(), 
+                            name: name.trim(), 
+                            amount: amount.trim(), 
+                            franchise: franchise,
+                            rawText: line 
+                        });
+                        break;
                     }
                 }
             });
@@ -1565,13 +1519,12 @@ try {
                 
                 document.getElementById('parsed-content').innerHTML = parsedImportData.map(i => 
                     `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
-                        <div class="flex items-center gap-2 flex-1">
+                        <div class="flex items-center gap-2">
                             <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
-                            <span class="text-slate-500 flex-1">${escapeHtml(i.name)}</span>
-                            <span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-xs">${escapeHtml(i.template || 'Unknown')}</span>
+                            <span class="text-slate-500">${escapeHtml(i.name)}</span>
                             ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${escapeHtml(i.franchise)}</span>` : ''}
                         </div>
-                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded ml-2">${escapeHtml(i.amount)} ₾</div>
+                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
                     </div>`
                 ).join('');
                 document.getElementById('btn-save-import').innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
@@ -1666,7 +1619,7 @@ try {
                 }
 
                 const dateObj = new Date(t.created_at || Date.now());
-                const dateStr = dateObj.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const dateStr = dateObj.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
                 // Find linked vehicle info for display (Normalized Matching)
                 const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
@@ -1743,7 +1696,7 @@ try {
                     let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
                     if (t.service_date) {
                         const svcDate = new Date(t.service_date.replace(' ', 'T'));
-                        const svcDateStr = svcDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                         serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
                             <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
                             <span class="font-semibold">${svcDateStr}</span>
@@ -1961,33 +1914,10 @@ try {
             }
 
             document.getElementById('edit-modal').classList.remove('hidden');
-            document.getElementById('edit-modal').style.display = 'block'; // Explicitly set display
-            document.getElementById('edit-modal').style.zIndex = '1000'; // Reasonable z-index for edit modal
-            
-            // Also show the backdrop
-            const editModal = document.getElementById('edit-modal');
-            const backdrop = editModal.querySelector('.fixed.inset-0');
-            if (backdrop) {
-                backdrop.style.display = 'block';
-                backdrop.style.zIndex = '999'; // Below modal
-            }
-            
             lucide.createIcons();
         };
 
-        window.closeModal = () => { 
-            const modal = document.getElementById('edit-modal');
-            modal.classList.add('hidden'); 
-            modal.style.display = 'none'; // Explicitly hide
-            modal.style.zIndex = ''; // Reset z-index
-            // Hide backdrop
-            const backdrop = modal.querySelector('.fixed.inset-0');
-            if (backdrop) {
-                backdrop.style.display = 'none';
-                backdrop.style.zIndex = '';
-            }
-            window.currentEditingId = null; 
-        };
+        window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); window.currentEditingId = null; };
 
         // Manual Create Modal Functions
         window.openManualCreateModal = async () => {
@@ -1997,33 +1927,8 @@ try {
                 return;
             }
             
-            // Close any other open modals first - aggressive approach
-            const editModal = document.getElementById('edit-modal');
-            if (editModal) {
-                // Ensure edit modal is completely hidden
-                editModal.classList.add('hidden');
-                editModal.style.display = 'none';
-                // Hide its backdrop
-                const editBackdrop = editModal.querySelector('.fixed.inset-0');
-                if (editBackdrop) {
-                    editBackdrop.style.display = 'none';
-                }
-            }
-            window.currentEditingId = null;
-            
             const modal = document.getElementById('manual-create-modal');
-            // Ensure proper positioning - don't move to end of body as it can cause centering issues
-            // Set extreme z-index to guarantee it appears on top
-            modal.style.zIndex = '2147483647'; // Maximum possible z-index value
             modal.classList.remove('hidden');
-            modal.style.display = 'flex'; // Use flex to ensure centering works
-            
-            // Also show backdrop elements with maximum z-index
-            const backdrops = modal.querySelectorAll('.fixed.inset-0');
-            backdrops.forEach(backdrop => {
-                backdrop.style.display = 'block';
-                backdrop.style.zIndex = '2147483646'; // Just below modal
-            });
             
             // Clear all inputs
             document.getElementById('manual-plate').value = '';
@@ -2040,16 +1945,7 @@ try {
         };
 
         window.closeManualCreateModal = () => {
-            const modal = document.getElementById('manual-create-modal');
-            modal.classList.add('hidden');
-            modal.style.zIndex = ''; // Reset z-index
-            modal.style.display = ''; // Reset display
-            // Hide backdrop
-            const backdrops = modal.querySelectorAll('.fixed.inset-0');
-            backdrops.forEach(backdrop => {
-                backdrop.style.display = 'none';
-                backdrop.style.zIndex = ''; // Reset z-index
-            });
+            document.getElementById('manual-create-modal').classList.add('hidden');
         };
 
         window.saveManualOrder = async () => {
@@ -2058,8 +1954,6 @@ try {
                 showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
                 return;
             }
-            
-            console.log('Permission check passed');
             
             const plate = document.getElementById('manual-plate').value.trim();
             const name = document.getElementById('manual-name').value.trim();
@@ -2299,7 +2193,7 @@ try {
             if (!t || !t.rescheduleDate) return;
 
             const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-            const dateStr = reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+            const dateStr = reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             
             if (!confirm(`Accept reschedule request for ${t.name} (${t.plate})?\n\nNew appointment: ${dateStr}\n\nCustomer will receive SMS confirmation.`)) {
                 return;
