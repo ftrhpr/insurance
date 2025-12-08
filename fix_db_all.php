@@ -164,6 +164,25 @@ try {
     $pdo->exec($sql);
     echo " - Table structure verified.\n";
 
+    // ---------------------------------------------------------
+    // 6. TABLE: sms_parsing_templates (SMS Parsing System)
+    // ---------------------------------------------------------
+    echo "\nChecking table 'sms_parsing_templates'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS sms_parsing_templates (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        insurance_company VARCHAR(100) NOT NULL,
+        template_pattern TEXT NOT NULL,
+        field_mappings JSON NOT NULL,
+        is_active BOOLEAN DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_insurance_company (insurance_company),
+        INDEX idx_active (is_active)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
     echo "\n---------------------------------------------------\n";
     echo "REPAIR COMPLETE. You can reload your app now.";
 
