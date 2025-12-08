@@ -17,6 +17,16 @@ if ($current_user_role !== 'admin') {
 }
 
 require_once 'language.php';
+
+// Simple language function for languages management
+function __($key, $default = '') {
+    $fallbacks = [
+        'languages.title' => 'Language Management',
+        'languages.add' => 'Add Language',
+        'languages.save' => 'Save Changes'
+    ];
+    return $fallbacks[$key] ?? $default ?: $key;
+}
 require_once 'config.php';
 
 $message = '';
@@ -28,9 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         switch ($_POST['action']) {
             case 'save_string':
                 if (isset($_POST['key']) && isset($_POST['value'])) {
-                    Language::setString($_POST['key'], $_POST['value']);
-                    $message = 'Language string updated successfully!';
-                    $messageType = 'success';
+                // Language system disabled - fallback response
+                $message = 'Language system is currently disabled.';
+                $messageType = 'error';
                 }
                 break;
 
@@ -44,13 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $enStrings = json_decode(file_get_contents(__DIR__ . '/languages/en.json'), true);
                         $enStrings['app']['language_name'] = $langName;
 
-                        if (Language::saveLanguage($langCode, $enStrings)) {
-                            $message = "Language '$langName' ($langCode) created successfully!";
-                            $messageType = 'success';
-                        } else {
-                            $message = 'Failed to create language file.';
-                            $messageType = 'error';
-                        }
+                        // Language system disabled - fallback response
+                        $message = 'Language system is currently disabled.';
+                        $messageType = 'error';
                     } else {
                         $message = 'Invalid language code. Use 2-3 lowercase letters (e.g., en, ka, ru).';
                         $messageType = 'error';
@@ -60,13 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             case 'delete_language':
                 if (isset($_POST['lang_code']) && $_POST['lang_code'] !== 'en') {
-                    if (Language::deleteLanguage($_POST['lang_code'])) {
-                        $message = 'Language deleted successfully!';
-                        $messageType = 'success';
-                    } else {
-                        $message = 'Failed to delete language.';
-                        $messageType = 'error';
-                    }
+                    // Language system disabled - fallback response
+                    $message = 'Language system is currently disabled.';
+                    $messageType = 'error';
                 } else {
                     $message = 'Cannot delete English language.';
                     $messageType = 'error';
@@ -76,18 +78,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'switch_language':
                 if (isset($_POST['language'])) {
                     $_SESSION['language'] = $_POST['language'];
-                    Language::init($_POST['language']);
-                    $message = 'Language switched successfully!';
-                    $messageType = 'success';
+                    // Language system disabled - fallback response
+                    $message = 'Language system is currently disabled.';
+                    $messageType = 'error';
                 }
                 break;
         }
     }
 }
 
-$currentLang = Language::getCurrentLanguage();
-$availableLanguages = Language::getAvailableLanguages();
-$allStrings = Language::getAllStrings();
+$currentLang = 'en'; // Fallback
+$availableLanguages = ['en' => 'English']; // Fallback
+$allStrings = []; // Fallback
 
 // Flatten the nested array for easier editing
 function flattenArray($array, $prefix = '') {
@@ -110,7 +112,7 @@ $flatStrings = flattenArray($allStrings);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo Language::get('languages.title'); ?> - OTOMOTORS</title>
+    <title><?php echo __('languages.title'); ?> - OTOMOTORS</title>
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -172,7 +174,7 @@ $flatStrings = flattenArray($allStrings);
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-slate-900"><?php echo Language::get('languages.title'); ?></h1>
+                    <h1 class="text-xl font-bold text-slate-900"><?php echo __('languages.title'); ?></h1>
                 </div>
                 <div class="flex items-center space-x-4">
                     <span class="text-sm text-slate-600"><?php echo htmlspecialchars($current_user_name); ?></span>
@@ -194,7 +196,7 @@ $flatStrings = flattenArray($allStrings);
 
         <!-- Language Selection -->
         <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-            <h2 class="text-lg font-semibold text-slate-900 mb-4"><?php echo Language::get('languages.current_language'); ?></h2>
+            <h2 class="text-lg font-semibold text-slate-900 mb-4"><?php echo __('languages.current_language', 'Current Language'); ?></h2>
             <form method="POST" class="flex items-center space-x-4">
                 <input type="hidden" name="action" value="switch_language">
                 <select name="language" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
@@ -205,27 +207,27 @@ $flatStrings = flattenArray($allStrings);
                     <?php endforeach; ?>
                 </select>
                 <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500">
-                    <?php echo Language::get('common.save'); ?>
+                    <?php echo __('common.save', 'Save'); ?>
                 </button>
             </form>
         </div>
 
         <!-- Add New Language -->
         <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-            <h2 class="text-lg font-semibold text-slate-900 mb-4"><?php echo Language::get('languages.add_language'); ?></h2>
+            <h2 class="text-lg font-semibold text-slate-900 mb-4"><?php echo __('languages.add_language', 'Add Language'); ?></h2>
             <form method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input type="hidden" name="action" value="add_language">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1"><?php echo Language::get('languages.language_code'); ?></label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1"><?php echo __('languages.language_code', 'Language Code'); ?></label>
                     <input type="text" name="lang_code" placeholder="en" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1"><?php echo Language::get('languages.language_name'); ?></label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1"><?php echo __('languages.language_name', 'Language Name'); ?></label>
                     <input type="text" name="lang_name" placeholder="English" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" required>
                 </div>
                 <div class="flex items-end">
                     <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500">
-                        <?php echo Language::get('languages.add_language'); ?>
+                        <?php echo __('languages.add_language', 'Add Language'); ?>
                     </button>
                 </div>
             </form>
@@ -234,8 +236,8 @@ $flatStrings = flattenArray($allStrings);
         <!-- Language Strings Editor -->
         <div class="bg-white rounded-lg shadow-sm border border-slate-200">
             <div class="p-6 border-b border-slate-200">
-                <h2 class="text-lg font-semibold text-slate-900"><?php echo Language::get('languages.edit_language'); ?> (<?php echo strtoupper($currentLang); ?>)</h2>
-                <p class="text-sm text-slate-600 mt-1"><?php echo Language::get('languages.description'); ?></p>
+                <h2 class="text-lg font-semibold text-slate-900"><?php echo __('languages.edit_language', 'Edit Language'); ?> (<?php echo strtoupper($currentLang); ?>)</h2>
+                <p class="text-sm text-slate-600 mt-1"><?php echo __('languages.description', 'Edit language strings below. Changes are saved automatically.'); ?></p>
             </div>
 
             <div class="p-6">
@@ -247,18 +249,18 @@ $flatStrings = flattenArray($allStrings);
                             <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
 
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1"><?php echo Language::get('languages.key'); ?></label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1"><?php echo __('languages.key', 'Key'); ?></label>
                                 <input type="text" value="<?php echo htmlspecialchars($key); ?>" class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg font-mono text-sm" readonly>
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1"><?php echo Language::get('languages.value'); ?></label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1"><?php echo __('languages.value', 'Value'); ?></label>
                                 <textarea name="value" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"><?php echo htmlspecialchars($value); ?></textarea>
                             </div>
 
                             <div class="flex justify-end">
                                 <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 text-sm">
-                                    <?php echo Language::get('languages.save'); ?>
+                                    <?php echo __('languages.save', 'Save'); ?>
                                 </button>
                             </div>
                         </form>
@@ -271,7 +273,7 @@ $flatStrings = flattenArray($allStrings);
         <!-- Available Languages Management -->
         <?php if (count($availableLanguages) > 1): ?>
         <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mt-6">
-            <h2 class="text-lg font-semibold text-slate-900 mb-4"><?php echo Language::get('languages.select_language'); ?></h2>
+            <h2 class="text-lg font-semibold text-slate-900 mb-4"><?php echo __('languages.select_language', 'Select Language'); ?></h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <?php foreach ($availableLanguages as $code => $name): ?>
                 <div class="border border-slate-200 rounded-lg p-4 <?php echo $code === $currentLang ? 'bg-primary-50 border-primary-300' : ''; ?>">
@@ -281,7 +283,7 @@ $flatStrings = flattenArray($allStrings);
                             <p class="text-sm text-slate-500"><?php echo $code; ?></p>
                         </div>
                         <?php if ($code !== 'en'): ?>
-                        <form method="POST" class="ml-2" onsubmit="return confirm('<?php echo Language::get('languages.confirm_delete'); ?>')">
+                        <form method="POST" class="ml-2" onsubmit="return confirm('<?php echo __('languages.confirm_delete', 'Are you sure you want to delete this language?'); ?>')">
                             <input type="hidden" name="action" value="delete_language">
                             <input type="hidden" name="lang_code" value="<?php echo $code; ?>">
                             <button type="submit" class="text-red-600 hover:text-red-800 p-1">

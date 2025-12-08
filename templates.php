@@ -9,6 +9,16 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once 'language.php';
 
+// Simple language function for templates
+function __($key, $default = '') {
+    $fallbacks = [
+        'templates.title' => 'SMS Templates',
+        'templates.registered' => 'Welcome message for new customers',
+        'templates.save' => 'Save Template'
+    ];
+    return $fallbacks[$key] ?? $default ?: $key;
+}
+
 // Get user info from session
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
@@ -55,7 +65,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo Language::get('templates.title'); ?> - OTOMOTORS</title>
+    <title><?php echo __('templates.title', 'SMS Templates'); ?> - OTOMOTORS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -101,11 +111,11 @@ try {
             <!-- Templates Section -->
             <div class="lg:col-span-2 space-y-6">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800"><?php echo Language::get('templates.title'); ?></h2>
+                    <h2 class="text-2xl font-bold text-slate-800"><?php echo __('templates.title', 'SMS Templates'); ?></h2>
                     <?php if ($current_user_role === 'admin' || $current_user_role === 'manager' || $current_user_role === 'viewer'): ?>
                     <button onclick="window.saveAllTemplates()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i>
-                        <?php echo Language::get('templates.save_button'); ?>
+                        <?php echo __('templates.save_button', 'Save Templates'); ?>
                     </button>
                     <?php else: ?>
                     <div class="text-sm text-slate-500 italic">View only - editing disabled</div>
@@ -120,7 +130,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                                 <i data-lucide="user-check" class="w-4 h-4 text-emerald-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.registered'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.registered', 'Welcome Message'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full ml-auto">Processing</span>
                         </div>
                         <textarea id="tpl-registered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['registered'] ?? ''); ?></textarea>
@@ -132,7 +142,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                                 <i data-lucide="phone-call" class="w-4 h-4 text-blue-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.called'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.called', 'Contacted'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full ml-auto">Called</span>
                         </div>
                         <textarea id="tpl-called" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['called'] ?? ''); ?></textarea>
@@ -144,7 +154,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
                                 <i data-lucide="calendar-check" class="w-4 h-4 text-indigo-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.schedule'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.schedule', 'Schedule'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full ml-auto">Scheduled</span>
                         </div>
                         <textarea id="tpl-schedule" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['schedule'] ?? ''); ?></textarea>
@@ -156,7 +166,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
                                 <i data-lucide="package" class="w-4 h-4 text-amber-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.parts_ordered'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.parts_ordered', 'Parts Ordered'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full ml-auto">Parts Ordered</span>
                         </div>
                         <textarea id="tpl-parts_ordered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_ordered'] ?? ''); ?></textarea>
@@ -168,7 +178,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
                                 <i data-lucide="box" class="w-4 h-4 text-purple-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.parts_arrived'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.parts_arrived', 'Parts Arrived'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full ml-auto">Parts Arrived</span>
                         </div>
                         <textarea id="tpl-parts_arrived" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_arrived'] ?? ''); ?></textarea>
@@ -180,7 +190,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
                                 <i data-lucide="clock" class="w-4 h-4 text-orange-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.rescheduled'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.rescheduled', 'Rescheduled'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">Customer Action</span>
                         </div>
                         <textarea id="tpl-rescheduled" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['rescheduled'] ?? ''); ?></textarea>
@@ -192,7 +202,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
                                 <i data-lucide="calendar-check" class="w-4 h-4 text-cyan-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.reschedule_accepted'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.reschedule_accepted', 'Reschedule Accepted'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-cyan-100 text-cyan-700 rounded-full ml-auto">Manager Action</span>
                         </div>
                         <textarea id="tpl-reschedule_accepted" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['reschedule_accepted'] ?? ''); ?></textarea>
@@ -204,7 +214,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
                                 <i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.completed'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.completed', 'Completed'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full ml-auto">Completed</span>
                         </div>
                         <textarea id="tpl-completed" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['completed'] ?? ''); ?></textarea>
@@ -216,7 +226,7 @@ try {
                             <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
                                 <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800"><?php echo Language::get('templates.issue'); ?></h3>
+                            <h3 class="font-bold text-slate-800"><?php echo __('templates.issue', 'Issue'); ?></h3>
                             <span class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full ml-auto">Issue</span>
                         </div>
                         <textarea id="tpl-issue" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['issue'] ?? ''); ?></textarea>

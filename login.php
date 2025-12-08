@@ -9,6 +9,19 @@ if (isset($_SESSION['user_id'])) {
 
 require_once 'language.php';
 
+// Simple language function for login
+function __($key, $default = '') {
+    $fallbacks = [
+        'login.title' => 'OTOMOTORS Login',
+        'login.welcome' => 'Welcome Back',
+        'login.username' => 'Username',
+        'login.password' => 'Password',
+        'login.sign_in' => 'Sign In',
+        'login.error' => 'Invalid credentials'
+    ];
+    return $fallbacks[$key] ?? $default ?: $key;
+}
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -84,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title><?php echo Language::get('login.title'); ?> | Hope UI</title>
+    <title><?php echo __('login.title', 'Login'); ?> | Hope UI</title>
     
     <!-- Bootstrap 5.3 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
@@ -277,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <form method="POST" action="">
                 <div class="mb-4">
-                    <label for="username" class="form-label"><?php echo Language::get('login.username'); ?></label>
+                    <label for="username" class="form-label"><?php echo __('login.username', 'Username'); ?></label>
                     <div class="input-group">
                         <span class="input-group-text">
                             <i class="fas fa-user"></i>
@@ -296,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <div class="mb-4">
-                    <label for="password" class="form-label"><?php echo Language::get('login.password'); ?></label>
+                    <label for="password" class="form-label"><?php echo __('login.password', 'Password'); ?></label>
                     <div class="input-group">
                         <span class="input-group-text">
                             <i class="fas fa-lock"></i>
@@ -315,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <button type="submit" class="btn btn-login">
                     <i class="fas fa-sign-in-alt me-2"></i>
-                    <?php echo Language::get('login.login_button'); ?>
+                    <?php echo __('login.login_button', 'Login'); ?>
                 </button>
             </form>
         </div>

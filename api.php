@@ -802,9 +802,9 @@ try {
             jsonResponse(['error' => 'Admin access required']);
         }
 
-        require_once 'language.php';
-        $languages = Language::getAvailableLanguages();
-        $current = Language::getCurrentLanguage();
+        // Language system disabled - using fallback
+        $languages = ['en' => 'English', 'ka' => 'ქართული (Georgian)'];
+        $current = 'en';
 
         jsonResponse([
             'languages' => $languages,
@@ -819,13 +819,11 @@ try {
         }
 
         $language = $_GET['lang'] ?? 'en';
-        require_once 'language.php';
-
-        // Temporarily switch to requested language
-        $originalLang = Language::getCurrentLanguage();
-        Language::init($language);
-        $strings = Language::getAllStrings();
-        Language::init($originalLang); // Switch back
+        // Language system disabled - using fallback
+        $strings = [
+            'app' => ['title' => 'OTOMOTORS Manager Portal'],
+            'dashboard' => ['import_title' => 'Import Transfers']
+        ];
 
         jsonResponse([
             'language' => $language,
@@ -848,18 +846,8 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Key is required']);
         }
 
-        require_once 'language.php';
-
-        // Temporarily switch to target language
-        $originalLang = Language::getCurrentLanguage();
-        Language::init($language);
-
-        Language::setString($key, $value);
-
-        // Switch back
-        Language::init($originalLang);
-
-        jsonResponse(['status' => 'success']);
+        // Language system disabled
+        jsonResponse(['status' => 'error', 'message' => 'Language system is currently disabled']);
     }
 
     if ($action === 'create_language' && $method === 'POST') {
@@ -880,16 +868,8 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Invalid language code format']);
         }
 
-        require_once 'language.php';
-
-        // Create new language file based on English
-        $enStrings = json_decode(file_get_contents(__DIR__ . '/languages/en.json'), true);
-        $enStrings['app']['language_name'] = $name;
-
-        if (Language::saveLanguage($code, $enStrings)) {
-            jsonResponse(['status' => 'success']);
-        } else {
-            jsonResponse(['status' => 'error', 'message' => 'Failed to create language file']);
+        // Language system disabled - fallback response
+        jsonResponse(['status' => 'error', 'message' => 'Language system is currently disabled']);
         }
     }
 
@@ -906,27 +886,16 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Cannot delete English language']);
         }
 
-        require_once 'language.php';
-
-        if (Language::deleteLanguage($code)) {
-            jsonResponse(['status' => 'success']);
-        } else {
-            jsonResponse(['status' => 'error', 'message' => 'Failed to delete language']);
-        }
+        // Language system disabled
+        jsonResponse(['status' => 'error', 'message' => 'Language system is currently disabled']);
     }
 
     if ($action === 'switch_language' && $method === 'POST') {
         $data = getJsonInput();
         $language = $data['language'] ?? 'en';
 
-        require_once 'language.php';
-
-        if (Language::saveLanguage($language, Language::getAllStrings())) {
-            $_SESSION['language'] = $language;
-            jsonResponse(['status' => 'success']);
-        } else {
-            jsonResponse(['status' => 'error', 'message' => 'Failed to switch language']);
-        }
+        // Language system disabled
+        jsonResponse(['status' => 'error', 'message' => 'Language system is currently disabled']);
     }
 
 } catch (Exception $e) {
