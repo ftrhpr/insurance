@@ -105,59 +105,21 @@ if (!isset($users) || !is_array($users)) {
 echo "<!-- DEBUG: PHP users count: " . count($users) . " -->";
 echo "<!-- DEBUG: PHP users data: " . htmlspecialchars(json_encode($users)) . " -->";
 echo "<!-- DEBUG: About to output HTML -->";
+echo "<!-- DEBUG: Creating simple HTML version -->";
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('users.title', 'User Management'); ?> - OTOMOTORS</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        primary: {
-                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc',
-                            400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
-                            800: '#075985', 900: '#0c4a6e'
-                        },
-                        accent: {
-                            50: '#fdf4ff', 100: '#fae8ff', 500: '#d946ef', 600: '#c026d3'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        * { font-family: 'Inter', -apple-system, system-ui, sans-serif; }
-        .gradient-primary {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-        }
-        .gradient-primary:hover {
-            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-        }
-    </style>
+    <title>Users Debug</title>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-
-<!-- <?php include 'header.php'; ?> -->
-
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- DEBUG: Main content starts here -->
-    <h1 style="color: red; font-size: 48px; font-weight: bold; background: yellow; padding: 20px; border: 5px solid black; text-align: center;">
-        🚨🚨🚨 DEBUG BOX IS HERE 🚨🚨🚨<br>
-        If you can read this, HTML is rendering!<br>
-        Users: <?php echo count($users); ?><br>
-        Time: <?php echo date('H:i:s'); ?>
-    </h1>
+<body>
+    <h1 style="color: red; background: yellow; padding: 20px;">DEBUG: Users Page Working!</h1>
+    <p>Users count: <?php echo count($users); ?></p>
+    <p>Current time: <?php echo date('H:i:s'); ?></p>
+    <pre><?php print_r($users); ?></pre>
+</body>
+</html>
+<?php exit(); // Stop execution here for debugging ?>
     
     <!-- Main Content -->
     <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
