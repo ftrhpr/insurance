@@ -1,59 +1,4 @@
 <?php
-// Log every request for debugging
-file_put_contents(__DIR__ . '/error_log', date('Y-m-d H:i:s') . " REQUEST: " . $_SERVER['REQUEST_URI'] . "\n", FILE_APPEND);
-
-// Catch-all exception handler for any uncaught errors
-register_shutdown_function(function() {
-    $error = error_get_last();
-    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        http_response_code(500);
-        echo json_encode([
-            'error' => 'Shutdown',
-            'message' => $error['message'],
-            'file' => $error['file'],
-            'line' => $error['line']
-        ]);
-    }
-});
-// Set error handler FIRST before anything else
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    if (!headers_sent()) {
-        header("Content-Type: application/json");
-        http_response_code(500);
-    }
-    echo json_encode([
-        'error' => 'PHP Error',
-        'type' => $errno,
-        'message' => $errstr,
-        'file' => basename($errfile),
-        'line' => $errline
-    ]);
-    exit;
-});
-
-// Set exception handler
-set_exception_handler(function($e) {
-    if (!headers_sent()) {
-        header("Content-Type: application/json");
-        http_response_code(500);
-    }
-    echo json_encode([
-        'error' => 'PHP Exception',
-        'message' => $e->getMessage(),
-        'file' => basename($e->getFile()),
-        'line' => $e->getLine(),
-        'trace' => $e->getTraceAsString()
-    ]);
-    exit;
-});
-
-
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1); // Force display errors for debugging
-ini_set('display_startup_errors', 1);
-ini_set('log_errors', 1);
-
 require_once 'session_config.php';
 
 header("Content-Type: application/json");
@@ -125,32 +70,7 @@ function jsonResponse($data) {
 }
 
 function getJsonInput() {
-    // Read input with size limit (1MB max)
-    $rawInput = file_get_contents('php://input', false, null, 0, 1048576);
-    
-    if ($rawInput === false || strlen($rawInput) === 0) {
-        return [];
-    }
-    
-    // Validate UTF-8 encoding
-    if (!mb_check_encoding($rawInput, 'UTF-8')) {
-        error_log('Invalid UTF-8 in JSON input');
-        http_response_code(400);
-        die(json_encode(['error' => 'Invalid character encoding']));
-    }
-    
-    // Decode with depth limit (10 levels max)
-    $input = json_decode($rawInput, true, 10, JSON_THROW_ON_ERROR);
-    
-    // Validate no excessively large arrays
-    if (is_array($input)) {
-        array_walk_recursive($input, function($value, $key) {
-            if (is_string($value) && strlen($value) > 100000) {
-                throw new Exception('String value too large');
-            }
-        });
-    }
-    
+    $input = json_decode(file_get_contents('php://input'), true);
     return (json_last_error() === JSON_ERROR_NONE) ? $input : [];
 }
 
@@ -224,25 +144,7 @@ function sendSecureSMS($to, $text, $api_key) {
 function getAccessToken($keyFile) {
     if (!file_exists($keyFile)) return null;
     
-    // Validate file size before reading (max 10KB for service account key)
-    $fileSize = filesize($keyFile);
-    if ($fileSize === false || $fileSize > 10240) {
-        error_log("Service account file too large or unreadable: $keyFile");
-        return null;
-    }
-    
-    $keyContent = file_get_contents($keyFile);
-    if ($keyContent === false) {
-        error_log("Failed to read service account file: $keyFile");
-        return null;
-    }
-    
-    try {
-        $keyData = json_decode($keyContent, true, 5, JSON_THROW_ON_ERROR);
-    } catch (Exception $e) {
-        error_log("Invalid JSON in service account file: " . $e->getMessage());
-        return null;
-    }
+    $keyData = json_decode(file_get_contents($keyFile), true);
     $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
     $now = time();
     $claim = json_encode([
@@ -273,19 +175,7 @@ function getAccessToken($keyFile) {
     $response = curl_exec($ch);
     curl_close($ch);
     
-    // Validate response size and parse safely
-    if (strlen($response) > 10240) {
-        error_log("OAuth response too large");
-        return null;
-    }
-    
-    try {
-        $tokenData = json_decode($response, true, 5, JSON_THROW_ON_ERROR);
-    } catch (Exception $e) {
-        error_log("Failed to parse OAuth response: " . $e->getMessage());
-        return null;
-    }
-    
+    $tokenData = json_decode($response, true);
     return $tokenData['access_token'] ?? null;
 }
 
@@ -330,19 +220,7 @@ function sendFCM_V1($pdo, $keyFile, $title, $body) {
         
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         $res = curl_exec($ch);
-        
-        // Validate FCM response size and parse safely
-        if ($res && strlen($res) < 10240) {
-            try {
-                $results[] = json_decode($res, true, 5, JSON_THROW_ON_ERROR);
-            } catch (Exception $e) {
-                error_log("Failed to parse FCM response: " . $e->getMessage());
-                $results[] = ['error' => 'Invalid response'];
-            }
-        } else {
-            error_log("FCM response too large or empty");
-            $results[] = ['error' => 'Invalid response size'];
-        }
+        $results[] = json_decode($res, true);
     }
     curl_close($ch);
 
@@ -514,9 +392,8 @@ try {
 
         if ($id > 0 && $serviceDate) {
             // Update service date and clear reschedule request, mark as confirmed
-            $safeServiceDate = (empty($serviceDate) || $serviceDate === '') ? null : $serviceDate;
             $pdo->prepare("UPDATE transfers SET service_date = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
-                ->execute([$safeServiceDate, $id]);
+                ->execute([$serviceDate, $id]);
 
             // Get transfer details for SMS
             $stmt = $pdo->prepare("SELECT name, plate, phone, amount FROM transfers WHERE id = ?");
@@ -565,24 +442,8 @@ try {
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
-            // Validate JSON size before decoding (max 100KB per field)
-            $notesJson = $row['internal_notes'] ?? '[]';
-            $logsJson = $row['system_logs'] ?? '[]';
-            
-            if (strlen($notesJson) > 102400 || strlen($logsJson) > 102400) {
-                error_log("Oversized JSON detected for transfer ID: " . $row['id']);
-                $row['internalNotes'] = [];
-                $row['systemLogs'] = [];
-            } else {
-                try {
-                    $row['internalNotes'] = json_decode($notesJson, true, 10, JSON_THROW_ON_ERROR) ?: [];
-                    $row['systemLogs'] = json_decode($logsJson, true, 10, JSON_THROW_ON_ERROR) ?: [];
-                } catch (Exception $e) {
-                    error_log("JSON decode error for transfer ID " . $row['id'] . ": " . $e->getMessage());
-                    $row['internalNotes'] = [];
-                    $row['systemLogs'] = [];
-                }
-            }
+            $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');
+            $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
             $row['serviceDate'] = $row['service_date'] ?? null; 
         }
         
@@ -701,30 +562,11 @@ try {
             $stmt->execute([$id]);
             if (!$stmt->fetch()) {
                 $pdo->rollBack();
-                if ($key === 'internalNotes' || $key === 'systemLogs') {
-                    $dbColumn = $key === 'internalNotes' ? 'internal_notes' : 'system_logs';
-                    
-                    // Validate array size before encoding (max 1000 items, max 100KB total)
-                    if (!is_array($val)) {
-                        continue; // Skip non-array values
-                    }
-                    
-                    if (count($val) > 1000) {
-                        error_log("Array too large for $key: " . count($val) . " items");
-                        http_response_code(400);
-                        throw new Exception("$key array exceeds maximum size (1000 items)");
-                    }
-                    
-                    $encoded = json_encode($val);
-                    if (strlen($encoded) > 102400) {
-                        error_log("Encoded JSON too large for $key: " . strlen($encoded) . " bytes");
-                        http_response_code(400);
-                        throw new Exception("$key data exceeds maximum size (100KB)");
-                    }
-                    
-                    $fields[] = "$dbColumn = :$key";
-                    $params[":$key"] = $encoded;
-                }ds = []; $params = [':id' => $id];
+                http_response_code(404);
+                jsonResponse(['status' => 'error', 'message' => 'Transfer not found']);
+            }
+            
+            $fields = []; $params = [':id' => $id];
             foreach ($data as $key => $val) {
                 if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
                     if ($key === 'serviceDate') {

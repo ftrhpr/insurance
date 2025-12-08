@@ -1,12 +1,4 @@
-// DEBUG: Confirm session_config.php is loaded
-echo "SESSION_CONFIG_LOADED";
-file_put_contents(__DIR__ . '/error_log', date('Y-m-d H:i:s') . " SESSION_CONFIG_LOADED\n", FILE_APPEND);
 <?php
-// Debug: log and display all errors in session_config.php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('log_errors', 1);
-file_put_contents(__DIR__ . '/error_log', date('Y-m-d H:i:s') . " SESSION_CONFIG: " . json_encode($_SERVER) . "\n", FILE_APPEND);
 // session_config.php - Secure session configuration
 // Include this at the start of every page BEFORE session_start()
 
@@ -44,17 +36,8 @@ if (session_status() === PHP_SESSION_NONE) {
             session_destroy();
             session_start();
             session_regenerate_id(true);
-            // If API request, return JSON error instead of redirect
-            if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], 'api.php') !== false) {
-                header('Content-Type: application/json');
-                http_response_code(401);
-                echo json_encode(['error' => 'Session timeout']);
-                exit();
-            } else {
-                header('Location: login.php?error=timeout');
-                exit();
-            }
-        }
+            header('Location: login.php?error=timeout');
+            exit();
         }
         $_SESSION['last_activity'] = time();
         

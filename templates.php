@@ -28,7 +28,8 @@ $defaultTemplatesData = [
 ];
 
 try {
-    $pdo = getDBConnection();
+    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // Fetch SMS templates
     $stmt = $pdo->query("SELECT * FROM sms_templates");

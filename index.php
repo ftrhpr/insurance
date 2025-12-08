@@ -15,10 +15,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>OTOMOTORS Manager Portal v<?php echo time(); ?></title>
+    <title>OTOMOTORS Manager Portal</title>
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -943,12 +940,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </div>
 
     <script>
-        console.log('[INIT] Script starting...');
         const API_URL = 'api.php';
         const MANAGER_PHONE = "511144486";
         const USER_ROLE = '<?php echo $current_user_role; ?>';
         const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager';
-        console.log('[INIT] Constants loaded, USER_ROLE:', USER_ROLE);
         
         // 1. FIREBASE CONFIG (REPLACE WITH YOURS)
         const firebaseConfig = {
@@ -999,17 +994,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         let parsedImportData = [];
         const currentUser = { uid: "manager", name: "Manager" }; 
 
-        // Helper - Enhanced plate normalization
-        const normalizePlate = (p) => {
-            if (!p) return '';
-            // Normalize Georgian characters (ა-ჰ), Latin, and numbers (including full-width)
-            // Remove RTL marks, zero-width spaces, and special characters
-            return p
-                .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E]/g, '') // Remove invisible chars
-                .normalize('NFKC') // Normalize full-width to ASCII
-                .replace(/[^a-zA-Z0-9ა-ჰ]/gi, '') // Keep Latin, Georgian, numbers
-                .toUpperCase();
-        };
+        // Helper
+        const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
         // --- API HELPERS ---
         const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
@@ -1039,18 +1025,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 
                 // Check if response is NOT OK (e.g. 500 Error)
                 if (!res.ok) {
-                    // Read response body once as text
-                    const responseText = await res.text();
+                    // Try to parse the JSON error message from api.php
                     let errorText = res.statusText;
-                    
-                    // Try to parse as JSON first
                     try {
-                        const errorJson = JSON.parse(responseText);
+                        const errorJson = await res.json();
                         if (errorJson.error) errorText = errorJson.error;
-                        else if (responseText) errorText = responseText.substring(0, 200);
                     } catch (parseErr) {
-                        // If not JSON, use the text directly
-                        if(responseText) errorText = responseText.substring(0, 200);
+                        // If parsing fails, use the text body or generic status
+                        const text = await res.text();
+                        if(text) errorText = text.substring(0, 100); // Limit length
                     }
                     throw new Error(`Server Error (${res.status}): ${errorText}`);
                 }
@@ -1538,21 +1521,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         const fMatch = line.match(franchiseRegex);
                         if(fMatch) franchise = fMatch[1];
 
-                        // Validate parsed numbers before adding
-                        const amountNum = parseFloat(amount);
-                        const franchiseNum = parseFloat(franchise || '0');
-                        
-                        // Only add if amounts are valid and within bounds
-                        if (isFinite(amountNum) && amountNum > 0 && amountNum <= 999999999 &&
-                            isFinite(franchiseNum) && franchiseNum >= 0 && franchiseNum <= 999999999) {
-                            parsedImportData.push({ 
-                                plate: plate.trim().substring(0, 20), // Limit plate length
-                                name: name.trim().substring(0, 100),  // Limit name length
-                                amount: amountNum.toFixed(2),  // Format to 2 decimals
-                                franchise: franchiseNum.toFixed(2),
-                                rawText: line 
-                            });
-                        }
+                        parsedImportData.push({ 
+                            plate: plate.trim(), 
+                            name: name.trim(), 
+                            amount: amount.trim(), 
+                            franchise: franchise,
+                            rawText: line 
+                        });
                         break;
                     }
                 }
@@ -1623,7 +1598,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             if(MANAGER_PHONE && successCount > 0) {
                 const msg = `System Alert: ${successCount} new transfer(s) added to OTOMOTORS portal.`;
-                window.sendSMS(MANAGER_PHONE, msg, 'system').catch(err => console.error('Failed to send SMS:', err));
+                window.sendSMS(MANAGER_PHONE, msg, 'system');
             }
             
             if (successCount > 0) {
@@ -1640,7 +1615,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (importText) importText.value = '';
             parsedResult?.classList.add('hidden');
             parsedPlaceholder?.classList.remove('hidden');
-            loadData().catch(err => console.error('Failed to reload data:', err));
+            loadData();
             
             if (failCount > 0) {
                 showToast("Import Completed with Errors", `${successCount} succeeded, ${failCount} failed`, "error");
@@ -1780,18 +1755,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>`;
                     }
                     
-                    // Review stars display with bounds checking
+                    // Review stars display
                     let reviewDisplay = '';
                     if (t.reviewStars && t.reviewStars > 0) {
-                        const starCount = parseInt(t.reviewStars) || 0;
-                        // Validate star count to prevent RangeError and excessive memory usage
-                        if (starCount >= 1 && starCount <= 5) {
-                            const stars = '⭐'.repeat(starCount);
-                            reviewDisplay = `<div class="flex items-center gap-1 mt-1">
-                                <span class="text-xs">${stars}</span>
-                                ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
-                            </div>`;
-                        }
+                        const stars = '⭐'.repeat(parseInt(t.reviewStars));
+                        reviewDisplay = `<div class="flex items-center gap-1 mt-1">
+                            <span class="text-xs">${stars}</span>
+                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
+                        </div>`;
                     }
 
                     activeContainer.innerHTML += `
@@ -1930,8 +1901,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     serviceDate: document.getElementById('input-service-date').value 
                 };
                 const msg = getFormattedMessage('registered', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'registered')
-                    .catch(err => console.error('Failed to send SMS:', err));
+                window.sendSMS(document.getElementById('input-phone').value, msg, 'registered');
             };
 
             document.getElementById('btn-sms-arrived').onclick = () => {
@@ -1946,8 +1916,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     serviceDate: date 
                 };
                 const msg = getFormattedMessage('parts_arrived', templateData);
-                window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived')
-                    .catch(err => console.error('Failed to send SMS:', err));
+                window.sendSMS(document.getElementById('input-phone').value, msg, 'parts_arrived');
             };
 
             document.getElementById('btn-sms-schedule').onclick = () => {
@@ -1990,17 +1959,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Display customer review if exists
             const reviewSection = document.getElementById('modal-review-section');
             if (reviewSection) {
-                const starCount = parseInt(t.reviewStars) || 0;
-                // Validate star count (1-5 range)
-                if (starCount >= 1 && starCount <= 5) {
+                if (t.reviewStars && t.reviewStars > 0) {
                     reviewSection.classList.remove('hidden');
                     
                     const reviewRating = document.getElementById('modal-review-rating');
-                    if (reviewRating) reviewRating.innerText = starCount;
+                    if (reviewRating) reviewRating.innerText = t.reviewStars;
                     
-                    // Render stars with validated count
+                    // Render stars
                     const starsHTML = Array(5).fill(0).map((_, i) => 
-                        `<i data-lucide="star" class="w-5 h-5 ${i < starCount ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}"></i>`
+                        `<i data-lucide="star" class="w-5 h-5 ${i < t.reviewStars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}"></i>`
                     ).join('');
                     
                     const reviewStars = document.getElementById('modal-review-stars');
@@ -2024,22 +1991,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     const rescheduleDateEl = document.getElementById('modal-reschedule-date');
                     if (rescheduleDateEl) {
                         if (t.rescheduleDate) {
-                            // Validate date string before parsing
-                            const dateStr = String(t.rescheduleDate).replace(' ', 'T');
-                            const requestedDate = new Date(dateStr);
-                            
-                            // Check if date is valid
-                            if (!isNaN(requestedDate.getTime())) {
-                                rescheduleDateEl.innerText = requestedDate.toLocaleString('en-US', { 
-                                    month: 'short', 
-                                    day: 'numeric', 
-                                    year: 'numeric',
-                                    hour: 'numeric',
-                                    minute: '2-digit'
-                                });
-                            } else {
-                                rescheduleDateEl.innerText = 'Invalid date format';
-                            }
+                            const requestedDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                            rescheduleDateEl.innerText = requestedDate.toLocaleString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                            });
                         } else {
                             rescheduleDateEl.innerText = 'Not specified';
                         }
@@ -2126,62 +2085,32 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 return;
             }
             
-            // Remove zero-width spaces and other invisible Unicode characters from text inputs
-            const cleanText = (text) => text.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '').trim();
-            
-            const plate = cleanText(plateInput.value);
-            const name = cleanText(nameInput.value);
+            const plate = plateInput.value.trim();
+            const name = nameInput.value.trim();
             const phone = phoneInput.value.trim();
-            
-            // Parse numbers with validation
-            const amountRaw = parseFloat(amountInput.value);
-            const franchiseRaw = parseFloat(franchiseInput?.value || '0');
-            
-            // Handle -0, Infinity, NaN, and apply bounds
-            const amount = (amountRaw && isFinite(amountRaw) && Object.is(amountRaw, -0) === false) ? amountRaw : 0;
-            const franchise = (franchiseRaw && isFinite(franchiseRaw)) ? franchiseRaw : 0;
-            
+            const amount = parseFloat(amountInput.value) || 0;
+            const franchise = parseFloat(franchiseInput?.value || '0') || 0;
             const status = statusInput?.value || 'New';
-            const notes = notesInput?.value ? cleanText(notesInput.value) : '';
+            const notes = notesInput?.value.trim() || '';
 
             // Validation
-            if (!plate || plate.length === 0) {
+            if (!plate) {
                 showToast('Validation Error', 'Vehicle plate number is required', 'error');
                 plateInput?.focus();
                 return;
             }
-            if (plate.length > 20) {
-                showToast('Validation Error', 'Plate number too long (max 20 characters)', 'error');
-                plateInput?.focus();
-                return;
-            }
-            if (!name || name.length === 0) {
+            if (!name) {
                 showToast('Validation Error', 'Customer name is required', 'error');
                 nameInput?.focus();
                 return;
             }
-            if (name.length > 100) {
-                showToast('Validation Error', 'Name too long (max 100 characters)', 'error');
-                nameInput?.focus();
-                return;
-            }
-            if (phone && !/^[0-9+\-\s()]{7,20}$/.test(phone)) {
-                showToast('Validation Error', 'Invalid phone number format', 'error');
-                phoneInput?.focus();
-                return;
-            }
-            if (amount <= 0 || amount > 999999999) {
-                showToast('Validation Error', 'Amount must be between 0.01 and 999,999,999', 'error');
+            if (isNaN(amount) || amount <= 0) {
+                showToast('Validation Error', 'Amount must be a valid number greater than 0', 'error');
                 amountInput?.focus();
                 return;
             }
-            if (amount < 0.01) {
-                showToast('Validation Error', 'Amount must be at least 0.01', 'error');
-                amountInput?.focus();
-                return;
-            }
-            if (franchise < 0 || franchise > 999999999) {
-                showToast('Validation Error', 'Franchise must be between 0 and 999,999,999', 'error');
+            if (franchise < 0) {
+                showToast('Validation Error', 'Franchise cannot be negative', 'error');
                 franchiseInput?.focus();
                 return;
             }
@@ -2215,7 +2144,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     window.closeManualCreateModal();
                     
                     // Refresh the table
-                    await loadData().catch(err => console.error('Failed to reload data:', err));
+                    await loadData();
                     
                     // Open the newly created order
                     if (result.id) {
@@ -2280,11 +2209,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             // AUTO-RESCHEDULE LOGIC (Existing)
             const currentDateStr = t.serviceDate ? t.serviceDate.replace(' ', 'T').slice(0, 16) : '';
-            if (currentDateStr && serviceDate && currentDateStr !== serviceDate) {
+            if (t.user_response === 'Reschedule Requested' && serviceDate && serviceDate !== currentDateStr) {
+                updates.user_response = 'Pending';
                 updates.systemLogs.push({ message: `Rescheduled to ${serviceDate.replace('T', ' ')}`, timestamp: new Date().toISOString(), type: 'info' });
                 const templateData = { id: t.id, name: t.name, plate: t.plate, amount: t.amount, serviceDate: serviceDate };
                 const msg = getFormattedMessage('rescheduled', templateData);
-                window.sendSMS(phone, msg, 'rescheduled').catch(err => console.error('Failed to send SMS:', err));
+                window.sendSMS(phone, msg, 'rescheduled');
             }
 
             // --- NEW AUTOMATED SMS LOGIC ---
@@ -2299,48 +2229,48 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         amount: t.amount, 
                         serviceDate: serviceDate || t.serviceDate // Use new date if set, else old
                     };
-                    
+
                     // 1. Processing -> Welcome SMS
                     if (status === 'Processing') {
                         const msg = getFormattedMessage('registered', templateData);
-                        window.sendSMS(phone, msg, 'welcome_sms').catch(err => console.error('Failed to send SMS:', err));
+                        window.sendSMS(phone, msg, 'welcome_sms');
                     }
                     
                     // 2. Scheduled -> Service Schedule SMS
                     else if (status === 'Scheduled') {
                         if(!serviceDate) showToast("Note", "Status set to Scheduled without a date.", "info");
                         const msg = getFormattedMessage('schedule', templateData);
-                        window.sendSMS(phone, msg, 'schedule_sms').catch(err => console.error('Failed to send SMS:', err));
+                        window.sendSMS(phone, msg, 'schedule_sms');
                     }
 
                     // 3. Contacted -> Called SMS
                     else if (status === 'Called') {
                         const msg = getFormattedMessage('called', templateData);
-                        window.sendSMS(phone, msg, 'contacted_sms').catch(err => console.error('Failed to send SMS:', err));
+                        window.sendSMS(phone, msg, 'contacted_sms');
                     }
 
                     // 4. Parts Ordered -> Parts Ordered SMS
                     else if (status === 'Parts Ordered') {
                         const msg = getFormattedMessage('parts_ordered', templateData);
-                        window.sendSMS(phone, msg, 'parts_ordered_sms').catch(err => console.error('Failed to send SMS:', err));
+                        window.sendSMS(phone, msg, 'parts_ordered_sms');
                     }
 
                     // 5. Parts Arrived -> Parts Arrived SMS
                     else if (status === 'Parts Arrived') {
                         const msg = getFormattedMessage('parts_arrived', templateData);
-                        window.sendSMS(phone, msg, 'parts_arrived_sms').catch(err => console.error('Failed to send SMS:', err));
+                        window.sendSMS(phone, msg, 'parts_arrived_sms');
                     }
 
                     // 6. Completed -> Completed SMS with review link
                     else if (status === 'Completed') {
                         const msg = getFormattedMessage('completed', templateData);
-                        window.sendSMS(phone, msg, 'completed_sms').catch(err => console.error('Failed to send SMS:', err));
+                        window.sendSMS(phone, msg, 'completed_sms');
                     }
 
                     // 7. Issue -> Issue SMS
                     else if (status === 'Issue') {
                         const msg = getFormattedMessage('issue', templateData);
-                        window.sendSMS(phone, msg, 'issue_sms').catch(err => console.error('Failed to send SMS:', err));
+                        window.sendSMS(phone, msg, 'issue_sms');
                     }
                 }
             }
@@ -2357,18 +2287,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             const connectionStatus = document.getElementById('connection-status');
             if (connectionStatus?.innerText.includes('Offline')) {
-                // Prototype pollution protection: only copy safe properties
-                const safeKeys = ['status', 'phone', 'serviceDate', 'franchise', 'internalNotes', 'systemLogs', 'user_response'];
-                safeKeys.forEach(key => {
-                    if (updates.hasOwnProperty(key) && key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
-                        t[key] = updates[key];
-                    }
-                });
+                Object.assign(t, updates);
             } else {
                 await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', updates);
             }
             
-            loadData().catch(err => console.error('Failed to reload data:', err));
+            loadData();
             showToast("Changes Saved", "success");
         };
 
@@ -2387,6 +2311,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             const connectionStatus = document.getElementById('connection-status');
             if (connectionStatus?.innerText.includes('Offline')) {
+            if (document.getElementById('connection-status').innerText.includes('Offline')) {
                 if(!t.internalNotes) t.internalNotes = [];
                 t.internalNotes.push(newNote);
             } else {
@@ -2435,7 +2360,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 t.rescheduleComment = null;
                 
                 showToast("Reschedule Accepted", `Appointment updated and SMS sent to ${t.name}`, "success");
-                loadData().catch(err => console.error('Failed to reload data:', err));
+                loadData();
             } catch(e) {
                 console.error('Quick accept reschedule error:', e);
                 showToast("Error", "Failed to accept reschedule request", "error");
@@ -2490,7 +2415,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 
                 showToast("Request Declined", "Reschedule request removed", "info");
                 window.closeModal();
-                loadData().catch(err => console.error('Failed to reload data:', err));
+                loadData();
             } catch(e) {
                 console.error('Decline reschedule error:', e);
                 showToast("Error", "Failed to decline request", "error");
@@ -2509,7 +2434,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     await fetchAPI(`delete_transfer&id=${id}`, 'POST');
                 }
                 window.closeModal();
-                loadData().catch(err => console.error('Failed to reload data:', err)); 
+                loadData(); 
                 showToast("Deleted", "error");
             }
         };
@@ -2541,18 +2466,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         // Consolidate all event listeners in one place
-        // Failsafe: Hide loading screen after 5 seconds if data doesn't load
-        setTimeout(() => {
-            const loadingScreen = document.getElementById('loading-screen');
-            const appContent = document.getElementById('app-content');
-            if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
-                console.warn('Loading timeout - forcing UI display');
-                loadingScreen.classList.add('opacity-0', 'pointer-events-none', 'hidden');
-                if (appContent) appContent.classList.remove('hidden');
-                showToast('Loading Issue', 'Data may not have loaded. Check browser console for errors.', 'error');
-            }
-        }, 5000);
-
         document.addEventListener('DOMContentLoaded', () => {
             // Filter and search listeners
             document.getElementById('search-input')?.addEventListener('input', renderTable);
@@ -2614,10 +2527,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             document.getElementById('edit-modal')?.classList.add('hidden');
             
             // Initialize data and icons
-            loadData().catch(err => {
-                console.error('Error loading initial data:', err);
+            try {
+                loadData();
+            } catch (e) {
+                console.error('Error loading initial data:', e);
                 showToast('Error', 'Failed to load data. Please refresh the page.', 'error');
-            });
+            }
             
             if(window.lucide) lucide.createIcons();
         });
