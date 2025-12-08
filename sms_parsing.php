@@ -87,19 +87,21 @@ try {
             [
                 'name' => 'Ardi Standard',
                 'insurance_company' => 'Ardi Insurance',
-                'template_pattern' => 'სახ. ნომ [PLATE] [AMOUNT]',
+                'template_pattern' => 'სახ. ნომ [PLATE] [AMOUNT] (ფრანშიზა [FRANCHISE])',
                 'field_mappings' => json_encode([
                     ['field' => 'plate', 'pattern' => 'სახ. ნომ', 'description' => 'Plate number after Georgian abbreviation'],
-                    ['field' => 'amount', 'pattern' => '', 'description' => 'Amount at the end']
+                    ['field' => 'amount', 'pattern' => '', 'description' => 'Amount at the end'],
+                    ['field' => 'franchise', 'pattern' => '(ფრანშიზა', 'description' => 'Franchise amount in parentheses after Georgian text']
                 ])
             ],
             [
                 'name' => 'Imedi L Standard',
                 'insurance_company' => 'Imedi L Insurance',
-                'template_pattern' => '[MAKE] ([PLATE]) [AMOUNT]',
+                'template_pattern' => '[MAKE] ([PLATE]) [AMOUNT] (ფრანშიზა [FRANCHISE])',
                 'field_mappings' => json_encode([
                     ['field' => 'plate', 'pattern' => '(', 'description' => 'Plate number in parentheses'],
-                    ['field' => 'amount', 'pattern' => ')', 'description' => 'Amount after closing parenthesis']
+                    ['field' => 'amount', 'pattern' => ')', 'description' => 'Amount after closing parenthesis'],
+                    ['field' => 'franchise', 'pattern' => '(ფრანშიზა', 'description' => 'Franchise amount in parentheses after Georgian text']
                 ])
             ]
         ];
@@ -250,8 +252,8 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                             <li><code class="bg-blue-100 px-1 rounded">INSURANCE PAY | [PLATE] | [NAME] | [AMOUNT]</code></li>
                             <li><code class="bg-blue-100 px-1 rounded">User: [NAME] Car: [PLATE] Sum: [AMOUNT]</code></li>
                             <li><code class="bg-blue-100 px-1 rounded">მანქანის ნომერი: [PLATE] დამზღვევი: [NAME], [AMOUNT] (ფრანშიზა [FRANCHISE])</code> (Aldagi with franchise)</li>
-                            <li><code class="bg-blue-100 px-1 rounded">სახ. ნომ [PLATE] [AMOUNT]</code> (Ardi)</li>
-                            <li><code class="bg-blue-100 px-1 rounded">[MAKE] ([PLATE]) [AMOUNT]</code> (Imedi L)</li>
+                            <li><code class="bg-blue-100 px-1 rounded">სახ. ნომ [PLATE] [AMOUNT] (ფრანშიზა [FRANCHISE])</code> (Ardi with franchise)</li>
+                            <li><code class="bg-blue-100 px-1 rounded">[MAKE] ([PLATE]) [AMOUNT] (ფრანშიზა [FRANCHISE])</code> (Imedi L with franchise)</li>
                         </ul>
                         <li>Sample templates for all formats are created automatically</li>
                     </ul>
