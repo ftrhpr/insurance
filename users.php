@@ -381,68 +381,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </body>
 </html>
     
-    <!-- Main Content -->
-    <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-slate-800"><?php echo __('users.user_accounts', 'User Accounts'); ?></h2>
-            <button onclick="window.openCreateUserModal()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
-                <i data-lucide="user-plus" class="w-4 h-4"></i>
-                <?php echo __('users.add_user', 'Add User'); ?>
-            </button>
-        </div>
-
-        <!-- Users Table -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                    <tr>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">User</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Username</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Role</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Last Login</th>
-                        <th class="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="users-table-body" class="divide-y divide-slate-200">
-                    <!-- Will be populated by JavaScript -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Role Descriptions -->
-        <div class="grid md:grid-cols-3 gap-4 mt-8">
-            <div class="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <div class="w-8 h-8 rounded-lg bg-purple-200 flex items-center justify-center">
-                        <i data-lucide="shield" class="w-4 h-4 text-purple-700"></i>
-                    </div>
-                    <h4 class="font-bold text-purple-900">Admin</h4>
-                </div>
-                <p class="text-sm text-purple-700">Full system access including user management, settings, and all features</p>
-            </div>
-
-            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <div class="w-8 h-8 rounded-lg bg-blue-200 flex items-center justify-center">
-                        <i data-lucide="edit" class="w-4 h-4 text-blue-700"></i>
-                    </div>
-                    <h4 class="font-bold text-blue-900">Manager</h4>
-                </div>
-                <p class="text-sm text-blue-700">Can edit cases, manage customers, update status, and send SMS</p>
-            </div>
-
-            <div class="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center">
-                        <i data-lucide="eye" class="w-4 h-4 text-slate-700"></i>
-                    </div>
-                    <h4 class="font-bold text-slate-900">Viewer</h4>
-                </div>
-                <p class="text-sm text-slate-700">Read-only access to view cases and reports without editing</p>
-            </div>
-        </div>
-    </div>
 
     <!-- Add/Edit User Modal -->
     <div id="user-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
