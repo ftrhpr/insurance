@@ -219,6 +219,20 @@ if ($current_user_role === 'admin') {
     color: #b91c1c;
 }
 
+/* Connection Status */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    background: rgba(241,245,249,0.8);
+    border: 1px solid rgba(226,232,240,0.6);
+}
+
 /* Mobile menu button */
 .mobile-menu-btn {
     display: block;
@@ -398,6 +412,9 @@ if ($current_user_role === 'admin') {
                 <div class="user-info">
                     <p class="user-name"><?php echo htmlspecialchars($current_user_name); ?></p>
                     <p class="user-role"><?php echo htmlspecialchars($current_user_role); ?></p>
+                </div>
+                <div id="connection-status" class="connection-status">
+                    <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span> Connecting...
                 </div>
                 <a href="logout.php" class="logout-link">Logout</a>
                 <button class="mobile-menu-btn" onclick="toggleMobileMenu()">

@@ -2248,7 +2248,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
 
             if(phone) {
-                if (document.getElementById('connection-status').innerText.includes('Offline')) {
+                const statusEl = document.getElementById('connection-status');
+                if (statusEl && statusEl.innerText.includes('Offline')) {
                     const v = vehicles.find(v => v.plate === t.plate);
                     if(v) v.phone = phone;
                 } else {
@@ -2256,7 +2257,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
             }
 
-            if (document.getElementById('connection-status').innerText.includes('Offline')) {
+            const statusEl2 = document.getElementById('connection-status');
+            if (statusEl2 && statusEl2.innerText.includes('Offline')) {
                 Object.assign(t, updates);
             } else {
                 await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', updates);
@@ -2272,7 +2274,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const t = transfers.find(i => i.id == window.currentEditingId);
             const newNote = { text, authorName: 'Manager', timestamp: new Date().toISOString() };
             
-            if (document.getElementById('connection-status').innerText.includes('Offline')) {
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl && statusEl.innerText.includes('Offline')) {
                 if(!t.internalNotes) t.internalNotes = [];
                 t.internalNotes.push(newNote);
             } else {
@@ -2385,7 +2388,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 return;
             }
             if(confirm("Delete this case permanently?")) {
-                if (document.getElementById('connection-status').innerText.includes('Offline')) {
+                const statusEl = document.getElementById('connection-status');
+                if (statusEl && statusEl.innerText.includes('Offline')) {
                     transfers = transfers.filter(t => t.id !== id);
                     window.closeModal();
                     loadData(); 
@@ -2418,7 +2422,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     const t = transfers.find(i => i.id == window.currentEditingId);
                     const newLog = { message: `SMS Sent (${type})`, timestamp: new Date().toISOString(), type: 'sms' };
                     
-                    if (document.getElementById('connection-status').innerText.includes('Offline')) {
+                    const statusEl = document.getElementById('connection-status');
+                    if (statusEl && statusEl.innerText.includes('Offline')) {
                         if(!t.systemLogs) t.systemLogs = [];
                         t.systemLogs.push(newLog);
                     } else {
@@ -2426,7 +2431,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', { systemLogs: logs });
                     }
                     // Refresh Logs
-                    const logsToRender = document.getElementById('connection-status').innerText.includes('Offline') ? t.systemLogs : [...(t.systemLogs || []), newLog];
+                    const logsToRender = statusEl && statusEl.innerText.includes('Offline') ? t.systemLogs : [...(t.systemLogs || []), newLog];
                     const logHTML = logsToRender.map(l => `<div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600"><div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>${escapeHtml(l.message)}</div>`).join('');
                     document.getElementById('activity-log-container').innerHTML = logHTML;
                 }
