@@ -282,9 +282,31 @@ try {
             $tr = $stmt->fetch();
 
             if ($tr && $tr['phone']) {
-                // Send confirmation SMS
+                // Send confirmation SMS using template
                 $formattedDate = date('M d, Y H:i', strtotime($serviceDate));
-                $smsText = "Hello {$tr['name']}, your reschedule request has been approved! New appointment: {$formattedDate}. Ref: {$tr['plate']}. - OTOMOTORS";
+                $templateData = [
+                    'name' => $tr['name'],
+                    'plate' => $tr['plate'],
+                    'amount' => $tr['amount'],
+                    'date' => $formattedDate
+                ];
+                
+                // Get SMS template
+                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'reschedule_accepted'");
+                $stmt->execute();
+                $template = $stmt->fetchColumn();
+                
+                if (!$template) {
+                    // Fallback to default template
+                    $template = 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}';
+                }
+                
+                // Replace placeholders
+                $smsText = str_replace(
+                    ['{name}', '{plate}', '{amount}', '{date}'],
+                    [$templateData['name'], $templateData['plate'], $templateData['amount'], $templateData['date']],
+                    $template
+                );
                 
                 $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
                 $to = $tr['phone'];

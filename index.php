@@ -1455,7 +1455,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
             'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
             'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
-            'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly."
+            'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly.",
+            'system': "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
         };
         
         let smsTemplates = defaultTemplates;
@@ -1497,7 +1498,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 .replace(/{plate}/g, data.plate || '')
                 .replace(/{amount}/g, data.amount || '')
                 .replace(/{link}/g, link)
-                .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '');
+                .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '')
+                .replace(/{count}/g, data.count || '');
         }
 
         // Notification Prompt & Load Templates
@@ -1717,7 +1719,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
             
             if(MANAGER_PHONE && successCount > 0) {
-                const msg = `<?php echo __('status.system_alert', 'System Alert: {count} new transfer(s) added to OTOMOTORS portal.'); ?>`.replace('{count}', successCount);
+                const templateData = { count: successCount };
+                const msg = getFormattedMessage('system', templateData);
                 window.sendSMS(MANAGER_PHONE, msg, 'system');
             }
             

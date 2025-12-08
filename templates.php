@@ -24,7 +24,8 @@ $defaultTemplatesData = [
     'rescheduled' => 'გამარჯობა, კლიენტმა {name} მოითხოვა თარიღის შეცვლა. ავტომობილი: {plate}',
     'reschedule_accepted' => 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}',
     'completed' => 'გამარჯობა {name}, თქვენი სერვისი დასრულდა. გთხოვთ შეაფასოთ ჩვენი მომსახურება',
-    'issue' => 'გამარჯობა {name}, დაფიქსირდა პრობლემა. ავტომობილი: {plate}. ჩვენ დაგიკავშირდებით.'
+    'issue' => 'გამარჯობა {name}, დაფიქსირდა პრობლემა. ავტომობილი: {plate}. ჩვენ დაგიკავშირდებით.',
+    'system' => 'სისტემური შეტყობინება: {count} ახალი განაცხადი დაემატა OTOMOTORS პორტალში.'
 ];
 
 try {
@@ -219,6 +220,18 @@ try {
                         </div>
                         <textarea id="tpl-issue" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['issue'] ?? ''); ?></textarea>
                     </div>
+
+                    <!-- System Alert -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                                <i data-lucide="bell" class="w-4 h-4 text-gray-600"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-800">System Alert (Manager)</h3>
+                            <span class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full ml-auto">System</span>
+                        </div>
+                        <textarea id="tpl-system" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['system'] ?? ''); ?></textarea>
+                    </div>
                 </div>
             </div>
 
@@ -249,6 +262,10 @@ try {
                         <div class="bg-white rounded-lg p-3 border border-slate-200">
                             <code class="text-blue-600 font-mono font-bold">{link}</code>
                             <p class="text-xs text-slate-600 mt-1">Customer confirmation link</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-3 border border-slate-200">
+                            <code class="text-blue-600 font-mono font-bold">{count}</code>
+                            <p class="text-xs text-slate-600 mt-1">Count/number (for system alerts)</p>
                         </div>
                     </div>
                     
@@ -283,7 +300,8 @@ try {
             rescheduled: 'გამარჯობა, კლიენტმა {name} მოითხოვა თარიღის შეცვლა. ავტომობილი: {plate}',
             reschedule_accepted: 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}',
             completed: 'გამარჯობა {name}, თქვენი სერვისი დასრულდა. გთხოვთ შეაფასოთ ჩვენი მომსახურება',
-            issue: 'გამარჯობა {name}, დაფიქსირდა პრობლემა. ავტომობილი: {plate}. ჩვენ დაგიკავშირდებით.'
+            issue: 'გამარჯობა {name}, დაფიქსირდა პრობლემა. ავტომობილი: {plate}. ჩვენ დაგიკავშირდებით.',
+            system: 'სისტემური შეტყობინება: {count} ახალი განაცხადი დაემატა OTOMOTORS პორტალში.'
         };
 
         // Utility Functions
@@ -376,6 +394,7 @@ try {
                 smsTemplates.reschedule_accepted = getVal('tpl-reschedule_accepted');
                 smsTemplates.completed = getVal('tpl-completed');
                 smsTemplates.issue = getVal('tpl-issue');
+                smsTemplates.system = getVal('tpl-system');
 
                 await fetchAPI('save_templates', 'POST', smsTemplates);
                 showToast('Success', 'All templates saved successfully', 'success');

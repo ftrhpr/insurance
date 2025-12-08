@@ -349,7 +349,8 @@ try {
             rescheduled: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისი გადატანილია: {date}. მადლობა! 📅",
             reschedule_accepted: "გამარჯობა {name}! თქვენი გადატანის მოთხოვნა დადასტურდა. ახალი თარიღი: {date}. გნახავთ! 👍",
             completed: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისი დასრულდა! თანხა: {amount} ლარი. გთხოვთ შეაფასოთ: {link} ⭐",
-            issue: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისთან დაკავშირებით პრობლემაა. გთხოვთ დაგვიკავშირდით. ☎️"
+            issue: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისთან დაკავშირებით პრობლემაა. გთხოვთ დაგვიკავშირდით. ☎️",
+            system: "სისტემური შეტყობინება: {count} ახალი განაცხადი დაემატა OTOMOTORS პორტალში."
         };
 
         let smsTemplates = defaultTemplates;
@@ -373,7 +374,8 @@ try {
                 .replace(/{plate}/g, data.plate || '')
                 .replace(/{amount}/g, data.amount || '0')
                 .replace(/{date}/g, data.date || '')
-                .replace(/{link}/g, data.link || '');
+                .replace(/{link}/g, data.link || '')
+                .replace(/{count}/g, data.count || '');
         }
 
         // Send SMS function
