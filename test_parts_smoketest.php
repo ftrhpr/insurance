@@ -66,6 +66,40 @@ try {
     echo "Export simulation failed: " . $e->getMessage() . PHP_EOL;
 }
 
+// Additional debug: show first 10 transfers and raw parts content to diagnose empty results
+try {
+    echo "\n--- Debug: first 10 transfers (raw parts) ---\n";
+    $dbg = $pdo->query("SELECT id, plate, parts FROM transfers ORDER BY id DESC LIMIT 10");
+    $rowsDbg = $dbg->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rowsDbg as $r) {
+        $raw = $r['parts'];
+        $len = is_null($raw) ? 'NULL' : strlen($raw);
+        echo "ID: {$r['id']} Plate: {$r['plate']} PartsRawLen: {$len}\n";
+        echo "PartsRaw: ";
+        var_export($raw);
+        echo "\n";
+        $decoded = json_decode($raw, true);
+        echo "json_decode => ";
+        var_export($decoded);
+        echo "\n---\n";
+    }
+} catch (Exception $e) {
+    echo "Debug fetch failed: " . $e->getMessage() . PHP_EOL;
+}
+
+// Show column type for parts
+try {
+    $col = $pdo->prepare("SELECT COLUMN_TYPE, DATA_TYPE FROM information_schema.columns WHERE table_schema = ? AND table_name = 'transfers' AND column_name = 'parts'");
+    $dbName = defined('DB_NAME') ? DB_NAME : '';
+    $col->execute([$dbName]);
+    $ctype = $col->fetch(PDO::FETCH_ASSOC);
+    echo "\nparts column info: ";
+    var_export($ctype);
+    echo "\n";
+} catch (Exception $e) {
+    echo "Failed to read information_schema for parts column: " . $e->getMessage() . PHP_EOL;
+}
+
 echo "Smoke test complete.\n";
 
 ?>
