@@ -346,6 +346,9 @@ try {
             contacted: "გამარჯობა {name}! ჩვენ დაგიკავშირდით თქვენი მანქანის {plate} სერვისის შესახებ. გთხოვთ შეამოწმოთ თქვენი შეტყობინებები. 📱",
             schedule: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისი დაინიშნა: {date}. გთხოვთ იყოთ დროულად! ⏰",
             parts_ordered: "გამარჯობა {name}! თქვენი მანქანის {plate} ნაწილები შეკვეთილია. მალე მოგვა! 📦",
+            parts_collection_requested: "გამარჯობა {name}! ნაწილების ასაღებად დაგვიკავშირდა კოლექტორი: {collector}. დეტალები: {link}",
+            parts_collection_in_progress: "გამარჯობა {name}! ნაწილების შეგროვება მიმდინარეობს თქვენი {plate}თვის.",
+            parts_collected: "გამარჯობა {name}! ნაწილები აიღა კოლექტორი. მალე მივლენ სერვისში.",
             parts_arrived: "გამარჯობა {name}! თქვენი მანქანის {plate} ნაწილები მივიდა! გთხოვთ დაადასტუროთ: {link} ✅",
             rescheduled: "გამარჯობა {name}! თქვენი მანქანის {plate} სერვისი გადატანილია: {date}. მადლობა! 📅",
             reschedule_accepted: "გამარჯობა {name}! თქვენი გადატანის მოთხოვნა დადასტურდა. ახალი თარიღი: {date}. გნახავთ! 👍",
@@ -376,6 +379,7 @@ try {
                 .replace(/{amount}/g, data.amount || '0')
                 .replace(/{date}/g, data.date || '')
                 .replace(/{link}/g, data.link || '')
+                .replace(/{collector}/g, data.collector || '')
                 .replace(/{count}/g, data.count || '');
         }
 

@@ -344,11 +344,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                         <!-- STATUS FILTER -->
                         <div class="relative">
-                            <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                                <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
                                 <option value="All"><?php echo __('dashboard.all_active_stages', 'All Active Stages'); ?></option>
                                 <option value="Processing">🟡 <?php echo __('dashboard.processing', 'Processing'); ?></option>
                                 <option value="Called">🟣 <?php echo __('dashboard.called', 'Contacted'); ?></option>
                                 <option value="Parts Ordered">📦 <?php echo __('dashboard.parts_ordered', 'Parts Ordered'); ?></option>
+                                    <option value="Collection Pending">📮 Collection Pending</option>
+                                    <option value="Collection In Progress">🚚 Collection In Progress</option>
+                                    <option value="Collected">✅ Collected</option>
                                 <option value="Parts Arrived">🏁 <?php echo __('dashboard.parts_arrived', 'Parts Arrived'); ?></option>
                                 <option value="Scheduled">🟠 <?php echo __('dashboard.scheduled', 'Scheduled'); ?></option>
                                 <option value="Completed">🟢 <?php echo __('dashboard.completed', 'Completed'); ?></option>
@@ -652,6 +655,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <option value="Processing">🟡 Processing</option>
                                     <option value="Called">🟣 Contacted</option>
                                     <option value="Parts Ordered">📦 Parts Ordered</option>
+                                    <option value="Collection Pending">📮 Collection Pending</option>
+                                    <option value="Collection In Progress">🚚 Collection In Progress</option>
+                                    <option value="Collected">✅ Collected</option>
                                     <option value="Parts Arrived">🏁 Parts Arrived</option>
                                     <option value="Scheduled">🟠 Scheduled</option>
                                     <option value="Completed">🟢 Completed</option>
@@ -941,6 +947,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <option value="New">🔵 New Case</option>
                             <option value="Processing">🟡 Processing</option>
                             <option value="Called">🟣 Contacted</option>
+                            <option value="Parts Ordered">📦 Parts Ordered</option>
                         </select>
                     </div>
 
@@ -1452,6 +1459,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             'contacted': "<?php echo __('sms.contacted', 'Hello {name}, we have contacted you about your {plate} service. Please check your messages.'); ?>",
             'schedule': "<?php echo __('sms.schedule'); ?>",
             'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
+            'parts_collection_requested': "<?php echo __('sms.parts_collection_requested', 'Hello {name}, parts collection has been scheduled. Collector: {collector}.'); ?>",
+            'parts_collection_in_progress': "<?php echo __('sms.parts_collection_in_progress', 'Hello {name}, parts are being collected for {plate}.'); ?>",
+            'parts_collected': "<?php echo __('sms.parts_collected', 'Hello {name}, parts have been collected for {plate}.'); ?>",
             'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
             'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
             'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
@@ -1500,6 +1510,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 .replace(/{amount}/g, data.amount || '')
                 .replace(/{link}/g, link)
                 .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '')
+                .replace(/{collector}/g, data.collector || '')
                 .replace(/{count}/g, data.count || '');
         }
 
@@ -1984,7 +1995,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (statusEl) statusEl.value = t.status;
             
             // Update workflow progress indicator
-            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
+            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Collection Pending', 'Collection In Progress', 'Collected', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
             const currentStageIndex = statusStages.indexOf(t.status);
             const progressPercentage = ((currentStageIndex + 1) / statusStages.length) * 100;
             
@@ -1999,7 +2010,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 'Processing': 'Case is being reviewed and processed',
                 'Called': 'Customer has been contacted',
                 'Parts Ordered': 'Parts have been ordered for repair',
-                'Parts Arrived': 'Parts are ready for service',
+                'Collection Pending': 'Parts collection scheduled - awaiting pickup',
+                'Collection In Progress': 'Parts are being collected from supplier',
+                'Collected': 'Parts have been collected',
+                'Parts Arrived': 'Parts are ready for service at the shop',
                 'Scheduled': 'Service appointment is scheduled',
                 'Completed': 'Case has been completed successfully',
                 'Issue': 'Case requires special attention'
@@ -2406,6 +2420,24 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         if(!serviceDate) showToast("Note", "Status set to Scheduled without a date.", "info");
                         const msg = getFormattedMessage('schedule', templateData);
                         window.sendSMS(phone, msg, 'schedule_sms');
+                    }
+
+                    // 2.a Collection workflow - Pending -> notify collector/request
+                    else if (status === 'Collection Pending') {
+                        const msg = getFormattedMessage('parts_collection_requested', templateData);
+                        window.sendSMS(phone, msg, 'parts_collection_requested_sms');
+                    }
+
+                    // 2.b Collection started
+                    else if (status === 'Collection In Progress') {
+                        const msg = getFormattedMessage('parts_collection_in_progress', templateData);
+                        window.sendSMS(phone, msg, 'parts_collection_in_progress_sms');
+                    }
+
+                    // 2.c Collected
+                    else if (status === 'Collected') {
+                        const msg = getFormattedMessage('parts_collected', templateData);
+                        window.sendSMS(phone, msg, 'parts_collected_sms');
                     }
 
                     // 3. Contacted -> Called SMS
