@@ -33,7 +33,6 @@ $nav_items = [
     'vehicles' => ['icon' => 'database', 'label' => 'Vehicle DB', 'url' => 'vehicles.php'],
     'reviews' => ['icon' => 'star', 'label' => 'Reviews', 'url' => 'reviews.php'],
     'templates' => ['icon' => 'message-square-dashed', 'label' => 'SMS Templates', 'url' => 'templates.php']
-    , 'collectors' => ['icon' => 'truck', 'label' => 'Collectors', 'url' => 'collectors.php']
 ];
 
 // Add SMS Parsing page for admins

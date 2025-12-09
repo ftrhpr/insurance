@@ -22,9 +22,6 @@ $defaultTemplatesData = [
     'schedule' => 'გამარჯობა {name}, თქვენი სერვისის თარიღი: {date}. ავტომობილი: {plate}',
     'parts_ordered' => 'გამარჯობა {name}, თქვენი ნაწილები შეკვეთილია. ავტომობილი: {plate}',
     'parts_arrived' => 'გამარჯობა {name}, თქვენი ნაწილები მივიდა. დაადასტურეთ თქვენი ვიზიტი: {link}',
-    'parts_collection_requested' => 'გამარჯობა {name}, ნაწილების ასაღებად დაგვიკავშირდა კოლექტორი: {collector}. დეტალები: {link}',
-    'parts_collection_in_progress' => 'გამარჯობა {name}, ნაწილების შეგროვება დაიწყო თქვენი ავტომობილის {plate}ათვის. ჩამოვლენ მალე.',
-    'parts_collected' => 'გამარჯობა {name}, ნაწილები აიღო ჩვენი კოლექტორი და დროებით ტარდება გადამზიდავზე/სერვისში.',
     'rescheduled' => 'გამარჯობა, კლიენტმა {name} მოითხოვა თარიღის შეცვლა. ავტომობილი: {plate}',
     'reschedule_accepted' => 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}',
     'completed' => 'გამარჯობა {name}, თქვენი სერვისი დასრულდა. გთხოვთ შეაფასოთ ჩვენი მომსახურება',
@@ -175,42 +172,6 @@ try {
                             <span class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full ml-auto">Parts Ordered</span>
                         </div>
                         <textarea id="tpl-parts_ordered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_ordered'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Parts Collection: Pending -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center">
-                                <i data-lucide="truck" class="w-4 h-4 text-amber-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Parts Collection - Request</h3>
-                            <span class="text-xs px-2 py-1 bg-yellow-50 text-amber-700 rounded-full ml-auto">Collection Pending</span>
-                        </div>
-                        <textarea id="tpl-parts_collection_requested" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_collection_requested'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Parts Collection: In Progress -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center">
-                                <i data-lucide="loader" class="w-4 h-4 text-sky-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Parts Collection - In Progress</h3>
-                            <span class="text-xs px-2 py-1 bg-sky-50 text-sky-700 rounded-full ml-auto">Collection In Progress</span>
-                        </div>
-                        <textarea id="tpl-parts_collection_in_progress" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_collection_in_progress'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Parts Collected -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                                <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Parts Collected</h3>
-                            <span class="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full ml-auto">Collected</span>
-                        </div>
-                        <textarea id="tpl-parts_collected" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_collected'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Parts Arrived -->
@@ -443,9 +404,6 @@ try {
                 smsTemplates.contacted = getVal('tpl-contacted');
                 smsTemplates.schedule = getVal('tpl-schedule');
                 smsTemplates.parts_ordered = getVal('tpl-parts_ordered');
-                smsTemplates.parts_collection_requested = getVal('tpl-parts_collection_requested');
-                smsTemplates.parts_collection_in_progress = getVal('tpl-parts_collection_in_progress');
-                smsTemplates.parts_collected = getVal('tpl-parts_collected');
                 smsTemplates.parts_arrived = getVal('tpl-parts_arrived');
                 smsTemplates.rescheduled = getVal('tpl-rescheduled');
                 smsTemplates.reschedule_accepted = getVal('tpl-reschedule_accepted');

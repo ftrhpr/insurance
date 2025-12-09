@@ -283,6 +283,69 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Parts Management -->
+                        <div id="parts-panel" class="hidden bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-amber-100 shadow-sm mt-3">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-amber-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="tool" class="w-3 h-3 text-white"></i>
+                                </div>
+                                <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider">Parts & Collection</h3>
+                                <span class="text-[10px] ml-auto text-amber-700 bg-amber-100 px-2 py-1 rounded-full">Manage parts for collection</span>
+                            </div>
+                            <div id="parts-list" class="space-y-2 max-h-48 overflow-y-auto p-1 bg-white/80 rounded-lg border border-amber-100"></div>
+                            <div class="mt-2 grid grid-cols-3 gap-2">
+                                <input id="new-part-name" type="text" placeholder="Part name" class="col-span-2 p-2 rounded-lg border border-amber-200">
+                                <input id="new-part-qty" type="number" placeholder="Qty" class="p-2 rounded-lg border border-amber-200 w-full">
+                                <input id="new-part-vendor" type="text" placeholder="Vendor" class="col-span-2 p-2 rounded-lg border border-amber-200">
+                                <select id="new-part-status" class="p-2 rounded-lg border border-amber-200">
+                                    <option>To Collect</option>
+                                    <option>Collected</option>
+                                    <option>In Transit</option>
+                                    <option>Delivered</option>
+                                    <option>Cancelled</option>
+                                </select>
+                                <button id="btn-add-part" class="bg-amber-600 text-white p-2 rounded-lg">Add Part</button>
+                            </div>
+                            <div class="mt-2 flex gap-2">
+                                <button id="btn-save-parts" class="flex-1 bg-gradient-to-r from-amber-600 to-yellow-500 text-white p-2 rounded-lg">Save Parts</button>
+                                <button id="btn-refresh-parts" class="flex-1 bg-white border border-amber-200 p-2 rounded-lg">Refresh</button>
+                            </div>
+                        </div>
+                            <!-- Part Edit Modal -->
+                            <div id="part-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                                <div class="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
+                                    <h3 class="text-lg font-bold mb-3">Edit Part</h3>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-xs text-slate-600">Name</label>
+                                            <input id="part-modal-name" type="text" class="w-full p-2 border rounded-lg" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-slate-600">Quantity</label>
+                                            <input id="part-modal-qty" type="number" class="w-full p-2 border rounded-lg" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-slate-600">Vendor</label>
+                                            <input id="part-modal-vendor" type="text" class="w-full p-2 border rounded-lg" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-slate-600">Status</label>
+                                            <select id="part-modal-status" class="w-full p-2 border rounded-lg">
+                                                <option>To Collect</option>
+                                                <option>Collected</option>
+                                                <option>In Transit</option>
+                                                <option>Delivered</option>
+                                                <option>Cancelled</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex justify-end gap-2">
+                                        <button id="part-modal-cancel" class="px-4 py-2 rounded-lg border">Cancel</button>
+                                        <button id="part-modal-save" class="px-4 py-2 rounded-lg bg-amber-600 text-white">Save</button>
+                                    </div>
+                                </div>
+                            </div>
                         
                         <div class="flex flex-col md:flex-row gap-6">
                             <!-- Text Input -->
@@ -344,14 +407,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                         <!-- STATUS FILTER -->
                         <div class="relative">
-                                <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                            <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
                                 <option value="All"><?php echo __('dashboard.all_active_stages', 'All Active Stages'); ?></option>
                                 <option value="Processing">🟡 <?php echo __('dashboard.processing', 'Processing'); ?></option>
                                 <option value="Called">🟣 <?php echo __('dashboard.called', 'Contacted'); ?></option>
                                 <option value="Parts Ordered">📦 <?php echo __('dashboard.parts_ordered', 'Parts Ordered'); ?></option>
-                                    <option value="Collection Pending">📮 Collection Pending</option>
-                                    <option value="Collection In Progress">🚚 Collection In Progress</option>
-                                    <option value="Collected">✅ Collected</option>
                                 <option value="Parts Arrived">🏁 <?php echo __('dashboard.parts_arrived', 'Parts Arrived'); ?></option>
                                 <option value="Scheduled">🟠 <?php echo __('dashboard.scheduled', 'Scheduled'); ?></option>
                                 <option value="Completed">🟢 <?php echo __('dashboard.completed', 'Completed'); ?></option>
@@ -532,64 +592,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         </div>
     </div>
 
-    <!-- Collector Selector Modal -->
-    <div id="collector-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-black/40" onclick="document.getElementById('collector-modal').classList.add('hidden')"></div>
-        <div class="fixed inset-0 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl p-4 w-full max-w-md shadow-2xl border border-slate-200">
-                <h4 class="text-sm font-bold mb-2">Assign Collector</h4>
-                <p class="text-xs text-slate-500 mb-3">Choose a collector from the list and save to assign to this order.</p>
-                <div class="mb-3">
-                    <select id="collector-select" class="w-full p-2 border rounded-lg bg-white text-sm">
-                        <option value="">-- Loading collectors --</option>
-                    </select>
-                </div>
-                <div class="flex gap-2 justify-end">
-                    <button id="collector-cancel-btn" class="px-4 py-2 bg-white border rounded-lg text-sm">Cancel</button>
-                    <button id="collector-save-btn" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Collectors Management Modal -->
-    <div id="collectors-manager-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-black/40" onclick="document.getElementById('collectors-manager-modal').classList.add('hidden')"></div>
-        <div class="fixed inset-0 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl p-4 w-full max-w-2xl shadow-2xl border border-slate-200">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-sm font-bold">Collectors</h4>
-                    <div class="flex gap-2">
-                        <button id="collector-add-new" class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-sm">Add New</button>
-                        <button onclick="document.getElementById('collectors-manager-modal').classList.add('hidden')" class="px-3 py-1 bg-white border rounded-lg">Close</button>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <table id="collectors-table" class="w-full text-sm">
-                        <thead class="text-left text-xs text-slate-500"><tr><th>Name</th><th>Phone</th><th>Notes</th><th class="text-right">Actions</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div id="collector-form" class="hidden">
-                    <div class="grid grid-cols-1 gap-2 mb-2">
-                        <input id="collector-name" placeholder="Name" class="p-2 border rounded">
-                        <input id="collector-phone" placeholder="Phone" class="p-2 border rounded">
-                        <textarea id="collector-notes" placeholder="Notes" class="p-2 border rounded" rows="3"></textarea>
-                    </div>
-                    <div class="flex justify-end gap-2">
-                        <button id="collector-form-cancel" class="px-3 py-1 border rounded">Cancel</button>
-                        <button id="collector-form-save" class="px-3 py-1 bg-amber-600 text-white rounded">Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Floating button to open collectors page -->
-    <button id="open-collectors-manager-btn" title="Open Collectors page" onclick="window.location.href='collectors.php'" class="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white rounded-full w-12 h-12 shadow-lg flex items-center justify-center"> 
-        <i data-lucide="truck" class="w-5 h-5"></i>
-    </button>
-
     <!-- Premium Edit Modal -->
     <div id="edit-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
         <!-- Enhanced Backdrop with Animation -->
@@ -713,9 +715,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <option value="Processing">🟡 Processing</option>
                                     <option value="Called">🟣 Contacted</option>
                                     <option value="Parts Ordered">📦 Parts Ordered</option>
-                                    <option value="Collection Pending">📮 Collection Pending</option>
-                                    <option value="Collection In Progress">🚚 Collection In Progress</option>
-                                    <option value="Collected">✅ Collected</option>
                                     <option value="Parts Arrived">🏁 Parts Arrived</option>
                                     <option value="Scheduled">🟠 Scheduled</option>
                                     <option value="Completed">🟢 Completed</option>
@@ -758,13 +757,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <a id="btn-call-real" href="#" class="bg-white text-teal-600 border-2 border-teal-200 p-3 rounded-xl hover:bg-teal-50 hover:border-teal-300 hover:scale-105 transition-all shadow-lg active:scale-95">
                                     <i data-lucide="phone-call" class="w-5 h-5"></i>
                                 </a>
-                                <button id="btn-assign-collector" onclick="window.assignCollector()" class="bg-white text-amber-600 border-2 border-amber-200 p-3 rounded-xl hover:bg-amber-50 hover:border-amber-300 hover:scale-105 transition-all shadow-lg active:scale-95 ml-2">
-                                    <i data-lucide="user-plus" class="w-5 h-5"></i>
-                                </button>
-                                    <div id="modal-collector-indicator" class="ml-2 flex items-center text-xs text-slate-500 hidden">
-                                        <span class="mr-2">Collector:</span>
-                                        <span id="modal-collector-phone" class="font-semibold text-slate-700"></span>
-                                    </div>
                             </div>
                         </div>
                         
@@ -1012,7 +1004,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <option value="New">🔵 New Case</option>
                             <option value="Processing">🟡 Processing</option>
                             <option value="Called">🟣 Contacted</option>
-                            <option value="Parts Ordered">📦 Parts Ordered</option>
                         </select>
                     </div>
 
@@ -1208,8 +1199,35 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             setTimeout(() => {
                 if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
                 if (appContentEl) appContentEl.classList.remove('hidden');
+                // If URL contains ?edit=<id>, open that transfer in the modal after data loads
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const editId = params.get('edit');
+                    if (editId) {
+                        // Ensure transfers are loaded and then open
+                        setTimeout(() => {
+                            if (typeof window.openEditModal === 'function') window.openEditModal(Number(editId));
+                        }, 300);
+                    }
+                } catch (e) { console.error('Failed to open edit from URL param', e); }
             }, 500);
         }
+
+        // Debug/Smoke test helper: call from console `smokeTestPartsModal()` to open first transfer's edit modal
+        window.smokeTestPartsModal = async () => {
+            if (!transfers || transfers.length === 0) {
+                await loadData();
+            }
+            if (transfers && transfers.length > 0) {
+                const id = transfers[0].id;
+                console.log('Opening edit modal for transfer', id);
+                window.openEditModal(id);
+                // ensure parts panel loads
+                setTimeout(() => { if (window.currentEditingId) loadParts(window.currentEditingId); }, 500);
+            } else {
+                console.warn('No transfers available for smoke test');
+            }
+        };
 
         // Poll for updates every 10 seconds
         setInterval(loadData, 10000);
@@ -1524,9 +1542,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             'contacted': "<?php echo __('sms.contacted', 'Hello {name}, we have contacted you about your {plate} service. Please check your messages.'); ?>",
             'schedule': "<?php echo __('sms.schedule'); ?>",
             'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
-            'parts_collection_requested': "<?php echo __('sms.parts_collection_requested', 'Hello {name}, parts collection has been scheduled. Collector: {collector}.'); ?>",
-            'parts_collection_in_progress': "<?php echo __('sms.parts_collection_in_progress', 'Hello {name}, parts are being collected for {plate}.'); ?>",
-            'parts_collected': "<?php echo __('sms.parts_collected', 'Hello {name}, parts have been collected for {plate}.'); ?>",
             'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
             'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
             'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
@@ -1575,207 +1590,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 .replace(/{amount}/g, data.amount || '')
                 .replace(/{link}/g, link)
                 .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '')
-                .replace(/{collector}/g, data.collector || '')
                 .replace(/{count}/g, data.count || '');
         }
-
-        // Assign collector quick action (opens selector modal)
-        window.assignCollector = function() {
-            if (!CAN_EDIT) return showToast('Permission Denied', 'Only managers can assign collectors', 'error');
-            const id = window.currentEditingId;
-            if (!id) return showToast('Error', 'No order selected', 'error');
-            openCollectorModal(id);
-        };
-
-        // Open collector selector modal and load collectors
-        window.openCollectorModal = async function(orderId) {
-            const modal = document.getElementById('collector-modal');
-            const select = document.getElementById('collector-select');
-            const saveBtn = document.getElementById('collector-save-btn');
-            const cancelBtn = document.getElementById('collector-cancel-btn');
-            if (!modal || !select) return showToast('Error', 'Collector UI not available', 'error');
-
-            // Clear previous options
-            select.innerHTML = '<option value="">-- Select collector --</option>';
-
-            try {
-                const collectors = await fetchAPI('get_collectors');
-                collectors.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    const phoneText = c.phone ? ` ${formatPhone(c.phone)}` : '';
-                    const companyText = c.company ? ` - ${c.company}` : '';
-                    opt.text = `${c.name}${phoneText}${companyText}`;
-                    // store raw phone on option for convenience
-                    opt.dataset.phone = c.phone || '';
-                    select.appendChild(opt);
-                });
-            } catch (e) {
-                console.error('Failed to load collectors', e);
-                showToast('Error', 'Could not load collectors', 'error');
-            }
-
-            // Pre-select current collector if present (prefer collector_id, fall back to name match)
-            const t = transfers.find(x => x.id == orderId);
-            if (t) {
-                if (t.collector_id) select.value = t.collector_id;
-                else if (t.collector) {
-                    // try to match by name
-                    for (let i=0;i<select.options.length;i++) {
-                        if (select.options[i].text.startsWith(t.collector)) { select.selectedIndex = i; break; }
-                    }
-                }
-            }
-
-            modal.classList.remove('hidden');
-
-            // Save handler
-            const onSave = async () => {
-                const selectedId = select.value;
-                const selectedOption = select.options[select.selectedIndex];
-                const collectorName = selectedOption?.text || '';
-                const collectorPhone = selectedOption?.dataset?.phone || '';
-                try {
-                    await fetchAPI(`update_transfer&id=${orderId}`, 'POST', { collector: collectorName, collector_id: selectedId, collector_phone: collectorPhone });
-                    showToast('Collector Assigned', `Assigned: ${collectorName}`, 'success');
-                    // Update local state
-                    const rec = transfers.find(x => x.id == orderId);
-                    if (rec) { rec.collector = collectorName; rec.collector_id = selectedId; rec.collector_phone = collectorPhone; }
-                    loadData();
-                } catch (err) {
-                    console.error('Assign via modal failed', err);
-                    showToast('Error', 'Failed to assign collector', 'error');
-                } finally {
-                    modal.classList.add('hidden');
-                    saveBtn.removeEventListener('click', onSave);
-                }
-            };
-
-            saveBtn.addEventListener('click', onSave);
-
-            // Cancel handler
-            const onCancel = () => {
-                modal.classList.add('hidden');
-                saveBtn.removeEventListener('click', onSave);
-                cancelBtn.removeEventListener('click', onCancel);
-            };
-            cancelBtn.addEventListener('click', onCancel);
-        };
-
-        // Format phone for display (simple grouping)
-        function formatPhone(p) {
-            if (!p) return '';
-            // keep leading + if present
-            const plus = p.startsWith('+') ? '+' : '';
-            const digits = p.replace(/\D/g, '');
-            // If contains country code (3 digits) and length > 9, split after 3
-            if (digits.length > 9) {
-                const cc = digits.slice(0, digits.length - 9);
-                const rest = digits.slice(digits.length - 9);
-                return `${plus}${cc} ${rest.slice(0,3)} ${rest.slice(3,6)} ${rest.slice(6)}`;
-            }
-            // fallback grouping by 3
-            return plus + digits.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
-        }
-
-        // --- Collectors Manager ---
-        window.openCollectorsManager = async function() {
-            const modal = document.getElementById('collectors-manager-modal');
-            const tbody = document.querySelector('#collectors-table tbody');
-            const form = document.getElementById('collector-form');
-            const addBtn = document.getElementById('collector-add-new');
-            const saveBtn = document.getElementById('collector-form-save');
-            const cancelBtn = document.getElementById('collector-form-cancel');
-
-            if (!modal || !tbody) return showToast('Error', 'Collectors UI not available', 'error');
-
-            modal.classList.remove('hidden');
-
-            async function loadList() {
-                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400">Loading...</td></tr>';
-                try {
-                    const list = await fetchAPI('get_collectors');
-                    if (!Array.isArray(list) || list.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400">No collectors found</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = '';
-                    list.forEach(c => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `<td class="py-2">${escapeHtml(c.name)}</td><td class="py-2">${escapeHtml(c.phone||'')}</td><td class="py-2">${escapeHtml(c.notes||'')}</td><td class="py-2 text-right"><button data-id="${c.id}" class="edit-collector px-2 py-1 text-xs bg-white border rounded mr-2">Edit</button><button data-id="${c.id}" class="delete-collector px-2 py-1 text-xs bg-red-600 text-white rounded">Delete</button></td>`;
-                        tbody.appendChild(tr);
-                    });
-
-                    // Wire edit/delete buttons
-                    document.querySelectorAll('.edit-collector').forEach(btn => btn.addEventListener('click', async (e) => {
-                        const id = e.currentTarget.getAttribute('data-id');
-                        openEditCollector(id);
-                    }));
-                    document.querySelectorAll('.delete-collector').forEach(btn => btn.addEventListener('click', async (e) => {
-                        const id = e.currentTarget.getAttribute('data-id');
-                        if (!confirm('Delete this collector?')) return;
-                        try {
-                            await fetchAPI(`delete_collector&id=${id}`, 'POST', {});
-                            showToast('Deleted', 'Collector removed', 'success');
-                            loadList();
-                        } catch (err) { console.error(err); showToast('Error', 'Delete failed', 'error'); }
-                    }));
-
-                } catch (err) {
-                    console.error('Load collectors failed', err);
-                    tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-red-500">Failed to load</td></tr>';
-                }
-            }
-
-            function showForm(data) {
-                form.classList.remove('hidden');
-                document.getElementById('collector-name').value = data?.name || '';
-                document.getElementById('collector-phone').value = data?.phone || '';
-                document.getElementById('collector-notes').value = data?.notes || '';
-                form.setAttribute('data-edit-id', data?.id || '');
-            }
-
-            function hideForm() {
-                form.classList.add('hidden');
-                form.removeAttribute('data-edit-id');
-                document.getElementById('collector-name').value = '';
-                document.getElementById('collector-phone').value = '';
-                document.getElementById('collector-notes').value = '';
-            }
-
-            async function openEditCollector(id) {
-                try {
-                    const list = await fetchAPI('get_collectors');
-                    const item = list.find(x => String(x.id) === String(id));
-                    if (!item) return showToast('Error', 'Collector not found', 'error');
-                    showForm(item);
-                } catch (err) { console.error(err); showToast('Error', 'Failed to load collector', 'error'); }
-            }
-
-            addBtn.onclick = () => showForm({});
-            cancelBtn.onclick = () => hideForm();
-            saveBtn.onclick = async () => {
-                const editId = form.getAttribute('data-edit-id');
-                const name = document.getElementById('collector-name').value.trim();
-                const phone = document.getElementById('collector-phone').value.trim();
-                const notes = document.getElementById('collector-notes').value.trim();
-                if (!name) return showToast('Validation', 'Name is required', 'error');
-                try {
-                    if (editId) {
-                        await fetchAPI(`update_collector&id=${editId}`, 'POST', { name, phone, notes });
-                        showToast('Saved', 'Collector updated', 'success');
-                    } else {
-                        await fetchAPI('create_collector', 'POST', { name, phone, notes });
-                        showToast('Created', 'Collector added', 'success');
-                    }
-                    hideForm();
-                    loadList();
-                } catch (err) { console.error(err); showToast('Error', 'Save failed', 'error'); }
-            };
-
-            // Initial load
-            loadList();
-        };
 
         // Notification Prompt & Load Templates
         document.addEventListener('DOMContentLoaded', () => {
@@ -2258,7 +2074,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (statusEl) statusEl.value = t.status;
             
             // Update workflow progress indicator
-            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Collection Pending', 'Collection In Progress', 'Collected', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
+            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
             const currentStageIndex = statusStages.indexOf(t.status);
             const progressPercentage = ((currentStageIndex + 1) / statusStages.length) * 100;
             
@@ -2273,10 +2089,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 'Processing': 'Case is being reviewed and processed',
                 'Called': 'Customer has been contacted',
                 'Parts Ordered': 'Parts have been ordered for repair',
-                'Collection Pending': 'Parts collection scheduled - awaiting pickup',
-                'Collection In Progress': 'Parts are being collected from supplier',
-                'Collected': 'Parts have been collected',
-                'Parts Arrived': 'Parts are ready for service at the shop',
+                'Parts Arrived': 'Parts are ready for service',
                 'Scheduled': 'Service appointment is scheduled',
                 'Completed': 'Case has been completed successfully',
                 'Issue': 'Case requires special attention'
@@ -2299,6 +2112,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     if (stageNumberEl) stageNumberEl.innerText = newStageIndex + 1;
                     if (progressBarEl) progressBarEl.style.width = `${newProgressPercentage}%`;
                     if (statusDescEl) statusDescEl.innerText = statusDescriptions[newStatus] || 'Unknown status';
+                    // Show parts manager only in Processing stage
+                    const partsPanel = document.getElementById('parts-panel');
+                    if (partsPanel) {
+                        if (newStatus === 'Processing') {
+                            partsPanel.classList.remove('hidden');
+                            if (window.currentEditingId) loadParts(window.currentEditingId);
+                        } else {
+                            partsPanel.classList.add('hidden');
+                        }
+                    }
                 });
             }
             
@@ -2316,29 +2139,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             } else {
                 if (createdDateEl) createdDateEl.innerText = 'N/A';
             }
-
-            // Assign collector button state
-            const assignBtn = document.getElementById('btn-assign-collector');
-            if (assignBtn) assignBtn.disabled = !(CAN_EDIT && window.currentEditingId);
             
             const callBtnEl = document.getElementById('btn-call-real');
             if (callBtnEl) callBtnEl.href = t.phone ? `tel:${t.phone}` : '#';
-
-            // Show assigned collector phone if present
-            const collectorIndicatorEl = document.getElementById('modal-collector-indicator');
-            const collectorPhoneEl = document.getElementById('modal-collector-phone');
-            if (collectorPhoneEl && collectorIndicatorEl) {
-                if (t.collector_phone) {
-                    collectorPhoneEl.innerText = formatPhone(t.collector_phone);
-                    collectorIndicatorEl.classList.remove('hidden');
-                } else if (t.collector) {
-                    collectorPhoneEl.innerText = t.collector;
-                    collectorIndicatorEl.classList.remove('hidden');
-                } else {
-                    collectorPhoneEl.innerText = '';
-                    collectorIndicatorEl.classList.add('hidden');
-                }
-            }
             
             const smsRegisterBtnEl = document.getElementById('btn-sms-register');
             if (smsRegisterBtnEl) smsRegisterBtnEl.onclick = () => {
@@ -2444,6 +2247,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 if (reviewCommentEl) reviewCommentEl.innerText = comment;
             } else {
                 if (reviewSection) reviewSection.classList.add('hidden');
+            }
+
+            // Parts panel visibility and load
+            const partsPanel = document.getElementById('parts-panel');
+            if (partsPanel) {
+                if (t.status === 'Processing') {
+                    partsPanel.classList.remove('hidden');
+                    loadParts(t.id);
+                } else {
+                    partsPanel.classList.add('hidden');
+                }
             }
 
             // Display reschedule request if exists
@@ -2705,24 +2519,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         window.sendSMS(phone, msg, 'schedule_sms');
                     }
 
-                    // 2.a Collection workflow - Pending -> notify collector/request
-                    else if (status === 'Collection Pending') {
-                        const msg = getFormattedMessage('parts_collection_requested', templateData);
-                        window.sendSMS(phone, msg, 'parts_collection_requested_sms');
-                    }
-
-                    // 2.b Collection started
-                    else if (status === 'Collection In Progress') {
-                        const msg = getFormattedMessage('parts_collection_in_progress', templateData);
-                        window.sendSMS(phone, msg, 'parts_collection_in_progress_sms');
-                    }
-
-                    // 2.c Collected
-                    else if (status === 'Collected') {
-                        const msg = getFormattedMessage('parts_collected', templateData);
-                        window.sendSMS(phone, msg, 'parts_collected_sms');
-                    }
-
                     // 3. Contacted -> Called SMS
                     else if (status === 'Called') {
                         const msg = getFormattedMessage('called', templateData);
@@ -2804,6 +2600,153 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const notesListEl = document.getElementById('notes-list');
             if (notesListEl) notesListEl.innerHTML = noteHTML;
         };
+
+        // --- Parts Management Functions ---
+        window.loadParts = async (id) => {
+            try {
+                const res = await fetchAPI(`get_parts&id=${id}`);
+                const parts = res.parts || [];
+                window.currentParts = parts;
+                renderPartsList(parts);
+            } catch (e) {
+                console.error('Failed to load parts', e);
+                window.currentParts = [];
+                renderPartsList([]);
+            }
+        };
+
+        function renderPartsList(parts) {
+            const container = document.getElementById('parts-list');
+            if (!container) return;
+            if (!Array.isArray(parts) || parts.length === 0) {
+                container.innerHTML = '<div class="text-sm text-slate-500 p-3 text-center">No parts added yet</div>';
+                return;
+            }
+            container.innerHTML = parts.map((p, i) => `
+                <div class="flex items-center gap-2 p-2 bg-white rounded-lg border border-amber-100">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(p.name || '')} <span class="text-xs text-slate-400">x${escapeHtml(String(p.qty || '1'))}</span></div>
+                        <div class="text-xs text-slate-500">${escapeHtml(p.vendor || '')} • <strong>${escapeHtml(p.status || '')}</strong></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select data-index="${i}" class="part-status-select p-1 rounded border border-amber-200 text-sm">
+                            <option${p.status==='To Collect'?' selected':''}>To Collect</option>
+                            <option${p.status==='Collected'?' selected':''}>Collected</option>
+                            <option${p.status==='In Transit'?' selected':''}>In Transit</option>
+                            <option${p.status==='Delivered'?' selected':''}>Delivered</option>
+                            <option${p.status==='Cancelled'?' selected':''}>Cancelled</option>
+                        </select>
+                        <button data-index="${i}" class="btn-edit-part bg-white border border-amber-200 p-2 rounded text-sm">Edit</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // attach listeners
+            document.querySelectorAll('.part-status-select').forEach(el => {
+                el.addEventListener('change', async (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    const val = e.target.value;
+                    await updatePart(idx, { status: val });
+                });
+            });
+            document.querySelectorAll('.btn-edit-part').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.getAttribute('data-index'));
+                    openPartModal(idx);
+                });
+            });
+        }
+
+        async function updatePart(index, updates) {
+            try {
+                const payload = { id: window.currentEditingId, index: index, updates };
+                const res = await fetchAPI('update_part', 'POST', payload);
+                if (res && res.status === 'updated') {
+                    // reload parts
+                    await loadParts(window.currentEditingId);
+                    showToast('Part updated', 'success');
+                }
+            } catch (e) {
+                console.error('updatePart error', e);
+                showToast('Failed to update part', 'error');
+            }
+        }
+
+        // --- Part Modal Functions ---
+        function openPartModal(index) {
+            const p = (window.currentParts && window.currentParts[index]) ? window.currentParts[index] : { name: '', qty: 1, vendor: '', status: 'To Collect' };
+            window.editingPartIndex = index;
+            document.getElementById('part-modal-name').value = p.name || '';
+            document.getElementById('part-modal-qty').value = p.qty || 1;
+            document.getElementById('part-modal-vendor').value = p.vendor || '';
+            document.getElementById('part-modal-status').value = p.status || 'To Collect';
+            document.getElementById('part-modal').classList.remove('hidden');
+        }
+
+        function closePartModal() {
+            const el = document.getElementById('part-modal');
+            if (el) el.classList.add('hidden');
+            window.editingPartIndex = null;
+        }
+
+        async function savePartModal() {
+            const idx = window.editingPartIndex;
+            if (idx === null || typeof idx === 'undefined') return closePartModal();
+            const name = document.getElementById('part-modal-name').value.trim();
+            const qty = Number(document.getElementById('part-modal-qty').value) || 1;
+            const vendor = document.getElementById('part-modal-vendor').value.trim();
+            const status = document.getElementById('part-modal-status').value;
+            await updatePart(idx, { name, qty, vendor, status });
+            closePartModal();
+        }
+
+        // Modal button handlers
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'part-modal-cancel') {
+                closePartModal();
+            }
+            if (e.target && e.target.id === 'part-modal-save') {
+                savePartModal();
+            }
+        });
+
+        // Add new part and save locally then call save_parts
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'btn-add-part') {
+                const nameEl = document.getElementById('new-part-name');
+                const qtyEl = document.getElementById('new-part-qty');
+                const vendorEl = document.getElementById('new-part-vendor');
+                const statusEl = document.getElementById('new-part-status');
+                const name = nameEl ? nameEl.value.trim() : '';
+                const qty = qtyEl ? Number(qtyEl.value) || 1 : 1;
+                const vendor = vendorEl ? vendorEl.value.trim() : '';
+                const status = statusEl ? statusEl.value : 'To Collect';
+                if (!name) return showToast('Please enter part name', 'error');
+                const parts = window.currentParts || [];
+                parts.push({ name, qty, vendor, status });
+                window.currentParts = parts;
+                renderPartsList(parts);
+            }
+            if (e.target && e.target.id === 'btn-save-parts') {
+                saveParts();
+            }
+            if (e.target && e.target.id === 'btn-refresh-parts') {
+                loadParts(window.currentEditingId);
+            }
+        });
+
+        async function saveParts() {
+            try {
+                const parts = window.currentParts || [];
+                const res = await fetchAPI(`save_parts&id=${window.currentEditingId}`, 'POST', { parts });
+                if (res && res.status === 'saved') {
+                    showToast('Parts saved', 'success');
+                }
+            } catch (e) {
+                console.error('saveParts error', e);
+                showToast('Failed to save parts', 'error');
+            }
+        }
 
         window.quickAcceptReschedule = async (id) => {
             const t = transfers.find(i => i.id == id);

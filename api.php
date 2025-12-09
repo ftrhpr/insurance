@@ -453,7 +453,7 @@ try {
         $existingTransfer = $existingStmt->fetch(PDO::FETCH_ASSOC);
         $fields = []; $params = [':id' => $id];
         foreach ($data as $key => $val) {
-            if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response', 'collector', 'collector_id', 'collector_phone'])) {
+            if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
                 if ($key === 'serviceDate') {
                     if(empty($val)) $val = null;
                     $fields[] = "service_date = :serviceDate";
@@ -587,6 +587,179 @@ try {
         }
         jsonResponse(['status' => 'synced']);
     }
+
+    // --- PARTS MANAGEMENT ENDPOINTS ---
+    if ($action === 'get_parts' && $method === 'GET') {
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) jsonResponse(['parts' => []]);
+        try {
+            $stmt = $pdo->prepare("SELECT parts FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+            $parts = $stmt->fetchColumn();
+            $partsArr = [];
+            if ($parts) {
+                $decoded = json_decode($parts, true);
+                if (is_array($decoded)) $partsArr = $decoded;
+            }
+            jsonResponse(['parts' => $partsArr]);
+        } catch (Exception $e) {
+            error_log('Error in get_parts: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
+    if ($action === 'save_parts' && $method === 'POST') {
+        $data = getJsonInput();
+        $id = intval($_GET['id'] ?? ($data['id'] ?? 0));
+        $parts = $data['parts'] ?? [];
+        if ($id <= 0) { http_response_code(400); jsonResponse(['error' => 'Invalid id']); }
+        try {
+            $pdo->prepare("UPDATE transfers SET parts = ? WHERE id = ?")->execute([json_encode($parts), $id]);
+            // append system log
+            try {
+                $logStmt = $pdo->prepare("SELECT system_logs FROM transfers WHERE id = ?");
+                $logStmt->execute([$id]);
+                $current = $logStmt->fetchColumn();
+                $logs = [];
+                if ($current) {
+                    $decoded = json_decode($current, true);
+                    if (is_array($decoded)) $logs = $decoded;
+                }
+                $logs[] = ['message' => 'Parts list updated', 'timestamp' => date('c')];
+                $pdo->prepare("UPDATE transfers SET system_logs = ? WHERE id = ?")->execute([json_encode($logs), $id]);
+            } catch (Exception $elog) {
+                error_log('Failed to append system_logs after save_parts: ' . $elog->getMessage());
+            }
+            // After saving parts, check if all parts are Delivered -> auto-transition
+            try {
+                $allDelivered = false;
+                if (is_array($parts) && count($parts) > 0) {
+                    $allDelivered = true;
+                    foreach ($parts as $p) {
+                        $st = trim(strtolower($p['status'] ?? ''));
+                        if ($st !== 'delivered') { $allDelivered = false; break; }
+                    }
+                }
+
+                if ($allDelivered) {
+                    // get current transfer
+                    $stmt = $pdo->prepare("SELECT status, phone, name, plate, amount FROM transfers WHERE id = ?");
+                    $stmt->execute([$id]);
+                    $tr = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($tr && ($tr['status'] ?? '') !== 'Parts Arrived') {
+                        // update status
+                        $pdo->prepare("UPDATE transfers SET status = ? WHERE id = ?")->execute(['Parts Arrived', $id]);
+
+                        // send parts_arrived SMS
+                        if (!empty($tr['phone'])) {
+                            $templateStmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'parts_arrived'");
+                            $templateStmt->execute();
+                            $template = $templateStmt->fetchColumn();
+                            if (!$template) {
+                                $template = 'Hello {name}, your parts have arrived. Please confirm: {link}';
+                            }
+                            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                            $link = $scheme . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/public_view.php?id=' . $id;
+                            $smsText = str_replace(['{name}', '{plate}', '{amount}', '{link}'], [$tr['name'], $tr['plate'], $tr['amount'], $link], $template);
+                            $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : '';
+                            @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=" . urlencode($tr['phone']) . "&from=OTOMOTORS&text=" . urlencode($smsText));
+
+                            // append system log entry
+                            try {
+                                $logStmt = $pdo->prepare("SELECT system_logs FROM transfers WHERE id = ?");
+                                $logStmt->execute([$id]);
+                                $current = $logStmt->fetchColumn();
+                                $logs = [];
+                                if ($current) {
+                                    $decoded = json_decode($current, true);
+                                    if (is_array($decoded)) $logs = $decoded;
+                                }
+                                $logs[] = ['message' => 'Auto transition: Parts Delivered -> Parts Arrived; Parts Arrived SMS sent', 'timestamp' => date('c')];
+                                $pdo->prepare("UPDATE transfers SET system_logs = ? WHERE id = ?")->execute([json_encode($logs), $id]);
+                            } catch (Exception $elog) {
+                                error_log('Failed to append system_logs after auto-transition: ' . $elog->getMessage());
+                            }
+
+                            // send FCM to managers
+                            try { sendFCM_V1($pdo, $service_account_file, 'Parts Arrived', "Order #{$id} ({$tr['plate']}) parts arrived"); } catch (Exception $ef) { error_log('FCM error: '.$ef->getMessage()); }
+                        }
+                    }
+                }
+            } catch (Exception $ae) {
+                error_log('Error during parts post-save auto-transition: ' . $ae->getMessage());
+            }
+
+            jsonResponse(['status' => 'saved']);
+        } catch (Exception $e) {
+            error_log('Error in save_parts: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
+    if ($action === 'update_part' && $method === 'POST') {
+        $data = getJsonInput();
+        $id = intval($_GET['id'] ?? ($data['id'] ?? 0));
+        $index = intval($data['index'] ?? -1);
+        $updates = $data['updates'] ?? [];
+        if ($id <= 0 || $index < 0) { http_response_code(400); jsonResponse(['error' => 'Invalid parameters']); }
+        try {
+            $stmt = $pdo->prepare("SELECT parts FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+            $parts = $stmt->fetchColumn();
+            $partsArr = [];
+            if ($parts) { $decoded = json_decode($parts, true); if (is_array($decoded)) $partsArr = $decoded; }
+            if (!isset($partsArr[$index])) { http_response_code(404); jsonResponse(['error' => 'Part not found']); }
+            // apply updates
+            foreach ($updates as $k => $v) { $partsArr[$index][$k] = $v; }
+            $pdo->prepare("UPDATE transfers SET parts = ? WHERE id = ?")->execute([json_encode($partsArr), $id]);
+
+            // After updating a part, check if all parts are Delivered -> auto-transition
+            try {
+                $allDelivered = true;
+                if (count($partsArr) === 0) $allDelivered = false;
+                foreach ($partsArr as $p) { if (trim(strtolower($p['status'] ?? '')) !== 'delivered') { $allDelivered = false; break; } }
+                if ($allDelivered) {
+                    $stmt2 = $pdo->prepare("SELECT status, phone, name, plate, amount FROM transfers WHERE id = ?");
+                    $stmt2->execute([$id]);
+                    $tr = $stmt2->fetch(PDO::FETCH_ASSOC);
+                    if ($tr && ($tr['status'] ?? '') !== 'Parts Arrived') {
+                        $pdo->prepare("UPDATE transfers SET status = ? WHERE id = ?")->execute(['Parts Arrived', $id]);
+                        if (!empty($tr['phone'])) {
+                            $templateStmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'parts_arrived'");
+                            $templateStmt->execute();
+                            $template = $templateStmt->fetchColumn();
+                            if (!$template) $template = 'Hello {name}, your parts have arrived. Please confirm: {link}';
+                            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                            $link = $scheme . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/public_view.php?id=' . $id;
+                            $smsText = str_replace(['{name}', '{plate}', '{amount}', '{link}'], [$tr['name'], $tr['plate'], $tr['amount'], $link], $template);
+                            $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : '';
+                            @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=" . urlencode($tr['phone']) . "&from=OTOMOTORS&text=" . urlencode($smsText));
+                            try {
+                                $logStmt = $pdo->prepare("SELECT system_logs FROM transfers WHERE id = ?");
+                                $logStmt->execute([$id]);
+                                $current = $logStmt->fetchColumn();
+                                $logs = [];
+                                if ($current) { $decoded = json_decode($current, true); if (is_array($decoded)) $logs = $decoded; }
+                                $logs[] = ['message' => 'Auto transition: Parts Delivered -> Parts Arrived; Parts Arrived SMS sent', 'timestamp' => date('c')];
+                                $pdo->prepare("UPDATE transfers SET system_logs = ? WHERE id = ?")->execute([json_encode($logs), $id]);
+                            } catch (Exception $elog) { error_log('Failed to append system_logs after auto-transition: ' . $elog->getMessage()); }
+                            try { sendFCM_V1($pdo, $service_account_file, 'Parts Arrived', "Order #{$id} ({$tr['plate']}) parts arrived"); } catch (Exception $ef) { error_log('FCM error: '.$ef->getMessage()); }
+                        }
+                    }
+                }
+            } catch (Exception $ae) { error_log('Error in update_part auto-transition: ' . $ae->getMessage()); }
+
+            jsonResponse(['status' => 'updated']);
+        } catch (Exception $e) {
+            error_log('Error in update_part: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
     if ($action === 'save_vehicle' && $method === 'POST') {
         $data = getJsonInput();
         
@@ -649,107 +822,6 @@ try {
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
         jsonResponse($rows ?: new stdClass());
-    }
-    // Return list of available collectors for assignment UI
-    if ($action === 'get_collectors' && $method === 'GET') {
-        try {
-            $stmt = $pdo->prepare("SELECT id, name, phone, company FROM collectors WHERE 1 ORDER BY name ASC");
-            $stmt->execute();
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            jsonResponse($rows ?: []);
-        } catch (Exception $e) {
-            error_log('get_collectors DB error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['error' => 'Database error']);
-        }
-    }
-
-    // Create a new collector (admin/manager only)
-    if ($action === 'create_collector' && $method === 'POST') {
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['error' => 'Manager access required']);
-        }
-        $data = getJsonInput();
-        $name = trim($data['name'] ?? '');
-        $phone = trim($data['phone'] ?? '');
-        $notes = trim($data['notes'] ?? '');
-        if (!$name) jsonResponse(['status' => 'error', 'message' => 'Name required']);
-        // Basic phone validation: allow +, digits, spaces, dashes, parentheses
-        if ($phone !== '') {
-            $normalized = preg_replace('/[^+0-9]/', '', $phone);
-            // Require at least 6 digits
-            $digitsOnly = preg_replace('/\D/', '', $normalized);
-            if (strlen($digitsOnly) < 6) {
-                http_response_code(400);
-                jsonResponse(['status' => 'error', 'message' => 'Invalid phone number']);
-            }
-            $phone = $normalized;
-        }
-        // Limit notes length
-        if (strlen($notes) > 2000) $notes = substr($notes, 0, 2000);
-        try {
-            $stmt = $pdo->prepare("INSERT INTO collectors (name, phone, notes, created_at) VALUES (?, ?, ?, NOW())");
-            $stmt->execute([$name, $phone, $notes]);
-            jsonResponse(['status' => 'success', 'id' => $pdo->lastInsertId()]);
-        } catch (Exception $e) {
-            error_log('create_collector error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['error' => 'Database error']);
-        }
-    }
-
-    // Update existing collector
-    if ($action === 'update_collector' && $method === 'POST') {
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['error' => 'Manager access required']);
-        }
-        $id = intval($_GET['id'] ?? 0);
-        if ($id <= 0) jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
-        $data = getJsonInput();
-        $name = trim($data['name'] ?? '');
-        $phone = trim($data['phone'] ?? '');
-        $notes = trim($data['notes'] ?? '');
-        if (!$name) jsonResponse(['status' => 'error', 'message' => 'Name required']);
-        if ($phone !== '') {
-            $normalized = preg_replace('/[^+0-9]/', '', $phone);
-            $digitsOnly = preg_replace('/\D/', '', $normalized);
-            if (strlen($digitsOnly) < 6) {
-                http_response_code(400);
-                jsonResponse(['status' => 'error', 'message' => 'Invalid phone number']);
-            }
-            $phone = $normalized;
-        }
-        if (strlen($notes) > 2000) $notes = substr($notes, 0, 2000);
-        try {
-            $stmt = $pdo->prepare("UPDATE collectors SET name = ?, phone = ?, notes = ? WHERE id = ?");
-            $stmt->execute([$name, $phone, $notes, $id]);
-            jsonResponse(['status' => 'success']);
-        } catch (Exception $e) {
-            error_log('update_collector error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['error' => 'Database error']);
-        }
-    }
-
-    // Delete collector
-    if ($action === 'delete_collector' && $method === 'POST') {
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['error' => 'Manager access required']);
-        }
-        $id = intval($_GET['id'] ?? 0);
-        if ($id <= 0) jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
-        try {
-            $stmt = $pdo->prepare("DELETE FROM collectors WHERE id = ?");
-            $stmt->execute([$id]);
-            jsonResponse(['status' => 'success']);
-        } catch (Exception $e) {
-            error_log('delete_collector error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['error' => 'Database error']);
-        }
     }
     if ($action === 'save_templates' && $method === 'POST') {
         $data = getJsonInput();
