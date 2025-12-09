@@ -453,7 +453,7 @@ try {
         $existingTransfer = $existingStmt->fetch(PDO::FETCH_ASSOC);
         $fields = []; $params = [':id' => $id];
         foreach ($data as $key => $val) {
-            if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response', 'collector'])) {
+            if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response', 'collector', 'collector_id', 'collector_phone'])) {
                 if ($key === 'serviceDate') {
                     if(empty($val)) $val = null;
                     $fields[] = "service_date = :serviceDate";
@@ -675,6 +675,19 @@ try {
         $phone = trim($data['phone'] ?? '');
         $notes = trim($data['notes'] ?? '');
         if (!$name) jsonResponse(['status' => 'error', 'message' => 'Name required']);
+        // Basic phone validation: allow +, digits, spaces, dashes, parentheses
+        if ($phone !== '') {
+            $normalized = preg_replace('/[^+0-9]/', '', $phone);
+            // Require at least 6 digits
+            $digitsOnly = preg_replace('/\D/', '', $normalized);
+            if (strlen($digitsOnly) < 6) {
+                http_response_code(400);
+                jsonResponse(['status' => 'error', 'message' => 'Invalid phone number']);
+            }
+            $phone = $normalized;
+        }
+        // Limit notes length
+        if (strlen($notes) > 2000) $notes = substr($notes, 0, 2000);
         try {
             $stmt = $pdo->prepare("INSERT INTO collectors (name, phone, notes, created_at) VALUES (?, ?, ?, NOW())");
             $stmt->execute([$name, $phone, $notes]);
@@ -699,6 +712,16 @@ try {
         $phone = trim($data['phone'] ?? '');
         $notes = trim($data['notes'] ?? '');
         if (!$name) jsonResponse(['status' => 'error', 'message' => 'Name required']);
+        if ($phone !== '') {
+            $normalized = preg_replace('/[^+0-9]/', '', $phone);
+            $digitsOnly = preg_replace('/\D/', '', $normalized);
+            if (strlen($digitsOnly) < 6) {
+                http_response_code(400);
+                jsonResponse(['status' => 'error', 'message' => 'Invalid phone number']);
+            }
+            $phone = $normalized;
+        }
+        if (strlen($notes) > 2000) $notes = substr($notes, 0, 2000);
         try {
             $stmt = $pdo->prepare("UPDATE collectors SET name = ?, phone = ?, notes = ? WHERE id = ?");
             $stmt->execute([$name, $phone, $notes, $id]);

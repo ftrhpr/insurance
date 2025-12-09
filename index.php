@@ -585,8 +585,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         </div>
     </div>
 
-    <!-- Floating button to open collectors manager -->
-    <button id="open-collectors-manager-btn" title="Manage Collectors" onclick="openCollectorsManager()" class="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white rounded-full w-12 h-12 shadow-lg flex items-center justify-center"> 
+    <!-- Floating button to open collectors page -->
+    <button id="open-collectors-manager-btn" title="Open Collectors page" onclick="window.location.href='collectors.php'" class="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white rounded-full w-12 h-12 shadow-lg flex items-center justify-center"> 
         <i data-lucide="truck" class="w-5 h-5"></i>
     </button>
 
@@ -761,6 +761,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <button id="btn-assign-collector" onclick="window.assignCollector()" class="bg-white text-amber-600 border-2 border-amber-200 p-3 rounded-xl hover:bg-amber-50 hover:border-amber-300 hover:scale-105 transition-all shadow-lg active:scale-95 ml-2">
                                     <i data-lucide="user-plus" class="w-5 h-5"></i>
                                 </button>
+                                    <div id="modal-collector-indicator" class="ml-2 flex items-center text-xs text-slate-500 hidden">
+                                        <span class="mr-2">Collector:</span>
+                                        <span id="modal-collector-phone" class="font-semibold text-slate-700"></span>
+                                    </div>
                             </div>
                         </div>
                         
@@ -1599,7 +1603,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 collectors.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c.id;
-                    opt.text = `${c.name}${c.phone ? ' (' + c.phone + ')' : ''}${c.company ? ' - ' + c.company : ''}`;
+                    const phoneText = c.phone ? ` ${formatPhone(c.phone)}` : '';
+                    const companyText = c.company ? ` - ${c.company}` : '';
+                    opt.text = `${c.name}${phoneText}${companyText}`;
+                    // store raw phone on option for convenience
+                    opt.dataset.phone = c.phone || '';
                     select.appendChild(opt);
                 });
             } catch (e) {
@@ -1607,22 +1615,32 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 showToast('Error', 'Could not load collectors', 'error');
             }
 
-            // Pre-select current collector if present
+            // Pre-select current collector if present (prefer collector_id, fall back to name match)
             const t = transfers.find(x => x.id == orderId);
-            if (t && t.collector_id) select.value = t.collector_id;
+            if (t) {
+                if (t.collector_id) select.value = t.collector_id;
+                else if (t.collector) {
+                    // try to match by name
+                    for (let i=0;i<select.options.length;i++) {
+                        if (select.options[i].text.startsWith(t.collector)) { select.selectedIndex = i; break; }
+                    }
+                }
+            }
 
             modal.classList.remove('hidden');
 
             // Save handler
             const onSave = async () => {
                 const selectedId = select.value;
-                const collectorName = select.options[select.selectedIndex]?.text || '';
+                const selectedOption = select.options[select.selectedIndex];
+                const collectorName = selectedOption?.text || '';
+                const collectorPhone = selectedOption?.dataset?.phone || '';
                 try {
-                    await fetchAPI(`update_transfer&id=${orderId}`, 'POST', { collector: collectorName, collector_id: selectedId });
+                    await fetchAPI(`update_transfer&id=${orderId}`, 'POST', { collector: collectorName, collector_id: selectedId, collector_phone: collectorPhone });
                     showToast('Collector Assigned', `Assigned: ${collectorName}`, 'success');
                     // Update local state
                     const rec = transfers.find(x => x.id == orderId);
-                    if (rec) { rec.collector = collectorName; rec.collector_id = selectedId; }
+                    if (rec) { rec.collector = collectorName; rec.collector_id = selectedId; rec.collector_phone = collectorPhone; }
                     loadData();
                 } catch (err) {
                     console.error('Assign via modal failed', err);
@@ -1643,6 +1661,22 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             };
             cancelBtn.addEventListener('click', onCancel);
         };
+
+        // Format phone for display (simple grouping)
+        function formatPhone(p) {
+            if (!p) return '';
+            // keep leading + if present
+            const plus = p.startsWith('+') ? '+' : '';
+            const digits = p.replace(/\D/g, '');
+            // If contains country code (3 digits) and length > 9, split after 3
+            if (digits.length > 9) {
+                const cc = digits.slice(0, digits.length - 9);
+                const rest = digits.slice(digits.length - 9);
+                return `${plus}${cc} ${rest.slice(0,3)} ${rest.slice(3,6)} ${rest.slice(6)}`;
+            }
+            // fallback grouping by 3
+            return plus + digits.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
+        }
 
         // --- Collectors Manager ---
         window.openCollectorsManager = async function() {
@@ -2289,6 +2323,22 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             const callBtnEl = document.getElementById('btn-call-real');
             if (callBtnEl) callBtnEl.href = t.phone ? `tel:${t.phone}` : '#';
+
+            // Show assigned collector phone if present
+            const collectorIndicatorEl = document.getElementById('modal-collector-indicator');
+            const collectorPhoneEl = document.getElementById('modal-collector-phone');
+            if (collectorPhoneEl && collectorIndicatorEl) {
+                if (t.collector_phone) {
+                    collectorPhoneEl.innerText = formatPhone(t.collector_phone);
+                    collectorIndicatorEl.classList.remove('hidden');
+                } else if (t.collector) {
+                    collectorPhoneEl.innerText = t.collector;
+                    collectorIndicatorEl.classList.remove('hidden');
+                } else {
+                    collectorPhoneEl.innerText = '';
+                    collectorIndicatorEl.classList.add('hidden');
+                }
+            }
             
             const smsRegisterBtnEl = document.getElementById('btn-sms-register');
             if (smsRegisterBtnEl) smsRegisterBtnEl.onclick = () => {
