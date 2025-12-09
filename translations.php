@@ -128,10 +128,6 @@ try {
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <input id="translation-search" type="text" placeholder="Search keys or default text..." oninput="filterTranslations()" class="px-4 py-2 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" />
-                    <button id="init-translations-btn" onclick="initTranslations()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium">
-                        <i data-lucide="refresh-ccw" class="w-4 h-4 inline mr-2"></i>Init Defaults
-                    </button>
                     <button onclick="exportTranslations()" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium">
                         <i data-lucide="download" class="w-4 h-4 inline mr-2"></i>Export
                     </button>
@@ -336,46 +332,6 @@ try {
             } catch (error) {
                 console.error('Error exporting translations:', error);
                 showToast('Failed to export translations', error.message, 'error');
-            }
-        }
-
-        // Filter translations table by key or default text
-        function filterTranslations() {
-            const q = document.getElementById('translation-search').value.trim().toLowerCase();
-            const rows = document.querySelectorAll('table tbody tr');
-            rows.forEach(row => {
-                const key = (row.querySelector('td:first-child') || {}).innerText || '';
-                const def = (row.querySelector('td:nth-child(2)') || {}).innerText || '';
-                if (!q) {
-                    row.style.display = '';
-                    return;
-                }
-                if (key.toLowerCase().includes(q) || def.toLowerCase().includes(q)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
-
-        // Call init_translations.php to initialize defaults (admin only)
-        async function initTranslations() {
-            const btn = document.getElementById('init-translations-btn');
-            btn.disabled = true; btn.innerText = 'Initializing...';
-            try {
-                const resp = await fetch('init_translations.php');
-                const data = await resp.json();
-                if (data.success) {
-                    showToast('Initialized', data.message, 'success');
-                    setTimeout(() => location.reload(), 800);
-                } else {
-                    showToast('Init failed', data.message, 'error');
-                    btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-ccw" class="w-4 h-4 inline mr-2"></i>Init Defaults';
-                }
-            } catch (e) {
-                console.error(e);
-                showToast('Init failed', e.message || e, 'error');
-                btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-ccw" class="w-4 h-4 inline mr-2"></i>Init Defaults';
             }
         }
 

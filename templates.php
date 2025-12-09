@@ -13,7 +13,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
 // Database connection
 require_once 'config.php';
-require_once 'language.php';
 
 // Default templates
 $defaultTemplatesData = [
@@ -26,7 +25,6 @@ $defaultTemplatesData = [
     'rescheduled' => 'გამარჯობა, კლიენტმა {name} მოითხოვა თარიღის შეცვლა. ავტომობილი: {plate}',
     'reschedule_accepted' => 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}',
     'completed' => 'გამარჯობა {name}, თქვენი სერვისი დასრულდა. გთხოვთ შეაფასოთ ჩვენი მომსახურება',
-    'review' => 'გამარჯობა {name}, გთხოვთ შეაფასოთ ჩვენი მომსახურება: {link}',
     'issue' => 'გამარჯობა {name}, დაფიქსირდა პრობლემა. ავტომობილი: {plate}. ჩვენ დაგიკავშირდებით.',
     'system' => 'სისტემური შეტყობინება: {count} ახალი განაცხადი დაემატა OTOMOTORS პორტალში.'
 ];
@@ -224,18 +222,6 @@ try {
                         <textarea id="tpl-completed" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['completed'] ?? ''); ?></textarea>
                     </div>
 
-                            <!-- Review Request -->
-                            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                                        <i data-lucide="star" class="w-4 h-4 text-emerald-600"></i>
-                                    </div>
-                                    <h3 class="font-bold text-slate-800"><?php echo __('templates.review_title', 'Review Request'); ?></h3>
-                                    <span class="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full ml-auto"><?php echo __('templates.review_tag', 'Review'); ?></span>
-                                </div>
-                                <textarea id="tpl-review" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['review'] ?? ''); ?></textarea>
-                            </div>
-
                     <!-- Issue Reported -->
                     <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
                         <div class="flex items-center gap-2 mb-3">
@@ -328,7 +314,6 @@ try {
             rescheduled: 'გამარჯობა, კლიენტმა {name} მოითხოვა თარიღის შეცვლა. ავტომობილი: {plate}',
             reschedule_accepted: 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}',
             completed: 'გამარჯობა {name}, თქვენი სერვისი დასრულდა. გთხოვთ შეაფასოთ ჩვენი მომსახურება',
-            review: 'გამარჯობა {name}, გთხოვთ შეაფასოთ ჩვენი მომსახურება: {link}',
             issue: 'გამარჯობა {name}, დაფიქსირდა პრობლემა. ავტომობილი: {plate}. ჩვენ დაგიკავშირდებით.',
             system: 'სისტემური შეტყობინება: {count} ახალი განაცხადი დაემატა OTOMOTORS პორტალში.'
         };
@@ -423,7 +408,6 @@ try {
                 smsTemplates.rescheduled = getVal('tpl-rescheduled');
                 smsTemplates.reschedule_accepted = getVal('tpl-reschedule_accepted');
                 smsTemplates.completed = getVal('tpl-completed');
-                smsTemplates.review = getVal('tpl-review');
                 smsTemplates.issue = getVal('tpl-issue');
                 smsTemplates.system = getVal('tpl-system');
 
