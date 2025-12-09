@@ -453,7 +453,7 @@ try {
         $existingTransfer = $existingStmt->fetch(PDO::FETCH_ASSOC);
         $fields = []; $params = [':id' => $id];
         foreach ($data as $key => $val) {
-            if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response'])) {
+            if (in_array($key, ['plate', 'name', 'phone', 'amount', 'serviceDate', 'franchise', 'status', 'operatorComment', 'user_response', 'collector'])) {
                 if ($key === 'serviceDate') {
                     if(empty($val)) $val = null;
                     $fields[] = "service_date = :serviceDate";
@@ -649,6 +649,84 @@ try {
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
         jsonResponse($rows ?: new stdClass());
+    }
+    // Return list of available collectors for assignment UI
+    if ($action === 'get_collectors' && $method === 'GET') {
+        try {
+            $stmt = $pdo->prepare("SELECT id, name, phone, company FROM collectors WHERE 1 ORDER BY name ASC");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            jsonResponse($rows ?: []);
+        } catch (Exception $e) {
+            error_log('get_collectors DB error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error']);
+        }
+    }
+
+    // Create a new collector (admin/manager only)
+    if ($action === 'create_collector' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+        $data = getJsonInput();
+        $name = trim($data['name'] ?? '');
+        $phone = trim($data['phone'] ?? '');
+        $notes = trim($data['notes'] ?? '');
+        if (!$name) jsonResponse(['status' => 'error', 'message' => 'Name required']);
+        try {
+            $stmt = $pdo->prepare("INSERT INTO collectors (name, phone, notes, created_at) VALUES (?, ?, ?, NOW())");
+            $stmt->execute([$name, $phone, $notes]);
+            jsonResponse(['status' => 'success', 'id' => $pdo->lastInsertId()]);
+        } catch (Exception $e) {
+            error_log('create_collector error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error']);
+        }
+    }
+
+    // Update existing collector
+    if ($action === 'update_collector' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
+        $data = getJsonInput();
+        $name = trim($data['name'] ?? '');
+        $phone = trim($data['phone'] ?? '');
+        $notes = trim($data['notes'] ?? '');
+        if (!$name) jsonResponse(['status' => 'error', 'message' => 'Name required']);
+        try {
+            $stmt = $pdo->prepare("UPDATE collectors SET name = ?, phone = ?, notes = ? WHERE id = ?");
+            $stmt->execute([$name, $phone, $notes, $id]);
+            jsonResponse(['status' => 'success']);
+        } catch (Exception $e) {
+            error_log('update_collector error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error']);
+        }
+    }
+
+    // Delete collector
+    if ($action === 'delete_collector' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
+        try {
+            $stmt = $pdo->prepare("DELETE FROM collectors WHERE id = ?");
+            $stmt->execute([$id]);
+            jsonResponse(['status' => 'success']);
+        } catch (Exception $e) {
+            error_log('delete_collector error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error']);
+        }
     }
     if ($action === 'save_templates' && $method === 'POST') {
         $data = getJsonInput();

@@ -532,6 +532,64 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         </div>
     </div>
 
+    <!-- Collector Selector Modal -->
+    <div id="collector-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/40" onclick="document.getElementById('collector-modal').classList.add('hidden')"></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl p-4 w-full max-w-md shadow-2xl border border-slate-200">
+                <h4 class="text-sm font-bold mb-2">Assign Collector</h4>
+                <p class="text-xs text-slate-500 mb-3">Choose a collector from the list and save to assign to this order.</p>
+                <div class="mb-3">
+                    <select id="collector-select" class="w-full p-2 border rounded-lg bg-white text-sm">
+                        <option value="">-- Loading collectors --</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <button id="collector-cancel-btn" class="px-4 py-2 bg-white border rounded-lg text-sm">Cancel</button>
+                    <button id="collector-save-btn" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collectors Management Modal -->
+    <div id="collectors-manager-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/40" onclick="document.getElementById('collectors-manager-modal').classList.add('hidden')"></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl p-4 w-full max-w-2xl shadow-2xl border border-slate-200">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-bold">Collectors</h4>
+                    <div class="flex gap-2">
+                        <button id="collector-add-new" class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-sm">Add New</button>
+                        <button onclick="document.getElementById('collectors-manager-modal').classList.add('hidden')" class="px-3 py-1 bg-white border rounded-lg">Close</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <table id="collectors-table" class="w-full text-sm">
+                        <thead class="text-left text-xs text-slate-500"><tr><th>Name</th><th>Phone</th><th>Notes</th><th class="text-right">Actions</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="collector-form" class="hidden">
+                    <div class="grid grid-cols-1 gap-2 mb-2">
+                        <input id="collector-name" placeholder="Name" class="p-2 border rounded">
+                        <input id="collector-phone" placeholder="Phone" class="p-2 border rounded">
+                        <textarea id="collector-notes" placeholder="Notes" class="p-2 border rounded" rows="3"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button id="collector-form-cancel" class="px-3 py-1 border rounded">Cancel</button>
+                        <button id="collector-form-save" class="px-3 py-1 bg-amber-600 text-white rounded">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating button to open collectors manager -->
+    <button id="open-collectors-manager-btn" title="Manage Collectors" onclick="openCollectorsManager()" class="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white rounded-full w-12 h-12 shadow-lg flex items-center justify-center"> 
+        <i data-lucide="truck" class="w-5 h-5"></i>
+    </button>
+
     <!-- Premium Edit Modal -->
     <div id="edit-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
         <!-- Enhanced Backdrop with Animation -->
@@ -700,6 +758,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <a id="btn-call-real" href="#" class="bg-white text-teal-600 border-2 border-teal-200 p-3 rounded-xl hover:bg-teal-50 hover:border-teal-300 hover:scale-105 transition-all shadow-lg active:scale-95">
                                     <i data-lucide="phone-call" class="w-5 h-5"></i>
                                 </a>
+                                <button id="btn-assign-collector" onclick="window.assignCollector()" class="bg-white text-amber-600 border-2 border-amber-200 p-3 rounded-xl hover:bg-amber-50 hover:border-amber-300 hover:scale-105 transition-all shadow-lg active:scale-95 ml-2">
+                                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                                </button>
                             </div>
                         </div>
                         
@@ -1514,6 +1575,174 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 .replace(/{count}/g, data.count || '');
         }
 
+        // Assign collector quick action (opens selector modal)
+        window.assignCollector = function() {
+            if (!CAN_EDIT) return showToast('Permission Denied', 'Only managers can assign collectors', 'error');
+            const id = window.currentEditingId;
+            if (!id) return showToast('Error', 'No order selected', 'error');
+            openCollectorModal(id);
+        };
+
+        // Open collector selector modal and load collectors
+        window.openCollectorModal = async function(orderId) {
+            const modal = document.getElementById('collector-modal');
+            const select = document.getElementById('collector-select');
+            const saveBtn = document.getElementById('collector-save-btn');
+            const cancelBtn = document.getElementById('collector-cancel-btn');
+            if (!modal || !select) return showToast('Error', 'Collector UI not available', 'error');
+
+            // Clear previous options
+            select.innerHTML = '<option value="">-- Select collector --</option>';
+
+            try {
+                const collectors = await fetchAPI('get_collectors');
+                collectors.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.text = `${c.name}${c.phone ? ' (' + c.phone + ')' : ''}${c.company ? ' - ' + c.company : ''}`;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Failed to load collectors', e);
+                showToast('Error', 'Could not load collectors', 'error');
+            }
+
+            // Pre-select current collector if present
+            const t = transfers.find(x => x.id == orderId);
+            if (t && t.collector_id) select.value = t.collector_id;
+
+            modal.classList.remove('hidden');
+
+            // Save handler
+            const onSave = async () => {
+                const selectedId = select.value;
+                const collectorName = select.options[select.selectedIndex]?.text || '';
+                try {
+                    await fetchAPI(`update_transfer&id=${orderId}`, 'POST', { collector: collectorName, collector_id: selectedId });
+                    showToast('Collector Assigned', `Assigned: ${collectorName}`, 'success');
+                    // Update local state
+                    const rec = transfers.find(x => x.id == orderId);
+                    if (rec) { rec.collector = collectorName; rec.collector_id = selectedId; }
+                    loadData();
+                } catch (err) {
+                    console.error('Assign via modal failed', err);
+                    showToast('Error', 'Failed to assign collector', 'error');
+                } finally {
+                    modal.classList.add('hidden');
+                    saveBtn.removeEventListener('click', onSave);
+                }
+            };
+
+            saveBtn.addEventListener('click', onSave);
+
+            // Cancel handler
+            const onCancel = () => {
+                modal.classList.add('hidden');
+                saveBtn.removeEventListener('click', onSave);
+                cancelBtn.removeEventListener('click', onCancel);
+            };
+            cancelBtn.addEventListener('click', onCancel);
+        };
+
+        // --- Collectors Manager ---
+        window.openCollectorsManager = async function() {
+            const modal = document.getElementById('collectors-manager-modal');
+            const tbody = document.querySelector('#collectors-table tbody');
+            const form = document.getElementById('collector-form');
+            const addBtn = document.getElementById('collector-add-new');
+            const saveBtn = document.getElementById('collector-form-save');
+            const cancelBtn = document.getElementById('collector-form-cancel');
+
+            if (!modal || !tbody) return showToast('Error', 'Collectors UI not available', 'error');
+
+            modal.classList.remove('hidden');
+
+            async function loadList() {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400">Loading...</td></tr>';
+                try {
+                    const list = await fetchAPI('get_collectors');
+                    if (!Array.isArray(list) || list.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400">No collectors found</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = '';
+                    list.forEach(c => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td class="py-2">${escapeHtml(c.name)}</td><td class="py-2">${escapeHtml(c.phone||'')}</td><td class="py-2">${escapeHtml(c.notes||'')}</td><td class="py-2 text-right"><button data-id="${c.id}" class="edit-collector px-2 py-1 text-xs bg-white border rounded mr-2">Edit</button><button data-id="${c.id}" class="delete-collector px-2 py-1 text-xs bg-red-600 text-white rounded">Delete</button></td>`;
+                        tbody.appendChild(tr);
+                    });
+
+                    // Wire edit/delete buttons
+                    document.querySelectorAll('.edit-collector').forEach(btn => btn.addEventListener('click', async (e) => {
+                        const id = e.currentTarget.getAttribute('data-id');
+                        openEditCollector(id);
+                    }));
+                    document.querySelectorAll('.delete-collector').forEach(btn => btn.addEventListener('click', async (e) => {
+                        const id = e.currentTarget.getAttribute('data-id');
+                        if (!confirm('Delete this collector?')) return;
+                        try {
+                            await fetchAPI(`delete_collector&id=${id}`, 'POST', {});
+                            showToast('Deleted', 'Collector removed', 'success');
+                            loadList();
+                        } catch (err) { console.error(err); showToast('Error', 'Delete failed', 'error'); }
+                    }));
+
+                } catch (err) {
+                    console.error('Load collectors failed', err);
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-red-500">Failed to load</td></tr>';
+                }
+            }
+
+            function showForm(data) {
+                form.classList.remove('hidden');
+                document.getElementById('collector-name').value = data?.name || '';
+                document.getElementById('collector-phone').value = data?.phone || '';
+                document.getElementById('collector-notes').value = data?.notes || '';
+                form.setAttribute('data-edit-id', data?.id || '');
+            }
+
+            function hideForm() {
+                form.classList.add('hidden');
+                form.removeAttribute('data-edit-id');
+                document.getElementById('collector-name').value = '';
+                document.getElementById('collector-phone').value = '';
+                document.getElementById('collector-notes').value = '';
+            }
+
+            async function openEditCollector(id) {
+                try {
+                    const list = await fetchAPI('get_collectors');
+                    const item = list.find(x => String(x.id) === String(id));
+                    if (!item) return showToast('Error', 'Collector not found', 'error');
+                    showForm(item);
+                } catch (err) { console.error(err); showToast('Error', 'Failed to load collector', 'error'); }
+            }
+
+            addBtn.onclick = () => showForm({});
+            cancelBtn.onclick = () => hideForm();
+            saveBtn.onclick = async () => {
+                const editId = form.getAttribute('data-edit-id');
+                const name = document.getElementById('collector-name').value.trim();
+                const phone = document.getElementById('collector-phone').value.trim();
+                const notes = document.getElementById('collector-notes').value.trim();
+                if (!name) return showToast('Validation', 'Name is required', 'error');
+                try {
+                    if (editId) {
+                        await fetchAPI(`update_collector&id=${editId}`, 'POST', { name, phone, notes });
+                        showToast('Saved', 'Collector updated', 'success');
+                    } else {
+                        await fetchAPI('create_collector', 'POST', { name, phone, notes });
+                        showToast('Created', 'Collector added', 'success');
+                    }
+                    hideForm();
+                    loadList();
+                } catch (err) { console.error(err); showToast('Error', 'Save failed', 'error'); }
+            };
+
+            // Initial load
+            loadList();
+        };
+
         // Notification Prompt & Load Templates
         document.addEventListener('DOMContentLoaded', () => {
             if ('Notification' in window && Notification.permission === 'default') {
@@ -2053,6 +2282,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             } else {
                 if (createdDateEl) createdDateEl.innerText = 'N/A';
             }
+
+            // Assign collector button state
+            const assignBtn = document.getElementById('btn-assign-collector');
+            if (assignBtn) assignBtn.disabled = !(CAN_EDIT && window.currentEditingId);
             
             const callBtnEl = document.getElementById('btn-call-real');
             if (callBtnEl) callBtnEl.href = t.phone ? `tel:${t.phone}` : '#';

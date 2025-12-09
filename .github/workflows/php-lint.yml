@@ -1,0 +1,36 @@
+name: PHP Lint
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  phplint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Run php -l on repository PHP files
+        run: |
+          set -e
+          echo "Finding PHP files..."
+          files=$(find . -type f -name '*.php' -not -path './.git/*' -not -path './vendor/*')
+          if [ -z "$files" ]; then
+            echo "No PHP files found"
+            exit 0
+          fi
+          rc=0
+          for f in $files; do
+            echo "Checking $f"
+            php -l "$f" || rc=1
+          done
+          if [ "$rc" -ne 0 ]; then
+            echo "PHP lint failed"
+            exit 1
+          fi
+          echo "PHP lint passed"

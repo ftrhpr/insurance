@@ -43,7 +43,10 @@ try {
         'review_stars'  => "INT DEFAULT NULL",
         'review_comment'=> "TEXT DEFAULT NULL",
         'internal_notes'=> "JSON DEFAULT NULL",  // or TEXT if MariaDB version is old
-        'system_logs'   => "JSON DEFAULT NULL"   // or TEXT if MariaDB version is old
+        'system_logs'   => "JSON DEFAULT NULL",   // or TEXT if MariaDB version is old
+        'collector'     => "VARCHAR(100) DEFAULT NULL",
+        'collector_id'  => "INT DEFAULT NULL",
+        'collector_phone' => "VARCHAR(20) DEFAULT NULL"
     ];
 
     foreach ($columns as $col => $def) {
@@ -90,6 +93,20 @@ try {
         token TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
+    // ---------------------------------------------------------
+    // 4.5.5 TABLE: collectors (Optional list of collection partners)
+    // ---------------------------------------------------------
+    echo "\nChecking table 'collectors'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS collectors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        phone VARCHAR(30) DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
     $pdo->exec($sql);
     echo " - Table structure verified.\n";
 
