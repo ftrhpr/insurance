@@ -283,69 +283,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </button>
                             </div>
                         </div>
-
-                        <!-- Parts Management -->
-                        <div id="parts-panel" class="hidden bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-amber-100 shadow-sm mt-3">
-                            <div class="flex items-center gap-1.5 mb-1.5">
-                                <div class="bg-amber-600 p-1 rounded-md shadow-sm">
-                                    <i data-lucide="tool" class="w-3 h-3 text-white"></i>
-                                </div>
-                                <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider">Parts & Collection</h3>
-                                <span class="text-[10px] ml-auto text-amber-700 bg-amber-100 px-2 py-1 rounded-full">Manage parts for collection</span>
-                            </div>
-                            <div id="parts-list" class="space-y-2 max-h-48 overflow-y-auto p-1 bg-white/80 rounded-lg border border-amber-100"></div>
-                            <div class="mt-2 grid grid-cols-3 gap-2">
-                                <input id="new-part-name" type="text" placeholder="Part name" class="col-span-2 p-2 rounded-lg border border-amber-200">
-                                <input id="new-part-qty" type="number" placeholder="Qty" class="p-2 rounded-lg border border-amber-200 w-full">
-                                <input id="new-part-vendor" type="text" placeholder="Vendor" class="col-span-2 p-2 rounded-lg border border-amber-200">
-                                <select id="new-part-status" class="p-2 rounded-lg border border-amber-200">
-                                    <option>To Collect</option>
-                                    <option>Collected</option>
-                                    <option>In Transit</option>
-                                    <option>Delivered</option>
-                                    <option>Cancelled</option>
-                                </select>
-                                <button id="btn-add-part" class="bg-amber-600 text-white p-2 rounded-lg">Add Part</button>
-                            </div>
-                            <div class="mt-2 flex gap-2">
-                                <button id="btn-save-parts" class="flex-1 bg-gradient-to-r from-amber-600 to-yellow-500 text-white p-2 rounded-lg">Save Parts</button>
-                                <button id="btn-refresh-parts" class="flex-1 bg-white border border-amber-200 p-2 rounded-lg">Refresh</button>
-                            </div>
-                        </div>
-                            <!-- Part Edit Modal -->
-                            <div id="part-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                                <div class="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
-                                    <h3 class="text-lg font-bold mb-3">Edit Part</h3>
-                                    <div class="space-y-3">
-                                        <div>
-                                            <label class="block text-xs text-slate-600">Name</label>
-                                            <input id="part-modal-name" type="text" class="w-full p-2 border rounded-lg" />
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-600">Quantity</label>
-                                            <input id="part-modal-qty" type="number" class="w-full p-2 border rounded-lg" />
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-600">Vendor</label>
-                                            <input id="part-modal-vendor" type="text" class="w-full p-2 border rounded-lg" />
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-600">Status</label>
-                                            <select id="part-modal-status" class="w-full p-2 border rounded-lg">
-                                                <option>To Collect</option>
-                                                <option>Collected</option>
-                                                <option>In Transit</option>
-                                                <option>Delivered</option>
-                                                <option>Cancelled</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="mt-4 flex justify-end gap-2">
-                                        <button id="part-modal-cancel" class="px-4 py-2 rounded-lg border">Cancel</button>
-                                        <button id="part-modal-save" class="px-4 py-2 rounded-lg bg-amber-600 text-white">Save</button>
-                                    </div>
-                                </div>
-                            </div>
                         
                         <div class="flex flex-col md:flex-row gap-6">
                             <!-- Text Input -->
@@ -1199,35 +1136,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             setTimeout(() => {
                 if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
                 if (appContentEl) appContentEl.classList.remove('hidden');
-                // If URL contains ?edit=<id>, open that transfer in the modal after data loads
-                try {
-                    const params = new URLSearchParams(window.location.search);
-                    const editId = params.get('edit');
-                    if (editId) {
-                        // Ensure transfers are loaded and then open
-                        setTimeout(() => {
-                            if (typeof window.openEditModal === 'function') window.openEditModal(Number(editId));
-                        }, 300);
-                    }
-                } catch (e) { console.error('Failed to open edit from URL param', e); }
             }, 500);
         }
-
-        // Debug/Smoke test helper: call from console `smokeTestPartsModal()` to open first transfer's edit modal
-        window.smokeTestPartsModal = async () => {
-            if (!transfers || transfers.length === 0) {
-                await loadData();
-            }
-            if (transfers && transfers.length > 0) {
-                const id = transfers[0].id;
-                console.log('Opening edit modal for transfer', id);
-                window.openEditModal(id);
-                // ensure parts panel loads
-                setTimeout(() => { if (window.currentEditingId) loadParts(window.currentEditingId); }, 500);
-            } else {
-                console.warn('No transfers available for smoke test');
-            }
-        };
 
         // Poll for updates every 10 seconds
         setInterval(loadData, 10000);
@@ -2112,16 +2022,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     if (stageNumberEl) stageNumberEl.innerText = newStageIndex + 1;
                     if (progressBarEl) progressBarEl.style.width = `${newProgressPercentage}%`;
                     if (statusDescEl) statusDescEl.innerText = statusDescriptions[newStatus] || 'Unknown status';
-                    // Show parts manager only in Processing stage
-                    const partsPanel = document.getElementById('parts-panel');
-                    if (partsPanel) {
-                        if (newStatus === 'Processing') {
-                            partsPanel.classList.remove('hidden');
-                            if (window.currentEditingId) loadParts(window.currentEditingId);
-                        } else {
-                            partsPanel.classList.add('hidden');
-                        }
-                    }
                 });
             }
             
@@ -2247,17 +2147,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 if (reviewCommentEl) reviewCommentEl.innerText = comment;
             } else {
                 if (reviewSection) reviewSection.classList.add('hidden');
-            }
-
-            // Parts panel visibility and load
-            const partsPanel = document.getElementById('parts-panel');
-            if (partsPanel) {
-                if (t.status === 'Processing') {
-                    partsPanel.classList.remove('hidden');
-                    loadParts(t.id);
-                } else {
-                    partsPanel.classList.add('hidden');
-                }
             }
 
             // Display reschedule request if exists
@@ -2600,153 +2489,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const notesListEl = document.getElementById('notes-list');
             if (notesListEl) notesListEl.innerHTML = noteHTML;
         };
-
-        // --- Parts Management Functions ---
-        window.loadParts = async (id) => {
-            try {
-                const res = await fetchAPI(`get_parts&id=${id}`);
-                const parts = res.parts || [];
-                window.currentParts = parts;
-                renderPartsList(parts);
-            } catch (e) {
-                console.error('Failed to load parts', e);
-                window.currentParts = [];
-                renderPartsList([]);
-            }
-        };
-
-        function renderPartsList(parts) {
-            const container = document.getElementById('parts-list');
-            if (!container) return;
-            if (!Array.isArray(parts) || parts.length === 0) {
-                container.innerHTML = '<div class="text-sm text-slate-500 p-3 text-center">No parts added yet</div>';
-                return;
-            }
-            container.innerHTML = parts.map((p, i) => `
-                <div class="flex items-center gap-2 p-2 bg-white rounded-lg border border-amber-100">
-                    <div class="flex-1 min-w-0">
-                        <div class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(p.name || '')} <span class="text-xs text-slate-400">x${escapeHtml(String(p.qty || '1'))}</span></div>
-                        <div class="text-xs text-slate-500">${escapeHtml(p.vendor || '')} • <strong>${escapeHtml(p.status || '')}</strong></div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <select data-index="${i}" class="part-status-select p-1 rounded border border-amber-200 text-sm">
-                            <option${p.status==='To Collect'?' selected':''}>To Collect</option>
-                            <option${p.status==='Collected'?' selected':''}>Collected</option>
-                            <option${p.status==='In Transit'?' selected':''}>In Transit</option>
-                            <option${p.status==='Delivered'?' selected':''}>Delivered</option>
-                            <option${p.status==='Cancelled'?' selected':''}>Cancelled</option>
-                        </select>
-                        <button data-index="${i}" class="btn-edit-part bg-white border border-amber-200 p-2 rounded text-sm">Edit</button>
-                    </div>
-                </div>
-            `).join('');
-
-            // attach listeners
-            document.querySelectorAll('.part-status-select').forEach(el => {
-                el.addEventListener('change', async (e) => {
-                    const idx = parseInt(e.target.getAttribute('data-index'));
-                    const val = e.target.value;
-                    await updatePart(idx, { status: val });
-                });
-            });
-            document.querySelectorAll('.btn-edit-part').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const idx = parseInt(btn.getAttribute('data-index'));
-                    openPartModal(idx);
-                });
-            });
-        }
-
-        async function updatePart(index, updates) {
-            try {
-                const payload = { id: window.currentEditingId, index: index, updates };
-                const res = await fetchAPI('update_part', 'POST', payload);
-                if (res && res.status === 'updated') {
-                    // reload parts
-                    await loadParts(window.currentEditingId);
-                    showToast('Part updated', 'success');
-                }
-            } catch (e) {
-                console.error('updatePart error', e);
-                showToast('Failed to update part', 'error');
-            }
-        }
-
-        // --- Part Modal Functions ---
-        function openPartModal(index) {
-            const p = (window.currentParts && window.currentParts[index]) ? window.currentParts[index] : { name: '', qty: 1, vendor: '', status: 'To Collect' };
-            window.editingPartIndex = index;
-            document.getElementById('part-modal-name').value = p.name || '';
-            document.getElementById('part-modal-qty').value = p.qty || 1;
-            document.getElementById('part-modal-vendor').value = p.vendor || '';
-            document.getElementById('part-modal-status').value = p.status || 'To Collect';
-            document.getElementById('part-modal').classList.remove('hidden');
-        }
-
-        function closePartModal() {
-            const el = document.getElementById('part-modal');
-            if (el) el.classList.add('hidden');
-            window.editingPartIndex = null;
-        }
-
-        async function savePartModal() {
-            const idx = window.editingPartIndex;
-            if (idx === null || typeof idx === 'undefined') return closePartModal();
-            const name = document.getElementById('part-modal-name').value.trim();
-            const qty = Number(document.getElementById('part-modal-qty').value) || 1;
-            const vendor = document.getElementById('part-modal-vendor').value.trim();
-            const status = document.getElementById('part-modal-status').value;
-            await updatePart(idx, { name, qty, vendor, status });
-            closePartModal();
-        }
-
-        // Modal button handlers
-        document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'part-modal-cancel') {
-                closePartModal();
-            }
-            if (e.target && e.target.id === 'part-modal-save') {
-                savePartModal();
-            }
-        });
-
-        // Add new part and save locally then call save_parts
-        document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'btn-add-part') {
-                const nameEl = document.getElementById('new-part-name');
-                const qtyEl = document.getElementById('new-part-qty');
-                const vendorEl = document.getElementById('new-part-vendor');
-                const statusEl = document.getElementById('new-part-status');
-                const name = nameEl ? nameEl.value.trim() : '';
-                const qty = qtyEl ? Number(qtyEl.value) || 1 : 1;
-                const vendor = vendorEl ? vendorEl.value.trim() : '';
-                const status = statusEl ? statusEl.value : 'To Collect';
-                if (!name) return showToast('Please enter part name', 'error');
-                const parts = window.currentParts || [];
-                parts.push({ name, qty, vendor, status });
-                window.currentParts = parts;
-                renderPartsList(parts);
-            }
-            if (e.target && e.target.id === 'btn-save-parts') {
-                saveParts();
-            }
-            if (e.target && e.target.id === 'btn-refresh-parts') {
-                loadParts(window.currentEditingId);
-            }
-        });
-
-        async function saveParts() {
-            try {
-                const parts = window.currentParts || [];
-                const res = await fetchAPI(`save_parts&id=${window.currentEditingId}`, 'POST', { parts });
-                if (res && res.status === 'saved') {
-                    showToast('Parts saved', 'success');
-                }
-            } catch (e) {
-                console.error('saveParts error', e);
-                showToast('Failed to save parts', 'error');
-            }
-        }
 
         window.quickAcceptReschedule = async (id) => {
             const t = transfers.find(i => i.id == id);
