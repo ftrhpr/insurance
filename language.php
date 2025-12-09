@@ -195,6 +195,10 @@ function initialize_default_translations() {
         'sms.completed' => "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
         'sms.reschedule_accepted' => "Hello {name}, your reschedule request has been approved! New appointment: {date}. Ref: {plate}. - OTOMOTORS",
 
+        // Templates UI
+        'templates.review_title' => 'Review Request',
+        'templates.review_tag' => 'Review',
+
         // Common actions
         'action.save' => 'Save',
         'action.cancel' => 'Cancel',
@@ -295,6 +299,42 @@ function initialize_default_translations() {
         'sms.parts_arrived' => "გამარჯობა {name}, თქვენი ნაწილები მოვიდა! დაადასტურეთ ვიზიტი აქ: {link} - OTOMOTORS",
         'sms.completed' => "{plate} სერვისი დასრულებულია. გმადლობთ OTOMOTORS-ის არჩევისთვის! შეაფასეთ თქვენი გამოცდილება: {link}",
         'sms.reschedule_accepted' => "გამარჯობა {name}, თქვენი გადავადების მოთხოვნა დადასტურებულია! ახალი დანიშვნა: {date}. მიმართ: {plate}. - OTOMOTORS"
+        ,
+        // Review template UI (Georgian)
+        'templates.review_title' => 'შეფასების მოთხოვნა',
+        'templates.review_tag' => 'შეფასება'
+    ];
+
+    // Russian translations
+    $russian_translations = [
+        'nav.dashboard' => 'Панель',
+        'nav.transfers' => 'Переводы',
+        'nav.vehicles' => 'Транспорт',
+        'nav.reviews' => 'Отзывы',
+        'nav.templates' => 'Шаблоны',
+        'nav.users' => 'Пользователи',
+        'nav.logout' => 'Выйти',
+
+        // Dashboard
+        'dashboard.title' => 'Панель управления OTOMOTORS',
+        'dashboard.quick_import' => 'Быстрый импорт',
+        'dashboard.quick_import_desc' => 'Вставьте текст SMS или выписки банка для автоматического обнаружения переводов.',
+        'dashboard.manual_create' => 'Создать вручную',
+        'dashboard.sample' => 'Пример',
+        'dashboard.detect' => 'Обнаружить',
+        'dashboard.ready_to_import' => 'Готово к импорту',
+        'dashboard.confirm_save' => 'Подтвердить и сохранить',
+        'dashboard.search_placeholder' => 'Поиск по номерам, именам, телефонам...',
+
+        // SMS Templates
+        'sms.registered' => "Здравствуйте {name}, оплата получена. Номер: {plate}. Добро пожаловать в OTOMOTORS.",
+        'sms.schedule' => "Здравствуйте {name}, ваша запись на сервис: {date}. Номер: {plate}.",
+        'sms.parts_arrived' => "Здравствуйте {name}, детали для {plate} прибыли. Подтвердите сервис: {link} - OTOMOTORS",
+        'sms.completed' => "Сервис для {plate} завершён. Спасибо что выбрали OTOMOTORS! Оцените: {link}",
+
+        // Review template UI
+        'templates.review_title' => 'Запрос отзыва',
+        'templates.review_tag' => 'Отзыв'
     ];
 
     try {
@@ -313,6 +353,13 @@ function initialize_default_translations() {
             $stmt = $pdo->prepare("INSERT IGNORE INTO translations (translation_key, language_code, translation_text, created_at, updated_at)
                                   VALUES (?, ?, ?, NOW(), NOW())");
             $stmt->execute([$key, 'ka', $text]);
+        }
+
+        // Insert Russian translations
+        foreach ($russian_translations as $key => $text) {
+            $stmt = $pdo->prepare("INSERT IGNORE INTO translations (translation_key, language_code, translation_text, created_at, updated_at)
+                                  VALUES (?, ?, ?, NOW(), NOW())");
+            $stmt->execute([$key, 'ru', $text]);
         }
 
         return true;
