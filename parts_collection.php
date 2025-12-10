@@ -286,8 +286,16 @@ if (empty($_SESSION['user_id'])) {
                         </div>
 
                         <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
-
-                        <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200/50">
+                            <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                <i data-lucide="activity" class="w-4 h-4 mr-2 text-blue-600"></i>
+                                Status
+                            </label>
+                            <select id="editStatus" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900">
+                                <option value="pending">Pending</option>
+                                <option value="collected">Collected</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
                             <button type="button" onclick="closeModal()" class="px-6 py-3 border-2 border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                                 <i data-lucide="x" class="w-4 h-4 mr-2 inline"></i>
                                 Cancel
