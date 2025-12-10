@@ -281,12 +281,12 @@ if (empty($_SESSION['user_id'])) {
 
     <!-- Edit Modal -->
     <div id="editModal" class="modal fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="flex items-center justify-center min-h-screen p-6">
             <!-- Backdrop -->
             <div class="fixed inset-0 bg-gradient-to-br from-gray-900/80 to-purple-900/80 backdrop-blur-sm transition-opacity"></div>
 
             <!-- Modal Content -->
-            <div class="relative bg-white rounded-3xl shadow-2xl transform transition-all max-w-2xl w-full mx-4 border border-white/20">
+            <div class="relative bg-white rounded-3xl shadow-2xl transform transition-all max-w-5xl w-full mx-auto border border-white/20">
                 <div class="gradient-header px-6 py-4 rounded-t-3xl">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
