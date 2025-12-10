@@ -451,7 +451,76 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                     </div>
                 </section>
-            </div>
+
+                <!-- Completed Cases Table -->
+                <section>
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <div class="p-1.5 bg-emerald-100 rounded-lg">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+                            </div>
+                            <?php echo __('dashboard.completed_cases', 'Completed Cases'); ?>
+                        </h2>
+                        <span id="completed-count" class="text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full shadow-sm">0 completed</span>
+                    </div>
+
+                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                    <tr>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="car" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="coins" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.completed_date', 'Completed Date'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="phone" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.phone', 'Phone'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="star" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.review', 'Review'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4 text-right">
+                                            <div class="flex items-center gap-2 justify-end">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.view_details', 'View Details'); ?></span>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="completed-table-body" class="divide-y divide-slate-100 bg-white">
+                                    <!-- Completed cases rows injected by JS -->
+                                </tbody>
+                            </table>
+                            <div id="completed-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                <div class="bg-emerald-50 p-4 rounded-full mb-4 ring-8 ring-emerald-50/50">
+                                    <i data-lucide="check-circle" class="w-8 h-8 text-emerald-300"></i>
+                                </div>
+                                <h3 class="text-slate-900 font-medium"><?php echo __('dashboard.no_completed_cases', 'No completed cases yet'); ?></h3>
+                                <p class="text-slate-400 text-sm mt-1 max-w-xs"><?php echo __('dashboard.completed_cases_desc', 'Completed service cases will appear here.'); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
             <!-- VIEW: VEHICLES -->
             <div id="view-vehicles" class="hidden space-y-6">
@@ -1765,10 +1834,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             const newContainer = document.getElementById('new-cases-grid');
             const activeContainer = document.getElementById('table-body');
-            newContainer.innerHTML = ''; activeContainer.innerHTML = '';
+            const completedContainer = document.getElementById('completed-table-body');
+            newContainer.innerHTML = ''; activeContainer.innerHTML = ''; completedContainer.innerHTML = '';
             
             let newCount = 0;
             let activeCount = 0;
+            let completedCount = 0;
 
             transfers.forEach(t => {
                 // 1. Text Search Filter
@@ -1941,18 +2012,98 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 }
                             </td>
                         </tr>`;
+                } else if (t.status === 'Completed') {
+                    completedCount++;
+                    
+                    // Completed date formatting
+                    let completedDateDisplay = '<span class="text-slate-400 text-xs">Unknown</span>';
+                    if (t.updated_at) {
+                        const compDate = new Date(t.updated_at.replace(' ', 'T'));
+                        const compDateStr = compDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        completedDateDisplay = `<span class="text-emerald-700 font-semibold text-xs">${compDateStr}</span>`;
+                    }
+                    
+                    // Review stars display for completed cases
+                    let reviewDisplay = '<span class="text-slate-400 text-xs">No review</span>';
+                    if (t.reviewStars && t.reviewStars > 0) {
+                        const stars = '⭐'.repeat(parseInt(t.reviewStars));
+                        const starRating = parseInt(t.reviewStars);
+                        const starColor = starRating >= 4 ? 'text-yellow-500' : starRating >= 3 ? 'text-orange-500' : 'text-red-500';
+                        reviewDisplay = `<div class="flex items-center gap-1">
+                            <span class="${starColor} text-sm">${stars}</span>
+                            <span class="text-xs text-slate-600">(${starRating}/5)</span>
+                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-blue-500" title="${escapeHtml(t.reviewComment)}"></i>` : ''}
+                        </div>`;
+                    }
+                    
+                    const hasPhone = t.phone ? 
+                        `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(t.phone)}</span>` : 
+                        `<span class="text-slate-400 text-xs">No phone</span>`;
+
+                    completedContainer.innerHTML += `
+                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:via-green-50/30 hover:to-emerald-50/50 transition-all group cursor-pointer" onclick="window.openEditModal(${t.id})">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-gradient-to-br from-emerald-500 to-green-600 p-2.5 rounded-xl shadow-lg shadow-emerald-500/25 group-hover:shadow-emerald-500/40 transition-all">
+                                        <i data-lucide="check-circle" class="w-4 h-4 text-white"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(t.plate)}</span>
+                                            <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
+                                        </div>
+                                        <div class="font-semibold text-xs text-slate-700">${escapeHtml(t.name)}</div>
+                                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                            <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                                <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
+                                            </span>
+                                            ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
+                                            </span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
+                                    <span class="font-bold text-emerald-600 text-base">${escapeHtml(t.amount)}₾</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="calendar-check" class="w-4 h-4 text-emerald-600"></i>
+                                    ${completedDateDisplay}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                ${hasPhone}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${reviewDisplay}
+                            </td>
+                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                                <button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-emerald-600 p-2.5 hover:bg-emerald-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95 group-hover:bg-white">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>`;
                 }
             });
 
             const newCountEl = document.getElementById('new-count');
             const recordCountEl = document.getElementById('record-count');
+            const completedCountEl = document.getElementById('completed-count');
             const newCasesEmptyEl = document.getElementById('new-cases-empty');
             const emptyStateEl = document.getElementById('empty-state');
+            const completedEmptyStateEl = document.getElementById('completed-empty-state');
             
             if (newCountEl) newCountEl.innerText = `${newCount}`;
             if (recordCountEl) recordCountEl.innerText = `${activeCount} active`;
+            if (completedCountEl) completedCountEl.innerText = `${completedCount} completed`;
             if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
             if (emptyStateEl) emptyStateEl.classList.toggle('hidden', activeCount > 0);
+            if (completedEmptyStateEl) completedEmptyStateEl.classList.toggle('hidden', completedCount > 0);
             lucide.createIcons();
         }
 
