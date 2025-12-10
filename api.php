@@ -1085,6 +1085,27 @@ try {
         jsonResponse(['success' => true]);
     }
 
+    // --------------------------------------------------
+    // PARTS SUGGESTIONS ENDPOINT
+    // --------------------------------------------------
+    if ($action === 'get_parts_suggestions' && $method === 'GET') {
+        $stmt = $pdo->query("SELECT DISTINCT JSON_EXTRACT(parts_list, '$[*].name') as part_names FROM parts_collections");
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $suggestions = [];
+        foreach ($results as $result) {
+            $names = json_decode($result['part_names'], true);
+            if (is_array($names)) {
+                $suggestions = array_merge($suggestions, $names);
+            }
+        }
+        
+        $uniqueSuggestions = array_unique(array_filter($suggestions));
+        sort($uniqueSuggestions);
+        
+        jsonResponse(['suggestions' => array_values($uniqueSuggestions)]);
+    }
+
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(['error' => $e->getMessage()]);

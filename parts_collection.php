@@ -72,10 +72,11 @@ if (empty($_SESSION['user_id'])) {
                                 Create Collection
                             </button>
                         </div>
-                    </form>
-                </div>
+            </form>
+        </div>
 
-                <!-- Collections List -->
+        <!-- Part Suggestions Datalist -->
+        <datalist id="partSuggestions"></datalist>                <!-- Collections List -->
                 <div class="bg-white shadow rounded-lg">
                     <div class="px-4 py-5 sm:p-6">
                         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Existing Collections</h3>
@@ -142,12 +143,14 @@ if (empty($_SESSION['user_id'])) {
     <script>
         let transfers = [];
         let collections = [];
+        let partSuggestions = [];
         let currentParts = [];
 
         // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadTransfers();
             loadCollections();
+            loadPartSuggestions();
             lucide.createIcons();
         });
 
@@ -171,6 +174,33 @@ if (empty($_SESSION['user_id'])) {
                 console.error('Error loading transfers:', error);
                 showToast('Error loading transfers', 'error');
             }
+        }
+
+        // Load part name suggestions
+        async function loadPartSuggestions() {
+            try {
+                const response = await fetch('api.php?action=get_parts_suggestions');
+                const data = await response.json();
+                partSuggestions = data.suggestions || [];
+                
+                // Update existing datalist
+                updateDatalist();
+            } catch (error) {
+                console.error('Error loading part suggestions:', error);
+            }
+        }
+
+        // Update datalist with suggestions
+        function updateDatalist() {
+            const datalist = document.getElementById('partSuggestions');
+            if (!datalist) return;
+            
+            datalist.innerHTML = '';
+            partSuggestions.forEach(suggestion => {
+                const option = document.createElement('option');
+                option.value = suggestion;
+                datalist.appendChild(option);
+            });
         }
 
         // Load collections
@@ -264,7 +294,7 @@ if (empty($_SESSION['user_id'])) {
             partDiv.innerHTML = `
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700">Part Name</label>
-                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 part-name" value="${name}" required>
+                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 part-name" value="${name}" list="partSuggestions" required>
                 </div>
                 <div class="w-24">
                     <label class="block text-sm font-medium text-gray-700">Qty</label>
@@ -376,7 +406,7 @@ if (empty($_SESSION['user_id'])) {
             partDiv.innerHTML = `
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700">Part Name</label>
-                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 part-name" value="${name}" required>
+                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 part-name" value="${name}" list="partSuggestions" required>
                 </div>
                 <div class="w-24">
                     <label class="block text-sm font-medium text-gray-700">Qty</label>
