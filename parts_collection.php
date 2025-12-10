@@ -127,63 +127,67 @@ if (empty($_SESSION['user_id'])) {
             <div class="px-4 py-6 sm:px-0">
                 <!-- Create Collection Form -->
                 <div class="glass-card shadow-xl rounded-3xl p-8 mb-8 card-hover border border-white/20">
-                    <div class="flex items-center space-x-3 mb-6">
-                        <div class="w-12 h-12 gradient-accent rounded-2xl flex items-center justify-center shadow-lg float-animation">
-                            <i data-lucide="plus-circle" class="w-7 h-7 text-white"></i>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 gradient-accent rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="plus-circle" class="w-5 h-5 text-white"></i>
                         </div>
                         <div>
-                            <h2 class="text-xl font-bold text-gray-900">Create New Parts Collection</h2>
-                            <p class="text-sm text-gray-600">Select a transfer order and add the required parts</p>
+                            <h2 class="text-lg font-bold text-gray-900">Create New Parts Collection</h2>
+                            <p class="text-xs text-gray-600">Select transfer and add parts</p>
                         </div>
                     </div>
 
-                    <form id="collectionForm" class="space-y-6">
-                        <div class="bg-white/50 rounded-2xl p-6 border border-white/30">
-                            <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="file-text" class="w-4 h-4 mr-2 text-indigo-600"></i>
-                                Select Transfer Order
-                            </label>
-                            <select id="transferSelect" class="mt-1 block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-4 py-3 text-gray-900" required>
-                                <option value="">Choose a transfer order...</option>
-                            </select>
+                    <form id="collectionForm" class="space-y-4">
+                        <!-- Transfer and Manager Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white/50 rounded-xl p-4 border border-white/30">
+                                <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i data-lucide="file-text" class="w-4 h-4 mr-2 text-indigo-600"></i>
+                                    Transfer Order
+                                </label>
+                                <select id="transferSelect" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 text-sm text-gray-900" required>
+                                    <option value="">Choose transfer...</option>
+                                </select>
+                            </div>
+
+                            <div class="bg-white/50 rounded-xl p-4 border border-white/30">
+                                <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
+                                    Manager (Optional)
+                                </label>
+                                <select id="assignedManager" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-orange-400 focus:ring-orange-400 px-3 py-2 text-sm text-gray-900">
+                                    <option value="">Unassigned</option>
+                                    <!-- Managers will be loaded here -->
+                                </select>
+                            </div>
                         </div>
 
-                        <div class="bg-white/50 rounded-2xl p-6 border border-white/30">
-                            <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
-                                Assign Manager (Optional)
-                            </label>
-                            <select id="assignedManager" class="mt-1 block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-orange-400 focus:ring-orange-400 px-4 py-3 text-gray-900">
-                                <option value="">Unassigned</option>
-                                <!-- Managers will be loaded here -->
-                            </select>
-                        </div>
-
-                        <div class="bg-white/50 rounded-2xl p-6 border border-white/30">
-                            <div class="flex items-center justify-between mb-4">
+                        <!-- Parts Section -->
+                        <div class="bg-white/50 rounded-xl p-4 border border-white/30">
+                            <div class="flex items-center justify-between mb-3">
                                 <label class="block text-sm font-semibold text-gray-800 flex items-center">
                                     <i data-lucide="package" class="w-4 h-4 mr-2 text-purple-600"></i>
                                     Parts List
                                 </label>
-                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Add multiple parts as needed</span>
+                                <button type="button" onclick="addPart()" class="inline-flex items-center px-3 py-1.5 border-2 border-dashed border-indigo-300 rounded-lg text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 transition-all duration-200">
+                                    <i data-lucide="plus" class="w-3 h-3 mr-1"></i>
+                                    Add Part
+                                </button>
                             </div>
-                            <div id="partsList" class="space-y-3 mb-4">
+                            <div id="partsList" class="space-y-2 mb-3">
                                 <!-- Parts will be added here -->
                             </div>
-                            <button type="button" onclick="addPart()" class="inline-flex items-center px-4 py-2 border-2 border-dashed border-indigo-300 rounded-xl text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 transition-all duration-200">
-                                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                                Add Part
-                            </button>
                         </div>
 
-                        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-                            <button type="button" onclick="clearForm()" class="px-6 py-3 border-2 border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
-                                <i data-lucide="x" class="w-4 h-4 mr-2 inline"></i>
-                                Clear Form
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end space-x-3 pt-3 border-t border-gray-200">
+                            <button type="button" onclick="clearForm()" class="px-4 py-2 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                                <i data-lucide="x" class="w-4 h-4 mr-1 inline"></i>
+                                Clear
                             </button>
-                            <button type="submit" class="btn-gradient px-6 py-3 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <i data-lucide="save" class="w-4 h-4 mr-2 inline"></i>
-                                Create Collection
+                            <button type="submit" class="btn-gradient px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <i data-lucide="save" class="w-4 h-4 mr-1 inline"></i>
+                                Create
                             </button>
                         </div>
                     </form>
@@ -229,80 +233,87 @@ if (empty($_SESSION['user_id'])) {
 
             <!-- Modal Content -->
             <div class="relative bg-white rounded-3xl shadow-2xl transform transition-all max-w-2xl w-full mx-4 border border-white/20">
-                <div class="gradient-header px-8 py-6 rounded-t-3xl">
+                <div class="gradient-header px-6 py-4 rounded-t-3xl">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                                <i data-lucide="edit-3" class="w-6 h-6 text-white"></i>
+                            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                                <i data-lucide="edit-3" class="w-5 h-5 text-white"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold text-white">Edit Parts Collection</h3>
-                                <p class="text-white/80 text-sm">Modify collection details and parts</p>
+                                <h3 class="text-lg font-bold text-white">Edit Parts Collection</h3>
+                                <p class="text-white/80 text-xs">Modify collection details</p>
                             </div>
                         </div>
-                        <button onclick="closeModal()" class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg">
-                            <i data-lucide="x" class="w-6 h-6"></i>
+                        <button onclick="closeModal()" class="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
+                            <i data-lucide="x" class="w-5 h-5"></i>
                         </button>
                     </div>
                 </div>
-                <div class="bg-gradient-to-br from-slate-50 to-blue-50 px-8 py-6 rounded-b-3xl">
-                    <form id="editForm" class="space-y-6">
+                <div class="bg-gradient-to-br from-slate-50 to-blue-50 px-6 py-4 rounded-b-3xl">
+                    <form id="editForm" class="space-y-4">
                         <input type="hidden" id="editId">
-                        <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
-                            <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                        <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
+                            <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
                                 <i data-lucide="file-text" class="w-4 h-4 mr-2 text-indigo-600"></i>
                                 Transfer Order
                             </label>
-                            <div id="editTransferInfo" class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border">
+                            <div id="editTransferInfo" class="text-xs text-gray-600 bg-gray-50 rounded-lg p-2 border">
                                 <!-- Transfer info will be loaded here -->
                             </div>
                         </div>
 
-                        <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
-                            <div class="flex items-center justify-between mb-4">
+                        <!-- Manager and Status Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
+                                <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
+                                    Assigned Manager
+                                </label>
+                                <select id="editAssignedManager" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900">
+                                    <option value="">Unassigned</option>
+                                    <!-- Managers will be loaded here -->
+                                </select>
+                            </div>
+
+                            <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
+                                <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i data-lucide="activity" class="w-4 h-4 mr-2 text-blue-600"></i>
+                                    Status
+                                </label>
+                                <select id="editStatus" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900">
+                                    <option value="pending">Pending</option>
+                                    <option value="collected">Collected</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Parts Section -->
+                        <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
+                            <div class="flex items-center justify-between mb-3">
                                 <label class="block text-sm font-semibold text-gray-800 flex items-center">
                                     <i data-lucide="package" class="w-4 h-4 mr-2 text-purple-600"></i>
                                     Parts List
                                 </label>
-                                <button type="button" onclick="addEditPart()" class="inline-flex items-center px-3 py-2 border-2 border-dashed border-purple-300 rounded-lg text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 transition-all duration-200">
-                                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i>
+                                <button type="button" onclick="addEditPart()" class="inline-flex items-center px-3 py-1.5 border-2 border-dashed border-purple-300 rounded-lg text-xs font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 transition-all duration-200">
+                                    <i data-lucide="plus" class="w-3 h-3 mr-1"></i>
                                     Add Part
                                 </button>
                             </div>
-                            <div id="editPartsList" class="space-y-3">
+                            <div id="editPartsList" class="space-y-2">
                                 <!-- Parts will be added here -->
                             </div>
                         </div>
 
-                        <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
-                            <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
-                                Assigned Manager
-                            </label>
-                            <select id="editAssignedManager" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900">
-                                <option value="">Unassigned</option>
-                                <!-- Managers will be loaded here -->
-                            </select>
-                        </div>
-
-                        <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
-                            <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="activity" class="w-4 h-4 mr-2 text-blue-600"></i>
-                                Status
-                            </label>
-                            <select id="editStatus" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900">
-                                <option value="pending">Pending</option>
-                                <option value="collected">Collected</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
-                        </div>
-                            <button type="button" onclick="closeModal()" class="px-6 py-3 border-2 border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
-                                <i data-lucide="x" class="w-4 h-4 mr-2 inline"></i>
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end space-x-3 pt-3 border-t border-gray-200">
+                            <button type="button" onclick="closeModal()" class="px-4 py-2 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                                <i data-lucide="x" class="w-4 h-4 mr-1 inline"></i>
                                 Cancel
                             </button>
-                            <button type="submit" class="btn-gradient px-6 py-3 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <i data-lucide="save" class="w-4 h-4 mr-2 inline"></i>
-                                Update Collection
+                            <button type="submit" class="btn-gradient px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <i data-lucide="save" class="w-4 h-4 mr-1 inline"></i>
+                                Update
                             </button>
                         </div>
                     </form>
@@ -580,31 +591,31 @@ if (empty($_SESSION['user_id'])) {
         function addPart(name = '', quantity = 1, price = 0) {
             const partsList = document.getElementById('partsList');
             const partDiv = document.createElement('div');
-            partDiv.className = 'flex space-x-3 items-end part-item bg-white/40 rounded-xl p-4 border border-white/30 backdrop-blur-sm';
+            partDiv.className = 'flex space-x-2 items-end part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
             partDiv.innerHTML = `
                 <div class="flex-1">
-                    <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                        <i data-lucide="tag" class="w-4 h-4 mr-2 text-indigo-600"></i>
+                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                        <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i>
                         Part Name
                     </label>
-                    <input type="text" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 placeholder-gray-500 part-name" value="${name}" list="partSuggestions" placeholder="Enter part name..." required>
+                    <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" list="partSuggestions" placeholder="Enter part name..." required>
                 </div>
-                <div class="w-28">
-                    <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                        <i data-lucide="hash" class="w-4 h-4 mr-2 text-purple-600"></i>
+                <div class="w-20">
+                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                        <i data-lucide="hash" class="w-3 h-3 mr-1 text-purple-600"></i>
                         Qty
                     </label>
-                    <input type="number" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 text-center part-quantity" value="${quantity}" min="1" required>
+                    <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center part-quantity" value="${quantity}" min="1" required>
                 </div>
-                <div class="w-36">
-                    <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                        <i data-lucide="dollar-sign" class="w-4 h-4 mr-2 text-green-600"></i>
+                <div class="w-24">
+                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                        <i data-lucide="dollar-sign" class="w-3 h-3 mr-1 text-green-600"></i>
                         Price
                     </label>
-                    <input type="number" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>
+                    <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>
                 </div>
-                <button type="button" onclick="removePart(this)" class="mb-1 px-3 py-3 border-2 border-red-300 rounded-xl text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                <button type="button" onclick="removePart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
             `;
             partsList.appendChild(partDiv);
@@ -752,31 +763,31 @@ if (empty($_SESSION['user_id'])) {
         function addEditPart(name = '', quantity = 1, price = 0) {
             const editPartsList = document.getElementById('editPartsList');
             const partDiv = document.createElement('div');
-            partDiv.className = 'flex space-x-3 items-end part-item bg-white/40 rounded-xl p-4 border border-white/30 backdrop-blur-sm';
+            partDiv.className = 'flex space-x-2 items-end part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
             partDiv.innerHTML = `
                 <div class="flex-1">
-                    <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                        <i data-lucide="tag" class="w-4 h-4 mr-2 text-indigo-600"></i>
+                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                        <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i>
                         Part Name
                     </label>
-                    <input type="text" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 placeholder-gray-500 part-name" value="${name}" list="partSuggestions" placeholder="Enter part name..." required>
+                    <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" list="partSuggestions" placeholder="Enter part name..." required>
                 </div>
-                <div class="w-28">
-                    <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                        <i data-lucide="hash" class="w-4 h-4 mr-2 text-purple-600"></i>
+                <div class="w-20">
+                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                        <i data-lucide="hash" class="w-3 h-3 mr-1 text-purple-600"></i>
                         Qty
                     </label>
-                    <input type="number" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 text-center part-quantity" value="${quantity}" min="1" required>
+                    <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center part-quantity" value="${quantity}" min="1" required>
                 </div>
-                <div class="w-36">
-                    <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                        <i data-lucide="dollar-sign" class="w-4 h-4 mr-2 text-green-600"></i>
+                <div class="w-24">
+                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                        <i data-lucide="dollar-sign" class="w-3 h-3 mr-1 text-green-600"></i>
                         Price
                     </label>
-                    <input type="number" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>
+                    <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>
                 </div>
-                <button type="button" onclick="removeEditPart(this)" class="mb-1 px-3 py-3 border-2 border-red-300 rounded-xl text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                <button type="button" onclick="removeEditPart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
             `;
             editPartsList.appendChild(partDiv);
