@@ -337,8 +337,8 @@ try {
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
-        // Includes review columns and reschedule data
-        $stmt = $pdo->prepare("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers ORDER BY created_at DESC");
+        // Includes review columns and reschedule data, exclude completed transfers
+        $stmt = $pdo->prepare("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status != 'Completed' ORDER BY created_at DESC");
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {

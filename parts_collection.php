@@ -79,6 +79,52 @@ if (empty($_SESSION['user_id'])) {
             background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
         }
 
+        /* Searchable Dropdown Styles */
+        .search-dropdown {
+            position: relative;
+        }
+
+        .search-dropdown input {
+            position: relative;
+        }
+
+        .search-dropdown .dropdown-arrow {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            transition: transform 0.2s;
+        }
+
+        .search-dropdown .dropdown-arrow.open {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .dropdown-options {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+
+        .dropdown-option {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.15s;
+        }
+
+        .dropdown-option:hover {
+            background-color: #f8fafc;
+        }
+
+        .dropdown-option:last-child {
+            border-bottom: none;
+        }
+
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
@@ -145,9 +191,18 @@ if (empty($_SESSION['user_id'])) {
                                     <i data-lucide="file-text" class="w-4 h-4 mr-2 text-indigo-600"></i>
                                     Transfer Order
                                 </label>
-                                <select id="transferSelect" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 text-sm text-gray-900" required>
-                                    <option value="">Choose transfer...</option>
-                                </select>
+                                <div class="relative search-dropdown">
+                                    <input type="text" id="transferSearch" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 pr-10 text-sm text-gray-900" placeholder="Search transfers..." autocomplete="off">
+                                    <div class="dropdown-arrow">
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+                                    </div>
+                                    <input type="hidden" id="transferSelect" name="transfer_id" required>
+                                    <div id="transferDropdown" class="absolute z-10 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden dropdown-options">
+                                        <div id="transferOptions" class="py-1">
+                                            <!-- Options will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="bg-white/50 rounded-xl p-4 border border-white/30">
@@ -346,7 +401,45 @@ if (empty($_SESSION['user_id'])) {
                     await saveEdit();
                 });
             }
+
+            // Initialize searchable transfer dropdown
+            initTransferSearch();
         });
+
+        // Initialize transfer search functionality
+        function initTransferSearch() {
+            const searchInput = document.getElementById('transferSearch');
+            const dropdown = document.getElementById('transferDropdown');
+
+            if (!searchInput || !dropdown) return;
+
+            // Focus event - show dropdown
+            searchInput.addEventListener('focus', () => {
+                updateTransferDropdown(searchInput.value);
+                toggleTransferDropdown(true);
+            });
+
+            // Input event - filter results
+            searchInput.addEventListener('input', (e) => {
+                updateTransferDropdown(e.target.value);
+                toggleTransferDropdown(true);
+            });
+
+            // Click outside to close dropdown
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    toggleTransferDropdown(false);
+                }
+            });
+
+            // Keyboard navigation
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    toggleTransferDropdown(false);
+                    searchInput.blur();
+                }
+            });
+        }
 
         // Load transfers for dropdown
         async function loadTransfers() {
@@ -354,19 +447,76 @@ if (empty($_SESSION['user_id'])) {
                 const response = await fetch('api.php?action=get_transfers');
                 const data = await response.json();
                 transfers = data.transfers || [];
-                
-                const select = document.getElementById('transferSelect');
-                select.innerHTML = '<option value="">Choose a transfer...</option>';
-                
-                transfers.forEach(transfer => {
-                    const option = document.createElement('option');
-                    option.value = transfer.id;
-                    option.textContent = `${transfer.plate} - ${transfer.name} (${transfer.status})`;
-                    select.appendChild(option);
-                });
+
+                // Populate searchable dropdown
+                updateTransferDropdown();
             } catch (error) {
                 console.error('Error loading transfers:', error);
                 showToast('Error loading transfers', 'error');
+            }
+        }
+
+        // Update transfer dropdown with search functionality
+        function updateTransferDropdown(filter = '') {
+            const optionsContainer = document.getElementById('transferOptions');
+            if (!optionsContainer) return;
+
+            optionsContainer.innerHTML = '';
+
+            const filteredTransfers = transfers.filter(transfer => {
+                const searchText = `${transfer.plate} ${transfer.name} ${transfer.status}`.toLowerCase();
+                return searchText.includes(filter.toLowerCase());
+            });
+
+            if (filteredTransfers.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.className = 'dropdown-option text-center text-gray-500';
+                noResults.textContent = 'No transfers found';
+                optionsContainer.appendChild(noResults);
+                return;
+            }
+
+            filteredTransfers.forEach(transfer => {
+                const option = document.createElement('div');
+                option.className = 'dropdown-option';
+                option.innerHTML = `
+                    <div class="font-medium text-gray-900">${transfer.plate} - ${transfer.name}</div>
+                    <div class="text-xs text-gray-600 capitalize">Status: ${transfer.status}</div>
+                `;
+                option.addEventListener('click', () => selectTransfer(transfer));
+                optionsContainer.appendChild(option);
+            });
+        }
+
+        // Select a transfer from dropdown
+        function selectTransfer(transfer) {
+            const searchInput = document.getElementById('transferSearch');
+            const hiddenInput = document.getElementById('transferSelect');
+            const dropdown = document.getElementById('transferDropdown');
+
+            searchInput.value = `${transfer.plate} - ${transfer.name} (${transfer.status})`;
+            hiddenInput.value = transfer.id;
+            toggleTransferDropdown(false);
+
+            // Remove required validation styling if present
+            searchInput.classList.remove('border-red-300');
+            searchInput.classList.add('border-gray-200');
+        }
+
+        // Show/hide dropdown
+        function toggleTransferDropdown(show = null) {
+            const dropdown = document.getElementById('transferDropdown');
+            const arrow = document.querySelector('.dropdown-arrow i');
+
+            if (show === null) {
+                dropdown.classList.toggle('hidden');
+                arrow?.classList.toggle('open');
+            } else if (show) {
+                dropdown.classList.remove('hidden');
+                arrow?.classList.add('open');
+            } else {
+                dropdown.classList.add('hidden');
+                arrow?.classList.remove('open');
             }
         }
 
@@ -629,10 +779,12 @@ if (empty($_SESSION['user_id'])) {
 
         // Clear form
         function clearForm() {
+            document.getElementById('transferSearch').value = '';
             document.getElementById('transferSelect').value = '';
             document.getElementById('assignedManager').value = '';
             document.getElementById('partsList').innerHTML = '';
             currentParts = [];
+            toggleTransferDropdown(false);
         }
 
         // Submit collection form
@@ -642,6 +794,10 @@ if (empty($_SESSION['user_id'])) {
             const transferId = document.getElementById('transferSelect').value;
             const assignedManagerId = document.getElementById('assignedManager').value;
             if (!transferId) {
+                const searchInput = document.getElementById('transferSearch');
+                searchInput.classList.add('border-red-300');
+                searchInput.classList.remove('border-gray-200');
+                searchInput.focus();
                 showToast('Please select a transfer', 'error');
                 return;
             }
