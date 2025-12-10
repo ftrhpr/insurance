@@ -300,20 +300,6 @@ if (empty($_SESSION['user_id'])) {
 
         // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing parts collection page');
-
-            // Ensure modal elements exist before proceeding
-            const requiredElements = ['editModal', 'editId', 'editStatus', 'editForm', 'editTransferInfo', 'editPartsList'];
-            const missingElements = requiredElements.filter(id => !document.getElementById(id));
-
-            if (missingElements.length > 0) {
-                console.error('Missing required elements:', missingElements);
-                showToast('Error: Page not properly loaded', 'error');
-                return;
-            }
-
-            console.log('All required elements found');
-
             loadTransfers();
             loadCollections();
             loadPartSuggestions();
@@ -321,11 +307,12 @@ if (empty($_SESSION['user_id'])) {
 
             // Add event listener for edit form
             const editForm = document.getElementById('editForm');
-            editForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await saveEdit();
-            });
-            console.log('Edit form event listener added');
+            if (editForm) {
+                editForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    await saveEdit();
+                });
+            }
         });
 
         // Load transfers for dropdown
@@ -531,21 +518,21 @@ if (empty($_SESSION['user_id'])) {
                         <i data-lucide="tag" class="w-4 h-4 mr-2 text-indigo-600"></i>
                         Part Name
                     </label>
-                    <input type="text" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 placeholder-gray-500" value="${name}" list="partSuggestions" placeholder="Enter part name..." required>
+                    <input type="text" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 placeholder-gray-500 part-name" value="${name}" list="partSuggestions" placeholder="Enter part name..." required>
                 </div>
                 <div class="w-28">
                     <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
                         <i data-lucide="hash" class="w-4 h-4 mr-2 text-purple-600"></i>
                         Qty
                     </label>
-                    <input type="number" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 text-center" value="${quantity}" min="1" required>
+                    <input type="number" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 text-center part-quantity" value="${quantity}" min="1" required>
                 </div>
                 <div class="w-36">
                     <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
                         <i data-lucide="dollar-sign" class="w-4 h-4 mr-2 text-green-600"></i>
                         Price
                     </label>
-                    <input type="number" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900" value="${price}" step="0.01" min="0" placeholder="0.00" required>
+                    <input type="number" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>
                 </div>
                 <button type="button" onclick="removePart(this)" class="mb-1 px-3 py-3 border-2 border-red-300 rounded-xl text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm">
                     <i data-lucide="trash-2" class="w-5 h-5"></i>
@@ -585,10 +572,23 @@ if (empty($_SESSION['user_id'])) {
                 return;
             }
 
-            partItems.forEach(item => {
-                const name = item.querySelector('.part-name').value.trim();
-                const quantity = parseInt(item.querySelector('.part-quantity').value);
-                const price = parseFloat(item.querySelector('.part-price').value);
+            partItems.forEach((item, index) => {
+                const nameInput = item.querySelector('.part-name');
+                const quantityInput = item.querySelector('.part-quantity');
+                const priceInput = item.querySelector('.part-price');
+                
+                if (!nameInput || !quantityInput || !priceInput) {
+                    console.error(`Part item ${index} missing required inputs:`, {
+                        nameInput,
+                        quantityInput,
+                        priceInput
+                    });
+                    return;
+                }
+
+                const name = nameInput.value.trim();
+                const quantity = parseInt(quantityInput.value);
+                const price = parseFloat(priceInput.value);
                 
                 if (name && quantity > 0 && price >= 0) {
                     parts.push({ name, quantity, price });
@@ -623,15 +623,6 @@ if (empty($_SESSION['user_id'])) {
 
         // Edit collection
         function editCollection(id) {
-            console.log('editCollection called with id:', id);
-            console.log('Available elements:', {
-                editModal: document.getElementById('editModal'),
-                editId: document.getElementById('editId'),
-                editStatus: document.getElementById('editStatus'),
-                editTransferInfo: document.getElementById('editTransferInfo'),
-                editPartsList: document.getElementById('editPartsList')
-            });
-
             const collection = collections.find(c => c.id == id);
             if (!collection) {
                 console.error('Collection not found:', id);
@@ -642,7 +633,6 @@ if (empty($_SESSION['user_id'])) {
             const editIdElement = document.getElementById('editId');
             if (editIdElement) {
                 editIdElement.value = id;
-                console.log('Set editId to:', id);
             } else {
                 console.error('editId element not found');
                 return;
@@ -655,14 +645,12 @@ if (empty($_SESSION['user_id'])) {
                     <div class="font-medium text-gray-900">${collection.plate} - ${collection.name}</div>
                     <div class="text-gray-600 mt-1">Status: <span class="capitalize">${collection.status}</span></div>
                 `;
-                console.log('Set transfer info');
             }
 
             // Set status
             const editStatusElement = document.getElementById('editStatus');
             if (editStatusElement) {
                 editStatusElement.value = collection.status;
-                console.log('Set status to:', collection.status);
             }
 
             // Load parts
@@ -671,8 +659,7 @@ if (empty($_SESSION['user_id'])) {
             if (editPartsList) {
                 editPartsList.innerHTML = '';
 
-                parts.forEach((part, index) => {
-                    console.log('Adding part:', index, part);
+                parts.forEach(part => {
                     addEditPart(part.name, part.quantity, part.price);
                 });
             }
@@ -681,7 +668,6 @@ if (empty($_SESSION['user_id'])) {
             const modal = document.getElementById('editModal');
             if (modal) {
                 modal.classList.add('active');
-                console.log('Modal shown');
             }
         }
 
@@ -748,7 +734,11 @@ if (empty($_SESSION['user_id'])) {
                 const priceInput = item.querySelector('.part-price');
 
                 if (!nameInput || !quantityInput || !priceInput) {
-                    console.error(`Part item ${index} missing required inputs`);
+                    console.error(`Part item ${index} missing required inputs:`, {
+                        nameInput,
+                        quantityInput,
+                        priceInput
+                    });
                     return;
                 }
 
