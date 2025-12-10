@@ -1890,128 +1890,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     Process Case <i data-lucide="arrow-right" class="w-3 h-3"></i>
                                 </button>
                             </div>
-                        </div>`;
-                } else {
-                    activeCount++;
-                    
-                    const statusColors = {
-                        'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                        'Called': 'bg-purple-100 text-purple-800 border-purple-200',
-                        'Parts Ordered': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                        'Parts Arrived': 'bg-teal-100 text-teal-800 border-teal-200',
-                        'Scheduled': 'bg-orange-100 text-orange-800 border-orange-200',
-                        'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                        'Issue': 'bg-red-100 text-red-800 border-red-200'
-                    };
-                    const badgeClass = statusColors[t.status] || 'bg-slate-100 text-slate-600 border-slate-200';
-                    
-                    const hasPhone = t.phone ? 
-                        `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(t.phone)}</span>` : 
-                        `<span class="text-red-400 text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Missing</span>`;
-                    
-                    // USER RESPONSE LOGIC
-                    let replyBadge = `<span class="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="help-circle" class="w-3 h-3"></i> Not Responded</span>`;
-                    
-                    if (t.user_response === 'Confirmed') {
-                        replyBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="check" class="w-3 h-3"></i> Confirmed</span>`;
-                    } else if (t.user_response === 'Reschedule Requested') {
-                        let rescheduleInfo = '';
-                        let quickAcceptBtn = '';
-                        if (t.rescheduleDate) {
-                            const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                            const dateStr = reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                            rescheduleInfo = `<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ${dateStr}</div>`;
-                            quickAcceptBtn = `<button onclick="event.stopPropagation(); window.quickAcceptReschedule(${t.id})" class="mt-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition-all active:scale-95 shadow-sm">
-                                <i data-lucide="check" class="w-3 h-3"></i> Accept
-                            </button>`;
-                        }
-                        replyBadge = `<div class="flex flex-col items-start gap-1">
-                            <span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
-                                <i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request
-                            </span>
-                            ${rescheduleInfo}
-                            ${quickAcceptBtn}
-                        </div>`;
-                    }
-
-                    // Service date formatting
-                    let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
-                    if (t.service_date) {
-                        const svcDate = new Date(t.service_date.replace(' ', 'T'));
-                        const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                        serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
-                            <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
-                            <span class="font-semibold">${svcDateStr}</span>
-                        </div>`;
-                    }
-                    
-                    // Review stars display
-                    let reviewDisplay = '';
-                    if (t.reviewStars && t.reviewStars > 0) {
-                        const stars = '⭐'.repeat(parseInt(t.reviewStars));
-                        reviewDisplay = `<div class="flex items-center gap-1 mt-1">
-                            <span class="text-xs">${stars}</span>
-                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
-                        </div>`;
-                    }
-
-                    activeContainer.innerHTML += `
-                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.openEditModal(${t.id})">
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all">
-                                        <i data-lucide="car" class="w-4 h-4 text-white"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(t.plate)}</span>
-                                            <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
-                                        </div>
-                                        <div class="font-semibold text-xs text-slate-700">${escapeHtml(t.name)}</div>
-                                        <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                            <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                                                <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
-                                            </span>
-                                            ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
-                                            </span>` : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
-                                    <span class="font-bold text-emerald-600 text-base">${escapeHtml(t.amount)}₾</span>
-                                </div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
-                                    ${t.status}
-                                </span>
-                            </td>
-                            <td class="px-5 py-4">
-                                ${hasPhone}
-                                ${reviewDisplay}
-                            </td>
-                            <td class="px-5 py-4">
-                                ${serviceDateDisplay}
-                            </td>
-                            <td class="px-5 py-4">
-                                ${replyBadge}
-                            </td>
-                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
-                                ${CAN_EDIT ? 
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2.5 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95 group-hover:bg-white">
-                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                    </button>` :
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-blue-600 p-2.5 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                    </button>`
-                                }
-                            </td>
-                        </tr>`;
                 } else if (t.status === 'Completed') {
                     completedCount++;
                     
@@ -2088,7 +1966,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </button>
                             </td>
                         </tr>`;
-                }
+                } else {
+                    activeCount++;
             });
 
             const newCountEl = document.getElementById('new-count');
