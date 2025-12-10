@@ -12,6 +12,10 @@ if (empty($_SESSION['user_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parts Collection - OTOMOTORS Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Suppress Tailwind CDN warning for development
+        console.log('Tailwind CSS loaded from CDN (development mode)');
+    </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         .modal { display: none; }
@@ -208,12 +212,13 @@ if (empty($_SESSION['user_id'])) {
 
     <!-- Edit Modal -->
     <div id="editModal" class="modal fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gradient-to-br from-gray-900/80 to-purple-900/80 backdrop-blur-sm"></div>
-            </div>
-            <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-white/20">
-                <div class="gradient-header px-8 py-6">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-gradient-to-br from-gray-900/80 to-purple-900/80 backdrop-blur-sm transition-opacity"></div>
+
+            <!-- Modal Content -->
+            <div class="relative bg-white rounded-3xl shadow-2xl transform transition-all max-w-2xl w-full mx-4 border border-white/20">
+                <div class="gradient-header px-8 py-6 rounded-t-3xl">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -224,13 +229,14 @@ if (empty($_SESSION['user_id'])) {
                                 <p class="text-white/80 text-sm">Modify collection details and parts</p>
                             </div>
                         </div>
-                        <button onclick="closeEditModal()" class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg">
+                        <button onclick="closeModal()" class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg">
                             <i data-lucide="x" class="w-6 h-6"></i>
                         </button>
                     </div>
                 </div>
-                <div class="bg-gradient-to-br from-slate-50 to-blue-50 px-8 py-6">
+                <div class="bg-gradient-to-br from-slate-50 to-blue-50 px-8 py-6 rounded-b-3xl">
                     <form id="editForm" class="space-y-6">
+                        <input type="hidden" id="editId">
                         <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
                             <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
                                 <i data-lucide="file-text" class="w-4 h-4 mr-2 text-indigo-600"></i>
@@ -257,8 +263,20 @@ if (empty($_SESSION['user_id'])) {
                             </div>
                         </div>
 
+                        <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
+                            <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                <i data-lucide="activity" class="w-4 h-4 mr-2 text-blue-600"></i>
+                                Status
+                            </label>
+                            <select id="editStatus" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900">
+                                <option value="pending">Pending</option>
+                                <option value="collected">Collected</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+
                         <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200/50">
-                            <button type="button" onclick="closeEditModal()" class="px-6 py-3 border-2 border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                            <button type="button" onclick="closeModal()" class="px-6 py-3 border-2 border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                                 <i data-lucide="x" class="w-4 h-4 mr-2 inline"></i>
                                 Cancel
                             </button>
@@ -282,10 +300,32 @@ if (empty($_SESSION['user_id'])) {
 
         // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing parts collection page');
+
+            // Ensure modal elements exist before proceeding
+            const requiredElements = ['editModal', 'editId', 'editStatus', 'editForm', 'editTransferInfo', 'editPartsList'];
+            const missingElements = requiredElements.filter(id => !document.getElementById(id));
+
+            if (missingElements.length > 0) {
+                console.error('Missing required elements:', missingElements);
+                showToast('Error: Page not properly loaded', 'error');
+                return;
+            }
+
+            console.log('All required elements found');
+
             loadTransfers();
             loadCollections();
             loadPartSuggestions();
             lucide.createIcons();
+
+            // Add event listener for edit form
+            const editForm = document.getElementById('editForm');
+            editForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await saveEdit();
+            });
+            console.log('Edit form event listener added');
         });
 
         // Load transfers for dropdown
@@ -583,22 +623,66 @@ if (empty($_SESSION['user_id'])) {
 
         // Edit collection
         function editCollection(id) {
-            const collection = collections.find(c => c.id == id);
-            if (!collection) return;
-
-            document.getElementById('editId').value = id;
-            document.getElementById('editTransfer').value = `${collection.plate} - ${collection.name}`;
-            document.getElementById('editStatus').value = collection.status;
-
-            const parts = JSON.parse(collection.parts_list || '[]');
-            const editPartsList = document.getElementById('editPartsList');
-            editPartsList.innerHTML = '';
-
-            parts.forEach(part => {
-                addEditPart(part.name, part.quantity, part.price);
+            console.log('editCollection called with id:', id);
+            console.log('Available elements:', {
+                editModal: document.getElementById('editModal'),
+                editId: document.getElementById('editId'),
+                editStatus: document.getElementById('editStatus'),
+                editTransferInfo: document.getElementById('editTransferInfo'),
+                editPartsList: document.getElementById('editPartsList')
             });
 
-            document.getElementById('editModal').classList.add('active');
+            const collection = collections.find(c => c.id == id);
+            if (!collection) {
+                console.error('Collection not found:', id);
+                return;
+            }
+
+            // Set hidden ID
+            const editIdElement = document.getElementById('editId');
+            if (editIdElement) {
+                editIdElement.value = id;
+                console.log('Set editId to:', id);
+            } else {
+                console.error('editId element not found');
+                return;
+            }
+
+            // Populate transfer info display
+            const transferInfo = document.getElementById('editTransferInfo');
+            if (transferInfo) {
+                transferInfo.innerHTML = `
+                    <div class="font-medium text-gray-900">${collection.plate} - ${collection.name}</div>
+                    <div class="text-gray-600 mt-1">Status: <span class="capitalize">${collection.status}</span></div>
+                `;
+                console.log('Set transfer info');
+            }
+
+            // Set status
+            const editStatusElement = document.getElementById('editStatus');
+            if (editStatusElement) {
+                editStatusElement.value = collection.status;
+                console.log('Set status to:', collection.status);
+            }
+
+            // Load parts
+            const parts = JSON.parse(collection.parts_list || '[]');
+            const editPartsList = document.getElementById('editPartsList');
+            if (editPartsList) {
+                editPartsList.innerHTML = '';
+
+                parts.forEach((part, index) => {
+                    console.log('Adding part:', index, part);
+                    addEditPart(part.name, part.quantity, part.price);
+                });
+            }
+
+            // Show modal
+            const modal = document.getElementById('editModal');
+            if (modal) {
+                modal.classList.add('active');
+                console.log('Modal shown');
+            }
         }
 
         // Add part to edit form
@@ -643,17 +727,35 @@ if (empty($_SESSION['user_id'])) {
 
         // Save edit
         async function saveEdit() {
-            const id = document.getElementById('editId').value;
-            const status = document.getElementById('editStatus').value;
-            
+            const editIdElement = document.getElementById('editId');
+            const editStatusElement = document.getElementById('editStatus');
+
+            if (!editIdElement || !editStatusElement) {
+                console.error('Required form elements not found');
+                showToast('Error: Form elements not found', 'error');
+                return;
+            }
+
+            const id = editIdElement.value;
+            const status = editStatusElement.value;
+
             const parts = [];
             const partItems = document.querySelectorAll('#editPartsList .part-item');
-            
-            partItems.forEach(item => {
-                const name = item.querySelector('.part-name').value.trim();
-                const quantity = parseInt(item.querySelector('.part-quantity').value);
-                const price = parseFloat(item.querySelector('.part-price').value);
-                
+
+            partItems.forEach((item, index) => {
+                const nameInput = item.querySelector('.part-name');
+                const quantityInput = item.querySelector('.part-quantity');
+                const priceInput = item.querySelector('.part-price');
+
+                if (!nameInput || !quantityInput || !priceInput) {
+                    console.error(`Part item ${index} missing required inputs`);
+                    return;
+                }
+
+                const name = nameInput.value.trim();
+                const quantity = parseInt(quantityInput.value);
+                const price = parseFloat(priceInput.value);
+
                 if (name && quantity > 0 && price >= 0) {
                     parts.push({ name, quantity, price });
                 }
@@ -670,7 +772,7 @@ if (empty($_SESSION['user_id'])) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, parts_list: parts, status })
                 });
-                
+
                 const result = await response.json();
                 if (result.success) {
                     showToast('Parts collection updated successfully', 'success');
@@ -711,7 +813,23 @@ if (empty($_SESSION['user_id'])) {
 
         // Close modal
         function closeModal() {
-            document.getElementById('editModal').classList.remove('active');
+            const modal = document.getElementById('editModal');
+            if (modal) {
+                modal.classList.remove('active');
+                // Reset form
+                const editForm = document.getElementById('editForm');
+                if (editForm) {
+                    editForm.reset();
+                }
+                const editPartsList = document.getElementById('editPartsList');
+                if (editPartsList) {
+                    editPartsList.innerHTML = '';
+                }
+                const editTransferInfo = document.getElementById('editTransferInfo');
+                if (editTransferInfo) {
+                    editTransferInfo.innerHTML = '';
+                }
+            }
         }
 
         // Toast notification
