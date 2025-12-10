@@ -991,8 +991,10 @@ try {
         $transfer_id = $_GET['transfer_id'] ?? null;
         $status = $_GET['status'] ?? null;
 
-        $query = "SELECT pc.*, t.plate, t.name FROM parts_collections pc 
-                  JOIN transfers t ON pc.transfer_id = t.id";
+        $query = "SELECT pc.*, t.plate, t.name, u.username as assigned_manager_username, u.full_name as assigned_manager_name 
+                  FROM parts_collections pc 
+                  JOIN transfers t ON pc.transfer_id = t.id
+                  LEFT JOIN users u ON pc.assigned_manager_id = u.id";
         $params = [];
 
         if ($transfer_id) {
@@ -1018,6 +1020,7 @@ try {
         $data = getJsonInput();
         $transfer_id = $data['transfer_id'] ?? null;
         $parts_list = $data['parts_list'] ?? [];
+        $assigned_manager_id = $data['assigned_manager_id'] ?? null;
 
         if (!$transfer_id || empty($parts_list)) {
             http_response_code(400);
@@ -1030,8 +1033,8 @@ try {
             $total_cost += ($part['quantity'] ?? 0) * ($part['price'] ?? 0);
         }
 
-        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost) VALUES (?, ?, ?)");
-        $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost]);
+        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost, assigned_manager_id) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost, $assigned_manager_id]);
 
         jsonResponse(['success' => true, 'id' => $pdo->lastInsertId()]);
     }
@@ -1041,6 +1044,7 @@ try {
         $id = $data['id'] ?? null;
         $parts_list = $data['parts_list'] ?? [];
         $status = $data['status'] ?? null;
+        $assigned_manager_id = $data['assigned_manager_id'] ?? null;
 
         if (!$id) {
             http_response_code(400);
@@ -1056,9 +1060,14 @@ try {
         $query = "UPDATE parts_collections SET parts_list = ?, total_cost = ?";
         $params = [json_encode($parts_list), $total_cost];
 
-        if ($status) {
+        if ($status !== null) {
             $query .= ", status = ?";
             $params[] = $status;
+        }
+
+        if ($assigned_manager_id !== null) {
+            $query .= ", assigned_manager_id = ?";
+            $params[] = $assigned_manager_id;
         }
 
         $query .= " WHERE id = ?";
@@ -1104,6 +1113,17 @@ try {
         sort($uniqueSuggestions);
         
         jsonResponse(['suggestions' => array_values($uniqueSuggestions)]);
+    }
+
+    // --------------------------------------------------
+    // GET MANAGERS ENDPOINT
+    // --------------------------------------------------
+    if ($action === 'get_managers' && $method === 'GET') {
+        $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
+        $stmt->execute();
+        $managers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        jsonResponse(['managers' => $managers]);
     }
 
 } catch (Exception $e) {

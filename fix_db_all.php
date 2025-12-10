@@ -213,13 +213,16 @@ try {
     $sql = "CREATE TABLE IF NOT EXISTS parts_collections (
         id INT AUTO_INCREMENT PRIMARY KEY,
         transfer_id INT NOT NULL,
+        assigned_manager_id INT DEFAULT NULL COMMENT 'ID of assigned manager from users table',
         parts_list JSON NOT NULL COMMENT 'Array of parts: [{name, quantity, price}]',
         status VARCHAR(50) DEFAULT 'pending' COMMENT 'pending, collected, cancelled, etc.',
         total_cost DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Calculated total from parts_list',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (transfer_id) REFERENCES transfers(id) ON DELETE CASCADE,
+        FOREIGN KEY (assigned_manager_id) REFERENCES users(id) ON DELETE SET NULL,
         INDEX idx_transfer_id (transfer_id),
+        INDEX idx_assigned_manager (assigned_manager_id),
         INDEX idx_status (status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $pdo->exec($sql);

@@ -149,6 +149,17 @@ if (empty($_SESSION['user_id'])) {
                         </div>
 
                         <div class="bg-white/50 rounded-2xl p-6 border border-white/30">
+                            <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
+                                Assign Manager (Optional)
+                            </label>
+                            <select id="assignedManager" class="mt-1 block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-orange-400 focus:ring-orange-400 px-4 py-3 text-gray-900">
+                                <option value="">Unassigned</option>
+                                <!-- Managers will be loaded here -->
+                            </select>
+                        </div>
+
+                        <div class="bg-white/50 rounded-2xl p-6 border border-white/30">
                             <div class="flex items-center justify-between mb-4">
                                 <label class="block text-sm font-semibold text-gray-800 flex items-center">
                                     <i data-lucide="package" class="w-4 h-4 mr-2 text-purple-600"></i>
@@ -265,15 +276,16 @@ if (empty($_SESSION['user_id'])) {
 
                         <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
                             <label class="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                                <i data-lucide="activity" class="w-4 h-4 mr-2 text-blue-600"></i>
-                                Status
+                                <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
+                                Assigned Manager
                             </label>
-                            <select id="editStatus" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900">
-                                <option value="pending">Pending</option>
-                                <option value="collected">Collected</option>
-                                <option value="cancelled">Cancelled</option>
+                            <select id="editAssignedManager" class="block w-full rounded-xl border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-4 py-3 text-gray-900">
+                                <option value="">Unassigned</option>
+                                <!-- Managers will be loaded here -->
                             </select>
                         </div>
+
+                        <div class="bg-white/60 rounded-2xl p-6 border border-white/40 backdrop-blur-sm">
 
                         <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200/50">
                             <button type="button" onclick="closeModal()" class="px-6 py-3 border-2 border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
@@ -297,12 +309,14 @@ if (empty($_SESSION['user_id'])) {
         let collections = [];
         let partSuggestions = [];
         let currentParts = [];
+        let managers = [];
 
         // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadTransfers();
             loadCollections();
             loadPartSuggestions();
+            loadManagers();
             lucide.createIcons();
 
             // Add event listener for edit form
@@ -351,6 +365,21 @@ if (empty($_SESSION['user_id'])) {
             }
         }
 
+        // Load managers for dropdown
+        async function loadManagers() {
+            try {
+                const response = await fetch('api.php?action=get_managers');
+                const data = await response.json();
+                managers = data.managers || [];
+                
+                // Update manager dropdowns
+                updateManagerDropdowns();
+            } catch (error) {
+                console.error('Error loading managers:', error);
+                showToast('Error loading managers', 'error');
+            }
+        }
+
         // Update datalist with suggestions
         function updateDatalist() {
             const datalist = document.getElementById('partSuggestions');
@@ -361,6 +390,24 @@ if (empty($_SESSION['user_id'])) {
                 const option = document.createElement('option');
                 option.value = suggestion;
                 datalist.appendChild(option);
+            });
+        }
+
+        // Update manager dropdowns
+        function updateManagerDropdowns() {
+            const editDropdown = document.getElementById('editAssignedManager');
+            const createDropdown = document.getElementById('assignedManager');
+            
+            [editDropdown, createDropdown].forEach(dropdown => {
+                if (dropdown) {
+                    dropdown.innerHTML = '<option value="">Unassigned</option>';
+                    managers.forEach(manager => {
+                        const option = document.createElement('option');
+                        option.value = manager.id;
+                        option.textContent = manager.full_name;
+                        dropdown.appendChild(option);
+                    });
+                }
             });
         }
 
@@ -413,6 +460,12 @@ if (empty($_SESSION['user_id'])) {
                                     <div class="flex items-center">
                                         <i data-lucide="activity" class="w-4 h-4 mr-2 text-blue-600"></i>
                                         Status
+                                    </div>
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
+                                    <div class="flex items-center">
+                                        <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
+                                        Assigned Manager
                                     </div>
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
@@ -474,6 +527,14 @@ if (empty($_SESSION['user_id'])) {
                                 <i data-lucide="circle" class="w-2 h-2 mr-1 fill-current"></i>
                                 ${collection.status}
                             </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i data-lucide="user" class="w-4 h-4 text-orange-600"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">${collection.assigned_manager_name || 'Unassigned'}</span>
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                             <div class="flex items-center">
@@ -550,6 +611,7 @@ if (empty($_SESSION['user_id'])) {
         // Clear form
         function clearForm() {
             document.getElementById('transferSelect').value = '';
+            document.getElementById('assignedManager').value = '';
             document.getElementById('partsList').innerHTML = '';
             currentParts = [];
         }
@@ -559,6 +621,7 @@ if (empty($_SESSION['user_id'])) {
             e.preventDefault();
             
             const transferId = document.getElementById('transferSelect').value;
+            const assignedManagerId = document.getElementById('assignedManager').value;
             if (!transferId) {
                 showToast('Please select a transfer', 'error');
                 return;
@@ -604,7 +667,7 @@ if (empty($_SESSION['user_id'])) {
                 const response = await fetch('api.php?action=create_parts_collection', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ transfer_id: transferId, parts_list: parts })
+                    body: JSON.stringify({ transfer_id: transferId, parts_list: parts, assigned_manager_id: assignedManagerId || null })
                 });
                 
                 const result = await response.json();
@@ -651,6 +714,12 @@ if (empty($_SESSION['user_id'])) {
             const editStatusElement = document.getElementById('editStatus');
             if (editStatusElement) {
                 editStatusElement.value = collection.status;
+            }
+
+            // Set assigned manager
+            const editAssignedManagerElement = document.getElementById('editAssignedManager');
+            if (editAssignedManagerElement) {
+                editAssignedManagerElement.value = collection.assigned_manager_id || '';
             }
 
             // Load parts
@@ -715,6 +784,7 @@ if (empty($_SESSION['user_id'])) {
         async function saveEdit() {
             const editIdElement = document.getElementById('editId');
             const editStatusElement = document.getElementById('editStatus');
+            const editAssignedManagerElement = document.getElementById('editAssignedManager');
 
             if (!editIdElement || !editStatusElement) {
                 console.error('Required form elements not found');
@@ -724,6 +794,7 @@ if (empty($_SESSION['user_id'])) {
 
             const id = editIdElement.value;
             const status = editStatusElement.value;
+            const assigned_manager_id = editAssignedManagerElement ? editAssignedManagerElement.value : null;
 
             const parts = [];
             const partItems = document.querySelectorAll('#editPartsList .part-item');
@@ -760,7 +831,7 @@ if (empty($_SESSION['user_id'])) {
                 const response = await fetch('api.php?action=update_parts_collection', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, parts_list: parts, status })
+                    body: JSON.stringify({ id, parts_list: parts, status, assigned_manager_id })
                 });
 
                 const result = await response.json();
