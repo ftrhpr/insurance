@@ -248,8 +248,7 @@ if (empty($_SESSION['user_id'])) {
                     </form>
                 </div>
 
-        <!-- Part Suggestions Datalist -->
-        <datalist id="partSuggestions"></datalist>                <!-- Collections List -->
+        <!-- Collections List -->
                 <div class="glass-card shadow-xl rounded-3xl card-hover border border-white/20">
                     <div class="px-8 py-6 border-b border-gray-200/50">
                         <div class="flex items-center justify-between">
@@ -520,15 +519,76 @@ if (empty($_SESSION['user_id'])) {
             }
         }
 
+        // Update part dropdown with search functionality
+        function updatePartDropdown(searchInput, dropdown, arrow, filter = '') {
+            const optionsContainer = dropdown.querySelector('.part-options');
+            if (!optionsContainer) return;
+
+            const searchText = filter || searchInput.value.toLowerCase();
+            optionsContainer.innerHTML = '';
+
+            const filteredParts = partSuggestions.filter(part => {
+                return part.toLowerCase().includes(searchText);
+            });
+
+            // Add current input as first option if it doesn't exist in suggestions
+            if (searchInput.value && !filteredParts.includes(searchInput.value)) {
+                const customOption = document.createElement('div');
+                customOption.className = 'dropdown-option';
+                customOption.innerHTML = `
+                    <div class="font-medium text-indigo-600">${searchInput.value}</div>
+                    <div class="text-xs text-gray-500">Custom part</div>
+                `;
+                customOption.addEventListener('click', () => selectPart(searchInput, dropdown, arrow, searchInput.value));
+                optionsContainer.appendChild(customOption);
+            }
+
+            if (filteredParts.length === 0 && !searchInput.value) {
+                const noResults = document.createElement('div');
+                noResults.className = 'dropdown-option text-center text-gray-500';
+                noResults.textContent = 'Start typing to search parts...';
+                optionsContainer.appendChild(noResults);
+                return;
+            }
+
+            filteredParts.forEach(part => {
+                const option = document.createElement('div');
+                option.className = 'dropdown-option';
+                option.innerHTML = `
+                    <div class="font-medium text-gray-900">${part}</div>
+                    <div class="text-xs text-gray-600">Suggested part</div>
+                `;
+                option.addEventListener('click', () => selectPart(searchInput, dropdown, arrow, part));
+                optionsContainer.appendChild(option);
+            });
+        }
+
+        // Select a part from dropdown
+        function selectPart(searchInput, dropdown, arrow, partName) {
+            searchInput.value = partName;
+            togglePartDropdown(dropdown, arrow, false);
+        }
+
+        // Show/hide part dropdown
+        function togglePartDropdown(dropdown, arrow, show = null) {
+            if (show === null) {
+                dropdown.classList.toggle('hidden');
+                arrow?.classList.toggle('open');
+            } else if (show) {
+                dropdown.classList.remove('hidden');
+                arrow?.classList.add('open');
+            } else {
+                dropdown.classList.add('hidden');
+                arrow?.classList.remove('open');
+            }
+        }
+
         // Load part name suggestions
         async function loadPartSuggestions() {
             try {
                 const response = await fetch('api.php?action=get_parts_suggestions');
                 const data = await response.json();
                 partSuggestions = data.suggestions || [];
-                
-                // Update existing datalist
-                updateDatalist();
             } catch (error) {
                 console.error('Error loading part suggestions:', error);
             }
@@ -547,19 +607,6 @@ if (empty($_SESSION['user_id'])) {
                 console.error('Error loading managers:', error);
                 showToast('Error loading managers', 'error');
             }
-        }
-
-        // Update datalist with suggestions
-        function updateDatalist() {
-            const datalist = document.getElementById('partSuggestions');
-            if (!datalist) return;
-            
-            datalist.innerHTML = '';
-            partSuggestions.forEach(suggestion => {
-                const option = document.createElement('option');
-                option.value = suggestion;
-                datalist.appendChild(option);
-            });
         }
 
         // Update manager dropdowns
@@ -742,13 +789,24 @@ if (empty($_SESSION['user_id'])) {
             const partsList = document.getElementById('partsList');
             const partDiv = document.createElement('div');
             partDiv.className = 'flex space-x-2 items-end part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
+            const partId = 'part-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
             partDiv.innerHTML = `
                 <div class="flex-1">
                     <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
                         <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i>
                         Part Name
                     </label>
-                    <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" list="partSuggestions" placeholder="Enter part name..." required>
+                    <div class="relative search-dropdown">
+                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" placeholder="Search parts..." autocomplete="off" required>
+                        <div class="dropdown-arrow">
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+                        </div>
+                        <div class="part-dropdown absolute z-10 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden dropdown-options" style="top: 100%; margin-top: 2px;">
+                            <div class="part-options py-1">
+                                <!-- Options will be populated here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="w-20">
                     <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
@@ -770,6 +828,33 @@ if (empty($_SESSION['user_id'])) {
             `;
             partsList.appendChild(partDiv);
             lucide.createIcons();
+            
+            // Add event listeners for the new part dropdown
+            const searchInput = partDiv.querySelector('.part-name');
+            const dropdown = partDiv.querySelector('.part-dropdown');
+            const arrow = partDiv.querySelector('.dropdown-arrow i');
+            
+            searchInput.addEventListener('focus', () => {
+                updatePartDropdown(searchInput, dropdown, arrow);
+                togglePartDropdown(dropdown, arrow, true);
+            });
+            
+            searchInput.addEventListener('input', () => {
+                updatePartDropdown(searchInput, dropdown, arrow);
+                togglePartDropdown(dropdown, arrow, true);
+            });
+            
+            searchInput.addEventListener('blur', () => {
+                // Delay hiding to allow click on options
+                setTimeout(() => {
+                    togglePartDropdown(dropdown, arrow, false);
+                }, 150);
+            });
+            
+            // If name is provided, set it
+            if (name) {
+                searchInput.value = name;
+            }
         }
 
         // Remove part from form
@@ -920,13 +1005,24 @@ if (empty($_SESSION['user_id'])) {
             const editPartsList = document.getElementById('editPartsList');
             const partDiv = document.createElement('div');
             partDiv.className = 'flex space-x-2 items-end part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
+            const partId = 'edit-part-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
             partDiv.innerHTML = `
                 <div class="flex-1">
                     <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
                         <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i>
                         Part Name
                     </label>
-                    <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" list="partSuggestions" placeholder="Enter part name..." required>
+                    <div class="relative search-dropdown">
+                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" placeholder="Search parts..." autocomplete="off" required>
+                        <div class="dropdown-arrow">
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+                        </div>
+                        <div class="part-dropdown absolute z-10 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden dropdown-options" style="top: 100%; margin-top: 2px;">
+                            <div class="part-options py-1">
+                                <!-- Options will be populated here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="w-20">
                     <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
@@ -948,6 +1044,33 @@ if (empty($_SESSION['user_id'])) {
             `;
             editPartsList.appendChild(partDiv);
             lucide.createIcons();
+            
+            // Add event listeners for the new part dropdown
+            const searchInput = partDiv.querySelector('.part-name');
+            const dropdown = partDiv.querySelector('.part-dropdown');
+            const arrow = partDiv.querySelector('.dropdown-arrow i');
+            
+            searchInput.addEventListener('focus', () => {
+                updatePartDropdown(searchInput, dropdown, arrow);
+                togglePartDropdown(dropdown, arrow, true);
+            });
+            
+            searchInput.addEventListener('input', () => {
+                updatePartDropdown(searchInput, dropdown, arrow);
+                togglePartDropdown(dropdown, arrow, true);
+            });
+            
+            searchInput.addEventListener('blur', () => {
+                // Delay hiding to allow click on options
+                setTimeout(() => {
+                    togglePartDropdown(dropdown, arrow, false);
+                }, 150);
+            });
+            
+            // If name is provided, set it
+            if (name) {
+                searchInput.value = name;
+            }
         }
 
         // Remove part from edit form
