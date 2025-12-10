@@ -286,24 +286,24 @@ if (empty($_SESSION['user_id'])) {
             <div class="fixed inset-0 bg-gradient-to-br from-gray-900/80 to-purple-900/80 backdrop-blur-sm transition-opacity"></div>
 
             <!-- Modal Content -->
-            <div class="relative bg-white rounded-3xl shadow-2xl transform transition-all max-w-5xl w-full mx-auto border border-white/20">
-                <div class="gradient-header px-6 py-4 rounded-t-3xl">
+            <div class="relative bg-white rounded-3xl shadow-2xl transform transition-all max-w-6xl w-full mx-auto border border-white/20 max-h-[90vh] overflow-y-auto">
+                <div class="gradient-header px-8 py-6 rounded-t-3xl">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                                <i data-lucide="edit-3" class="w-5 h-5 text-white"></i>
+                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                                <i data-lucide="edit-3" class="w-6 h-6 text-white"></i>
                             </div>
                             <div>
-                                <h3 class="text-lg font-bold text-white">Edit Parts Collection</h3>
-                                <p class="text-white/80 text-xs">Modify collection details</p>
+                                <h3 class="text-xl font-bold text-white">Edit Parts Collection</h3>
+                                <p class="text-white/80 text-sm">Modify collection details</p>
                             </div>
                         </div>
-                        <button onclick="closeModal()" class="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
-                            <i data-lucide="x" class="w-5 h-5"></i>
+                        <button onclick="closeModal()" class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg">
+                            <i data-lucide="x" class="w-6 h-6"></i>
                         </button>
                     </div>
                 </div>
-                <div class="bg-gradient-to-br from-slate-50 to-blue-50 px-6 py-4 rounded-b-3xl">
+                <div class="bg-gradient-to-br from-slate-50 to-blue-50 px-8 py-6 rounded-b-3xl">
                     <form id="editForm" class="space-y-4">
                         <input type="hidden" id="editId">
                         <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
