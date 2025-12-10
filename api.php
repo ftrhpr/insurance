@@ -984,6 +984,107 @@ try {
         ]);
     }
 
+    // --------------------------------------------------
+    // PARTS COLLECTIONS ENDPOINTS
+    // --------------------------------------------------
+    if ($action === 'get_parts_collections' && $method === 'GET') {
+        $transfer_id = $_GET['transfer_id'] ?? null;
+        $status = $_GET['status'] ?? null;
+
+        $query = "SELECT pc.*, t.plate, t.name FROM parts_collections pc 
+                  JOIN transfers t ON pc.transfer_id = t.id";
+        $params = [];
+
+        if ($transfer_id) {
+            $query .= " WHERE pc.transfer_id = ?";
+            $params[] = $transfer_id;
+        }
+
+        if ($status) {
+            $query .= ($transfer_id ? " AND" : " WHERE") . " pc.status = ?";
+            $params[] = $status;
+        }
+
+        $query .= " ORDER BY pc.created_at DESC";
+
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        $collections = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        jsonResponse(['collections' => $collections]);
+    }
+
+    if ($action === 'create_parts_collection' && $method === 'POST') {
+        $data = getJsonInput();
+        $transfer_id = $data['transfer_id'] ?? null;
+        $parts_list = $data['parts_list'] ?? [];
+
+        if (!$transfer_id || empty($parts_list)) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Transfer ID and parts list are required']);
+        }
+
+        // Calculate total cost
+        $total_cost = 0;
+        foreach ($parts_list as $part) {
+            $total_cost += ($part['quantity'] ?? 0) * ($part['price'] ?? 0);
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost) VALUES (?, ?, ?)");
+        $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost]);
+
+        jsonResponse(['success' => true, 'id' => $pdo->lastInsertId()]);
+    }
+
+    if ($action === 'update_parts_collection' && $method === 'POST') {
+        $data = getJsonInput();
+        $id = $data['id'] ?? null;
+        $parts_list = $data['parts_list'] ?? [];
+        $status = $data['status'] ?? null;
+
+        if (!$id) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Collection ID is required']);
+        }
+
+        // Calculate total cost
+        $total_cost = 0;
+        foreach ($parts_list as $part) {
+            $total_cost += ($part['quantity'] ?? 0) * ($part['price'] ?? 0);
+        }
+
+        $query = "UPDATE parts_collections SET parts_list = ?, total_cost = ?";
+        $params = [json_encode($parts_list), $total_cost];
+
+        if ($status) {
+            $query .= ", status = ?";
+            $params[] = $status;
+        }
+
+        $query .= " WHERE id = ?";
+        $params[] = $id;
+
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+
+        jsonResponse(['success' => true]);
+    }
+
+    if ($action === 'delete_parts_collection' && $method === 'POST') {
+        $data = getJsonInput();
+        $id = $data['id'] ?? null;
+
+        if (!$id) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Collection ID is required']);
+        }
+
+        $stmt = $pdo->prepare("DELETE FROM parts_collections WHERE id = ?");
+        $stmt->execute([$id]);
+
+        jsonResponse(['success' => true]);
+    }
+
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(['error' => $e->getMessage()]);

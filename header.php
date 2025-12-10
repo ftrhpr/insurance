@@ -31,6 +31,7 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
 $nav_items = [
     'index' => ['icon' => 'layout-dashboard', 'label' => 'Dashboard', 'url' => 'index.php'],
     'vehicles' => ['icon' => 'database', 'label' => 'Vehicle DB', 'url' => 'vehicles.php'],
+    'parts_collection' => ['icon' => 'wrench', 'label' => 'Parts Collection', 'url' => 'parts_collection.php'],
     'reviews' => ['icon' => 'star', 'label' => 'Reviews', 'url' => 'reviews.php'],
     'templates' => ['icon' => 'message-square-dashed', 'label' => 'SMS Templates', 'url' => 'templates.php']
 ];

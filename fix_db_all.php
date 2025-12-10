@@ -206,8 +206,24 @@ try {
         echo " - SMS parsing templates already exist.\n";
     }
 
-    echo "\n---------------------------------------------------\n";
-    echo "REPAIR COMPLETE. You can reload your app now.";
+    // ---------------------------------------------------------
+    // 7. TABLE: parts_collections (Car Parts Collection System)
+    // ---------------------------------------------------------
+    echo "\nChecking table 'parts_collections'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS parts_collections (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        transfer_id INT NOT NULL,
+        parts_list JSON NOT NULL COMMENT 'Array of parts: [{name, quantity, price}]',
+        status VARCHAR(50) DEFAULT 'pending' COMMENT 'pending, collected, cancelled, etc.',
+        total_cost DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Calculated total from parts_list',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (transfer_id) REFERENCES transfers(id) ON DELETE CASCADE,
+        INDEX idx_transfer_id (transfer_id),
+        INDEX idx_status (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
 
 } catch (PDOException $e) {
     echo "CRITICAL ERROR: " . $e->getMessage();
