@@ -1797,7 +1797,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (successCount > 0) {
                 await fetchAPI('send_broadcast', 'POST', { 
                     title: 'New Transfers Imported', 
-                    body: `<?php echo __('status.new_cases_added', '{count} new cases added.'); ?>`.replace('{count}', successCount) 
+                    body: '<?php echo __('status.new_cases_added', '{count} new cases added.'); ?>'.replace('{count}', successCount) 
                 });
             }
 
@@ -1811,9 +1811,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             loadData();
             
             if (failCount > 0) {
-                showToast("Import Completed with Errors", `<?php echo __('status.import_errors', '{success} succeeded, {failed} failed'); ?>`.replace('{success}', successCount).replace('{failed}', failCount), "error");
+                showToast("Import Completed with Errors", '<?php echo __('status.import_errors', '{success} succeeded, {failed} failed'); ?>'.replace('{success}', successCount).replace('{failed}', failCount), "error");
             } else {
-                showToast("<?php echo __('status.import_successful', 'Import Successful'); ?>", `<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>`.replace('{count}', successCount), "success");
+                showToast("<?php echo __('status.import_successful', 'Import Successful'); ?>", '<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>'.replace('{count}', successCount), "success");
             }
             
             if (btn) {
@@ -2415,7 +2415,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 status: status,
                 internalNotes: notes ? [{ note: notes, timestamp: new Date().toISOString(), user: '<?php echo $current_user_name; ?>' }] : [],
                 systemLogs: [{ 
-                    message: `Order manually created by <?php echo $current_user_name; ?>`, 
+                    message: 'Order manually created by <?php echo $current_user_name; ?>', 
                     timestamp: new Date().toISOString(), 
                     type: 'info' 
                 }]
