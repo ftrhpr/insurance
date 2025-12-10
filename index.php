@@ -1269,7 +1269,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 </div>
                 <div class="flex-1 pt-1">
                     <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
+                    ${message ? '<p class="text-xs text-slate-600 leading-relaxed font-medium">' + message + '</p>' : ''}
                 </div>
                 <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
                     <i data-lucide="x" class="w-4 h-4"></i>
@@ -1747,13 +1747,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <div class="flex items-center gap-2">
                             <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
                             <span class="text-slate-500">${escapeHtml(i.name)}</span>
-                            ${i.template ? `<span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 text-xs">${escapeHtml(i.template)}</span>` : ''}
-                            ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${escapeHtml(i.franchise)}</span>` : ''}
+                            ${i.template ? '<span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 text-xs">' + escapeHtml(i.template) + '</span>' : ''}
+                            ${i.franchise ? '<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ' + escapeHtml(i.franchise) + '</span>' : ''}
                         </div>
                         <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
                     </div>`
                 ).join('');
-                if (btnSaveImportEl) btnSaveImportEl.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
+                if (btnSaveImportEl) btnSaveImportEl.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Save ' + parsedImportData.length + ' Items';
                 lucide.createIcons();
             } else {
                 showToast("No matches found", "Could not parse any transfers from the text", "error");
@@ -1882,8 +1882,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <div class="pl-3 mb-5">
                                 <h3 class="font-bold text-lg text-slate-800">${escapeHtml(t.plate)}</h3>
                                 <p class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</p>
-                                ${displayPhone ? `<div class="flex items-center gap-1.5 mt-2 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(displayPhone)}</div>` : ''}
-                                ${t.franchise ? `<p class="text-[10px] text-orange-500 mt-1">Franchise: ${escapeHtml(t.franchise)}</p>` : ''}
+                                ${displayPhone ? '<div class="flex items-center gap-1.5 mt-2 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ' + escapeHtml(displayPhone) + '</div>' : ''}
+                                ${t.franchise ? '<p class="text-[10px] text-orange-500 mt-1">Franchise: ' + escapeHtml(t.franchise) + '</p>' : ''}
                             </div>
                             <div class="pl-3 text-right">
                                 <button onclick="window.openEditModal(${t.id})" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 ml-auto group-hover:bg-primary-50">
@@ -1932,9 +1932,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                                                 <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
                                             </span>
-                                            ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
-                                            </span>` : ''}
+                                            ${t.franchise ? '<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100"><i data-lucide="percent" class="w-3 h-3"></i> Franchise: ' + escapeHtml(t.franchise) + '₾</span>' : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -2031,9 +2029,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                                                 <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
                                             </span>
-                                            ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
-                                            </span>` : ''}
+                                            ${t.franchise ? '<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100"><i data-lucide="percent" class="w-3 h-3"></i> Franchise: ' + escapeHtml(t.franchise) + '₾</span>' : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -2757,7 +2753,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     }
                     // Refresh Logs
                     const logsToRender = statusEl && statusEl.innerText.includes('Offline') ? t.systemLogs : [...(t.systemLogs || []), newLog];
-                    const logHTML = logsToRender.map(l => `<div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600"><div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>${escapeHtml(l.message)}</div>`).join('');
+                    const logHTML = logsToRender.map(l => '<div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600"><div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">' + l.timestamp.split('T')[0] + '</div>' + escapeHtml(l.message) + '</div>').join('');
                     const activityLogEl = document.getElementById('activity-log-container');
                     if (activityLogEl) activityLogEl.innerHTML = logHTML;
                 }
