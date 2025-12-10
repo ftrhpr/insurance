@@ -228,6 +228,44 @@ try {
     $pdo->exec($sql);
     echo " - Table structure verified.\n";
 
+    // List of required columns for 'parts_collections'
+    $columns = [
+        'assigned_manager_id' => "INT DEFAULT NULL COMMENT 'ID of assigned manager from users table'",
+    ];
+
+    foreach ($columns as $col => $def) {
+        if (!columnExists($pdo, 'parts_collections', $col)) {
+            $pdo->exec("ALTER TABLE parts_collections ADD COLUMN $col $def");
+            echo " - Added missing column: $col\n";
+        } else {
+            echo " - Column $col exists.\n";
+        }
+    }
+
+    // Add foreign key if it doesn't exist
+    try {
+        $pdo->exec("ALTER TABLE parts_collections ADD CONSTRAINT fk_assigned_manager FOREIGN KEY (assigned_manager_id) REFERENCES users(id) ON DELETE SET NULL");
+        echo " - Added foreign key constraint for assigned_manager_id\n";
+    } catch (PDOException $e) {
+        if (strpos($e->getMessage(), 'Duplicate key name') === false) {
+            echo " - Foreign key constraint already exists or error: " . $e->getMessage() . "\n";
+        } else {
+            echo " - Foreign key constraint already exists.\n";
+        }
+    }
+
+    // Add index if it doesn't exist
+    try {
+        $pdo->exec("ALTER TABLE parts_collections ADD INDEX idx_assigned_manager (assigned_manager_id)");
+        echo " - Added index for assigned_manager_id\n";
+    } catch (PDOException $e) {
+        if (strpos($e->getMessage(), 'Duplicate key name') === false) {
+            echo " - Index already exists or error: " . $e->getMessage() . "\n";
+        } else {
+            echo " - Index already exists.\n";
+        }
+    }
+
 } catch (PDOException $e) {
     echo "CRITICAL ERROR: " . $e->getMessage();
 }
