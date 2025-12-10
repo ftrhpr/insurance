@@ -1907,11 +1907,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         const stars = '⭐'.repeat(parseInt(t.reviewStars));
                         const starRating = parseInt(t.reviewStars);
                         const starColor = starRating >= 4 ? 'text-yellow-500' : starRating >= 3 ? 'text-orange-500' : 'text-red-500';
-                        reviewDisplay = `<div class="flex items-center gap-1">
-                            <span class="${starColor} text-sm">${stars}</span>
-                            <span class="text-xs text-slate-600">(${starRating}/5)</span>
-                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-blue-500" title="${escapeHtml(t.reviewComment)}"></i>` : ''}
-                        </div>`;
+                        const commentIcon = t.reviewComment ? '<i data-lucide="message-square" class="w-3 h-3 text-blue-500" title="' + escapeHtml(t.reviewComment) + '"></i>' : '';
+                        reviewDisplay = '<div class="flex items-center gap-1"><span class="' + starColor + ' text-sm">' + stars + '</span><span class="text-xs text-slate-600">(' + starRating + '/5)</span>' + commentIcon + '</div>';
                     }
                     
                     const hasPhone = t.phone ? 
@@ -1995,18 +1992,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         if (t.rescheduleDate) {
                             const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
                             const dateStr = reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                            rescheduleInfo = `<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ${dateStr}</div>`;
-                            quickAcceptBtn = `<button onclick="event.stopPropagation(); window.quickAcceptReschedule(${t.id})" class="mt-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition-all active:scale-95 shadow-sm">
-                                <i data-lucide="check" class="w-3 h-3"></i> Accept
-                            </button>`;
+                            rescheduleInfo = '<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ' + dateStr + '</div>';
+                            quickAcceptBtn = '<button onclick="event.stopPropagation(); window.quickAcceptReschedule(' + t.id + ')" class="mt-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition-all active:scale-95 shadow-sm"><i data-lucide="check" class="w-3 h-3"></i> Accept</button>';
                         }
-                        replyBadge = `<div class="flex flex-col items-start gap-1">
-                            <span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
-                                <i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request
-                            </span>
-                            ${rescheduleInfo}
-                            ${quickAcceptBtn}
-                        </div>`;
+                        replyBadge = '<div class="flex flex-col items-start gap-1"><span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse"><i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request</span>' + rescheduleInfo + quickAcceptBtn + '</div>';
                     }
 
                     // Service date formatting
@@ -2014,20 +2003,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     if (t.service_date) {
                         const svcDate = new Date(t.service_date.replace(' ', 'T'));
                         const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                        serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
-                            <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
-                            <span class="font-semibold">${svcDateStr}</span>
-                        </div>`;
+                        serviceDateDisplay = '<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit"><i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i><span class="font-semibold">' + svcDateStr + '</span></div>';
                     }
                     
                     // Review stars display
                     let reviewDisplay = '';
                     if (t.reviewStars && t.reviewStars > 0) {
                         const stars = '⭐'.repeat(parseInt(t.reviewStars));
-                        reviewDisplay = `<div class="flex items-center gap-1 mt-1">
-                            <span class="text-xs">${stars}</span>
-                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
-                        </div>`;
+                        const commentIcon = t.reviewComment ? '<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="' + t.reviewComment + '"></i>' : '';
+                        reviewDisplay = '<div class="flex items-center gap-1 mt-1"><span class="text-xs">' + stars + '</span>' + commentIcon + '</div>';
                     }
 
                     activeContainer.innerHTML += `
@@ -2078,12 +2062,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 ${CAN_EDIT ? 
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2.5 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95 group-hover:bg-white">
-                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                    </button>` :
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-blue-600 p-2.5 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                    </button>`
+                                    '<button onclick="window.openEditModal(' + t.id + ')" class="text-slate-400 hover:text-primary-600 p-2.5 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95 group-hover:bg-white"><i data-lucide="edit-2" class="w-4 h-4"></i></button>' :
+                                    '<button onclick="window.openEditModal(' + t.id + ')" class="text-slate-400 hover:text-blue-600 p-2.5 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only"><i data-lucide="eye" class="w-4 h-4"></i></button>'
                                 }
                             </td>
                         </tr>`;
