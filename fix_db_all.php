@@ -217,6 +217,7 @@ try {
         parts_list JSON NOT NULL COMMENT 'Array of parts: [{name, quantity, price}]',
         status VARCHAR(50) DEFAULT 'pending' COMMENT 'pending, collected, cancelled, etc.',
         total_cost DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Calculated total from parts_list',
+        currency VARCHAR(3) DEFAULT 'GEL' COMMENT 'Currency for the collection: GEL',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (transfer_id) REFERENCES transfers(id) ON DELETE CASCADE,
@@ -231,6 +232,7 @@ try {
     // List of required columns for 'parts_collections'
     $columns = [
         'assigned_manager_id' => "INT DEFAULT NULL COMMENT 'ID of assigned manager from users table'",
+        'currency' => "VARCHAR(3) DEFAULT 'GEL' COMMENT 'Currency for the collection: GEL'",
     ];
 
     foreach ($columns as $col => $def) {

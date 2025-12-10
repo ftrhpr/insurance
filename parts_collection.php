@@ -621,7 +621,7 @@ if (empty($_SESSION['user_id'])) {
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
                                     <div class="flex items-center">
-                                        <i data-lucide="dollar-sign" class="w-4 h-4 mr-2 text-green-600"></i>
+                                        <span class="text-green-600 mr-2 text-lg">₾</span>
                                         Total Cost
                                     </div>
                                 </th>
@@ -686,9 +686,9 @@ if (empty($_SESSION['user_id'])) {
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                                    <i data-lucide="dollar-sign" class="w-4 h-4 text-green-600"></i>
+                                    <span class="text-green-600 text-lg">₾</span>
                                 </div>
-                                <span class="text-sm font-semibold text-gray-900">$${parseFloat(collection.total_cost || 0).toFixed(2)}</span>
+                                <span class="text-sm font-semibold text-gray-900">₾${parseFloat(collection.total_cost || 0).toFixed(2)}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -759,7 +759,7 @@ if (empty($_SESSION['user_id'])) {
                 </div>
                 <div class="w-24">
                     <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                        <i data-lucide="dollar-sign" class="w-3 h-3 mr-1 text-green-600"></i>
+                        <span class="text-green-600 mr-1">₾</span>
                         Price
                     </label>
                     <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>
@@ -937,7 +937,7 @@ if (empty($_SESSION['user_id'])) {
                 </div>
                 <div class="w-24">
                     <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                        <i data-lucide="dollar-sign" class="w-3 h-3 mr-1 text-green-600"></i>
+                        <span class="text-green-600 mr-1">₾</span>
                         Price
                     </label>
                     <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>

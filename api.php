@@ -1033,7 +1033,7 @@ try {
             $total_cost += ($part['quantity'] ?? 0) * ($part['price'] ?? 0);
         }
 
-        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost, assigned_manager_id) VALUES (?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost, assigned_manager_id, currency) VALUES (?, ?, ?, ?, 'GEL')");
         $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost, $assigned_manager_id]);
 
         jsonResponse(['success' => true, 'id' => $pdo->lastInsertId()]);
