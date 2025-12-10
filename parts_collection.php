@@ -281,12 +281,12 @@ if (empty($_SESSION['user_id'])) {
 
     <!-- Edit Modal -->
     <div id="editModal" class="modal fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen p-6">
+        <div class="flex items-center justify-center min-h-screen px-4 py-8">
             <!-- Backdrop -->
             <div class="fixed inset-0 bg-gradient-to-br from-gray-900/80 to-purple-900/80 backdrop-blur-sm transition-opacity"></div>
 
             <!-- Modal Content -->
-            <div class="relative bg-white rounded-3xl shadow-2xl transform transition-all max-w-6xl w-full mx-auto border border-white/20 max-h-[90vh] overflow-y-auto">
+            <div class="relative bg-white rounded-3xl shadow-2xl transform transition-all w-full max-w-7xl mx-auto border border-white/20 overflow-hidden">
                 <div class="gradient-header px-8 py-6 rounded-t-3xl">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
@@ -303,7 +303,7 @@ if (empty($_SESSION['user_id'])) {
                         </button>
                     </div>
                 </div>
-                <div class="bg-gradient-to-br from-slate-50 to-blue-50 px-8 py-6 rounded-b-3xl">
+                <div class="bg-gradient-to-br from-slate-50 to-blue-50 px-8 py-6 rounded-b-3xl max-h-[70vh] overflow-y-auto">
                     <form id="editForm" class="space-y-4">
                         <input type="hidden" id="editId">
                         <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
