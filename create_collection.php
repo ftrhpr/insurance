@@ -287,16 +287,55 @@ if (empty($_SESSION['user_id'])) {
                     const data = await response.json();
 
                     if (data.success && Array.isArray(data.items) && data.items.length > 0) {
-                        statusDiv.textContent = `Successfully parsed ${data.items.length} items.`;
-                        let previewHtml = '<div class="bg-teal-50 border border-teal-200 rounded-lg p-3"><h4 class="font-bold mb-2">Parsed Items Preview</h4><ul class="list-disc ml-6 text-sm">';
-                        data.items.forEach(item => {
-                            previewHtml += `<li>[${item.type}] ${item.name} (Qty: ${item.quantity}, Price: ₾${item.price})</li>`;
+                        statusDiv.textContent = `Successfully parsed ${data.items.length} items. Select which items to add.`;
+                        
+                        let checklistHtml = '';
+                        data.items.forEach((item, index) => {
+                            const itemData = JSON.stringify(item);
+                            checklistHtml += `
+                                <div class="flex items-center p-1 rounded-md hover:bg-teal-100">
+                                    <input id="item-${index}" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 parsed-item-checkbox" data-item='${itemData}' checked>
+                                    <label for="item-${index}" class="ml-3 text-sm text-gray-700">
+                                        <span class="font-medium text-indigo-700">[${item.type}]</span> ${item.name} 
+                                        <span class="text-gray-500">(Qty: ${item.quantity}, Price: ₾${item.price})</span>
+                                    </label>
+                                </div>`;
                         });
-                        previewHtml += '</ul><button type="button" id="addParsedItemsBtn" class="mt-3 btn-gradient text-white px-3 py-1 rounded-md text-sm">Add to Lists</button></div>';
-                        previewDiv.innerHTML = previewHtml;
 
+                        previewDiv.innerHTML = `
+                            <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+                                <h4 class="font-bold mb-2 text-gray-800">Parsed Items</h4>
+                                <div class="flex items-center border-b pb-2 mb-2">
+                                    <input id="selectAllParsed" type="checkbox" class="h-4 w-4 rounded border-gray-300" checked>
+                                    <label for="selectAllParsed" class="ml-3 text-sm font-medium text-gray-800">Select All</label>
+                                </div>
+                                <div id="parsedItemsChecklist" class="space-y-1 max-h-40 overflow-y-auto">
+                                    ${checklistHtml}
+                                </div>
+                                <button type="button" id="addParsedItemsBtn" class="mt-3 btn-gradient text-white px-3 py-1 rounded-md text-sm">Add Selected Items</button>
+                            </div>
+                        `;
+
+                        // Add event listener for 'Select All'
+                        document.getElementById('selectAllParsed').addEventListener('change', (e) => {
+                            document.querySelectorAll('.parsed-item-checkbox').forEach(checkbox => {
+                                checkbox.checked = e.target.checked;
+                            });
+                        });
+                        
+                        // Add event listener for 'Add Selected Items'
                         document.getElementById('addParsedItemsBtn').onclick = () => {
-                            data.items.forEach(item => {
+                            const selectedItems = [];
+                            document.querySelectorAll('.parsed-item-checkbox:checked').forEach(checkbox => {
+                                selectedItems.push(JSON.parse(checkbox.dataset.item));
+                            });
+
+                            if (selectedItems.length === 0) {
+                                showToast('No items selected.', 'info');
+                                return;
+                            }
+
+                            selectedItems.forEach(item => {
                                 if (item.type === 'labor') {
                                     addLabor(item.name, item.quantity, item.price);
                                 } else {
@@ -304,7 +343,7 @@ if (empty($_SESSION['user_id'])) {
                                 }
                             });
                             previewDiv.innerHTML = '';
-                            statusDiv.textContent = 'Items have been added to the lists below.';
+                            statusDiv.textContent = `${selectedItems.length} items have been added to the lists below.`;
                         };
 
                     } else {
