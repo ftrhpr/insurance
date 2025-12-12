@@ -1033,7 +1033,7 @@ if (empty($_SESSION['user_id'])) {
                         <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 labor-price" value="${price}" step="0.01" min="0" placeholder="0.00" required oninput="updateEditTotals()">
                     </div>
                     <div class="col-span-1 flex items-end">
-                        <button type="button" onclick="removeEditPart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
+                        <button type="button" onclick="removeEditLabor(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
