@@ -851,6 +851,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             </div>
         </div>
     </div>
+    </div>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
@@ -1049,27 +1050,30 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
 
             try {
-                const response = await fetch(`${API_URL}?action=${action}`, opts);
+                const res = await fetch(`${API_URL}?action=${action}`, opts);
                 
                 // Check if response is NOT OK (e.g. 500 Error)
-                if (!response.ok) {
+                if (!res.ok) {
                     // Try to parse the JSON error message from api.php
-                    let errorText = response.statusText;
+                    let errorText = res.statusText;
                     try {
-                        const errorJson = await response.json();
+                        const errorJson = await res.json();
                         if (errorJson.error) errorText = errorJson.error;
                     } catch (parseErr) {
                         // If parsing fails, use the text body or generic status
-                        const text = await response.text();
+                        const text = await res.text();
                         if(text) errorText = text.substring(0, 100); // Limit length
                     }
-                    console.error('API Error:', { url, method, data, status: response.status });
-                    const errorText = await response.text();
-                    console.error('Raw Error Response:', errorText);
-                    showToast('Server Error', `Endpoint: ${url.split('?')[1]} - ${errorText}`, 'error');
-                    throw new Error(`Server returned ${response.status}: ${errorText}`);
+                    throw new Error(`Server Error (${res.status}): ${errorText}`);
                 }
-                return await response.json();
+
+                const data = await res.json();
+                
+                // Update UI Connection Status
+                const statusEl = document.getElementById('connection-status');
+                if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> SQL Connected`;
+                
+                return data;
             } catch (e) {
                 console.warn("Server unavailable:", e);
                 const statusEl = document.getElementById('connection-status');
@@ -1112,7 +1116,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 // Handle new combined response format
                 if (response.transfers && response.vehicles) {
                     transfers = response.transfers;
-                   
                     vehicles = response.vehicles;
                 } else if (Array.isArray(response)) {
                     // Fallback for old format (just transfers array)
@@ -1751,2470 +1754,916 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             lucide.createIcons();
         };
 
-        // --- INITIAL DATA LOAD ---
-        // Load initial data
-        async function loadData() {
-            try {
-                const response = await fetchAPI('get_transfers');
-                
-                // Handle new combined response format
-                if (response.transfers && response.vehicles) {
-                    transfers = response.transfers;
-                    vehicles = response.vehicles;
-                } else if (Array.isArray(response)) {
-                    // Fallback for old format (just transfers array)
-                    transfers = response;
-                    const newVehicles = await fetchAPI('get_vehicles');
-                    if(Array.isArray(newVehicles)) vehicles = newVehicles;
-                }
-
-                renderTable();
-            } catch(e) {
-                // Squelch load errors to prevent loop spam, alert user once via status
-            }
-
-            const loadingScreenEl = document.getElementById('loading-screen');
-            const appContentEl = document.getElementById('app-content');
+        function renderTable() {
+            const searchInputEl = document.getElementById('search-input');
+            const statusFilterEl = document.getElementById('status-filter');
+            const replyFilterEl = document.getElementById('reply-filter');
             
-            if (loadingScreenEl) loadingScreenEl.classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
-                if (appContentEl) appContentEl.classList.remove('hidden');
-            }, 500);
-        }
-
-        // Poll for updates every 10 seconds
-        setInterval(loadData, 10000);
-
-        // Premium Toast Notifications
-        function showToast(title, message = '', type = 'success', duration = 4000) {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
+            const search = searchInputEl ? searchInputEl.value.toLowerCase() : '';
+            const filter = statusFilterEl ? statusFilterEl.value : 'All';
+            const replyFilter = replyFilterEl ? replyFilterEl.value : 'All';
             
-            // Handle legacy calls
-            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
-            if (!message && !type) { type = 'success'; }
-            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
+            const newContainer = document.getElementById('new-cases-grid');
+            const activeContainer = document.getElementById('table-body');
+            newContainer.innerHTML = ''; activeContainer.innerHTML = '';
             
-            // Create toast
-            const toast = document.createElement('div');
-            
-            const colors = {
-                success: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-emerald-200/60', 
-                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', 
-                    iconColor: 'text-emerald-600', 
-                    icon: 'check-circle-2',
-                    shadow: 'shadow-emerald-500/20' 
-                },
-                error: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-red-200/60', 
-                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50', 
-                    iconColor: 'text-red-600', 
-                    icon: 'alert-circle',
-                    shadow: 'shadow-red-500/20' 
-                },
-                info: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-primary-200/60', 
-                    iconBg: 'bg-gradient-to-br from-primary-50 to-accent-50', 
-                    iconColor: 'text-primary-600', 
-                    icon: 'info',
-                    shadow: 'shadow-primary-500/20' 
-                },
-                urgent: { 
-                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent', 
-                    border: 'border-primary-300', 
-                    iconBg: 'bg-gradient-to-br from-primary-100 to-accent-100', 
-                    iconColor: 'text-primary-700', 
-                    icon: 'bell-ring',
-                    shadow: 'shadow-primary-500/30' 
-                }
-            };
-            
-            const style = colors[type] || colors.info;
+            let newCount = 0;
+            let activeCount = 0;
 
-            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
-            
-            toast.innerHTML = `
-                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
-                    <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            `;
+            transfers.forEach(t => {
+                // 1. Text Search Filter
+                const match = (t.plate+t.name+(t.phone||'')).toLowerCase().includes(search);
+                if(!match) return;
 
-            container.appendChild(toast);
-            if(window.lucide) lucide.createIcons();
+                // 2. Status Filter
+                if(filter !== 'All' && t.status !== filter) return;
 
-            // Animate In
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-10', 'opacity-0');
-            });
-
-            // Auto Dismiss (unless persistent/urgent)
-            if (duration > 0 && type !== 'urgent') {
-                setTimeout(() => {
-                    toast.classList.add('translate-y-4', 'opacity-0');
-                    setTimeout(() => toast.remove(), 500);
-                }, duration);
-            }
-        }
-
-        window.switchView = (v) => {
-            // Toggle views (check if element exists before accessing)
-            const dashboardView = document.getElementById('view-dashboard');
-            const vehiclesView = document.getElementById('view-vehicles');
-            const templatesView = document.getElementById('view-templates');
-            const usersView = document.getElementById('view-users');
-            
-            if (dashboardView) dashboardView.classList.toggle('hidden', v !== 'dashboard');
-            if (vehiclesView) vehiclesView.classList.toggle('hidden', v !== 'vehicles');
-            if (templatesView) templatesView.classList.toggle('hidden', v !== 'templates');
-            if (usersView) usersView.classList.toggle('hidden', v !== 'users');
-            
-            // Render vehicles when switching to that view
-            if (v === 'vehicles') {
-                renderVehicles();
-            }
-            
-            const activeClass = "nav-active px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 bg-slate-900 text-white shadow-sm";
-            const inactiveClass = "nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-white";
-
-            // Update nav button (check if element exists)
-            const navDashboard = document.getElementById('nav-dashboard');
-            const navVehicles = document.getElementById('nav-vehicles');
-            if (navDashboard) navDashboard.className = v === 'dashboard' ? activeClass : inactiveClass;
-            if (navVehicles) navVehicles.className = v === 'vehicles' ? activeClass : inactiveClass;
-        };
-
-        // --- VEHICLES PAGINATION ---
-        let currentVehiclesPage = 1;
-        const vehiclesPerPage = 10;
-
-        function renderVehicles(page = 1) {
-            if (!vehicles || vehicles.length === 0) {
-                const tableBodyEl = document.getElementById('vehicles-table-body');
-                const emptyEl = document.getElementById('vehicles-empty');
-                const countEl = document.getElementById('vehicles-count');
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                const paginationEl = document.getElementById('vehicles-pagination');
-                
-                if (tableBodyEl) tableBodyEl.innerHTML = '';
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                if (countEl) countEl.textContent = '0 vehicles';
-                if (pageInfoEl) pageInfoEl.classList.add('hidden');
-                if (paginationEl) paginationEl.innerHTML = '';
-                return;
-            }
-
-            currentVehiclesPage = page;
-            const searchTerm = document.getElementById('vehicles-search')?.value.toLowerCase() || '';
-            
-            // Filter vehicles
-            let filtered = vehicles.filter(v => {
-                const plate = (v.plate || '').toLowerCase();
-                const phone = (v.phone || '').toLowerCase();
-                return plate.includes(searchTerm) || phone.includes(searchTerm);
-            });
-
-            const totalVehicles = filtered.length;
-            const totalPages = Math.ceil(totalVehicles / vehiclesPerPage);
-            
-            // Adjust page if out of range
-            if (currentVehiclesPage > totalPages && totalPages > 0) {
-                currentVehiclesPage = totalPages;
-            }
-            if (currentVehiclesPage < 1) {
-                currentVehiclesPage = 1;
-            }
-
-            const startIndex = (currentVehiclesPage - 1) * vehiclesPerPage;
-            const endIndex = Math.min(startIndex + vehiclesPerPage, totalVehicles);
-            const pageVehicles = filtered.slice(startIndex, endIndex);
-
-            // Update count
-            const countEl = document.getElementById('vehicles-count');
-            if (countEl) countEl.textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
-
-            // Render table
-            const tbody = document.getElementById('vehicles-table-body');
-            const emptyEl = document.getElementById('vehicles-empty');
-            if (pageVehicles.length === 0) {
-                if (tbody) tbody.innerHTML = '';
-                if (emptyEl) emptyEl.classList.remove('hidden');
-            } else {
-                if (emptyEl) emptyEl.classList.add('hidden');
-                if (tbody) tbody.innerHTML = pageVehicles.map(v => {
-                    const addedDate = v.created_at ? new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
-                    const source = v.source || 'Manual';
-                    return `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="car" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="font-mono font-bold text-slate-900">${escapeHtml(v.plate || 'N/A')}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="text-slate-700">${escapeHtml(v.phone || 'N/A')}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-slate-600 text-sm">${addedDate}</td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                    source === 'Import' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'
-                                }">${source}</span>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            // Update pagination info
-            if (totalVehicles > 0) {
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                const showingStartEl = document.getElementById('vehicles-showing-start');
-                const showingEndEl = document.getElementById('vehicles-showing-end');
-                const totalEl = document.getElementById('vehicles-total');
-                
-                if (pageInfoEl) pageInfoEl.classList.remove('hidden');
-                if (showingStartEl) showingStartEl.textContent = startIndex + 1;
-                if (showingEndEl) showingEndEl.textContent = endIndex;
-                if (totalEl) totalEl.textContent = totalVehicles;
-            } else {
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                if (pageInfoEl) pageInfoEl.classList.add('hidden');
-            }
-
-            // Render pagination buttons
-            renderVehiclesPagination(totalPages);
-            
-            // Re-init Lucide icons
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function renderVehiclesPagination(totalPages) {
-            const container = document.getElementById('vehicles-pagination');
-            if (!container) return;
-            if (totalPages <= 1) {
-                container.innerHTML = '';
-                return;
-            }
-
-            let html = '';
-
-            // Previous button
-            html += `
-                <button onclick="renderVehicles(${currentVehiclesPage - 1})" 
-                    class="px-3 py-1.5 rounded-lg border transition-all ${
-                        currentVehiclesPage === 1 
-                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }" 
-                    ${currentVehiclesPage === 1 ? 'disabled' : ''}>
-                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            // Page numbers (show max 5 pages)
-            let startPage = Math.max(1, currentVehiclesPage - 2);
-            let endPage = Math.min(totalPages, startPage + 4);
-            
-            if (endPage - startPage < 4) {
-                startPage = Math.max(1, endPage - 4);
-            }
-
-            if (startPage > 1) {
-                html += `<button onclick="renderVehicles(1)" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">1</button>`;
-                if (startPage > 2) {
-                    html += `<span class="px-2 text-slate-400">...</span>`;
-                }
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-                html += `
-                    <button onclick="renderVehicles(${i})" 
-                        class="px-3 py-1.5 rounded-lg border transition-all ${
-                            i === currentVehiclesPage 
-                                ? 'bg-slate-900 text-white border-slate-900' 
-                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                        }">
-                        ${i}
-                    </button>
-                `;
-            }
-
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    html += `<span class="px-2 text-slate-400">...</span>`;
-                }
-                html += `<button onclick="renderVehicles(${totalPages})" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">${totalPages}</button>`;
-            }
-
-            // Next button
-            html += `
-                <button onclick="renderVehicles(${currentVehiclesPage + 1})" 
-                    class="px-3 py-1.5 rounded-lg border transition-all ${
-                        currentVehiclesPage === totalPages 
-                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }" 
-                    ${currentVehiclesPage === totalPages ? 'disabled' : ''}>
-                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.innerHTML = html;
-            if (window.lucide) lucide.createIcons();
-        }
-
-        // Search handler for vehicles
-        document.addEventListener('DOMContentLoaded', () => {
-            const vehiclesSearch = document.getElementById('vehicles-search');
-            if (vehiclesSearch) {
-                vehiclesSearch.addEventListener('input', () => {
-                    currentVehiclesPage = 1; // Reset to first page on search
-                    renderVehicles(1);
-                });
-            }
-        });
-
-        // --- SMS TEMPLATE LOGIC (Template editing moved to templates.php) ---
-        const defaultTemplates = {
-            'registered': "<?php echo __('sms.registered'); ?>",
-            'called': "<?php echo __('sms.called', 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'); ?>",
-            'contacted': "<?php echo __('sms.contacted', 'Hello {name}, we have contacted you about your {plate} service. Please check your messages.'); ?>",
-            'schedule': "<?php echo __('sms.schedule'); ?>",
-            'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
-            'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
-            'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
-            'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
-            'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
-            'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly.",
-            'system': "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
-        };
-        
-        let smsTemplates = defaultTemplates;
-
-        // Load templates from API
-        async function loadSMSTemplates() {
-            try {
-                const serverTemplates = await fetchAPI('get_templates');
-                smsTemplates = { ...defaultTemplates, ...serverTemplates };
-            } catch (e) {
-                console.error("Template load error:", e);
-                // Fallback to defaults
-                smsTemplates = defaultTemplates;
-            }
-        }
-
-        // SMS Parsing Templates
-        let smsParsingTemplates = [];
-
-        // Load SMS parsing templates from API
-        async function loadSMSParsingTemplates() {
-            try {
-                smsParsingTemplates = await fetchAPI('get_parsing_templates');
-            } catch (e) {
-                console.error("SMS parsing templates load error:", e);
-                // Fallback to empty array
-                smsParsingTemplates = [];
-            }
-        }
-
-        // Format SMS message with template placeholders
-        function getFormattedMessage(type, data) {
-            let template = smsTemplates[type] || defaultTemplates[type] || "";
-            const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
-            const link = `${baseUrl}/public_view.php?id=${data.id}`;
-
-            return template
-                .replace(/{name}/g, data.name || '')
-                .replace(/{plate}/g, data.plate || '')
-                .replace(/{amount}/g, data.amount || '')
-                .replace(/{link}/g, link)
-                .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '')
-                .replace(/{count}/g, data.count || '');
-        }
-
-        // Notification Prompt & Load Templates
-        document.addEventListener('DOMContentLoaded', () => {
-            if ('Notification' in window && Notification.permission === 'default') {
-                const prompt = document.getElementById('notification-prompt');
-                if(prompt) setTimeout(() => prompt.classList.remove('hidden'), 2000);
-            }
-            loadSMSTemplates(); // Load SMS templates from API on start
-            loadSMSParsingTemplates(); // Load SMS parsing templates from API on start
-        });
-
-        // --- HTML ESCAPING FUNCTION ---
-        const escapeHtml = (text) => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = String(text);
-            return div.innerHTML;
-        };
-
-        // --- TRANSFERS ---
-        window.parseBankText = () => {
-            const importTextEl = document.getElementById('import-text');
-            const text = importTextEl ? importTextEl.value : '';
-            if(!text) return;
-            const lines = text.split(/\r?\n/);
-            parsedImportData = [];
-            
-            const franchiseRegex = /\(ფრანშიზა\s*([\d\.,]+)\)/i;
-
-            lines.forEach(line => {
-                if (!line.trim()) return; // Skip empty lines
-                
-                let parsed = false;
-                
-                // Try each SMS parsing template
-                for (let template of smsParsingTemplates) {
-                    if (parsed) break;
-                    
-                    const fieldMappings = template.field_mappings || [];
-                    let extractedData = {};
-                    
-                    // Try to extract each field using its pattern
-                    for (let mapping of fieldMappings) {
-                        const field = mapping.field;
-                        const pattern = mapping.pattern;
-                        
-                        if (!pattern) continue;
-                        
-                        let regex;
-                        if (field === 'plate') {
-                            // Plate numbers: look for pattern followed by plate
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([A-Za-z0-9]+)', 'i');
-                        } else if (field === 'name') {
-                            // Names: look for pattern followed by name until comma or end
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([^,]+)', 'i');
-                        } else if (field === 'amount') {
-                            // Amounts: look for pattern followed by number
-                            if (pattern) {
-                                regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
-                            } else {
-                                // If no pattern, look for amount at the end
-                                regex = /([\d\.,]+)$/i;
-                            }
-                        } else if (field === 'franchise') {
-                            // Franchise amounts: look for pattern followed by number in parentheses
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
-                        }
-                        
-                        if (regex) {
-                            const match = line.match(regex);
-                            if (match) {
-                                if (field === 'plate') extractedData.plate = match[1];
-                                else if (field === 'name') extractedData.name = match[1].trim();
-                                else if (field === 'amount') extractedData.amount = match[1];
-                                else if (field === 'franchise') extractedData.franchise = match[1];
-                            }
-                        }
-                    }
-                    
-                    // If we extracted at least plate and amount, consider it a match
-                    if (extractedData.plate && extractedData.amount) {
-                        let franchise = extractedData.franchise || '';
-                        // Fallback to general franchise regex if not found in template
-                        if (!franchise) {
-                            const fMatch = line.match(franchiseRegex);
-                            if(fMatch) franchise = fMatch[1];
-                        }
-
-                        // Clean up name (remove trailing commas)
-                        if (extractedData.name) {
-                            extractedData.name = extractedData.name.replace(/,+$/, '').trim();
-                        } else {
-                            // Default name based on insurance company
-                            extractedData.name = template.insurance_company + ' Customer';
-                        }
-
-                        parsedImportData.push({ 
-                            plate: extractedData.plate.trim(), 
-                            name: extractedData.name.trim(), 
-                            amount: extractedData.amount.trim(), 
-                            franchise: franchise,
-                            rawText: line,
-                            template: template.name
-                        });
-                        parsed = true;
-                    }
-                }
-                
-                // Fallback to old hardcoded patterns if no template matched
-                if (!parsed) {
-                    // Keep the old regex patterns as fallback
-                    const regexes = [
-                        /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
-                        /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
-                        /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
-                        // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10" - most specific with parentheses
-                        /([A-Z\s\-]+)\s*\(([A-Za-z0-9]+)\)\s*([\d\.,]+)/i,
-                        // Ardi insurance: "სახ. ნომ AA123BC 507.40" - Georgian text
-                        /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
-                        // Aldagi insurance: "მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00" - Georgian text
-                        /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.+?)\s+(\d[\d\.,]*)/i
-                    ];
-                    
-                    for(let r of regexes) {
-                        const m = line.match(r);
-                        if(m) {
-                            let plate, name, amount;
-                            if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                            else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                            else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                            else if(r.source.includes('[A-Z') && r.source.includes('([A-Za-z0-9]+)\\)')) { plate=m[2]; amount=m[3]; name='Imedi L Customer'; }
-                            else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; }
-                            else if(r.source.includes('მანქანის')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                            
-                            let franchise = '';
-                            const fMatch = line.match(franchiseRegex);
-                            if(fMatch) franchise = fMatch[1];
-
-                            // Clean up name (remove trailing commas)
-                            name = name.replace(/,+$/, '').trim();
-
-                            parsedImportData.push({ 
-                                plate: plate.trim(), 
-                                name: name.trim(), 
-                                amount: amount.trim(), 
-                                franchise: franchise,
-                                rawText: line 
-                            });
-                            parsed = true;
-                            break;
-                        }
-                    }
-                }
-            });
-
-            if(parsedImportData.length > 0) {
-                const parsedResultEl = document.getElementById('parsed-result');
-                const parsedPlaceholderEl = document.getElementById('parsed-placeholder');
-                const parsedContentEl = document.getElementById('parsed-content');
-                const btnSaveImportEl = document.getElementById('btn-save-import');
-                
-                if (parsedResultEl) parsedResultEl.classList.remove('hidden');
-                if (parsedPlaceholderEl) parsedPlaceholderEl.classList.add('hidden');
-                
-                // Escape HTML to prevent XSS
-                const escapeHtml = (text) => {
-                    const div = document.createElement('div');
-                    div.textContent = text;
-                    return div.innerHTML;
-                };
-                
-                if (parsedContentEl) parsedContentEl.innerHTML = parsedImportData.map(i => 
-                    `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
-                        <div class="flex items-center gap-2">
-                            <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
-                            <span class="text-slate-500">${escapeHtml(i.name)}</span>
-                            ${i.template ? `<span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 text-xs">${escapeHtml(i.template)}</span>` : ''}
-                            ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${escapeHtml(i.franchise)}</span>` : ''}
-                        </div>
-                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
-                    </div>`
-                ).join('');
-                if (btnSaveImportEl) btnSaveImportEl.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
-                lucide.createIcons();
-            } else {
-                showToast("No matches found", "Could not parse any transfers from the text", "error");
-            }
-        };
-
-        window.saveParsedImport = async () => {
-            const btn = document.getElementById('btn-save-import');
-            if (btn) {
-                btn.disabled = true; 
-                btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
-            }
-            
-            let successCount = 0;
-            let failCount = 0;
-            
-            for(let data of parsedImportData) {
-                try {
-                    const res = await fetchAPI('add_transfer', 'POST', data);
-                    if (res && res.status === 'success') {
-                        successCount++;
-                        if (res.id && data.franchise) {
-                            await fetchAPI(`update_transfer&id=${res.id}`, 'POST', { franchise: data.franchise });
-                        }
-                        await fetchAPI('sync_vehicle', 'POST', { plate: data.plate, ownerName: data.name });
+                // 3. Reply Filter (Logic: 'Not Responded' matches 'Pending' or null)
+                if (replyFilter !== 'All') {
+                    if (replyFilter === 'Pending') {
+                        // Match "Not Responded" (Pending or empty)
+                        if (t.user_response && t.user_response !== 'Pending') return;
                     } else {
-                        failCount++;
+                        // Match specific reply (Confirmed / Reschedule)
+                        if (t.user_response !== replyFilter) return;
                     }
-                } catch (error) {
-                    console.error('Error importing transfer:', error);
-                    failCount++;
                 }
-            }
+
+                const dateObj = new Date(t.created_at || Date.now());
+                const dateStr = dateObj.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                // Find linked vehicle info for display (Normalized Matching)
+                const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
+                const displayPhone = t.phone || (linkedVehicle ? linkedVehicle.phone : null);
+
+                if(t.status === 'New') {
+                    newCount++;
+                    newContainer.innerHTML += `
+                        <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                            <div class="absolute top-0 left-0 w-1.5 h-full bg-primary-500"></div>
+                            <div class="flex justify-between items-start mb-3 pl-3">
+                                <div class="flex flex-col gap-1">
+                                    <span class="bg-primary-50 text-primary-700 border border-primary-100 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1 w-fit"><i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}</span>
+                                    <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
+                                </div>
+                                <span class="text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">${escapeHtml(t.amount)} ₾</span>
+                            </div>
+                            <div class="pl-3 mb-5">
+                                <h3 class="font-bold text-lg text-slate-800">${escapeHtml(t.plate)}</h3>
+                                <p class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</p>
+                                ${displayPhone ? `<div class="flex items-center gap-1.5 mt-2 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(displayPhone)}</div>` : ''}
+                                ${t.franchise ? `<p class="text-[10px] text-orange-500 mt-1">Franchise: ${escapeHtml(t.franchise)}</p>` : ''}
+                            </div>
+                            <div class="pl-3 text-right">
+                                <button onclick="window.openEditModal(${t.id})" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 ml-auto group-hover:bg-primary-50">
+                                    Process Case <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </div>`;
+                } else {
+                    activeCount++;
+                    
+                    const statusColors = {
+                        'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                        'Called': 'bg-purple-100 text-purple-800 border-purple-200',
+                        'Parts Ordered': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                        'Parts Arrived': 'bg-teal-100 text-teal-800 border-teal-200',
+                        'Scheduled': 'bg-orange-100 text-orange-800 border-orange-200',
+                        'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                        'Issue': 'bg-red-100 text-red-800 border-red-200'
+                    };
+                    const badgeClass = statusColors[t.status] || 'bg-slate-100 text-slate-600 border-slate-200';
+                    
+                    const hasPhone = t.phone ? 
+                        `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(t.phone)}</span>` : 
+                        `<span class="text-red-400 text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Missing</span>`;
+                    
+                    // USER RESPONSE LOGIC
+                    let replyBadge = `<span class="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="help-circle" class="w-3 h-3"></i> Not Responded</span>`;
+                    
+                    if (t.user_response === 'Confirmed') {
+                        replyBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="check" class="w-3 h-3"></i> Confirmed</span>`;
+                    } else if (t.user_response === 'Reschedule Requested') {
+                        let rescheduleInfo = '';
+                        let quickAcceptBtn = '';
+                        if (t.rescheduleDate) {
+                            const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                            const dateStr = reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            rescheduleInfo = `<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ${dateStr}</div>`;
+                            quickAcceptBtn = `<button onclick="event.stopPropagation(); window.quickAcceptReschedule(${t.id})" class="mt-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition-all active:scale-95 shadow-sm">
+                                <i data-lucide="check" class="w-3 h-3"></i> Accept
+                            </button>`;
+                        }
+                        replyBadge = `<div class="flex flex-col items-start gap-1">
+                            <span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
+                                <i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request
+                            </span>
+                            ${rescheduleInfo}
+                            ${quickAcceptBtn}
+                        </div>`;
+                    }
+
+                    // Service date formatting
+                    let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
+                    if (t.service_date) {
+                        const svcDate = new Date(t.service_date.replace(' ', 'T'));
+                        const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
+                            <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span class="font-semibold">${svcDateStr}</span>
+                        </div>`;
+                    }
+                    
+                    // Review stars display
+                    let reviewDisplay = '';
+                    if (t.reviewStars && t.reviewStars > 0) {
+                        const stars = '⭐'.repeat(parseInt(t.reviewStars));
+                        reviewDisplay = `<div class="flex items-center gap-1 mt-1">
+                            <span class="text-xs">${stars}</span>
+                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
+                        </div>`;
+                    }
+
+                    activeContainer.innerHTML += `
+                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.openEditModal(${t.id})">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all">
+                                        <i data-lucide="car" class="w-4 h-4 text-white"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(t.plate)}</span>
+                                            <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
+                                        </div>
+                                        <div class="font-semibold text-xs text-slate-700">${escapeHtml(t.name)}</div>
+                                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                            <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                                <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
+                                            </span>
+                                            ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
+                                            </span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
+                                    <span class="font-bold text-emerald-600 text-base">${escapeHtml(t.amount)}₾</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
+                                    ${t.status}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4">
+                                ${hasPhone}
+                                ${reviewDisplay}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${serviceDateDisplay}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${replyBadge}
+                            </td>
+                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                                ${CAN_EDIT ? 
+                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2.5 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95 group-hover:bg-white">
+                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                    </button>` :
+                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-blue-600 p-2.5 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>`
+                                }
+                            </td>
+                        </tr>`;
+                }
+            });
+
+            const newCountEl = document.getElementById('new-count');
+            const recordCountEl = document.getElementById('record-count');
+            const newCasesEmptyEl = document.getElementById('new-cases-empty');
+            const emptyStateEl = document.getElementById('empty-state');
             
-            if(MANAGER_PHONE && successCount > 0) {
-                const templateData = { count: successCount };
-                const msg = getFormattedMessage('system', templateData);
-                window.sendSMS(MANAGER_PHONE, msg, 'system');
-            }
+            if (newCountEl) newCountEl.innerText = `${newCount}`;
+            if (recordCountEl) recordCountEl.innerText = `${activeCount} active`;
+            if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
+            if (emptyStateEl) emptyStateEl.classList.toggle('hidden', activeCount > 0);
+            lucide.createIcons();
+        }
+
+        window.openEditModal = (id) => {
+            const t = transfers.find(i => i.id == id);
+            if(!t) return;
+            window.currentEditingId = id; // Ensure global scope assignment
             
-            if (successCount > 0) {
-                await fetchAPI('send_broadcast', 'POST', { 
-                    title: 'New Transfers Imported', 
-                    body: `<?php echo __('status.new_cases_added', '{count} new cases added.'); ?>`.replace('{count}', successCount) 
+            // Auto-fill phone from registry if missing in transfer
+            const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
+            const phoneToFill = t.phone || (linkedVehicle ? linkedVehicle.phone : '');
+
+            const titleRefEl = document.getElementById('modal-title-ref');
+            const titleNameEl = document.getElementById('modal-title-name');
+            const orderIdEl = document.getElementById('modal-order-id');
+            const amountEl = document.getElementById('modal-amount');
+            const phoneInputEl = document.getElementById('input-phone');
+            const serviceDateEl = document.getElementById('input-service-date');
+            const franchiseEl = document.getElementById('input-franchise');
+            const statusEl = document.getElementById('input-status');
+
+            if (titleRefEl) titleRefEl.innerText = t.plate;
+            if (titleNameEl) titleNameEl.innerText = t.name;
+            if (orderIdEl) orderIdEl.innerText = `#${t.id}`;
+            if (amountEl) amountEl.innerText = t.amount || '0';
+            if (phoneInputEl) phoneInputEl.value = phoneToFill;
+            if (serviceDateEl) serviceDateEl.value = t.serviceDate ? t.serviceDate.replace(' ', 'T') : '';
+            if (franchiseEl) franchiseEl.value = t.franchise || '';
+            if (statusEl) statusEl.value = t.status;
+            
+            // Update workflow progress indicator
+            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
+            const currentStageIndex = statusStages.indexOf(t.status);
+            const progressPercentage = ((currentStageIndex + 1) / statusStages.length) * 100;
+            
+            const stageNumberEl = document.getElementById('workflow-stage-number');
+            const progressBarEl = document.getElementById('workflow-progress-bar');
+            if (stageNumberEl) stageNumberEl.innerText = currentStageIndex + 1;
+            if (progressBarEl) progressBarEl.style.width = `${progressPercentage}%`;
+            
+            // Update status description
+            const statusDescriptions = {
+                'New': 'Initial case import - awaiting processing',
+                'Processing': 'Case is being reviewed and processed',
+                'Called': 'Customer has been contacted',
+                'Parts Ordered': 'Parts have been ordered for repair',
+                'Parts Arrived': 'Parts are ready for service',
+                'Scheduled': 'Service appointment is scheduled',
+                'Completed': 'Case has been completed successfully',
+                'Issue': 'Case requires special attention'
+            };
+            const statusDescEl = document.getElementById('status-description');
+            if (statusDescEl) statusDescEl.innerText = statusDescriptions[t.status] || 'Unknown status';
+            
+            // Add status change listener for progress updates
+            const statusInputEl = document.getElementById('input-status');
+            if (statusInputEl) {
+                statusInputEl.addEventListener('change', (e) => {
+                    const newStatus = e.target.value;
+                    const newStageIndex = statusStages.indexOf(newStatus);
+                    const newProgressPercentage = ((newStageIndex + 1) / statusStages.length) * 100;
+                    
+                    const stageNumberEl = document.getElementById('workflow-stage-number');
+                    const progressBarEl = document.getElementById('workflow-progress-bar');
+                    const statusDescEl = document.getElementById('status-description');
+                    
+                    if (stageNumberEl) stageNumberEl.innerText = newStageIndex + 1;
+                    if (progressBarEl) progressBarEl.style.width = `${newProgressPercentage}%`;
+                    if (statusDescEl) statusDescEl.innerText = statusDescriptions[newStatus] || 'Unknown status';
                 });
             }
-
-            const importTextEl = document.getElementById('import-text');
-            const parsedResultEl = document.getElementById('parsed-result');
-            const parsedPlaceholderEl = document.getElementById('parsed-placeholder');
             
-            if (importTextEl) importTextEl.value = '';
-            if (parsedResultEl) parsedResultEl.classList.add('hidden');
-            if (parsedPlaceholderEl) parsedPlaceholderEl.classList.remove('hidden');
-            loadData();
-            
-            if (failCount > 0) {
-                showToast("Import Completed with Errors", `<?php echo __('status.import_errors', '{success} succeeded, {failed} failed'); ?>`.replace('{success}', successCount).replace('{failed}', failCount), "error");
+            // Format and display created date
+            const createdDateEl = document.getElementById('modal-created-date');
+            if (t.created_at) {
+                const createdDate = new Date(t.created_at);
+                if (createdDateEl) createdDateEl.innerText = createdDate.toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
             } else {
-                showToast("<?php echo __('status.import_successful', 'Import Successful'); ?>", `<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>`.replace('{count}', successCount), "success");
+                if (createdDateEl) createdDateEl.innerText = 'N/A';
             }
             
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Confirm & Save`;
+            const callBtnEl = document.getElementById('btn-call-real');
+            if (callBtnEl) callBtnEl.href = t.phone ? `tel:${t.phone}` : '#';
+            
+            const smsRegisterBtnEl = document.getElementById('btn-sms-register');
+            if (smsRegisterBtnEl) smsRegisterBtnEl.onclick = () => {
+                // Use Template for Welcome SMS
+                const serviceDateEl = document.getElementById('input-service-date');
+                const phoneEl = document.getElementById('input-phone');
+                const templateData = { 
+                    id: t.id, // ID needed for link gen
+                    name: t.name, 
+                    plate: t.plate, 
+                    amount: t.amount, 
+                    serviceDate: serviceDateEl ? serviceDateEl.value : '' 
+                };
+                const msg = getFormattedMessage('registered', templateData);
+                if (phoneEl) window.sendSMS(phoneEl.value, msg, 'registered');
+            };
+
+            const smsArrivedBtnEl = document.getElementById('btn-sms-arrived');
+            if (smsArrivedBtnEl) smsArrivedBtnEl.onclick = () => {
+                const serviceDateEl = document.getElementById('input-service-date');
+                const date = serviceDateEl ? serviceDateEl.value : '';
+                if (!date) return showToast("Time Required", "Please set an Appointment date for Parts Arrived SMS", "error");
+                
+                const templateData = { 
+                    id: t.id,
+                    name: t.name, 
+                    plate: t.plate, 
+                    amount: t.amount, 
+                    serviceDate: date 
+                };
+                const msg = getFormattedMessage('parts_arrived', templateData);
+                const phoneEl = document.getElementById('input-phone');
+                if (phoneEl) window.sendSMS(phoneEl.value, msg, 'parts_arrived');
+            };
+
+            const smsScheduleBtnEl = document.getElementById('btn-sms-schedule');
+            if (smsScheduleBtnEl) smsScheduleBtnEl.onclick = () => {
+                const serviceDateEl = document.getElementById('input-service-date');
+                const date = serviceDateEl ? serviceDateEl.value : '';
+                if (!date) return showToast("Please set an Appointment date first", "error");
+                // Use Template for Schedule SMS
+                const templateData = { 
+                    id: t.id,
+                    name: t.name, 
+                    plate: t.plate, 
+                    amount: t.amount, 
+                    serviceDate: date 
+                };
+                const msg = getFormattedMessage('schedule', templateData);
+                const phoneEl = document.getElementById('input-phone');
+                if (phoneEl) window.sendSMS(phoneEl.value, msg, 'schedule');
+            };
+
+            const logHTML = (t.systemLogs || []).map(l => `
+                <div class="bg-white p-3 rounded-lg border border-slate-200 mb-2 last:mb-0">
+                    <div class="flex items-start gap-3">
+                        <div class="bg-slate-100 p-2 rounded-lg flex-shrink-0">
+                            <i data-lucide="clock" class="w-4 h-4 text-slate-500"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs text-slate-400 font-medium mb-1">${l.timestamp.split('T')[0]}</div>
+                            <div class="text-sm text-slate-700 leading-relaxed">${escapeHtml(l.message)}</div>
+                        </div>
+                    </div>
+                </div>`).join('');
+            const activityLogEl = document.getElementById('activity-log-container');
+            if (activityLogEl) activityLogEl.innerHTML = logHTML || '<div class="text-center py-8"><div class="bg-slate-100 p-4 rounded-lg"><i data-lucide="inbox" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i><span class="text-slate-500 text-sm">No system activity recorded</span></div></div>';
+            
+            const noteHTML = (t.internalNotes || []).map(n => `
+                <div class="bg-white p-4 rounded-lg border border-emerald-200 mb-3 last:mb-0 shadow-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="bg-emerald-100 p-2 rounded-lg flex-shrink-0">
+                            <i data-lucide="user" class="w-4 h-4 text-emerald-600"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm text-slate-700 leading-relaxed mb-2">${escapeHtml(n.text)}</div>
+                            <div class="flex justify-end">
+                                <span class="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded-full font-medium">${escapeHtml(n.authorName)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`).join('');
+            const notesListEl = document.getElementById('notes-list');
+            if (notesListEl) notesListEl.innerHTML = noteHTML || '<div class="text-center py-8"><div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200"><i data-lucide="sticky-note" class="w-8 h-8 text-emerald-400 mx-auto mb-2"></i><span class="text-emerald-600 text-sm">No team notes yet</span></div></div>';
+
+            // Display customer review if exists
+            const reviewSection = document.getElementById('modal-review-section');
+            if (t.reviewStars && t.reviewStars > 0) {
+                if (reviewSection) reviewSection.classList.remove('hidden');
+                const reviewRatingEl = document.getElementById('modal-review-rating');
+                if (reviewRatingEl) reviewRatingEl.innerText = t.reviewStars;
+                
+                // Render stars
+                const starsHTML = Array(5).fill(0).map((_, i) => 
+                    `<i data-lucide="star" class="w-5 h-5 ${i < t.reviewStars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}"></i>`
+                ).join('');
+                const reviewStarsEl = document.getElementById('modal-review-stars');
+                if (reviewStarsEl) reviewStarsEl.innerHTML = starsHTML;
+                
+                // Display comment
+                const comment = t.reviewComment || 'No comment provided';
+                const reviewCommentEl = document.getElementById('modal-review-comment');
+                if (reviewCommentEl) reviewCommentEl.innerText = comment;
+            } else {
+                if (reviewSection) reviewSection.classList.add('hidden');
             }
+
+            // Display reschedule request if exists
+            const rescheduleSection = document.getElementById('modal-reschedule-section');
+            if (t.userResponse === 'Reschedule Requested' && (t.rescheduleDate || t.rescheduleComment)) {
+                if (rescheduleSection) rescheduleSection.classList.remove('hidden');
+                
+                if (t.rescheduleDate) {
+                    const requestedDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                    const rescheduleDateEl = document.getElementById('modal-reschedule-date');
+                    if (rescheduleDateEl) rescheduleDateEl.innerText = requestedDate.toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+                } else {
+                    const rescheduleDateEl = document.getElementById('modal-reschedule-date');
+                    if (rescheduleDateEl) rescheduleDateEl.innerText = 'Not specified';
+                }
+                
+                const rescheduleComment = t.rescheduleComment || 'No additional comments';
+                const rescheduleCommentEl = document.getElementById('modal-reschedule-comment');
+                if (rescheduleCommentEl) rescheduleCommentEl.innerText = rescheduleComment;
+            } else {
+                if (rescheduleSection) rescheduleSection.classList.add('hidden');
+            }
+
+            const editModalEl = document.getElementById('edit-modal');
+            if (editModalEl) editModalEl.classList.remove('hidden');
             lucide.createIcons();
         };
 
-        // --- INITIAL DATA LOAD ---
-        // Load initial data
-        async function loadData() {
-            try {
-                const response = await fetchAPI('get_transfers');
-                
-                // Handle new combined response format
-                if (response.transfers && response.vehicles) {
-                    transfers = response.transfers;
-                    vehicles = response.vehicles;
-                } else if (Array.isArray(response)) {
-                    // Fallback for old format (just transfers array)
-                    transfers = response;
-                    const newVehicles = await fetchAPI('get_vehicles');
-                    if(Array.isArray(newVehicles)) vehicles = newVehicles;
-                }
-
-                renderTable();
-            } catch(e) {
-                // Squelch load errors to prevent loop spam, alert user once via status
-            }
-
-            const loadingScreenEl = document.getElementById('loading-screen');
-            const appContentEl = document.getElementById('app-content');
-            
-            if (loadingScreenEl) loadingScreenEl.classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
-                if (appContentEl) appContentEl.classList.remove('hidden');
-            }, 500);
-        }
-
-        // Poll for updates every 10 seconds
-        setInterval(loadData, 10000);
-
-        // Premium Toast Notifications
-        function showToast(title, message = '', type = 'success', duration = 4000) {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            
-            // Handle legacy calls
-            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
-            if (!message && !type) { type = 'success'; }
-            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
-            
-            // Create toast
-            const toast = document.createElement('div');
-            
-            const colors = {
-                success: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-emerald-200/60', 
-                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', 
-                    iconColor: 'text-emerald-600', 
-                    icon: 'check-circle-2',
-                    shadow: 'shadow-emerald-500/20' 
-                },
-                error: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-red-200/60', 
-                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50', 
-                    iconColor: 'text-red-600', 
-                    icon: 'alert-circle',
-                    shadow: 'shadow-red-500/20' 
-                },
-                info: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-primary-200/60', 
-                    iconBg: 'bg-gradient-to-br from-primary-50 to-accent-50', 
-                    iconColor: 'text-primary-600', 
-                    icon: 'info',
-                    shadow: 'shadow-primary-500/20' 
-                },
-                urgent: { 
-                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent', 
-                    border: 'border-primary-300', 
-                    iconBg: 'bg-gradient-to-br from-primary-100 to-accent-100', 
-                    iconColor: 'text-primary-700', 
-                    icon: 'bell-ring',
-                    shadow: 'shadow-primary-500/30' 
-                }
-            };
-            
-            const style = colors[type] || colors.info;
-
-            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
-            
-            toast.innerHTML = `
-                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
-                    <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.appendChild(toast);
-            if(window.lucide) lucide.createIcons();
-
-            // Animate In
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-10', 'opacity-0');
-            });
-
-            // Auto Dismiss (unless persistent/urgent)
-            if (duration > 0 && type !== 'urgent') {
-                setTimeout(() => {
-                    toast.classList.add('translate-y-4', 'opacity-0');
-                    setTimeout(() => toast.remove(), 500);
-                }, duration);
-            }
-        }
-
-        window.switchView = (v) => {
-            // Toggle views (check if element exists before accessing)
-            const dashboardView = document.getElementById('view-dashboard');
-            const vehiclesView = document.getElementById('view-vehicles');
-            const templatesView = document.getElementById('view-templates');
-            const usersView = document.getElementById('view-users');
-            
-            if (dashboardView) dashboardView.classList.toggle('hidden', v !== 'dashboard');
-            if (vehiclesView) vehiclesView.classList.toggle('hidden', v !== 'vehicles');
-            if (templatesView) templatesView.classList.toggle('hidden', v !== 'templates');
-            if (usersView) usersView.classList.toggle('hidden', v !== 'users');
-            
-            // Render vehicles when switching to that view
-            if (v === 'vehicles') {
-                renderVehicles();
-            }
-            
-            const activeClass = "nav-active px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 bg-slate-900 text-white shadow-sm";
-            const inactiveClass = "nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-white";
-
-            // Update nav button (check if element exists)
-            const navDashboard = document.getElementById('nav-dashboard');
-            const navVehicles = document.getElementById('nav-vehicles');
-            if (navDashboard) navDashboard.className = v === 'dashboard' ? activeClass : inactiveClass;
-            if (navVehicles) navVehicles.className = v === 'vehicles' ? activeClass : inactiveClass;
+        window.closeModal = () => { 
+            const editModalEl = document.getElementById('edit-modal');
+            if (editModalEl) editModalEl.classList.add('hidden'); 
+            window.currentEditingId = null; 
         };
 
-        // --- VEHICLES PAGINATION ---
-        let currentVehiclesPage = 1;
-        const vehiclesPerPage = 10;
-
-        function renderVehicles(page = 1) {
-            if (!vehicles || vehicles.length === 0) {
-                const tableBodyEl = document.getElementById('vehicles-table-body');
-                const emptyEl = document.getElementById('vehicles-empty');
-                const countEl = document.getElementById('vehicles-count');
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                const paginationEl = document.getElementById('vehicles-pagination');
-                
-                if (tableBodyEl) tableBodyEl.innerHTML = '';
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                if (countEl) countEl.textContent = '0 vehicles';
-                if (pageInfoEl) pageInfoEl.classList.add('hidden');
-                if (paginationEl) paginationEl.innerHTML = '';
+        // Manual Create Modal Functions
+        window.openManualCreateModal = async () => {
+            // Check permissions
+            if (!CAN_EDIT) {
+                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
                 return;
             }
-
-            currentVehiclesPage = page;
-            const searchTerm = document.getElementById('vehicles-search')?.value.toLowerCase() || '';
             
-            // Filter vehicles
-            let filtered = vehicles.filter(v => {
-                const plate = (v.plate || '').toLowerCase();
-                const phone = (v.phone || '').toLowerCase();
-                return plate.includes(searchTerm) || phone.includes(searchTerm);
-            });
-
-            const totalVehicles = filtered.length;
-            const totalPages = Math.ceil(totalVehicles / vehiclesPerPage);
+            const modal = document.getElementById('manual-create-modal');
+            if (modal) modal.classList.remove('hidden');
             
-            // Adjust page if out of range
-            if (currentVehiclesPage > totalPages && totalPages > 0) {
-                currentVehiclesPage = totalPages;
-            }
-            if (currentVehiclesPage < 1) {
-                currentVehiclesPage = 1;
-            }
-
-            const startIndex = (currentVehiclesPage - 1) * vehiclesPerPage;
-            const endIndex = Math.min(startIndex + vehiclesPerPage, totalVehicles);
-            const pageVehicles = filtered.slice(startIndex, endIndex);
-
-            // Update count
-            const countEl = document.getElementById('vehicles-count');
-            if (countEl) countEl.textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
-
-            // Render table
-            const tbody = document.getElementById('vehicles-table-body');
-            const emptyEl = document.getElementById('vehicles-empty');
-            if (pageVehicles.length === 0) {
-                if (tbody) tbody.innerHTML = '';
-                if (emptyEl) emptyEl.classList.remove('hidden');
-            } else {
-                if (emptyEl) emptyEl.classList.add('hidden');
-                if (tbody) tbody.innerHTML = pageVehicles.map(v => {
-                    const addedDate = v.created_at ? new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
-                    const source = v.source || 'Manual';
-                    return `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="car" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="font-mono font-bold text-slate-900">${escapeHtml(v.plate || 'N/A')}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="text-slate-700">${escapeHtml(v.phone || 'N/A')}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-slate-600 text-sm">${addedDate}</td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                    source === 'Import' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'
-                                }">${source}</span>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            // Update pagination info
-            if (totalVehicles > 0) {
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                const showingStartEl = document.getElementById('vehicles-showing-start');
-                const showingEndEl = document.getElementById('vehicles-showing-end');
-                const totalEl = document.getElementById('vehicles-total');
-                
-                if (pageInfoEl) pageInfoEl.classList.remove('hidden');
-                if (showingStartEl) showingStartEl.textContent = startIndex + 1;
-                if (showingEndEl) showingEndEl.textContent = endIndex;
-                if (totalEl) totalEl.textContent = totalVehicles;
-            } else {
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                if (pageInfoEl) pageInfoEl.classList.add('hidden');
-            }
-
-            // Render pagination buttons
-            renderVehiclesPagination(totalPages);
+            // Clear all inputs
+            const plateEl = document.getElementById('manual-plate');
+            const nameEl = document.getElementById('manual-name');
+            const phoneEl = document.getElementById('manual-phone');
+            const amountEl = document.getElementById('manual-amount');
+            const franchiseEl = document.getElementById('manual-franchise');
+            const statusEl = document.getElementById('manual-status');
+            const notesEl = document.getElementById('manual-notes');
             
-            // Re-init Lucide icons
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function renderVehiclesPagination(totalPages) {
-            const container = document.getElementById('vehicles-pagination');
-            if (!container) return;
-            if (totalPages <= 1) {
-                container.innerHTML = '';
-                return;
-            }
-
-            let html = '';
-
-            // Previous button
-            html += `
-                <button onclick="renderVehicles(${currentVehiclesPage - 1})" 
-                    class="px-3 py-1.5 rounded-lg border transition-all ${
-                        currentVehiclesPage === 1 
-                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
- 
-                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }" 
-                    ${currentVehiclesPage === 1 ? 'disabled' : ''}>
-                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            // Page numbers (show max 5 pages)
-            let startPage = Math.max(1, currentVehiclesPage - 2);
-            let endPage = Math.min(totalPages, startPage + 4);
-            
-            if (endPage - startPage < 4) {
-                startPage = Math.max(1, endPage - 4);
-            }
-
-            if (startPage > 1) {
-                html += `<button onclick="renderVehicles(1)" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">1</button>`;
-                if (startPage > 2) {
-                    html += `<span class="px-2 text-slate-400">...</span>`;
-                }
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-                html += `
-                    <button onclick="renderVehicles(${i})" 
-                        class="px-3 py-1.5 rounded-lg border transition-all ${
-                            i === currentVehiclesPage 
-                                ? 'bg-slate-900 text-white border-slate-900' 
-                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                        }">
-                        ${i}
-                    </button>
-                `;
-            }
-
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    html += `<span class="px-2 text-slate-400">...</span>`;
-                }
-                html += `<button onclick="renderVehicles(${totalPages})" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">${totalPages}</button>`;
-            }
-
-            // Next button
-            html += `
-                <button onclick="renderVehicles(${currentVehiclesPage + 1})" 
-                    class="px-3 py-1.5 rounded-lg border transition-all ${
-                        currentVehiclesPage === totalPages 
-                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }" 
-                    ${currentVehiclesPage === totalPages ? 'disabled' : ''}>
-                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.innerHTML = html;
-            if (window.lucide) lucide.createIcons();
-        }
-
-        // Search handler for vehicles
-        document.addEventListener('DOMContentLoaded', () => {
-            const vehiclesSearch = document.getElementById('vehicles-search');
-            if (vehiclesSearch) {
-                vehiclesSearch.addEventListener('input', () => {
-                    currentVehiclesPage = 1; // Reset to first page on search
-                    renderVehicles(1);
-                });
-            }
-        });
-
-        // --- SMS TEMPLATE LOGIC (Template editing moved to templates.php) ---
-        const defaultTemplates = {
-            'registered': "<?php echo __('sms.registered'); ?>",
-            'called': "<?php echo __('sms.called', 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'); ?>",
-            'contacted': "<?php echo __('sms.contacted', 'Hello {name}, we have contacted you about your {plate} service. Please check your messages.'); ?>",
-            'schedule': "<?php echo __('sms.schedule'); ?>",
-            'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
-            'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
-            'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
-            'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
-            'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
-            'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly.",
-            'system': "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
-        };
-        
-        let smsTemplates = defaultTemplates;
-
-        // Load templates from API
-        async function loadSMSTemplates() {
-            try {
-                const serverTemplates = await fetchAPI('get_templates');
-                smsTemplates = { ...defaultTemplates, ...serverTemplates };
-            } catch (e) {
-                console.error("Template load error:", e);
-                // Fallback to defaults
-                smsTemplates = defaultTemplates;
-            }
-        }
-
-        // SMS Parsing Templates
-        let smsParsingTemplates = [];
-
-        // Load SMS parsing templates from API
-        async function loadSMSParsingTemplates() {
-            try {
-                smsParsingTemplates = await fetchAPI('get_parsing_templates');
-            } catch (e) {
-                console.error("SMS parsing templates load error:", e);
-                // Fallback to empty array
-                smsParsingTemplates = [];
-            }
-        }
-
-        // Format SMS message with template placeholders
-        function getFormattedMessage(type, data) {
-            let template = smsTemplates[type] || defaultTemplates[type] || "";
-            const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
-            const link = `${baseUrl}/public_view.php?id=${data.id}`;
-
-            return template
-                .replace(/{name}/g, data.name || '')
-                .replace(/{plate}/g, data.plate || '')
-                .replace(/{amount}/g, data.amount || '')
-                .replace(/{link}/g, link)
-                .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '')
-                .replace(/{count}/g, data.count || '');
-        }
-
-        // Notification Prompt & Load Templates
-        document.addEventListener('DOMContentLoaded', () => {
-            if ('Notification' in window && Notification.permission === 'default') {
-                const prompt = document.getElementById('notification-prompt');
-                if(prompt) setTimeout(() => prompt.classList.remove('hidden'), 2000);
-            }
-            loadSMSTemplates(); // Load SMS templates from API on start
-            loadSMSParsingTemplates(); // Load SMS parsing templates from API on start
-        });
-
-        // --- HTML ESCAPING FUNCTION ---
-        const escapeHtml = (text) => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = String(text);
-            return div.innerHTML;
-        };
-
-        // --- TRANSFERS ---
-        window.parseBankText = () => {
-            const importTextEl = document.getElementById('import-text');
-            const text = importTextEl ? importTextEl.value : '';
-            if(!text) return;
-            const lines = text.split(/\r?\n/);
-            parsedImportData = [];
-            
-            const franchiseRegex = /\(ფრანშიზა\s*([\d\.,]+)\)/i;
-
-            lines.forEach(line => {
-                if (!line.trim()) return; // Skip empty lines
-                
-                let parsed = false;
-                
-                // Try each SMS parsing template
-                for (let template of smsParsingTemplates) {
-                    if (parsed) break;
-                    
-                    const fieldMappings = template.field_mappings || [];
-                    let extractedData = {};
-                    
-                    // Try to extract each field using its pattern
-                    for (let mapping of fieldMappings) {
-                        const field = mapping.field;
-                        const pattern = mapping.pattern;
-                        
-                        if (!pattern) continue;
-                        
-                        let regex;
-                        if (field === 'plate') {
-                            // Plate numbers: look for pattern followed by plate
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([A-Za-z0-9]+)', 'i');
-                        } else if (field === 'name') {
-                            // Names: look for pattern followed by name until comma or end
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([^,]+)', 'i');
-                        } else if (field === 'amount') {
-                            // Amounts: look for pattern followed by number
-                            if (pattern) {
-                                regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
-                            } else {
-                                // If no pattern, look for amount at the end
-                                regex = /([\d\.,]+)$/i;
-                            }
-                        } else if (field === 'franchise') {
-                            // Franchise amounts: look for pattern followed by number in parentheses
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
-                        }
-                        
-                        if (regex) {
-                            const match = line.match(regex);
-                            if (match) {
-                                if (field === 'plate') extractedData.plate = match[1];
-                                else if (field === 'name') extractedData.name = match[1].trim();
-                                else if (field === 'amount') extractedData.amount = match[1];
-                                else if (field === 'franchise') extractedData.franchise = match[1];
-                            }
-                        }
-                    }
-                    
-                    // If we extracted at least plate and amount, consider it a match
-                    if (extractedData.plate && extractedData.amount) {
-                        let franchise = extractedData.franchise || '';
-                        // Fallback to general franchise regex if not found in template
-                        if (!franchise) {
-                            const fMatch = line.match(franchiseRegex);
-                            if(fMatch) franchise = fMatch[1];
-                        }
-
-                        // Clean up name (remove trailing commas)
-                        if (extractedData.name) {
-                            extractedData.name = extractedData.name.replace(/,+$/, '').trim();
-                        } else {
-                            // Default name based on insurance company
-                            extractedData.name = template.insurance_company + ' Customer';
-                        }
-
-                        parsedImportData.push({ 
-                            plate: extractedData.plate.trim(), 
-                            name: extractedData.name.trim(), 
-                            amount: extractedData.amount.trim(), 
-                            franchise: franchise,
-                            rawText: line,
-                            template: template.name
-                        });
-                        parsed = true;
-                    }
-                }
-                
-                // Fallback to old hardcoded patterns if no template matched
-                if (!parsed) {
-                    // Keep the old regex patterns as fallback
-                    const regexes = [
-                        /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
-                        /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
-                        /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
-                        // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10" - most specific with parentheses
-                        /([A-Z\s\-]+)\s*\(([A-Za-z0-9]+)\)\s*([\d\.,]+)/i,
-                        // Ardi insurance: "სახ. ნომ AA123BC 507.40" - Georgian text
-                        /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
-                        // Aldagi insurance: "მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00" - Georgian text
-                        /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.+?)\s+(\d[\d\.,]*)/i
-                    ];
-                    
-                    for(let r of regexes) {
-                        const m = line.match(r);
-                        if(m) {
-                            let plate, name, amount;
-                            if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                            else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                            else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                            else if(r.source.includes('[A-Z') && r.source.includes('([A-Za-z0-9]+)\\)')) { plate=m[2]; amount=m[3]; name='Imedi L Customer'; }
-                            else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; }
-                            else if(r.source.includes('მანქანის')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                            
-                            let franchise = '';
-                            const fMatch = line.match(franchiseRegex);
-                            if(fMatch) franchise = fMatch[1];
-
-                            // Clean up name (remove trailing commas)
-                            name = name.replace(/,+$/, '').trim();
-
-                            parsedImportData.push({ 
-                                plate: plate.trim(), 
-                                name: name.trim(), 
-                                amount: amount.trim(), 
-                                franchise: franchise,
-                                rawText: line 
-                            });
-                            parsed = true;
-                            break;
-                        }
-                    }
-                }
-            });
-
-            if(parsedImportData.length > 0) {
-                const parsedResultEl = document.getElementById('parsed-result');
-                const parsedPlaceholderEl = document.getElementById('parsed-placeholder');
-                const parsedContentEl = document.getElementById('parsed-content');
-                const btnSaveImportEl = document.getElementById('btn-save-import');
-                
-                if (parsedResultEl) parsedResultEl.classList.remove('hidden');
-                if (parsedPlaceholderEl) parsedPlaceholderEl.classList.add('hidden');
-                
-                // Escape HTML to prevent XSS
-                const escapeHtml = (text) => {
-                    const div = document.createElement('div');
-                    div.textContent = text;
-                    return div.innerHTML;
-                };
-                
-                if (parsedContentEl) parsedContentEl.innerHTML = parsedImportData.map(i => 
-                    `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
-                        <div class="flex items-center gap-2">
-                            <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
-                            <span class="text-slate-500">${escapeHtml(i.name)}</span>
-                            ${i.template ? `<span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 text-xs">${escapeHtml(i.template)}</span>` : ''}
-                            ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${escapeHtml(i.franchise)}</span>` : ''}
-                        </div>
-                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
-                    </div>`
-                ).join('');
-                if (btnSaveImportEl) btnSaveImportEl.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
-                lucide.createIcons();
-            } else {
-                showToast("No matches found", "Could not parse any transfers from the text", "error");
-            }
-        };
-
-        window.saveParsedImport = async () => {
-            const btn = document.getElementById('btn-save-import');
-            if (btn) {
-                btn.disabled = true; 
-                btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
-            }
-            
-            let successCount = 0;
-            let failCount = 0;
-            
-            for(let data of parsedImportData) {
-                try {
-                    const res = await fetchAPI('add_transfer', 'POST', data);
-                    if (res && res.status === 'success') {
-                        successCount++;
-                        if (res.id && data.franchise) {
-                            await fetchAPI(`update_transfer&id=${res.id}`, 'POST', { franchise: data.franchise });
-                        }
-                        await fetchAPI('sync_vehicle', 'POST', { plate: data.plate, ownerName: data.name });
-                    } else {
-                        failCount++;
-                    }
-                } catch (error) {
-                    console.error('Error importing transfer:', error);
-                    failCount++;
-                }
-            }
-            
-            if(MANAGER_PHONE && successCount > 0) {
-                const templateData = { count: successCount };
-                const msg = getFormattedMessage('system', templateData);
-                window.sendSMS(MANAGER_PHONE, msg, 'system');
-            }
-            
-            if (successCount > 0) {
-                await fetchAPI('send_broadcast', 'POST', { 
-                    title: 'New Transfers Imported', 
-                    body: `<?php echo __('status.new_cases_added', '{count} new cases added.'); ?>`.replace('{count}', successCount) 
-                });
-            }
-
-            const importTextEl = document.getElementById('import-text');
-            const parsedResultEl = document.getElementById('parsed-result');
-            const parsedPlaceholderEl = document.getElementById('parsed-placeholder');
-            
-            if (importTextEl) importTextEl.value = '';
-            if (parsedResultEl) parsedResultEl.classList.add('hidden');
-            if (parsedPlaceholderEl) parsedPlaceholderEl.classList.remove('hidden');
-            loadData();
-            
-            if (failCount > 0) {
-                showToast("Import Completed with Errors", `<?php echo __('status.import_errors', '{success} succeeded, {failed} failed'); ?>`.replace('{success}', successCount).replace('{failed}', failCount), "error");
-            } else {
-                showToast("<?php echo __('status.import_successful', 'Import Successful'); ?>", `<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>`.replace('{count}', successCount), "success");
-            }
-            
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Confirm & Save`;
-            }
+            if (plateEl) plateEl.value = '';
+            if (nameEl) nameEl.value = '';
+            if (phoneEl) phoneEl.value = '';
+            if (amountEl) amountEl.value = '';
+            if (franchiseEl) franchiseEl.value = '';
+            if (statusEl) statusEl.value = 'New';
+            if (notesEl) notesEl.value = '';
             lucide.createIcons();
-        };
-
-        // --- INITIAL DATA LOAD ---
-        // Load initial data
-        async function loadData() {
-            try {
-                const response = await fetchAPI('get_transfers');
-                
-                // Handle new combined response format
-                if (response.transfers && response.vehicles) {
-                    transfers = response.transfers;
-                    vehicles = response.vehicles;
-                } else if (Array.isArray(response)) {
-                    // Fallback for old format (just transfers array)
-                    transfers = response;
-                    const newVehicles = await fetchAPI('get_vehicles');
-                    if(Array.isArray(newVehicles)) vehicles = newVehicles;
-                }
-
-                renderTable();
-            } catch(e) {
-                // Squelch load errors to prevent loop spam, alert user once via status
-            }
-
-            const loadingScreenEl = document.getElementById('loading-screen');
-            const appContentEl = document.getElementById('app-content');
             
-            if (loadingScreenEl) loadingScreenEl.classList.add('opacity-0', 'pointer-events-none');
+            // Focus on first input
             setTimeout(() => {
-                if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
-                if (appContentEl) appContentEl.classList.remove('hidden');
-            }, 500);
-        }
+                const plateFocusEl = document.getElementById('manual-plate');
+                if (plateFocusEl) plateFocusEl.focus();
+            }, 100);
+        };
 
-        // Poll for updates every 10 seconds
-        setInterval(loadData, 10000);
+        window.closeManualCreateModal = () => {
+            const modal = document.getElementById('manual-create-modal');
+            if (modal) modal.classList.add('hidden');
+        };
 
-        // Premium Toast Notifications
-        function showToast(title, message = '', type = 'success', duration = 4000) {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
+        window.saveManualOrder = async () => {
+            // Check permissions
+            if (!CAN_EDIT) {
+                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
+                return;
+            }
             
-            // Handle legacy calls
-            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
-            if (!message && !type) { type = 'success'; }
-            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
+            const plateEl = document.getElementById('manual-plate');
+            const nameEl = document.getElementById('manual-name');
+            const phoneEl = document.getElementById('manual-phone');
+            const amountEl = document.getElementById('manual-amount');
+            const franchiseEl = document.getElementById('manual-franchise');
+            const statusEl = document.getElementById('manual-status');
+            const notesEl = document.getElementById('manual-notes');
             
-            // Create toast
-            const toast = document.createElement('div');
+            const plate = plateEl ? plateEl.value.trim() : '';
+            const name = nameEl ? nameEl.value.trim() : '';
+            const phone = phoneEl ? phoneEl.value.trim() : '';
+            const amount = amountEl ? (parseFloat(amountEl.value) || 0) : 0;
+            const franchise = franchiseEl ? (parseFloat(franchiseEl.value) || 0) : 0;
+            const status = statusEl ? statusEl.value : 'New';
+            const notes = notesEl ? notesEl.value.trim() : '';
+
+            // Validation
+            if (!plate) {
+                showToast('Validation Error', 'Vehicle plate number is required', 'error');
+                if (plateEl) plateEl.focus();
+                return;
+            }
+            if (!name) {
+                showToast('Validation Error', 'Customer name is required', 'error');
+                if (nameEl) nameEl.focus();
+                return;
+            }
+            if (isNaN(amount) || amount <= 0) {
+                showToast('Validation Error', 'Amount must be a valid number greater than 0', 'error');
+                if (amountEl) amountEl.focus();
+                return;
+            }
+            if (franchise < 0) {
+                showToast('Validation Error', 'Franchise cannot be negative', 'error');
+                if (franchiseEl) franchiseEl.focus();
+                return;
+            }
+
+            // Disable submit button to prevent double submission
+            const submitBtn = document.getElementById('manual-create-submit');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Creating...';
+            }
             
-            const colors = {
-                success: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-emerald-200/60', 
-                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', 
-                    iconColor: 'text-emerald-600', 
-                    icon: 'check-circle-2',
-                    shadow: 'shadow-emerald-500/20' 
-                },
-                error: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-red-200/60', 
-                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50', 
-                    iconColor: 'text-red-600', 
-                    icon: 'alert-circle',
-                    shadow: 'shadow-red-500/20' 
-                },
-                info: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-primary-200/60', 
-                    iconBg: 'bg-gradient-to-br from-primary-50 to-accent-50', 
-                    iconColor: 'text-primary-600', 
-                    icon: 'info',
-                    shadow: 'shadow-primary-500/20' 
-                },
-                urgent: { 
-                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent', 
-                    border: 'border-primary-300', 
-                    iconBg: 'bg-gradient-to-br from-primary-100 to-accent-100', 
-                    iconColor: 'text-primary-700', 
-                    icon: 'bell-ring',
-                    shadow: 'shadow-primary-500/30' 
-                }
+            // Prepare data
+            const orderData = {
+                plate: plate.toUpperCase(),
+                name: name,
+                phone: phone,
+                amount: amount,
+                franchise: franchise,
+                status: status,
+                internalNotes: notes ? [{ note: notes, timestamp: new Date().toISOString(), user: '<?php echo $current_user_name; ?>' }] : [],
+                systemLogs: [{ 
+                    message: `Order manually created by <?php echo $current_user_name; ?>`, 
+                    timestamp: new Date().toISOString(), 
+                    type: 'info' 
+                }]
             };
-            
-            const style = colors[type] || colors.info;
 
-            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
-            
-            toast.innerHTML = `
-                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
-                    <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.appendChild(toast);
-            if(window.lucide) lucide.createIcons();
-
-            // Animate In
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-10', 'opacity-0');
-            });
-
-            // Auto Dismiss (unless persistent/urgent)
-            if (duration > 0 && type !== 'urgent') {
-                setTimeout(() => {
-                    toast.classList.add('translate-y-4', 'opacity-0');
-                    setTimeout(() => toast.remove(), 500);
-                }, duration);
-            }
-        }
-
-        window.switchView = (v) => {
-            // Toggle views (check if element exists before accessing)
-            const dashboardView = document.getElementById('view-dashboard');
-            const vehiclesView = document.getElementById('view-vehicles');
-            const templatesView = document.getElementById('view-templates');
-            const usersView = document.getElementById('view-users');
-            
-            if (dashboardView) dashboardView.classList.toggle('hidden', v !== 'dashboard');
-            if (vehiclesView) vehiclesView.classList.toggle('hidden', v !== 'vehicles');
-            if (templatesView) templatesView.classList.toggle('hidden', v !== 'templates');
-            if (usersView) usersView.classList.toggle('hidden', v !== 'users');
-            
-            // Render vehicles when switching to that view
-            if (v === 'vehicles') {
-                renderVehicles();
-            }
-            
-            const activeClass = "nav-active px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 bg-slate-900 text-white shadow-sm";
-            const inactiveClass = "nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-white";
-
-            // Update nav button (check if element exists)
-            const navDashboard = document.getElementById('nav-dashboard');
-            const navVehicles = document.getElementById('nav-vehicles');
-            if (navDashboard) navDashboard.className = v === 'dashboard' ? activeClass : inactiveClass;
-            if (navVehicles) navVehicles.className = v === 'vehicles' ? activeClass : inactiveClass;
-        };
-
-        // --- VEHICLES PAGINATION ---
-        let currentVehiclesPage = 1;
-        const vehiclesPerPage = 10;
-
-        function renderVehicles(page = 1) {
-            if (!vehicles || vehicles.length === 0) {
-                const tableBodyEl = document.getElementById('vehicles-table-body');
-                const emptyEl = document.getElementById('vehicles-empty');
-                const countEl = document.getElementById('vehicles-count');
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                const paginationEl = document.getElementById('vehicles-pagination');
-                
-                if (tableBodyEl) tableBodyEl.innerHTML = '';
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                if (countEl) countEl.textContent = '0 vehicles';
-                if (pageInfoEl) pageInfoEl.classList.add('hidden');
-                if (paginationEl) paginationEl.innerHTML = '';
-                return;
-            }
-
-            currentVehiclesPage = page;
-            const searchTerm = document.getElementById('vehicles-search')?.value.toLowerCase() || '';
-            
-            // Filter vehicles
-            let filtered = vehicles.filter(v => {
-                const plate = (v.plate || '').toLowerCase();
-                const phone = (v.phone || '').toLowerCase();
-                return plate.includes(searchTerm) || phone.includes(searchTerm);
-            });
-
-            const totalVehicles = filtered.length;
-            const totalPages = Math.ceil(totalVehicles / vehiclesPerPage);
-            
-            // Adjust page if out of range
-            if (currentVehiclesPage > totalPages && totalPages > 0) {
-                currentVehiclesPage = totalPages;
-            }
-            if (currentVehiclesPage < 1) {
-                currentVehiclesPage = 1;
-            }
-
-            const startIndex = (currentVehiclesPage - 1) * vehiclesPerPage;
-            const endIndex = Math.min(startIndex + vehiclesPerPage, totalVehicles);
-            const pageVehicles = filtered.slice(startIndex, endIndex);
-
-            // Update count
-            const countEl = document.getElementById('vehicles-count');
-            if (countEl) countEl.textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
-
-            // Render table
-            const tbody = document.getElementById('vehicles-table-body');
-            const emptyEl = document.getElementById('vehicles-empty');
-            if (pageVehicles.length === 0) {
-                if (tbody) tbody.innerHTML = '';
-                if (emptyEl) emptyEl.classList.remove('hidden');
-            } else {
-                if (emptyEl) emptyEl.classList.add('hidden');
-                if (tbody) tbody.innerHTML = pageVehicles.map(v => {
-                    const addedDate = v.created_at ? new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
-                    const source = v.source || 'Manual';
-                    return `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="car" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="font-mono font-bold text-slate-900">${escapeHtml(v.plate || 'N/A')}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="text-slate-700">${escapeHtml(v.phone || 'N/A')}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-slate-600 text-sm">${addedDate}</td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                    source === 'Import' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'
-                                }">${source}</span>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            // Update pagination info
-            if (totalVehicles > 0) {
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                const showingStartEl = document.getElementById('vehicles-showing-start');
-                const showingEndEl = document.getElementById('vehicles-showing-end');
-                const totalEl = document.getElementById('vehicles-total');
-                
-                if (pageInfoEl) pageInfoEl.classList.remove('hidden');
-                if (showingStartEl) showingStartEl.textContent = startIndex + 1;
-                if (showingEndEl) showingEndEl.textContent = endIndex;
-                if (totalEl) totalEl.textContent = totalVehicles;
-            } else {
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                if (pageInfoEl) pageInfoEl.classList.add('hidden');
-            }
-
-            // Render pagination buttons
-            renderVehiclesPagination(totalPages);
-            
-            // Re-init Lucide icons
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function renderVehiclesPagination(totalPages) {
-            const container = document.getElementById('vehicles-pagination');
-            if (!container) return;
-            if (totalPages <= 1) {
-                container.innerHTML = '';
-                return;
-            }
-
-            let html = '';
-
-            // Previous button
-            html += `
-                <button onclick="renderVehicles(${currentVehiclesPage - 1})" 
-                    class="px-3 py-1.5 rounded-lg border transition-all ${
-                        currentVehiclesPage === 1 
-                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }" 
-                    ${currentVehiclesPage === 1 ? 'disabled' : ''}>
-                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            // Page numbers (show max 5 pages)
-            let startPage = Math.max(1, currentVehiclesPage - 2);
-            let endPage = Math.min(totalPages, startPage + 4);
-            
-            if (endPage - startPage < 4) {
-                startPage = Math.max(1, endPage - 4);
-            }
-
-            if (startPage > 1) {
-                html += `<button onclick="renderVehicles(1)" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">1</button>`;
-                if (startPage > 2) {
-                    html += `<span class="px-2 text-slate-400">...</span>`;
-                }
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-                html += `
-                    <button onclick="renderVehicles(${i})" 
-                        class="px-3 py-1.5 rounded-lg border transition-all ${
-                            i === currentVehiclesPage 
-                                ? 'bg-slate-900 text-white border-slate-900' 
-                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                        }">
-                        ${i}
-                    </button>
-                `;
-            }
-
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    html += `<span class="px-2 text-slate-400">...</span>`;
-                }
-                html += `<button onclick="renderVehicles(${totalPages})" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">${totalPages}</button>`;
-            }
-
-            // Next button
-            html += `
-                <button onclick="renderVehicles(${currentVehiclesPage + 1})" 
-                    class="px-3 py-1.5 rounded-lg border transition-all ${
-                        currentVehiclesPage === totalPages 
-                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }" 
-                    ${currentVehiclesPage === totalPages ? 'disabled' : ''}>
-                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.innerHTML = html;
-            if (window.lucide) lucide.createIcons();
-        }
-
-        // Search handler for vehicles
-        document.addEventListener('DOMContentLoaded', () => {
-            const vehiclesSearch = document.getElementById('vehicles-search');
-            if (vehiclesSearch) {
-                vehiclesSearch.addEventListener('input', () => {
-                    currentVehiclesPage = 1; // Reset to first page on search
-                    renderVehicles(1);
-                });
-            }
-        });
-
-        // --- SMS TEMPLATE LOGIC (Template editing moved to templates.php) ---
-        const defaultTemplates = {
-            'registered': "<?php echo __('sms.registered'); ?>",
-            'called': "<?php echo __('sms.called', 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'); ?>",
-            'contacted': "<?php echo __('sms.contacted', 'Hello {name}, we have contacted you about your {plate} service. Please check your messages.'); ?>",
-            'schedule': "<?php echo __('sms.schedule'); ?>",
-            'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
-            'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
-            'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
-            'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
-            'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
-            'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly.",
-            'system': "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
-        };
-        
-        let smsTemplates = defaultTemplates;
-
-        // Load templates from API
-        async function loadSMSTemplates() {
             try {
-                const serverTemplates = await fetchAPI('get_templates');
-                smsTemplates = { ...defaultTemplates, ...serverTemplates };
-            } catch (e) {
-                console.error("Template load error:", e);
-                // Fallback to defaults
-                smsTemplates = defaultTemplates;
-            }
-        }
-
-        // SMS Parsing Templates
-        let smsParsingTemplates = [];
-
-        // Load SMS parsing templates from API
-        async function loadSMSParsingTemplates() {
-            try {
-                smsParsingTemplates = await fetchAPI('get_parsing_templates');
-            } catch (e) {
-                console.error("SMS parsing templates load error:", e);
-                // Fallback to empty array
-                smsParsingTemplates = [];
-            }
-        }
-
-        // Format SMS message with template placeholders
-        function getFormattedMessage(type, data) {
-            let template = smsTemplates[type] || defaultTemplates[type] || "";
-            const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
-            const link = `${baseUrl}/public_view.php?id=${data.id}`;
-
-            return template
-                .replace(/{name}/g, data.name || '')
-                .replace(/{plate}/g, data.plate || '')
-                .replace(/{amount}/g, data.amount || '')
-                .replace(/{link}/g, link)
-                .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '')
-                .replace(/{count}/g, data.count || '');
-        }
-
-        // Notification Prompt & Load Templates
-        document.addEventListener('DOMContentLoaded', () => {
-            if ('Notification' in window && Notification.permission === 'default') {
-                const prompt = document.getElementById('notification-prompt');
-                if(prompt) setTimeout(() => prompt.classList.remove('hidden'), 2000);
-            }
-            loadSMSTemplates(); // Load SMS templates from API on start
-            loadSMSParsingTemplates(); // Load SMS parsing templates from API on start
-        });
-
-        // --- HTML ESCAPING FUNCTION ---
-        const escapeHtml = (text) => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = String(text);
-            return div.innerHTML;
-        };
-
-        // --- TRANSFERS ---
-        window.parseBankText = () => {
-            const importTextEl = document.getElementById('import-text');
-            const text = importTextEl ? importTextEl.value : '';
-            if(!text) return;
-            const lines = text.split(/\r?\n/);
-            parsedImportData = [];
-            
-            const franchiseRegex = /\(ფრანშიზა\s*([\d\.,]+)\)/i;
-
-            lines.forEach(line => {
-                if (!line.trim()) return; // Skip empty lines
+                const result = await fetchAPI('create_transfer', 'POST', orderData);
                 
-                let parsed = false;
-                
-                // Try each SMS parsing template
-                for (let template of smsParsingTemplates) {
-                    if (parsed) break;
+                if (result && result.status === 'success') {
+                    showToast('Success', 'Order created successfully!', 'success');
+                    window.closeManualCreateModal();
                     
-                    const fieldMappings = template.field_mappings || [];
-                    let extractedData = {};
+                    // Refresh the table
+                    await loadData();
                     
-                    // Try to extract each field using its pattern
-                    for (let mapping of fieldMappings) {
-                        const field = mapping.field;
-                        const pattern = mapping.pattern;
-                        
-                        if (!pattern) continue;
-                        
-                        let regex;
-                        if (field === 'plate') {
-                            // Plate numbers: look for pattern followed by plate
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([A-Za-z0-9]+)', 'i');
-                        } else if (field === 'name') {
-                            // Names: look for pattern followed by name until comma or end
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([^,]+)', 'i');
-                        } else if (field === 'amount') {
-                            // Amounts: look for pattern followed by number
-                            if (pattern) {
-                                regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
-                            } else {
-                                // If no pattern, look for amount at the end
-                                regex = /([\d\.,]+)$/i;
-                            }
-                        } else if (field === 'franchise') {
-                            // Franchise amounts: look for pattern followed by number in parentheses
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
-                        }
-                        
-                        if (regex) {
-                            const match = line.match(regex);
-                            if (match) {
-                                if (field === 'plate') extractedData.plate = match[1];
-                                else if (field === 'name') extractedData.name = match[1].trim();
-                                else if (field === 'amount') extractedData.amount = match[1];
-                                else if (field === 'franchise') extractedData.franchise = match[1];
-                            }
-                        }
+                    // Open the newly created order
+                    if (result.id) {
+                        setTimeout(() => window.openEditModal(result.id), 500);
                     }
-                    
-                    // If we extracted at least plate and amount, consider it a match
-                    if (extractedData.plate && extractedData.amount) {
-                        let franchise = extractedData.franchise || '';
-                        // Fallback to general franchise regex if not found in template
-                        if (!franchise) {
-                            const fMatch = line.match(franchiseRegex);
-                            if(fMatch) franchise = fMatch[1];
-                        }
-
-                        // Clean up name (remove trailing commas)
-                        if (extractedData.name) {
-                            extractedData.name = extractedData.name.replace(/,+$/, '').trim();
-                        } else {
-                            // Default name based on insurance company
-                            extractedData.name = template.insurance_company + ' Customer';
-                        }
-
-                        parsedImportData.push({ 
-                            plate: extractedData.plate.trim(), 
-                            name: extractedData.name.trim(), 
-                            amount: extractedData.amount.trim(), 
-                            franchise: franchise,
-                            rawText: line,
-                            template: template.name
-                        });
-                        parsed = true;
-                    }
+                } else {
+                    const errorMsg = result?.message || 'Failed to create order';
+                    showToast('Error', errorMsg, 'error');
                 }
-                
-                // Fallback to old hardcoded patterns if no template matched
-                if (!parsed) {
-                    // Keep the old regex patterns as fallback
-                    const regexes = [
-                        /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
-                        /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
-                        /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
-                        // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10" - most specific with parentheses
-                        /([A-Z\s\-]+)\s*\(([A-Za-z0-9]+)\)\s*([\d\.,]+)/i,
-                        // Ardi insurance: "სახ. ნომ AA123BC 507.40" - Georgian text
-                        /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
-                        // Aldagi insurance: "მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00" - Georgian text
-                        /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.+?)\s+(\d[\d\.,]*)/i
-                    ];
-                    
-                    for(let r of regexes) {
-                        const m = line.match(r);
-                        if(m) {
-                            let plate, name, amount;
-                            if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                            else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                            else if(r.source.includes('User:')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                            else if(r.source.includes('[A-Z') && r.source.includes('([A-Za-z0-9]+)\\)')) { plate=m[2]; amount=m[3]; name='Imedi L Customer'; }
-                            else if(r.source.includes('სახ')) { plate=m[1]; amount=m[2]; name='Ardi Customer'; }
-                            else if(r.source.includes('მანქანის')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                            
-                            let franchise = '';
-                            const fMatch = line.match(franchiseRegex);
-                            if(fMatch) franchise = fMatch[1];
-
-                            // Clean up name (remove trailing commas)
-                            name = name.replace(/,+$/, '').trim();
-
-                            parsedImportData.push({ 
-                                plate: plate.trim(), 
-                                name: name.trim(), 
-                                amount: amount.trim(), 
-                                franchise: franchise,
-                                rawText: line 
-                            });
-                            parsed = true;
-                            break;
-                        }
-                    }
+            } catch (error) {
+                showToast('Error', error.message || 'Failed to create order', 'error');
+            } finally {
+                // Re-enable button
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Create Order';
                 }
-            });
-
-            if(parsedImportData.length > 0) {
-                const parsedResultEl = document.getElementById('parsed-result');
-                const parsedPlaceholderEl = document.getElementById('parsed-placeholder');
-                const parsedContentEl = document.getElementById('parsed-content');
-                const btnSaveImportEl = document.getElementById('btn-save-import');
-                
-                if (parsedResultEl) parsedResultEl.classList.remove('hidden');
-                if (parsedPlaceholderEl) parsedPlaceholderEl.classList.add('hidden');
-                
-                // Escape HTML to prevent XSS
-                const escapeHtml = (text) => {
-                    const div = document.createElement('div');
-                    div.textContent = text;
-                    return div.innerHTML;
-                };
-                
-                if (parsedContentEl) parsedContentEl.innerHTML = parsedImportData.map(i => 
-                    `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
-                        <div class="flex items-center gap-2">
-                            <div class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(i.plate)}</div> 
-                            <span class="text-slate-500">${escapeHtml(i.name)}</span>
-                            ${i.template ? `<span class="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 text-xs">${escapeHtml(i.template)}</span>` : ''}
-                            ${i.franchise ? `<span class="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded ml-1">Franchise: ${escapeHtml(i.franchise)}</span>` : ''}
-                        </div>
-                        <div class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">${escapeHtml(i.amount)} ₾</div>
-                    </div>`
-                ).join('');
-                if (btnSaveImportEl) btnSaveImportEl.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
                 lucide.createIcons();
-            } else {
-                showToast("No matches found", "Could not parse any transfers from the text", "error");
             }
         };
 
-        window.saveParsedImport = async () => {
-            const btn = document.getElementById('btn-save-import');
-            if (btn) {
-                btn.disabled = true; 
-                btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
-            }
-            
-            let successCount = 0;
-            let failCount = 0;
-            
-            for(let data of parsedImportData) {
-                try {
-                    const res = await fetchAPI('add_transfer', 'POST', data);
-                    if (res && res.status === 'success') {
-                        successCount++;
-                        if (res.id && data.franchise) {
-                            await fetchAPI(`update_transfer&id=${res.id}`, 'POST', { franchise: data.franchise });
-                        }
-                        await fetchAPI('sync_vehicle', 'POST', { plate: data.plate, ownerName: data.name });
-                    } else {
-                        failCount++;
-                    }
-                } catch (error) {
-                    console.error('Error importing transfer:', error);
-                    failCount++;
-                }
-            }
-            
-            if(MANAGER_PHONE && successCount > 0) {
-                const templateData = { count: successCount };
-                const msg = getFormattedMessage('system', templateData);
-                window.sendSMS(MANAGER_PHONE, msg, 'system');
-            }
-            
-            if (successCount > 0) {
-                await fetchAPI('send_broadcast', 'POST', { 
-                    title: 'New Transfers Imported', 
-                    body: `<?php echo __('status.new_cases_added', '{count} new cases added.'); ?>`.replace('{count}', successCount) 
+        window.viewCase = function(id) {
+            window.openEditModal(id);
+            // Disable all form inputs for viewers
+            if (!CAN_EDIT) {
+                const modal = document.getElementById('edit-modal');
+                modal.querySelectorAll('input, select, textarea, button[onclick*="save"]').forEach(el => {
+                    el.disabled = true;
                 });
+                // Change save button to close
+                const saveBtn = modal.querySelector('button[onclick*="saveEdit"]');
+                if (saveBtn) {
+                    saveBtn.textContent = 'Close';
+                    saveBtn.onclick = window.closeModal;
+                }
             }
-
-            const importTextEl = document.getElementById('import-text');
-            const parsedResultEl = document.getElementById('parsed-result');
-            const parsedPlaceholderEl = document.getElementById('parsed-placeholder');
-            
-            if (importTextEl) importTextEl.value = '';
-            if (parsedResultEl) parsedResultEl.classList.add('hidden');
-            if (parsedPlaceholderEl) parsedPlaceholderEl.classList.remove('hidden');
-            loadData();
-            
-            if (failCount > 0) {
-                showToast("Import Completed with Errors", `<?php echo __('status.import_errors', '{success} succeeded, {failed} failed'); ?>`.replace('{success}', successCount).replace('{failed}', failCount), "error");
-            } else {
-                showToast("<?php echo __('status.import_successful', 'Import Successful'); ?>", `<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>`.replace('{count}', successCount), "success");
-            }
-            
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Confirm & Save`;
-            }
-            lucide.createIcons();
         };
 
-        // --- INITIAL DATA LOAD ---
-        // Load initial data
-        async function loadData() {
-            try {
-                const response = await fetchAPI('get_transfers');
-                
-                // Handle new combined response format
-                if (response.transfers && response.vehicles) {
-                    transfers = response.transfers;
-                    vehicles = response.vehicles;
-                } else if (Array.isArray(response)) {
-                    // Fallback for old format (just transfers array)
-                    transfers = response;
-                    const newVehicles = await fetchAPI('get_vehicles');
-                    if(Array.isArray(newVehicles)) vehicles = newVehicles;
-                }
-
-                renderTable();
-            } catch(e) {
-                // Squelch load errors to prevent loop spam, alert user once via status
+        window.saveEdit = async () => {
+            if (!CAN_EDIT) {
+                showToast('Permission Denied', 'You do not have permission to edit cases', 'error');
+                return;
+            }
+            const t = transfers.find(i => i.id == window.currentEditingId);
+            const statusEl = document.getElementById('input-status');
+            const phoneEl = document.getElementById('input-phone');
+            const serviceDateEl = document.getElementById('input-service-date');
+            const franchiseEl = document.getElementById('input-franchise');
+            
+            const status = statusEl ? statusEl.value : t.status;
+            const phone = phoneEl ? phoneEl.value : t.phone;
+            const serviceDate = serviceDateEl ? serviceDateEl.value : t.serviceDate;
+            
+            // VALIDATION: Parts Arrived requires a date
+            if (status === 'Parts Arrived' && !serviceDate) {
+                return showToast("Scheduling Required", "Please select a service date to save 'Parts Arrived' status.", "error");
             }
 
-            const loadingScreenEl = document.getElementById('loading-screen');
-            const appContentEl = document.getElementById('app-content');
-            
-            if (loadingScreenEl) loadingScreenEl.classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
-                if (appContentEl) appContentEl.classList.remove('hidden');
-            }, 500);
-        }
-
-        // Poll for updates every 10 seconds
-        setInterval(loadData, 10000);
-
-        // Premium Toast Notifications
-        function showToast(title, message = '', type = 'success', duration = 4000) {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            
-            // Handle legacy calls
-            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
-            if (!message && !type) { type = 'success'; }
-            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
-            
-            // Create toast
-            const toast = document.createElement('div');
-            
-            const colors = {
-                success: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-emerald-200/60', 
-                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', 
-                    iconColor: 'text-emerald-600', 
-                    icon: 'check-circle-2',
-                    shadow: 'shadow-emerald-500/20' 
-                },
-                error: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-red-200/60', 
-                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50', 
-                    iconColor: 'text-red-600', 
-                    icon: 'alert-circle',
-                    shadow: 'shadow-red-500/20' 
-                },
-                info: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-primary-200/60', 
-                    iconBg: 'bg-gradient-to-br from-primary-50 to-accent-50', 
-                    iconColor: 'text-primary-600', 
-                    icon: 'info',
-                    shadow: 'shadow-primary-500/20' 
-                },
-                urgent: { 
-                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent', 
-                    border: 'border-primary-300', 
-                    iconBg: 'bg-gradient-to-br from-primary-100 to-accent-100', 
-                    iconColor: 'text-primary-700', 
-                    icon: 'bell-ring',
-                    shadow: 'shadow-primary-500/30' 
-                }
+            const updates = {
+                status,
+                phone,
+                serviceDate: serviceDate || null,
+                franchise: franchiseEl ? franchiseEl.value : t.franchise,
+                internalNotes: t.internalNotes || [],
+                systemLogs: t.systemLogs || []
             };
-            
-            const style = colors[type] || colors.info;
 
-            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
-            
-            toast.innerHTML = `
-                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
-                    <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.appendChild(toast);
-            if(window.lucide) lucide.createIcons();
-
-            // Animate In
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-10', 'opacity-0');
-            });
-
-            // Auto Dismiss (unless persistent/urgent)
-            if (duration > 0 && type !== 'urgent') {
-                setTimeout(() => {
-                    toast.classList.add('translate-y-4', 'opacity-0');
-                    setTimeout(() => toast.remove(), 500);
-                }, duration);
+            // AUTO-RESCHEDULE LOGIC (Existing)
+            const currentDateStr = t.serviceDate ? t.serviceDate.replace(' ', 'T').slice(0, 16) : '';
+            if (t.user_response === 'Reschedule Requested' && serviceDate && serviceDate !== currentDateStr) {
+                updates.user_response = 'Pending';
+                updates.systemLogs.push({ message: `Rescheduled to ${serviceDate.replace('T', ' ')}`, timestamp: new Date().toISOString(), type: 'info' });
+                const templateData = { id: t.id, name: t.name, plate: t.plate, amount: t.amount, serviceDate: serviceDate };
+                const msg = getFormattedMessage('rescheduled', templateData);
+                window.sendSMS(phone, msg, 'rescheduled');
             }
-        }
 
-        window.switchView = (v) => {
-            // Toggle views (check if element exists before accessing)
-            const dashboardView = document.getElementById('view-dashboard');
-            const vehiclesView = document.getElementById('view-vehicles');
-            const templatesView = document.getElementById('view-templates');
-            const usersView = document.getElementById('view-users');
-            
-            if (dashboardView) dashboardView.classList.toggle('hidden', v !== 'dashboard');
-            if (vehiclesView) vehiclesView.classList.toggle('hidden', v !== 'vehicles');
-            if (templatesView) templatesView.classList.toggle('hidden', v !== 'templates');
-            if (usersView) usersView.classList.toggle('hidden', v !== 'users');
-            
-            // Render vehicles when switching to that view
-            if (v === 'vehicles') {
-                renderVehicles();
-            }
-            
-            const activeClass = "nav-active px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 bg-slate-900 text-white shadow-sm";
-            const inactiveClass = "nav-inactive px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-white";
-
-            // Update nav button (check if element exists)
-            const navDashboard = document.getElementById('nav-dashboard');
-            const navVehicles = document.getElementById('nav-vehicles');
-            if (navDashboard) navDashboard.className = v === 'dashboard' ? activeClass : inactiveClass;
-            if (navVehicles) navVehicles.className = v === 'vehicles' ? activeClass : inactiveClass;
-        };
-
-        // --- VEHICLES PAGINATION ---
-        let currentVehiclesPage = 1;
-        const vehiclesPerPage = 10;
-
-        function renderVehicles(page = 1) {
-            if (!vehicles || vehicles.length === 0) {
-                const tableBodyEl = document.getElementById('vehicles-table-body');
-                const emptyEl = document.getElementById('vehicles-empty');
-                const countEl = document.getElementById('vehicles-count');
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                const paginationEl = document.getElementById('vehicles-pagination');
+            // --- NEW AUTOMATED SMS LOGIC ---
+            if(status !== t.status) {
+                updates.systemLogs.push({ message: `Status: ${t.status} -> ${status}`, timestamp: new Date().toISOString(), type: 'status' });
                 
-                if (tableBodyEl) tableBodyEl.innerHTML = '';
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                if (countEl) countEl.textContent = '0 vehicles';
-                if (pageInfoEl) pageInfoEl.classList.add('hidden');
-                if (paginationEl) paginationEl.innerHTML = '';
-                return;
-            }
+                if (phone) {
+                    const templateData = { 
+                        id: t.id, 
+                        name: t.name, 
+                        plate: t.plate, 
+                        amount: t.amount, 
+                        serviceDate: serviceDate || t.serviceDate // Use new date if set, else old
+                    };
 
-            currentVehiclesPage = page;
-            const searchTerm = document.getElementById('vehicles-search')?.value.toLowerCase() || '';
-            
-            // Filter vehicles
-            let filtered = vehicles.filter(v => {
-                const plate = (v.plate || '').toLowerCase();
-                const phone = (v.phone || '').toLowerCase();
-                return plate.includes(searchTerm) || phone.includes(searchTerm);
-            });
+                    // 1. Processing -> Welcome SMS
+                    if (status === 'Processing') {
+                        const msg = getFormattedMessage('registered', templateData);
+                        window.sendSMS(phone, msg, 'welcome_sms');
+                    }
+                    
+                    // 2. Scheduled -> Service Schedule SMS
+                    else if (status === 'Scheduled') {
+                        if(!serviceDate) showToast("Note", "Status set to Scheduled without a date.", "info");
+                        const msg = getFormattedMessage('schedule', templateData);
+                        window.sendSMS(phone, msg, 'schedule_sms');
+                    }
 
-            const totalVehicles = filtered.length;
-            const totalPages = Math.ceil(totalVehicles / vehiclesPerPage);
-            
-            // Adjust page if out of range
-            if (currentVehiclesPage > totalPages && totalPages > 0) {
-                currentVehiclesPage = totalPages;
-            }
-            if (currentVehiclesPage < 1) {
-                currentVehiclesPage = 1;
-            }
+                    // 3. Contacted -> Called SMS
+                    else if (status === 'Called') {
+                        const msg = getFormattedMessage('called', templateData);
+                        window.sendSMS(phone, msg, 'contacted_sms');
+                    }
 
-            const startIndex = (currentVehiclesPage - 1) * vehiclesPerPage;
-            const endIndex = Math.min(startIndex + vehiclesPerPage, totalVehicles);
-            const pageVehicles = filtered.slice(startIndex, endIndex);
+                    // 4. Parts Ordered -> Parts Ordered SMS
+                    else if (status === 'Parts Ordered') {
+                        const msg = getFormattedMessage('parts_ordered', templateData);
+                        window.sendSMS(phone, msg, 'parts_ordered_sms');
+                    }
 
-            // Update count
-            const countEl = document.getElementById('vehicles-count');
-            if (countEl) countEl.textContent = `${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''}`;
+                    // 5. Parts Arrived -> Parts Arrived SMS
+                    else if (status === 'Parts Arrived') {
+                        const msg = getFormattedMessage('parts_arrived', templateData);
+                        window.sendSMS(phone, msg, 'parts_arrived_sms');
+                    }
 
-            // Render table
-            const tbody = document.getElementById('vehicles-table-body');
-            const emptyEl = document.getElementById('vehicles-empty');
-            if (pageVehicles.length === 0) {
-                if (tbody) tbody.innerHTML = '';
-                if (emptyEl) emptyEl.classList.remove('hidden');
-            } else {
-                if (emptyEl) emptyEl.classList.add('hidden');
-                if (tbody) tbody.innerHTML = pageVehicles.map(v => {
-                    const addedDate = v.created_at ? new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
-                    const source = v.source || 'Manual';
-                    return `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="car" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="font-mono font-bold text-slate-900">${escapeHtml(v.plate || 'N/A')}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
-                                    <span class="text-slate-700">${escapeHtml(v.phone || 'N/A')}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-slate-600 text-sm">${addedDate}</td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                    source === 'Import' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'
-                                }">${source}</span>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            }
+                    // 6. Completed -> Completed SMS with review link
+                    else if (status === 'Completed') {
+                        const msg = getFormattedMessage('completed', templateData);
+                        window.sendSMS(phone, msg, 'completed_sms');
+                    }
 
-            // Update pagination info
-            if (totalVehicles > 0) {
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                const showingStartEl = document.getElementById('vehicles-showing-start');
-                const showingEndEl = document.getElementById('vehicles-showing-end');
-                const totalEl = document.getElementById('vehicles-total');
-                
-                if (pageInfoEl) pageInfoEl.classList.remove('hidden');
-                if (showingStartEl) showingStartEl.textContent = startIndex + 1;
-                if (showingEndEl) showingEndEl.textContent = endIndex;
-                if (totalEl) totalEl.textContent = totalVehicles;
-            } else {
-                const pageInfoEl = document.getElementById('vehicles-page-info');
-                if (pageInfoEl) pageInfoEl.classList.add('hidden');
-            }
-
-            // Render pagination buttons
-            renderVehiclesPagination(totalPages);
-            
-            // Re-init Lucide icons
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function renderVehiclesPagination(totalPages) {
-            const container = document.getElementById('vehicles-pagination');
-            if (!container) return;
-            if (totalPages <= 1) {
-                container.innerHTML = '';
-                return;
-            }
-
-            let html = '';
-
-            // Previous button
-            html += `
-                <button onclick="renderVehicles(${currentVehiclesPage - 1})" 
-                    class="px-3 py-1.5 rounded-lg border transition-all ${
-                        currentVehiclesPage === 1 
-                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }" 
-                    ${currentVehiclesPage === 1 ? 'disabled' : ''}>
-                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            // Page numbers (show max 5 pages)
-            let startPage = Math.max(1, currentVehiclesPage - 2);
-            let endPage = Math.min(totalPages, startPage + 4);
-            
-            if (endPage - startPage < 4) {
-                startPage = Math.max(1, endPage - 4);
-            }
-
-            if (startPage > 1) {
-                html += `<button onclick="renderVehicles(1)" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">1</button>`;
-                if (startPage > 2) {
-                    html += `<span class="px-2 text-slate-400">...</span>`;
+                    // 7. Issue -> Issue SMS
+                    else if (status === 'Issue') {
+                        const msg = getFormattedMessage('issue', templateData);
+                        window.sendSMS(phone, msg, 'issue_sms');
+                    }
                 }
             }
 
-            for (let i = startPage; i <= endPage; i++) {
-                html += `
-                    <button onclick="renderVehicles(${i})" 
-                        class="px-3 py-1.5 rounded-lg border transition-all ${
-                            i === currentVehiclesPage 
-                                ? 'bg-slate-900 text-white border-slate-900' 
-                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                        }">
-                        ${i}
-                    </button>
-                `;
-            }
-
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    html += `<span class="px-2 text-slate-400">...</span>`;
+            if(phone) {
+                const statusEl = document.getElementById('connection-status');
+                if (statusEl && statusEl.innerText.includes('Offline')) {
+                    const v = vehicles.find(v => v.plate === t.plate);
+                    if(v) v.phone = phone;
+                } else {
+                    await fetchAPI('sync_vehicle', 'POST', { plate: t.plate, phone: phone });
                 }
-                html += `<button onclick="renderVehicles(${totalPages})" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">${totalPages}</button>`;
             }
 
-            // Next button
-            html += `
-                <button onclick="renderVehicles(${currentVehiclesPage + 1})" 
-                    class="px-3 py-1.5 rounded-lg border transition-all ${
-                        currentVehiclesPage === totalPages 
-                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }" 
-                    ${currentVehiclesPage === totalPages ? 'disabled' : ''}>
-                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.innerHTML = html;
-            if (window.lucide) lucide.createIcons();
-        }
-
-        // Search handler for vehicles
-        document.addEventListener('DOMContentLoaded', () => {
-            const vehiclesSearch = document.getElementById('vehicles-search');
-            if (vehiclesSearch) {
-                vehiclesSearch.addEventListener('input', () => {
-                    currentVehiclesPage = 1; // Reset to first page on search
-                    renderVehicles(1);
-                });
+            const statusEl2 = document.getElementById('connection-status');
+            if (statusEl2 && statusEl2.innerText.includes('Offline')) {
+                Object.assign(t, updates);
+            } else {
+                await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', updates);
             }
-        });
-
-        // --- SMS TEMPLATE LOGIC (Template editing moved to templates.php) ---
-        const defaultTemplates = {
-            'registered': "<?php echo __('sms.registered'); ?>",
-            'called': "<?php echo __('sms.called', 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'); ?>",
-            'contacted': "<?php echo __('sms.contacted', 'Hello {name}, we have contacted you about your {plate} service. Please check your messages.'); ?>",
-            'schedule': "<?php echo __('sms.schedule'); ?>",
-            'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
-            'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
-            'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
-            'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
-            'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
-            'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly.",
-            'system': "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
-        };
-        
-        let smsTemplates = defaultTemplates;
-
-        // Load templates from API
-        async function loadSMSTemplates() {
-            try {
-                const serverTemplates = await fetchAPI('get_templates');
-                smsTemplates = { ...defaultTemplates, ...serverTemplates };
-            } catch (e) {
-                console.error("Template load error:", e);
-                // Fallback to defaults
-                smsTemplates = defaultTemplates;
-            }
-        }
-
-        // SMS Parsing Templates
-        let smsParsingTemplates = [];
-
-        // Load SMS parsing templates from API
-        async function loadSMSParsingTemplates() {
-            try {
-                smsParsingTemplates = await fetchAPI('get_parsing_templates');
-            } catch (e) {
-                console.error("SMS parsing templates load error:", e);
-                // Fallback to empty array
-                smsParsingTemplates = [];
-            }
-        }
-
-        // Format SMS message with template placeholders
-        function getFormattedMessage(type, data) {
-            let template = smsTemplates[type] || defaultTemplates[type] || "";
-            const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
-            const link = `${baseUrl}/public_view.php?id=${data.id}`;
-
-            return template
-                .replace(/{name}/g, data.name || '')
-                .replace(/{plate}/g, data.plate || '')
-                .replace(/{amount}/g, data.amount || '')
-                .replace(/{link}/g, link)
-                .replace(/{date}/g, data.serviceDate ? data.serviceDate.replace('T', ' ') : '')
-                .replace(/{count}/g, data.count || '');
-        }
-
-        // Notification Prompt & Load Templates
-        document.addEventListener('DOMContentLoaded', () => {
-            if ('Notification' in window && Notification.permission === 'default') {
-                const prompt = document.getElementById('notification-prompt');
-                if(prompt) setTimeout(() => prompt.classList.remove('hidden'), 2000);
-            }
-            loadSMSTemplates(); // Load SMS templates from API on start
-            loadSMSParsingTemplates(); // Load SMS parsing templates from API on start
-        });
-
-        // --- HTML ESCAPING FUNCTION ---
-        const escapeHtml = (text) => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = String(text);
-            return div.innerHTML;
+            
+            loadData();
+            showToast("Changes Saved", "success");
         };
 
-        // --- TRANSFERS ---
-        window.parseBankText = () => {
-            const importTextEl = document.getElementById('import-text');
-            const text = importTextEl ? importTextEl.value : '';
+        window.addNote = async () => {
+            const newNoteInputEl = document.getElementById('new-note-input');
+            const text = newNoteInputEl ? newNoteInputEl.value : '';
             if(!text) return;
-            const lines = text.split(/\r?\n/);
-            parsedImportData = [];
+            const t = transfers.find(i => i.id == window.currentEditingId);
+            const newNote = { text, authorName: 'Manager', timestamp: new Date().toISOString() };
             
-            const franchiseRegex = /\(ფრანშიზა\s*([\d\.,]+)\)/i;
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl && statusEl.innerText.includes('Offline')) {
+                if(!t.internalNotes) t.internalNotes = [];
+                t.internalNotes.push(newNote);
+            } else {
+                const notes = [...(t.internalNotes || []), newNote];
+                await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', { internalNotes: notes });
+                t.internalNotes = notes;
+            }
+            
+            if (newNoteInputEl) newNoteInputEl.value = '';
+            
+            // Re-render notes
+            const noteHTML = (t.internalNotes || []).map(n => `
+                <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3 animate-in slide-in-from-bottom-2 fade-in">
+                    <p class="text-sm text-slate-700">${escapeHtml(n.text)}</p>
+                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName)}</span></div>
+                </div>`).join('');
+            const notesListEl = document.getElementById('notes-list');
+            if (notesListEl) notesListEl.innerHTML = noteHTML;
+        };
 
-            lines.forEach(line => {
-                if (!line.trim()) return; // Skip empty lines
+        window.quickAcceptReschedule = async (id) => {
+            const t = transfers.find(i => i.id == id);
+            if (!t || !t.rescheduleDate) return;
+
+            const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+            const dateStr = reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            
+            if (!confirm(`Accept reschedule request for ${t.name} (${t.plate})?\n\nNew appointment: ${dateStr}\n\nCustomer will receive SMS confirmation.`)) {
+                return;
+            }
+
+            try {
+                showToast("Processing...", "Accepting reschedule request", "info");
                 
-                let parsed = false;
+                const rescheduleDateTime = t.rescheduleDate.replace(' ', 'T');
+                await fetchAPI(`accept_reschedule&id=${id}`, 'POST', {
+                    service_date: rescheduleDateTime
+                });
+
+                t.serviceDate = rescheduleDateTime;
+                t.userResponse = 'Confirmed';
+                t.rescheduleDate = null;
+                t.rescheduleComment = null;
                 
-                // Try each SMS parsing template
-                for (let template of smsParsingTemplates) {
-                    if (parsed) break;
-                    
-                    const fieldMappings = template.field_mappings || [];
-                    let extractedData = {};
-                    
-                    // Try to extract each field using its pattern
-                    for (let mapping of fieldMappings) {
-                        const field = mapping.field;
-                        const pattern = mapping.pattern;
-                        
-                        if (!pattern) continue;
-                        
-                        let regex;
-                        if (field === 'plate') {
-                            // Plate numbers: look for pattern followed by plate
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([A-Za-z0-9]+)', 'i');
-                        } else if (field === 'name') {
-                            // Names: look for pattern followed by name until comma or end
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([^,]+)', 'i');
-                        } else if (field === 'amount') {
-                            // Amounts: look for pattern followed by number
-                            if (pattern) {
-                                regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
-                            } else {
-                                // If no pattern, look for amount at the end
-                                regex = /([\d\.,]+)$/i;
-                            }
-                        } else if (field === 'franchise') {
-                            // Franchise amounts: look for pattern followed by number in parentheses
-                            regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*([\\d\\.,]+)', 'i');
-                        }
-                        
-                        if (regex) {
-                            const match = line.match(regex);
-                            if (match) {
-                                if (field === 'plate') extractedData.plate = match[1];
-                                else if (field === 'name') extractedData.name = match[1].trim();
-                                else if (field === 'amount') extractedData.amount = match[1];
-                                else if (field === 'franchise') extractedData.franchise = match[1];
-                            }
-                        }
-                    }
-                    
-                    // If we extracted at least plate and amount, consider it a match
-                    if (extractedData.plate && extractedData.amount) {
-                        let franchise = extractedData.franchise || '';
-                        // Fallback to general franchise regex if not found in template
-                        if (!franchise) {
-                            const fMatch = line.match(franchiseRegex);
-                            if(fMatch) franchise = fMatch[1];
-                        }
+                showToast("Reschedule Accepted", `Appointment updated and SMS sent to ${t.name}`, "success");
+                loadData();
+            } catch(e) {
+                console.error('Quick accept reschedule error:', e);
+                showToast("Error", "Failed to accept reschedule request", "error");
+            }
+        };
 
-                        // Clean up name (remove trailing commas)
-                        if (extractedData.name) {
-                            extractedData.name = extractedData.name.replace(/,+$/, '').trim();
-                        } else {
-                            // Default name based on insurance company
-                            extractedData.name = template.insurance_company + ' Customer';
-                        }
+        window.acceptReschedule = async () => {
+            const t = transfers.find(i => i.id == window.currentEditingId);
+            if (!t || !t.rescheduleDate) return;
 
-                        parsedImportData.push({ 
-                            plate: extractedData.plate.trim(), 
-                            name: extractedData.name.trim(), 
-                            amount: extractedData.amount.trim(), 
-                            franchise: franchise,
-                            rawText: line,
-                            template: template.name
-                        });
-                        parsed = true;
-                    }
+            if (!confirm(`Accept reschedule request and update appointment to ${new Date(t.rescheduleDate.replace(' ', 'T')).toLocaleString()}?`)) {
+                return;
+            }
+
+            try {
+                // Update service date to the requested date
+                const rescheduleDateTime = t.rescheduleDate.replace(' ', 'T');
+                const serviceDateEl = document.getElementById('input-service-date');
+                if (serviceDateEl) serviceDateEl.value = rescheduleDateTime;
+                
+                // Call API to accept reschedule
+                await fetchAPI(`accept_reschedule&id=${window.currentEditingId}`, 'POST', {
+                    service_date: rescheduleDateTime
+                });
+
+                // Update local data
+                t.serviceDate = rescheduleDateTime;
+                t.userResponse = 'Confirmed';
+                
+                showToast("Reschedule Accepted", "Appointment updated and SMS sent to customer", "success");
+                window.closeModal();
+                loadData();
+            } catch(e) {
+                console.error('Accept reschedule error:', e);
+                showToast("Error", "Failed to accept reschedule request", "error");
+            }
+        };
+
+        window.declineReschedule = async () => {
+            if (!confirm('Decline this reschedule request? The customer will need to be contacted manually.')) {
+                return;
+            }
+
+            try {
+                await fetchAPI(`decline_reschedule&id=${window.currentEditingId}`, 'POST', {});
+                
+                const t = transfers.find(i => i.id == window.currentEditingId);
+                if (t) {
+                    t.rescheduleDate = null;
+                    t.rescheduleComment = null;
+                    t.userResponse = 'Pending';
                 }
                 
-                // Fallback to old hardcoded patterns if no template matched
-                if (!parsed) {
-                    // Keep the old regex patterns as fallback
-                    const regexes = [
-                        /Transfer from ([\w\s]+), Plate: ([\w\d]+), Amt: (\d+)/i,
-                        /INSURANCE PAY \| ([\w\d]+) \| ([\w\s]+) \| (\d+)/i,
-                        /User: ([\w\s]+) Car: ([\w\d]+) Sum: ([\w\d\.]+)/i,
-                        // imedi L insurance: "MERCEDES-BENZ (AA123BC) 11,381.10" - most specific with parentheses
-                        /([A-Z\s\-]+)\s*\(([A-Za-z0-9]+)\)\s*([\d\.,]+)/i,
-                        // Ardi insurance: "სახ. ნომ AA123BC 507.40" - Georgian text
-                        /სახ\.?\s*ნომ\s*([A-Za-z0-9]+)\s*([\d\.,]+)/i,
-                        // Aldagi insurance: "მანქანის ნომერი: AA123BB დამზღვევი: სახელი გვარი, 1234.00" - Georgian text
-                        /მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*(.+?)\s+(\d[\d\.,]*)/i
-                    ];
+                showToast("Request Declined", "Reschedule request removed", "info");
+                window.closeModal();
+                loadData();
+            } catch(e) {
+                console.error('Decline reschedule error:', e);
+                showToast("Error", "Failed to decline request", "error");
+            }
+        };
+
+        window.deleteRecord = async (id) => {
+            if(!id) {
+                showToast("Error: No record ID", "error");
+                return;
+            }
+            if(confirm("Delete this case permanently?")) {
+                const statusEl = document.getElementById('connection-status');
+                if (statusEl && statusEl.innerText.includes('Offline')) {
+                    transfers = transfers.filter(t => t.id !== id);
+                    window.closeModal();
+                    loadData(); 
+                    showToast("Deleted", "error");
+                } else {
+                    try {
+                        const result = await fetchAPI(`delete_transfer&id=${id}`, 'POST');
+                        if (result.status === 'deleted') {
+                            window.closeModal();
+                            loadData(); 
+                            showToast("Order deleted successfully", "success");
+                        } else {
+                            showToast(result.message || "Failed to delete order", "error");
+                        }
+                    } catch (error) {
+                        console.error('Delete error:', error);
+                        showToast("Failed to delete order", "error");
+                    }
+                }
+            }
+        };
+
+        window.sendSMS = async (phone, text, type) => {
+            if(!phone) return showToast("No phone number", "error");
+            const clean = phone.replace(/\D/g, '');
+            try {
+                const result = await fetchAPI('send_sms', 'POST', { to: clean, text: text });
+                
+                if(window.currentEditingId) {
+                    const t = transfers.find(i => i.id == window.currentEditingId);
+                    const newLog = { message: `SMS Sent (${type})`, timestamp: new Date().toISOString(), type: 'sms' };
                     
-                    for(let r of regexes) {
-                        const m = line.match(r);
-                        if(m) {
-                            let plate, name, amount;
-                            if(r.source.includes('Transfer from')) { name=m[1]; plate=m[2]; amount=m[3]; }
-                            else if(r.source.includes('INSURANCE')) { plate=m[1]; name=m[2]; amount=m[3]; }
-                            else
+                    const statusEl = document.getElementById('connection-status');
+                    if (statusEl && statusEl.innerText.includes('Offline')) {
+                        if(!t.systemLogs) t.systemLogs = [];
+                        t.systemLogs.push(newLog);
+                    } else {
+                        const logs = [...(t.systemLogs || []), newLog];
+                        await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', { systemLogs: logs });
+                    }
+                    // Refresh Logs
+                    const logsToRender = statusEl && statusEl.innerText.includes('Offline') ? t.systemLogs : [...(t.systemLogs || []), newLog];
+                    const logHTML = logsToRender.map(l => `<div class="mb-2 last:mb-0 pl-3 border-l-2 border-slate-200 text-slate-600"><div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">${l.timestamp.split('T')[0]}</div>${escapeHtml(l.message)}</div>`).join('');
+                    const activityLogEl = document.getElementById('activity-log-container');
+                    if (activityLogEl) activityLogEl.innerHTML = logHTML;
+                }
+                showToast("SMS Sent", "success");
+            } catch(e) { console.error(e); showToast("SMS Failed", "error"); }
+        };
+
+        const searchInputEl = document.getElementById('search-input');
+        const statusFilterEl = document.getElementById('status-filter');
+        const replyFilterEl = document.getElementById('reply-filter');
+        const newNoteInputEl = document.getElementById('new-note-input');
+        
+        if (searchInputEl) searchInputEl.addEventListener('input', renderTable);
+        if (statusFilterEl) statusFilterEl.addEventListener('change', renderTable);
+        if (replyFilterEl) replyFilterEl.addEventListener('change', renderTable);
+        if (newNoteInputEl) newNoteInputEl.addEventListener('keypress', (e) => { if(e.key === 'Enter') window.addNote(); });
+        window.insertSample = (t) => {
+            const importTextEl = document.getElementById('import-text');
+            if (importTextEl) importTextEl.value = t;
+        };
+
+        // Ensure all modals are hidden on page load
+        const editModalEl = document.getElementById('edit-modal');
+        if (editModalEl) editModalEl.classList.add('hidden');
+        
+        // Initialize data and icons
+        try {
+            loadData();
+        } catch (e) {
+            console.error('Error loading initial data:', e);
+            showToast('Error', 'Failed to load data. Please refresh the page.', 'error');
+        }
+        
+        if(window.lucide) lucide.createIcons();
+
+    </script>
+</body>
+</html>
