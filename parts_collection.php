@@ -220,7 +220,7 @@ if (empty($_SESSION['user_id'])) {
                         </div>
 
                         <!-- Parts Section -->
-                        <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
+                        <div class="bg-white/50 rounded-xl p-4 border border-white/30">
                             <div class="flex items-center justify-between mb-3">
                                 <label class="block text-sm font-semibold text-gray-800 flex items-center">
                                     <i data-lucide="package" class="w-4 h-4 mr-2 text-purple-600"></i>
@@ -233,6 +233,15 @@ if (empty($_SESSION['user_id'])) {
                             </div>
                             <div id="partsList" class="space-y-2 mb-3">
                                 <!-- Parts will be added here -->
+                            </div>
+                            <!-- Totals Section -->
+                            <div id="createTotals" class="mt-4 pt-4 border-t-2 border-dashed border-gray-200/80 flex justify-end items-center space-x-6">
+                                <div class="text-sm font-semibold text-gray-700">
+                                    Total Items: <span id="createTotalItems" class="text-gray-900">0</span>
+                                </div>
+                                <div class="text-lg font-bold text-gray-800">
+                                    Total Price: <span class="gradient-text" id="createTotalPrice">₾0.00</span>
+                                </div>
                             </div>
                         </div>
 
@@ -652,286 +661,181 @@ if (empty($_SESSION['user_id'])) {
             }
         }
 
-        // Render collections table
+        // Render collections in a card-based layout
         function renderCollections() {
             const container = document.getElementById('collectionsTable');
-            
+            if (!container) return;
+
             if (collections.length === 0) {
-                container.innerHTML = '<p class="text-gray-500">No parts collections found.</p>';
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="mx-auto w-24 h-24 gradient-accent rounded-full flex items-center justify-center float-animation">
+                            <i data-lucide="package-search" class="w-12 h-12 text-white"></i>
+                        </div>
+                        <h3 class="mt-4 text-lg font-semibold text-gray-800">No collections yet</h3>
+                        <p class="mt-1 text-sm text-gray-600">Create a new collection to get started.</p>
+                    </div>
+                `;
+                lucide.createIcons();
                 return;
             }
 
-            let html = `
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200/50">
-                        <thead class="table-gradient">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
-                                    <div class="flex items-center">
-                                        <i data-lucide="file-text" class="w-4 h-4 mr-2 text-indigo-600"></i>
-                                        Transfer Details
-                                    </div>
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
-                                    <div class="flex items-center">
-                                        <i data-lucide="package" class="w-4 h-4 mr-2 text-purple-600"></i>
-                                        Parts Count
-                                    </div>
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
-                                    <div class="flex items-center">
-                                        <span class="text-green-600 mr-2 text-lg">₾</span>
-                                        Total Cost
-                                    </div>
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
-                                    <div class="flex items-center">
-                                        <i data-lucide="activity" class="w-4 h-4 mr-2 text-blue-600"></i>
-                                        Status
-                                    </div>
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
-                                    <div class="flex items-center">
-                                        <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
-                                        Assigned Manager
-                                    </div>
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
-                                    <div class="flex items-center">
-                                        <i data-lucide="calendar" class="w-4 h-4 mr-2 text-gray-600"></i>
-                                        Created
-                                    </div>
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300/50">
-                                    <div class="flex items-center">
-                                        <i data-lucide="settings" class="w-4 h-4 mr-2 text-gray-600"></i>
-                                        Actions
-                                    </div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white/60 divide-y divide-gray-200/30">
-            `;
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">';
 
             collections.forEach(collection => {
-                const parts = JSON.parse(collection.parts_list || '[]');
-                const statusStyles = {
-                    'pending': 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-md',
-                    'collected': 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-md',
-                    'cancelled': 'bg-gradient-to-r from-red-400 to-pink-500 text-white shadow-md'
+                const statusColors = {
+                    pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'hourglass' },
+                    collected: { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle' },
+                    cancelled: { bg: 'bg-red-100', text: 'text-red-800', icon: 'x-circle' }
                 };
+                const statusInfo = statusColors[collection.status] || { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'help-circle' };
+                
+                const managerName = collection.manager_full_name || 'Unassigned';
+                const totalItems = collection.parts_list.reduce((sum, item) => sum + parseInt(item.quantity, 10), 0);
+                const totalPrice = collection.parts_list.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity, 10)), 0);
 
                 html += `
-                    <tr class="hover:bg-white/80 transition-colors duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 gradient-accent rounded-lg flex items-center justify-center shadow-md mr-3">
-                                    <i data-lucide="car" class="w-4 h-4 text-white"></i>
-                                </div>
+                    <div class="glass-card rounded-2xl shadow-lg card-hover border border-white/30 overflow-hidden">
+                        <div class="p-5">
+                            <div class="flex justify-between items-start">
                                 <div>
-                                    <div class="text-sm font-semibold text-gray-900">${collection.plate}</div>
-                                    <div class="text-sm text-gray-600">${collection.name}</div>
+                                    <p class="text-xs text-gray-500">#${collection.id}</p>
+                                    <p class="font-bold text-gray-800">${collection.transfer_plate} - ${collection.transfer_name}</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.bg} ${statusInfo.text}">
+                                        <i data-lucide="${statusInfo.icon}" class="w-3 h-3 mr-1"></i>
+                                        ${collection.status.charAt(0).toUpperCase() + collection.status.slice(1)}
+                                    </span>
                                 </div>
                             </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                    <span class="text-sm font-bold text-purple-600">${parts.length}</span>
+
+                            <div class="mt-4 space-y-3 text-sm">
+                                <div class="flex items-center text-gray-700">
+                                    <i data-lucide="user-cog" class="w-4 h-4 mr-2 text-orange-500"></i>
+                                    Manager: <span class="font-semibold ml-1">${managerName}</span>
                                 </div>
-                                <span class="text-sm text-gray-600">parts</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                                    <span class="text-green-600 text-lg">₾</span>
+                                <div class="flex items-center text-gray-700">
+                                    <i data-lucide="package" class="w-4 h-4 mr-2 text-purple-500"></i>
+                                    Items: <span class="font-semibold ml-1">${totalItems}</span>
                                 </div>
-                                <span class="text-sm font-semibold text-gray-900">₾${parseFloat(collection.total_cost || 0).toFixed(2)}</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${statusStyles[collection.status] || 'bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-md'}">
-                                <i data-lucide="circle" class="w-2 h-2 mr-1 fill-current"></i>
-                                ${collection.status}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                                    <i data-lucide="user" class="w-4 h-4 text-orange-600"></i>
+                                <div class="flex items-center text-gray-700">
+                                    <i data-lucide="receipt" class="w-4 h-4 mr-2 text-green-500"></i>
+                                    Total: <span class="font-bold ml-1">₾${totalPrice.toFixed(2)}</span>
                                 </div>
-                                <span class="text-sm font-medium text-gray-900">${collection.assigned_manager_name || 'Unassigned'}</span>
                             </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            <div class="flex items-center">
-                                <i data-lucide="calendar" class="w-4 h-4 mr-2 text-gray-400"></i>
-                                ${new Date(collection.created_at).toLocaleDateString()}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div class="flex space-x-2">
-                                <button onclick="editCollection(${collection.id})" class="inline-flex items-center px-3 py-2 border-2 border-indigo-300 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 transition-all duration-200">
-                                    <i data-lucide="edit-3" class="w-4 h-4 mr-1"></i>
-                                    Edit
-                                </button>
-                                <button onclick="deleteCollection(${collection.id})" class="inline-flex items-center px-3 py-2 border-2 border-red-300 rounded-lg text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 hover:border-red-400 transition-all duration-200">
-                                    <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i>
-                                    Delete
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                        </div>
+                        <div class="bg-gray-50/50 px-5 py-3 flex justify-end space-x-2">
+                            <button onclick="openEditModal(${collection.id})" class="inline-flex items-center px-3 py-1.5 border-2 border-transparent rounded-lg text-xs font-medium text-indigo-600 bg-indigo-100 hover:bg-indigo-200 transition-all duration-200">
+                                <i data-lucide="edit" class="w-3 h-3 mr-1"></i> Edit
+                            </button>
+                            <button onclick="deleteCollection(${collection.id})" class="inline-flex items-center px-3 py-1.5 border-2 border-transparent rounded-lg text-xs font-medium text-red-600 bg-red-100 hover:bg-red-200 transition-all duration-200">
+                                <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i> Delete
+                            </button>
+                        </div>
+                    </div>
                 `;
             });
 
-            html += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-
+            html += '</div>';
             container.innerHTML = html;
             lucide.createIcons();
         }
 
-        // Add part to form
-        function addPart(name = '', quantity = 1, price = 0) {
+        // Add part to the main collection form
+        function addPart(name = '', quantity = 1, price = 0, type = 'part') {
             const partsList = document.getElementById('partsList');
             const partDiv = document.createElement('div');
-            partDiv.className = 'flex space-x-2 items-end part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
-            const partId = 'part-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            partDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
+            
             partDiv.innerHTML = `
-                <div class="flex-1">
-                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                        <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i>
-                        Part Name
-                    </label>
-                    <div class="relative search-dropdown">
-                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" placeholder="Search parts..." autocomplete="off" required>
-                        <div class="dropdown-arrow">
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
-                        </div>
-                        <div class="part-dropdown absolute z-10 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden dropdown-options" style="top: 100%; margin-top: 2px;">
-                            <div class="part-options py-1">
-                                <!-- Options will be populated here -->
-                            </div>
-                        </div>
+                <div class="grid grid-cols-12 gap-x-3 items-end">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Type</label>
+                        <select class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-type" onchange="updateCreateFormTotals()">
+                            <option value="part">Part</option>
+                            <option value="labor">Labor</option>
+                        </select>
+                    </div>
+                    <div class="col-span-5">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Part/Service Name</label>
+                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-name" value="${name}" placeholder="Enter part or service name..." required>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center part-quantity" value="${quantity}" min="1" required oninput="updateCreateFormTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required oninput="updateCreateFormTotals()">
+                    </div>
+                    <div class="col-span-1 flex items-end">
+                        <button type="button" onclick="removePart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="w-20">
-                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                        <i data-lucide="hash" class="w-3 h-3 mr-1 text-purple-600"></i>
-                        Qty
-                    </label>
-                    <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center part-quantity" value="${quantity}" min="1" required>
-                </div>
-                <div class="w-24">
-                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                        <span class="text-green-600 mr-1">₾</span>
-                        Price
-                    </label>
-                    <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>
-                </div>
-                <button type="button" onclick="removePart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
             `;
             partsList.appendChild(partDiv);
-            lucide.createIcons();
-            
-            // Add event listeners for the new part dropdown
-            const searchInput = partDiv.querySelector('.part-name');
-            const dropdown = partDiv.querySelector('.part-dropdown');
-            const arrow = partDiv.querySelector('.dropdown-arrow i');
-            
-            searchInput.addEventListener('focus', () => {
-                updatePartDropdown(searchInput, dropdown, arrow);
-                togglePartDropdown(dropdown, arrow, true);
-            });
-            
-            searchInput.addEventListener('input', () => {
-                updatePartDropdown(searchInput, dropdown, arrow);
-                togglePartDropdown(dropdown, arrow, true);
-            });
-            
-            searchInput.addEventListener('blur', () => {
-                // Delay hiding to allow click on options
-                setTimeout(() => {
-                    togglePartDropdown(dropdown, arrow, false);
-                }, 150);
-            });
-            
-            // If name is provided, set it
-            if (name) {
-                searchInput.value = name;
+
+            const typeSelect = partDiv.querySelector('.part-type');
+            if (typeSelect) {
+                typeSelect.value = type;
             }
+            
+            lucide.createIcons();
+            updateCreateFormTotals();
         }
 
-        // Remove part from form
+        // Remove part from the main form
         function removePart(button) {
             button.closest('.part-item').remove();
+            updateCreateFormTotals();
         }
 
-        // Clear form
-        function clearForm() {
-            document.getElementById('transferSearch').value = '';
-            document.getElementById('transferSelect').value = '';
-            document.getElementById('assignedManager').value = '';
-            document.getElementById('partsList').innerHTML = '';
-            currentParts = [];
-            toggleTransferDropdown(false);
+        // Update totals in the main create form
+        function updateCreateFormTotals() {
+            const partItems = document.querySelectorAll('#partsList .part-item');
+            let totalItems = 0;
+            let totalPrice = 0;
+            partItems.forEach(item => {
+                const quantity = parseInt(item.querySelector('.part-quantity')?.value || 0);
+                const price = parseFloat(item.querySelector('.part-price')?.value || 0);
+                totalItems += quantity;
+                totalPrice += quantity * price;
+            });
+
+            const totalItemsEl = document.getElementById('createTotalItems');
+            const totalPriceEl = document.getElementById('createTotalPrice');
+
+            if (totalItemsEl) totalItemsEl.textContent = totalItems;
+            if (totalPriceEl) totalPriceEl.textContent = `₾${totalPrice.toFixed(2)}`;
         }
 
-        // Submit collection form
+        // Handle form submission for creating a new collection
         document.getElementById('collectionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const transferId = document.getElementById('transferSelect').value;
             const assignedManagerId = document.getElementById('assignedManager').value;
             if (!transferId) {
-                const searchInput = document.getElementById('transferSearch');
-                searchInput.classList.add('border-red-300');
-                searchInput.classList.remove('border-gray-200');
-                searchInput.focus();
-                showToast('Please select a transfer', 'error');
+                showToast('Please select a transfer order.', 'error');
                 return;
             }
 
             const parts = [];
-            const partItems = document.querySelectorAll('.part-item');
-            
-            if (partItems.length === 0) {
-                showToast('Please add at least one part', 'error');
-                return;
-            }
-
-            partItems.forEach((item, index) => {
-                const nameInput = item.querySelector('.part-name');
-                const quantityInput = item.querySelector('.part-quantity');
-                const priceInput = item.querySelector('.part-price');
-                
-                if (!nameInput || !quantityInput || !priceInput) {
-                    console.error(`Part item ${index} missing required inputs:`, {
-                        nameInput,
-                        quantityInput,
-                        priceInput
-                    });
-                    return;
-                }
-
-                const name = nameInput.value.trim();
-                const quantity = parseInt(quantityInput.value);
-                const price = parseFloat(priceInput.value);
-                
+            document.querySelectorAll('#partsList .part-item').forEach(item => {
+                const name = item.querySelector('.part-name').value.trim();
+                const quantity = parseInt(item.querySelector('.part-quantity').value);
+                const price = parseFloat(item.querySelector('.part-price').value);
+                const type = item.querySelector('.part-type').value;
                 if (name && quantity > 0 && price >= 0) {
-                    parts.push({ name, quantity, price });
+                    parts.push({ name, quantity, price, type });
                 }
             });
 
             if (parts.length === 0) {
-                showToast('Please fill in all part details', 'error');
+                showToast('Please add at least one part.', 'error');
                 return;
             }
 
