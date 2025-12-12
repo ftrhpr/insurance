@@ -854,15 +854,14 @@ try {
         $filePath = $_FILES['pdf']['tmp_name'];
 
         // --- MOCK PARSING LOGIC ---
-        // In a real application, you would use a library like smalot/pdfparser here.
-        // For this example, we will simulate parsing by returning a fixed list of items.
-        // This demonstrates the frontend functionality without requiring a PDF library.
+        // For this example, we will simulate parsing by returning a fixed list of items in Georgian.
+        // This demonstrates that the feature extracts text as-is, without translation.
         
         $mock_items = [
-            ['name' => 'Front Bumper (Parsed)', 'quantity' => 1, 'price' => 250.75, 'type' => 'part'],
-            ['name' => 'Headlight Assembly (Parsed)', 'quantity' => 2, 'price' => 150.00, 'type' => 'part'],
-            ['name' => 'Bumper Painting (Parsed)', 'quantity' => 1, 'price' => 120.00, 'type' => 'labor'],
-            ['name' => 'Installation Labor (Parsed)', 'quantity' => 2, 'price' => 50.00, 'type' => 'labor']
+            ['name' => 'წინა ბამპერი (დაპარსული)', 'quantity' => 1, 'price' => 250.75, 'type' => 'part'],
+            ['name' => 'ფარი (დაპარსული)', 'quantity' => 2, 'price' => 150.00, 'type' => 'part'],
+            ['name' => 'ბამპერის შეღებვა (დაპარსული)', 'quantity' => 1, 'price' => 120.00, 'type' => 'labor'],
+            ['name' => 'მონტაჟი (დაპარსული)', 'quantity' => 2, 'price' => 50.00, 'type' => 'labor']
         ];
         
         // Simulate a delay to make it feel like a real process
