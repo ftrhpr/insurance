@@ -358,20 +358,10 @@ try {
 
     // --- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
     if ($action === 'get_transfers_for_parts' && $method === 'GET') {
-        // --- DIAGNOSTIC: RETURN HARDCODED DUMMY DATA ---
-        $dummy_transfers = [
-            ['id' => 1, 'plate' => 'TEST-001', 'name' => 'John Doe (Test)', 'status' => 'Processing'],
-            ['id' => 2, 'plate' => 'TEST-002', 'name' => 'Jane Smith (Test)', 'status' => 'Called'],
-            ['id' => 3, 'plate' => 'DUMMY-123', 'name' => 'Test Car (Test)', 'status' => 'Parts Ordered']
-        ];
-        jsonResponse(['transfers' => $dummy_transfers]);
-
-        /* -- Original DB Code --
         $stmt = $pdo->prepare("SELECT id, plate, name, status FROM transfers ORDER BY created_at DESC");
         $stmt->execute();
         $transfers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         jsonResponse(['transfers' => $transfers]);
-        */
     }
 
     // --- SMS TEMPLATES ACTIONS ---
