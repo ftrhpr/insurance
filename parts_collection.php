@@ -498,154 +498,31 @@ if (empty($_SESSION['user_id'])) {
 
             filteredTransfers.forEach(transfer => {
                 const option = document.createElement('div');
+                option.setAttribute('data-id', transfer.id);
                 option.className = 'dropdown-option';
                 option.innerHTML = `
-                    <div class="font-medium text-gray-900">${transfer.plate} - ${transfer.name}</div>
-                    <div class="text-xs text-gray-600 capitalize">Status: ${transfer.status}</div>
+                    <div>
+                        <span class="font-bold">${transfer.plate}</span> - ${transfer.name}
+                    </div>
+                    <div class="text-xs text-gray-500">${transfer.status}</div>
                 `;
-                option.addEventListener('click', () => selectTransfer(transfer));
+                option.addEventListener('click', () => {
+                    document.getElementById('transferSearch').value = `${transfer.plate} - ${transfer.name}`;
+                    document.getElementById('transferSelect').value = transfer.id;
+                    toggleTransferDropdown(false);
+                });
                 optionsContainer.appendChild(option);
             });
         }
 
-        // Select a transfer from dropdown
-        function selectTransfer(transfer) {
-            const searchInput = document.getElementById('transferSearch');
-            const hiddenInput = document.getElementById('transferSelect');
+        // Toggle transfer dropdown visibility
+        function toggleTransferDropdown(show) {
             const dropdown = document.getElementById('transferDropdown');
-
-            searchInput.value = `${transfer.plate} - ${transfer.name} (${transfer.status})`;
-            hiddenInput.value = transfer.id;
-            toggleTransferDropdown(false);
-
-            // Remove required validation styling if present
-            searchInput.classList.remove('border-red-300');
-            searchInput.classList.add('border-gray-200');
-        }
-
-        // Show/hide dropdown
-        function toggleTransferDropdown(show = null) {
-            const dropdown = document.getElementById('transferDropdown');
-            const arrow = document.querySelector('.dropdown-arrow i');
-
-            if (show === null) {
-                dropdown.classList.toggle('hidden');
-                arrow?.classList.toggle('open');
-            } else if (show) {
-                dropdown.classList.remove('hidden');
-                arrow?.classList.add('open');
-            } else {
-                dropdown.classList.add('hidden');
-                arrow?.classList.remove('open');
+            const arrow = document.querySelector('#transferSearch + .dropdown-arrow i');
+            if (dropdown && arrow) {
+                dropdown.classList.toggle('hidden', !show);
+                arrow.parentElement.classList.toggle('open', show);
             }
-        }
-
-        // Update part dropdown with search functionality
-        function updatePartDropdown(searchInput, dropdown, arrow, filter = '') {
-            const optionsContainer = dropdown.querySelector('.part-options');
-            if (!optionsContainer) return;
-
-            const searchText = filter || searchInput.value.toLowerCase();
-            optionsContainer.innerHTML = '';
-
-            const filteredParts = partSuggestions.filter(part => {
-                return part.toLowerCase().includes(searchText);
-            });
-
-            // Add current input as first option if it doesn't exist in suggestions
-            if (searchInput.value && !filteredParts.includes(searchInput.value)) {
-                const customOption = document.createElement('div');
-                customOption.className = 'dropdown-option';
-                customOption.innerHTML = `
-                    <div class="font-medium text-indigo-600">${searchInput.value}</div>
-                    <div class="text-xs text-gray-500">Custom part</div>
-                `;
-                customOption.addEventListener('click', () => selectPart(searchInput, dropdown, arrow, searchInput.value));
-                optionsContainer.appendChild(customOption);
-            }
-
-            if (filteredParts.length === 0 && !searchInput.value) {
-                const noResults = document.createElement('div');
-                noResults.className = 'dropdown-option text-center text-gray-500';
-                noResults.textContent = 'Start typing to search parts...';
-                optionsContainer.appendChild(noResults);
-                return;
-            }
-
-            filteredParts.forEach(part => {
-                const option = document.createElement('div');
-                option.className = 'dropdown-option';
-                option.innerHTML = `
-                    <div class="font-medium text-gray-900">${part}</div>
-                    <div class="text-xs text-gray-600">Suggested part</div>
-                `;
-                option.addEventListener('click', () => selectPart(searchInput, dropdown, arrow, part));
-                optionsContainer.appendChild(option);
-            });
-        }
-
-        // Select a part from dropdown
-        function selectPart(searchInput, dropdown, arrow, partName) {
-            searchInput.value = partName;
-            togglePartDropdown(dropdown, arrow, false);
-        }
-
-        // Show/hide part dropdown
-        function togglePartDropdown(dropdown, arrow, show = null) {
-            if (show === null) {
-                dropdown.classList.toggle('hidden');
-                arrow?.classList.toggle('open');
-            } else if (show) {
-                dropdown.classList.remove('hidden');
-                arrow?.classList.add('open');
-            } else {
-                dropdown.classList.add('hidden');
-                arrow?.classList.remove('open');
-            }
-        }
-
-        // Load part name suggestions
-        async function loadPartSuggestions() {
-            try {
-                const response = await fetch('api.php?action=get_parts_suggestions');
-                const data = await response.json();
-                partSuggestions = data.suggestions || [];
-            } catch (error) {
-                console.error('Error loading part suggestions:', error);
-            }
-        }
-
-        // Load managers for dropdown
-        async function loadManagers() {
-            try {
-                const response = await fetch('api.php?action=get_managers');
-                const data = await response.json();
-                managers = data.managers || [];
-                
-                // Update manager dropdowns
-                updateManagerDropdowns();
-            } catch (error) {
-                console.error('Error loading managers:', error);
-                showToast('Error loading managers', 'error');
-            }
-        }
-
-        // Update manager dropdowns
-        function updateManagerDropdowns() {
-            const editDropdown = document.getElementById('editAssignedManager');
-            const createDropdown = document.getElementById('assignedManager');
-            
-            [editDropdown, createDropdown].forEach(dropdown => {
-                if (dropdown) {
-                    dropdown.innerHTML = '<option value="">Unassigned</option>';
-                    managers.forEach(manager => {
-                        const option = document.createElement('option');
-                        option.value = manager.id;
-                        option.textContent = manager.full_name;
-                        dropdown.appendChild(option);
-                    });
-                }
-            });
         }
 
         // Load collections from the server
@@ -674,6 +551,171 @@ if (empty($_SESSION['user_id'])) {
                 console.error('Error loading collections:', error);
                 showToast('Error loading collections', 'error');
             }
+        }
+        
+        // Load part suggestions for autocompletion
+        async function loadPartSuggestions() {
+            try {
+                const response = await fetch('api.php?action=get_parts_suggestions');
+                const data = await response.json();
+                partSuggestions = data.suggestions || [];
+            } catch (error) {
+                console.error('Error loading part suggestions:', error);
+            }
+        }
+
+        // Load managers
+        async function loadManagers() {
+            try {
+                const response = await fetch('api.php?action=get_managers');
+                const data = await response.json();
+                if (data.managers) {
+                    managers = data.managers;
+                    const managerSelects = document.querySelectorAll('#assignedManager, #editAssignedManager');
+                    managerSelects.forEach(select => {
+                        // Clear existing options except the first one
+                        while (select.options.length > 1) {
+                            select.remove(1);
+                        }
+                        managers.forEach(manager => {
+                            const option = new Option(`${manager.full_name} (${manager.username})`, manager.id);
+                            select.add(option);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading managers:', error);
+            }
+        }
+
+        // Add part to the main collection form
+        function addPart(name = '', quantity = 1, price = 0, type = 'part') {
+            const partsList = document.getElementById('partsList');
+            const partDiv = document.createElement('div');
+            partDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
+            
+            partDiv.innerHTML = `
+                <div class="grid grid-cols-12 gap-x-3 items-end">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Type</label>
+                        <select class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-type" onchange="updateCreateFormTotals()">
+                            <option value="part">Part</option>
+                            <option value="labor">Labor</option>
+                        </select>
+                    </div>
+                    <div class="col-span-5">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Part/Service Name</label>
+                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-name" value="${name}" placeholder="Enter part or service name..." required>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center part-quantity" value="${quantity}" min="1" required oninput="updateCreateFormTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required oninput="updateCreateFormTotals()">
+                    </div>
+                    <div class="col-span-1 flex items-end">
+                        <button type="button" onclick="removePart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            partsList.appendChild(partDiv);
+
+            const typeSelect = partDiv.querySelector('.part-type');
+            if (typeSelect) {
+                typeSelect.value = type;
+            }
+            
+            lucide.createIcons();
+            updateCreateFormTotals();
+        }
+
+        // Remove part from the main form
+        function removePart(button) {
+            button.closest('.part-item').remove();
+            updateCreateFormTotals();
+        }
+
+        // Update totals in the main create form
+        function updateCreateFormTotals() {
+            const partItems = document.querySelectorAll('#partsList .part-item');
+            let totalItems = 0;
+            let totalPrice = 0;
+            partItems.forEach(item => {
+                const quantity = parseInt(item.querySelector('.part-quantity')?.value || 0);
+                const price = parseFloat(item.querySelector('.part-price')?.value || 0);
+                totalItems += quantity;
+                totalPrice += quantity * price;
+            });
+
+            const totalItemsEl = document.getElementById('createTotalItems');
+            const totalPriceEl = document.getElementById('createTotalPrice');
+
+            if (totalItemsEl) totalItemsEl.textContent = totalItems;
+            if (totalPriceEl) totalPriceEl.textContent = `₾${totalPrice.toFixed(2)}`;
+        }
+
+        // Handle form submission for creating a new collection
+        document.getElementById('collectionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const transferId = document.getElementById('transferSelect').value;
+            const assignedManager = document.getElementById('assignedManager').value;
+
+            if (!transferId) {
+                showToast('Please select a transfer order.', 'error');
+                return;
+            }
+
+            const parts = [];
+            document.querySelectorAll('#partsList .part-item').forEach(item => {
+                const name = item.querySelector('.part-name').value.trim();
+                const quantity = parseInt(item.querySelector('.part-quantity').value);
+                const price = parseFloat(item.querySelector('.part-price').value);
+                const type = item.querySelector('.part-type').value;
+                if (name && quantity > 0 && price >= 0) {
+                    parts.push({ name, quantity, price, type });
+                }
+            });
+
+            if (parts.length === 0) {
+                showToast('Please add at least one part.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('api.php?action=create_parts_collection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        transfer_id: transferId,
+                        parts_list: parts,
+                        assigned_manager_id: assignedManager || null
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Parts collection created successfully!', 'success');
+                    clearForm();
+                    loadCollections();
+                } else {
+                    showToast(result.error || 'Error creating collection', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error creating collection', 'error');
+            }
+        });
+
+        // Clear the main collection form
+        function clearForm() {
+            document.getElementById('collectionForm').reset();
+            document.getElementById('partsList').innerHTML = '';
+            document.getElementById('transferSearch').value = '';
+            document.getElementById('transferSelect').value = '';
+            updateCreateFormTotals();
         }
 
         // Render collections in a card-based layout
@@ -757,178 +799,32 @@ if (empty($_SESSION['user_id'])) {
             lucide.createIcons();
         }
 
-        // Add part to the main collection form
-        function addPart(name = '', quantity = 1, price = 0, type = 'part') {
-            const partsList = document.getElementById('partsList');
-            const partDiv = document.createElement('div');
-            partDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
-            
-            partDiv.innerHTML = `
-                <div class="grid grid-cols-12 gap-x-3 items-end">
-                    <div class="col-span-2">
-                        <label class="block text-xs font-semibold text-gray-800 mb-1">Type</label>
-                        <select class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-type" onchange="updateCreateFormTotals()">
-                            <option value="part">Part</option>
-                            <option value="labor">Labor</option>
-                        </select>
-                    </div>
-                    <div class="col-span-5">
-                        <label class="block text-xs font-semibold text-gray-800 mb-1">Part/Service Name</label>
-                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-name" value="${name}" placeholder="Enter part or service name..." required>
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
-                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center part-quantity" value="${quantity}" min="1" required oninput="updateCreateFormTotals()">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
-                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required oninput="updateCreateFormTotals()">
-                    </div>
-                    <div class="col-span-1 flex items-end">
-                        <button type="button" onclick="removePart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            partsList.appendChild(partDiv);
+        // Open edit modal and populate data
+        async function openEditModal(id) {
+            const modal = document.getElementById('editModal');
+            const collection = collections.find(c => c.id === id);
 
-            const typeSelect = partDiv.querySelector('.part-type');
-            if (typeSelect) {
-                typeSelect.value = type;
-            }
-            
-            lucide.createIcons();
-            updateCreateFormTotals();
-        }
-
-        // Remove part from the main form
-        function removePart(button) {
-            button.closest('.part-item').remove();
-            updateCreateFormTotals();
-        }
-
-        // Update totals in the main create form
-        function updateCreateFormTotals() {
-            const partItems = document.querySelectorAll('#partsList .part-item');
-            let totalItems = 0;
-            let totalPrice = 0;
-            partItems.forEach(item => {
-                const quantity = parseInt(item.querySelector('.part-quantity')?.value || 0);
-                const price = parseFloat(item.querySelector('.part-price')?.value || 0);
-                totalItems += quantity;
-                totalPrice += quantity * price;
-            });
-
-            const totalItemsEl = document.getElementById('createTotalItems');
-            const totalPriceEl = document.getElementById('createTotalPrice');
-
-            if (totalItemsEl) totalItemsEl.textContent = totalItems;
-            if (totalPriceEl) totalPriceEl.textContent = `₾${totalPrice.toFixed(2)}`;
-        }
-
-        // Handle form submission for creating a new collection
-        document.getElementById('collectionForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const transferId = document.getElementById('transferSelect').value;
-            const assignedManagerId = document.getElementById('assignedManager').value;
-            if (!transferId) {
-                showToast('Please select a transfer order.', 'error');
-                return;
-            }
-
-            const parts = [];
-            document.querySelectorAll('#partsList .part-item').forEach(item => {
-                const name = item.querySelector('.part-name').value.trim();
-                const quantity = parseInt(item.querySelector('.part-quantity').value);
-                const price = parseFloat(item.querySelector('.part-price').value);
-                const type = item.querySelector('.part-type').value;
-                if (name && quantity > 0 && price >= 0) {
-                    parts.push({ name, quantity, price, type });
-                }
-            });
-
-            if (parts.length === 0) {
-                showToast('Please add at least one part.', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch('api.php?action=create_parts_collection', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ transfer_id: transferId, parts_list: parts, assigned_manager_id: assignedManagerId || null })
-                });
+            if (modal && collection) {
+                // Populate basic info
+                document.getElementById('editId').value = id;
+                document.getElementById('editTransferInfo').innerHTML = `<span class="font-bold">${collection.transfer_plate}</span> - ${collection.transfer_name}`;
+                document.getElementById('editStatus').value = collection.status;
                 
-                const result = await response.json();
-                if (result.success) {
-                    showToast('Parts collection created successfully', 'success');
-                    clearForm();
-                    loadCollections();
-                } else {
-                    showToast(result.error || 'Error creating collection', 'error');
+                // Populate manager
+                const editAssignedManager = document.getElementById('editAssignedManager');
+                editAssignedManager.value = collection.assigned_manager_id || "";
+
+                // Populate parts
+                const editPartsList = document.getElementById('editPartsList');
+                editPartsList.innerHTML = ''; // Clear old parts
+                if (collection.parts_list && Array.isArray(collection.parts_list)) {
+                    collection.parts_list.forEach(part => {
+                        addEditPart(part.name, part.quantity, part.price, part.type || 'part');
+                    });
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Error creating collection', 'error');
-            }
-        });
-
-        // Edit collection
-        function editCollection(id) {
-            const collection = collections.find(c => c.id == id);
-            if (!collection) {
-                console.error('Collection not found:', id);
-                return;
-            }
-
-            // Set hidden ID
-            const editIdElement = document.getElementById('editId');
-            if (editIdElement) {
-                editIdElement.value = id;
-            } else {
-                console.error('editId element not found');
-                return;
-            }
-
-            // Populate transfer info display
-            const transferInfo = document.getElementById('editTransferInfo');
-            if (transferInfo) {
-                transferInfo.innerHTML = `
-                    <div class="font-medium text-gray-900">${collection.plate} - ${collection.name}</div>
-                    <div class="text-gray-600 mt-1">Status: <span class="capitalize">${collection.status}</span></div>
-                `;
-            }
-
-            // Set status
-            const editStatusElement = document.getElementById('editStatus');
-            if (editStatusElement) {
-                editStatusElement.value = collection.status;
-            }
-
-            // Set assigned manager
-            const editAssignedManagerElement = document.getElementById('editAssignedManager');
-            if (editAssignedManagerElement) {
-                editAssignedManagerElement.value = collection.assigned_manager_id || '';
-            }
-
-            // Load parts
-            const parts = JSON.parse(collection.parts_list || '[]');
-            const editPartsList = document.getElementById('editPartsList');
-            if (editPartsList) {
-                editPartsList.innerHTML = '';
-
-                parts.forEach(part => {
-                    addEditPart(part.name, part.quantity, part.price, part.type || 'part');
-                });
                 updateEditTotals(); // Update totals after populating
 
-                // Show modal
-                const modal = document.getElementById('editModal');
-                if (modal) {
-                    modal.classList.add('active');
-                }
+                modal.classList.add('active');
             }
         }
 
@@ -1168,6 +1064,41 @@ if (empty($_SESSION['user_id'])) {
             toast.textContent = message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
+        }
+
+        // --- PART SEARCH DROPDOWN HELPERS ---
+        function updatePartDropdown(searchInput, dropdown, arrow) {
+            const filter = searchInput.value.toLowerCase();
+            const optionsContainer = dropdown.querySelector('.part-options');
+            optionsContainer.innerHTML = '';
+
+            const filtered = partSuggestions.filter(p => p.toLowerCase().includes(filter));
+            
+            if (filtered.length > 0) {
+                filtered.forEach(suggestion => {
+                    const option = document.createElement('div');
+                    option.className = 'dropdown-option';
+                    option.textContent = suggestion;
+                    option.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        searchInput.value = suggestion;
+                        togglePartDropdown(dropdown, arrow, false);
+                    });
+                    optionsContainer.appendChild(option);
+                });
+            } else {
+                const noResults = document.createElement('div');
+                noResults.className = 'dropdown-option text-center text-gray-500';
+                noResults.textContent = 'No suggestions';
+                optionsContainer.appendChild(noResults);
+            }
+        }
+
+        function togglePartDropdown(dropdown, arrow, show) {
+            if (dropdown && arrow) {
+                dropdown.classList.toggle('hidden', !show);
+                arrow.parentElement.classList.toggle('open', show);
+            }
         }
     </script>
 </body>
