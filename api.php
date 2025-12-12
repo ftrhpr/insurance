@@ -866,51 +866,82 @@ try {
             $parser = new \Smalot\PdfParser\Parser();
             $pdf = $parser->parseFile($filePath);
             $text = $pdf->getText();
-            $lines = explode("\n", $text);
 
-            // Regex patterns to identify item lines in an invoice. This is a best-effort approach.
-            // Pattern 1: Looks for description, quantity, and price.
-            $pattern1 = '/(.+?)\s+(\d{1,3})\s+([\d,.]+)$/';
-            // Pattern 2: Looks for description and a price.
-            $pattern2 = '/(.+?)\s+([\d,.]+)$/';
+            // Define Georgian keywords from user specification
+            $partsHeader = 'დეტალების ჩამონათვალი';
+            $laborHeader = 'მომსახურების ჩამონათვალი';
+            $statusKeyword = 'სტატუსი';
 
-            foreach ($lines as $line) {
-                $line = trim($line);
-                $matches = [];
-                $name = '';
-                $quantity = 1; // Default quantity
-                $price = 0;
+            // Function to process a block of text (either parts or labor)
+            $processBlock = function($blockText, $type) use ($statusKeyword) {
+                $lines = explode("\n", $blockText);
+                $foundItems = [];
+                
+                // Regex to capture: (Description) (Quantity) (Price)
+                // The 'u' flag is for UTF-8 compatibility (Georgian characters).
+                $regex = '/^(.+?)\s+(\d+)\s+([\d,.]+)\s*$/u';
 
-                // Try to match the more specific pattern first
-                if (preg_match($pattern1, $line, $matches)) {
-                    $name = trim($matches[1]);
-                    $quantity = (int)$matches[2];
-                    $price = (float)str_replace(',', '', $matches[3]);
-                } elseif (preg_match($pattern2, $line, $matches)) {
-                    $name = trim($matches[1]);
-                    // If a single number is found, assume quantity is 1
-                    $price = (float)str_replace(',', '', $matches[2]);
-                }
-
-                // Basic validation to filter out non-item lines
-                if (!empty($name) && $price > 0 && strlen($name) > 2 && !is_numeric($name)) {
-                    // Simple heuristic to determine type
-                    $type = 'part';
-                    if (preg_match('/(labor|service|installation|შეღებვა|მონტაჟი)/i', $name)) {
-                        $type = 'labor';
-                    }
+                foreach ($lines as $line) {
+                    $line = trim($line);
                     
-                    $items[] = [
-                        'name' => $name,
-                        'quantity' => $quantity,
-                        'price' => $price,
-                        'type' => $type
-                    ];
+                    // Skip empty lines, headers, or lines with the ignored keyword
+                    if (empty($line) || mb_stripos($line, $statusKeyword, 0, 'UTF-8') !== false || preg_match('/(რაოდენობა|ფასი\(ლარი\))/u', $line)) {
+                        continue;
+                    }
+
+                    $matches = [];
+                    if (preg_match($regex, $line, $matches)) {
+                        // Clean up name: remove leading numbers/dots/spaces from item enumeration
+                        $name = trim(preg_replace('/^\d+\.?\s*/u', '', $matches[1]));
+                        $quantity = (int)$matches[2];
+                        $price = (float)str_replace(',', '', $matches[3]);
+
+                        // Validation check
+                        if (!empty($name) && $quantity > 0 && $price >= 0 && mb_strlen($name, 'UTF-8') > 1) {
+                            $foundItems[] = [
+                                'name' => $name,
+                                'quantity' => $quantity,
+                                'price' => $price,
+                                'type' => $type
+                            ];
+                        }
+                    }
                 }
+                return $foundItems;
+            };
+
+            // Find positions of headers to split the document into sections
+            $partsPos = mb_stripos($text, $partsHeader, 0, 'UTF-8');
+            $laborPos = mb_stripos($text, $laborHeader, 0, 'UTF-8');
+
+            $partsText = '';
+            $laborText = '';
+
+            // Split text into parts and labor sections based on header positions
+            if ($partsPos !== false && $laborPos !== false) {
+                if ($partsPos < $laborPos) {
+                    $partsText = mb_substr($text, $partsPos, $laborPos - $partsPos, 'UTF-8');
+                    $laborText = mb_substr($text, $laborPos, null, 'UTF-8');
+                } else {
+                    $laborText = mb_substr($text, $laborPos, $partsPos - $laborPos, 'UTF-8');
+                    $partsText = mb_substr($text, $partsPos, null, 'UTF-8');
+                }
+            } elseif ($partsPos !== false) {
+                $partsText = mb_substr($text, $partsPos, null, 'UTF-8');
+            } elseif ($laborPos !== false) {
+                $laborText = mb_substr($text, $laborPos, null, 'UTF-8');
+            } else {
+                // If no headers are found, fallback to processing the whole document as parts
+                $partsText = $text;
             }
 
+            $partItems = $processBlock($partsText, 'part');
+            $laborItems = $processBlock($laborText, 'labor');
+            
+            $items = array_merge($partItems, $laborItems);
+
             if (empty($items)) {
-                 jsonResponse(['success' => false, 'error' => 'Could not automatically detect any items. Please add them manually.']);
+                 jsonResponse(['success' => false, 'error' => 'Could not automatically detect any items based on the specified format. Please add them manually.']);
             } else {
                  jsonResponse(['success' => true, 'items' => $items]);
             }
