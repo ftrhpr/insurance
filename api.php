@@ -756,8 +756,12 @@ try {
 
         $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost, assigned_manager_id, currency) VALUES (?, ?, ?, ?, 'GEL')");
         $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost, $assigned_manager_id]);
+        $new_collection_id = $pdo->lastInsertId();
 
-        jsonResponse(['success' => true, 'id' => $pdo->lastInsertId()]);
+        // --- NEW: UPDATE SUGGESTIONS ---
+        update_suggestions_from_list($pdo, $parts_list);
+
+        jsonResponse(['success' => true, 'id' => $new_collection_id]);
     }
 
     if ($action === 'update_parts_collection' && $method === 'POST') {
@@ -797,6 +801,9 @@ try {
         $stmt = $pdo->prepare($query);
         $stmt->execute($params);
 
+        // --- NEW: UPDATE SUGGESTIONS ---
+        update_suggestions_from_list($pdo, $parts_list);
+
         jsonResponse(['success' => true]);
     }
 
@@ -818,22 +825,12 @@ try {
     // --------------------------------------------------
     // PARTS SUGGESTIONS ENDPOINT
     // --------------------------------------------------
-    if ($action === 'get_parts_suggestions' && $method === 'GET') {
-        $stmt = $pdo->query("SELECT DISTINCT JSON_EXTRACT(parts_list, '$[*].name') as part_names FROM parts_collections");
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        $suggestions = [];
-        foreach ($results as $result) {
-            $names = json_decode($result['part_names'], true);
-            if (is_array($names)) {
-                $suggestions = array_merge($suggestions, $names);
-            }
-        }
-        
-        $uniqueSuggestions = array_unique(array_filter($suggestions));
-        sort($uniqueSuggestions);
-        
-        jsonResponse(['suggestions' => array_values($uniqueSuggestions)]);
+    if ($action === 'get_item_suggestions' && $method === 'GET') {
+        $type = $_GET['type'] ?? 'part'; // 'part' or 'labor'
+        $stmt = $pdo->prepare("SELECT name FROM item_suggestions WHERE type = ? ORDER BY usage_count DESC, name ASC LIMIT 100");
+        $stmt->execute([$type]);
+        $suggestions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        jsonResponse(['suggestions' => $suggestions]);
     }
 
     // --------------------------------------------------
@@ -850,5 +847,27 @@ try {
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(['error' => $e->getMessage()]);
+}
+
+// --- HELPER FUNCTION FOR SUGGESTIONS ---
+function update_suggestions_from_list($pdo, $items) {
+    if (empty($items)) {
+        return;
+    }
+    
+    $stmt = $pdo->prepare("
+        INSERT INTO item_suggestions (name, type, usage_count) 
+        VALUES (:name, :type, 1) 
+        ON DUPLICATE KEY UPDATE usage_count = usage_count + 1
+    ");
+
+    foreach ($items as $item) {
+        if (!empty($item['name']) && !empty($item['type'])) {
+            $stmt->execute([
+                ':name' => trim($item['name']),
+                ':type' => $item['type']
+            ]);
+        }
+    }
 }
 ?>

@@ -268,6 +268,18 @@ try {
         }
     }
 
+    echo "---------------------------------\n";
+
+    // Fix SMS Templates table
+    require_once 'fix_sms_templates.php';
+
+    // Fix or create item suggestions table
+    require_once 'fix_db_suggestions.php';
+
+    echo "---------------------------------\n";
+    echo "All database checks and fixes are complete.\n";
+    echo "---------------------------------\n";
+
 } catch (PDOException $e) {
     echo "CRITICAL ERROR: " . $e->getMessage();
 }
