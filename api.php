@@ -866,58 +866,57 @@ try {
             $parser = new \Smalot\PdfParser\Parser();
             $pdf = $parser->parseFile($filePath);
             $text = $pdf->getText();
+            
+            // --- NEW: LOGGING ---
+            // Log the raw extracted text for debugging purposes.
+            $logContent = "--- PDF PARSE ATTEMPT: " . date('Y-m-d H:i:s') . " ---\n";
+            $logContent .= $text;
+            $logContent .= "\n--- END OF PDF ---\n\n";
+            file_put_contents(__DIR__ . '/error_log', $logContent, FILE_APPEND);
 
-            // Define Georgian keywords from user specification
+            // Define Georgian keywords
             $partsHeader = 'დეტალების ჩამონათვალი';
             $laborHeader = 'მომსახურების ჩამონათვალი';
             $statusKeyword = 'სტატუსი';
 
-            // Function to process a block of text (either parts or labor)
+            // Function to process a block of text
             $processBlock = function($blockText, $type) use ($statusKeyword) {
                 $lines = explode("\n", $blockText);
                 $foundItems = [];
                 
-                // Regex to capture: (Description) (Quantity) (Price)
-                // The 'u' flag is for UTF-8 compatibility (Georgian characters).
-                $regex = '/^(.+?)\s+(\d+)\s+([\d,.]+)\s*$/u';
+                // Flexible regex: (Description) (maybe some text) (Quantity) (maybe some text) (Price)
+                // This is more robust against extra words or slightly different table structures.
+                $regex = '/^(.+?)\s+.*?(\d+)\s+.*?([\d,.]+)\s*$/u';
 
                 foreach ($lines as $line) {
                     $line = trim($line);
                     
-                    // Skip empty lines, headers, or lines with the ignored keyword
-                    if (empty($line) || mb_stripos($line, $statusKeyword, 0, 'UTF-8') !== false || preg_match('/(რაოდენობა|ფასი\(ლარი\))/u', $line)) {
+                    // Skip lines that are likely headers, footers, or contain ignored keywords
+                    if (empty($line) || mb_strlen($line, 'UTF-8') < 5 || mb_stripos($line, $statusKeyword, 0, 'UTF-8') !== false || is_numeric(trim(str_replace(['.', ','], '', $line)))) {
                         continue;
                     }
 
                     $matches = [];
                     if (preg_match($regex, $line, $matches)) {
-                        // Clean up name: remove leading numbers/dots/spaces from item enumeration
                         $name = trim(preg_replace('/^\d+\.?\s*/u', '', $matches[1]));
                         $quantity = (int)$matches[2];
                         $price = (float)str_replace(',', '', $matches[3]);
 
-                        // Validation check
-                        if (!empty($name) && $quantity > 0 && $price >= 0 && mb_strlen($name, 'UTF-8') > 1) {
-                            $foundItems[] = [
-                                'name' => $name,
-                                'quantity' => $quantity,
-                                'price' => $price,
-                                'type' => $type
-                            ];
+                        // Stronger validation to avoid capturing incorrect lines
+                        if (!empty($name) && $quantity > 0 && $price > 0 && !is_numeric($name)) {
+                            $foundItems[] = ['name' => $name, 'quantity' => $quantity, 'price' => $price, 'type' => $type];
                         }
                     }
                 }
                 return $foundItems;
             };
 
-            // Find positions of headers to split the document into sections
+            // Section detection logic (same as before)
             $partsPos = mb_stripos($text, $partsHeader, 0, 'UTF-8');
             $laborPos = mb_stripos($text, $laborHeader, 0, 'UTF-8');
-
             $partsText = '';
             $laborText = '';
 
-            // Split text into parts and labor sections based on header positions
             if ($partsPos !== false && $laborPos !== false) {
                 if ($partsPos < $laborPos) {
                     $partsText = mb_substr($text, $partsPos, $laborPos - $partsPos, 'UTF-8');
@@ -931,7 +930,7 @@ try {
             } elseif ($laborPos !== false) {
                 $laborText = mb_substr($text, $laborPos, null, 'UTF-8');
             } else {
-                // If no headers are found, fallback to processing the whole document as parts
+                // Fallback if no specific headers are found
                 $partsText = $text;
             }
 
