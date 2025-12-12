@@ -1,32 +1,3 @@
-// --- DB CONNECTION ---
-try {
-    $pdo = getDBConnection();
-} catch (Exception $e) {
-    http_response_code(500); 
-    die(json_encode(['error' => 'DB Connection failed: ' . $e->getMessage()]));
-}
-
-// --- PDF Invoice Parsing Endpoint ---
-if ($action === 'parse_invoice_pdf' && $method === 'POST') {
-    if (empty($_FILES['pdf'])) {
-        http_response_code(400);
-        jsonResponse(['error' => 'No PDF file uploaded']);
-    }
-    $file = $_FILES['pdf'];
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        http_response_code(400);
-        jsonResponse(['error' => 'File upload error']);
-    }
-    $tmpPath = $file['tmp_name'];
-    require_once __DIR__ . '/pdf_invoice_parser.php';
-    try {
-        $result = parse_invoice_pdf($tmpPath);
-        jsonResponse(['success' => true, 'invoice' => $result]);
-    } catch (Exception $e) {
-        http_response_code(500);
-        jsonResponse(['error' => 'PDF parse error', 'details' => $e->getMessage()]);
-    }
-}
 <?php
 require_once 'session_config.php';
 
