@@ -465,12 +465,7 @@ if (empty($_SESSION['user_id'])) {
             try {
                 // Use endpoint that excludes Completed orders for parts collection
                 const response = await fetch('api.php?action=get_transfers_for_parts');
-                const rawResponseText = await response.text();
-                console.log("Raw response from get_transfers_for_parts:", rawResponseText);
-                
-                const data = JSON.parse(rawResponseText);
-                console.log("Parsed data from get_transfers_for_parts:", data);
-
+                const data = await response.json();
                 transfers = data.transfers || [];
 
                 // Populate searchable dropdown
@@ -489,7 +484,10 @@ if (empty($_SESSION['user_id'])) {
             optionsContainer.innerHTML = '';
 
             const filteredTransfers = transfers.filter(transfer => {
-                const searchText = `${transfer.plate} ${transfer.name} ${transfer.status}`.toLowerCase();
+                const plate = transfer.plate || '';
+                const name = transfer.name || '';
+                const status = transfer.status || '';
+                const searchText = `${plate} ${name} ${status}`.toLowerCase();
                 return searchText.includes(filter.toLowerCase());
             });
 
