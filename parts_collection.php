@@ -549,23 +549,16 @@ if (empty($_SESSION['user_id'])) {
         // Toggle transfer dropdown visibility
         function toggleTransferDropdown(show) {
             const dropdown = document.getElementById('transferDropdown');
-            const arrow = document.querySelector('#transferSearch + .dropdown-arrow i');
+            // Select the container of the arrow, not the icon itself, to avoid issues with Lucide's SVG replacement
+            const arrowContainer = document.querySelector('.search-dropdown .dropdown-arrow');
 
-            if (!dropdown || !arrow) {
-                console.error('Could not find dropdown or arrow element for toggling.');
+            if (!dropdown || !arrowContainer) {
+                console.error('Could not find dropdown or arrow container element for toggling.');
                 return;
             }
 
-            console.log(`Toggling dropdown. Requested state: ${show ? 'SHOW' : 'HIDE'}. Current classes: "${dropdown.className}"`);
-            
-            if (show) {
-                dropdown.classList.remove('hidden');
-            } else {
-                dropdown.classList.add('hidden');
-            }
-            
-            arrow.parentElement.classList.toggle('open', show);
-            console.log(`Dropdown classes after toggle: "${dropdown.className}"`);
+            dropdown.classList.toggle('hidden', !show);
+            arrowContainer.classList.toggle('open', show);
         }
 
         // Load collections from the server
