@@ -443,7 +443,8 @@ if (empty($_SESSION['user_id'])) {
         // Load transfers for dropdown
         async function loadTransfers() {
             try {
-                const response = await fetch('api.php?action=get_transfers');
+                // Use endpoint that excludes Completed orders for parts collection
+                const response = await fetch('api.php?action=get_transfers_for_parts');
                 const data = await response.json();
                 transfers = data.transfers || [];
 

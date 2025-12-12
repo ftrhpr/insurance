@@ -356,6 +356,22 @@ try {
         ]);
     }
 
+    // --- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
+    if ($action === 'get_transfers_for_parts' && $method === 'GET') {
+        $stmt = $pdo->prepare("SELECT *, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled') ORDER BY created_at DESC");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row['internalNotes'] = json_decode($row['internal_notes'] ?? '[]');
+            $row['systemLogs'] = json_decode($row['system_logs'] ?? '[]');
+            $row['serviceDate'] = $row['service_date'] ?? null;
+        }
+
+        jsonResponse([
+            'transfers' => $rows
+        ]);
+    }
+
     // ... (Rest of existing actions: add_transfer, update_transfer, delete_transfer, etc. remain unchanged) ...
     // Keeping previous endpoints for brevity, assume they are present here exactly as before.
     
