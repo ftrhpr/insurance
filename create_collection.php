@@ -129,48 +129,114 @@ if (empty($_SESSION['user_id'])) {
     </div>
 
     <script>
-        let transfers = [], managers = [], partSuggestions = [], laborSuggestions = [];
+        // Define global variables to hold the data
+        let transfers = [];
+        let managers = [];
+        let partSuggestions = [];
+        let laborSuggestions = [];
 
+        /**
+         * A generic and robust function to fetch data from the API.
+         * @param {string} url - The API endpoint to fetch data from.
+         * @param {string} key - The key in the response JSON that holds the data array.
+         * @returns {Promise<Array>} A promise that resolves to the data array.
+         */
+        async function loadData(url, key) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`API request failed for ${key} with status ${response.status}`);
+                }
+                const data = await response.json();
+                // Ensure the response has the expected key and it's an array
+                if (data && Array.isArray(data[key])) {
+                    console.log(`Successfully loaded ${data[key].length} items for ${key}.`);
+                    return data[key];
+                } else if (data && Array.isArray(data.suggestions)) { // Handle suggestions endpoint format
+                    console.log(`Successfully loaded ${data.suggestions.length} items for ${key}.`);
+                    return data.suggestions;
+                }
+                else {
+                    console.warn(`No items found for ${key} in API response.`, data);
+                    return [];
+                }
+            } catch (error) {
+                console.error(`Failed to load or parse data for ${key}:`, error);
+                showToast(`Could not load ${key}.`, 'error');
+                return []; // Return an empty array on failure to prevent further errors
+            }
+        }
+
+        /**
+         * Main function to initialize the page after the DOM is loaded.
+         */
         document.addEventListener('DOMContentLoaded', async function() {
-            // Use await to ensure all data is loaded before proceeding
-            await Promise.all([
+            console.log("DOM fully loaded. Starting data fetch...");
+
+            // Fetch all required data in parallel and wait for all to complete
+            [transfers, managers, partSuggestions, laborSuggestions] = await Promise.all([
                 loadData('api.php?action=get_transfers_for_parts', 'transfers'),
                 loadData('api.php?action=get_managers', 'managers'),
-                loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions'),
-                loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions')
+                loadData('api.php?action=get_item_suggestions&type=part', 'suggestions'),
+                loadData('api.php?action=get_item_suggestions&type=labor', 'suggestions')
             ]);
             
+            console.log("All data loading finished.");
+
             // Now that all data is guaranteed to be loaded, populate the UI
-            const managerSelect = document.getElementById('assignedManager');
-            if (managers && managers.length > 0) {
-                managers.forEach(m => managerSelect.add(new Option(`${m.full_name} (${m.username})`, m.id)));
-            }
+            populateManagers();
+            updateTransferDropdown(''); // Initial population
             
-            updateTransferDropdown('');
-            
+            // Set up event listeners
             initTransferSearch();
-            lucide.createIcons();
             document.getElementById('collectionForm').addEventListener('submit', createCollection);
+
+            // Initialize icons
+            lucide.createIcons();
+            console.log("Page initialization complete.");
         });
 
+        /**
+         * Populates the managers dropdown with the loaded data.
+         */
+        function populateManagers() {
+            const managerSelect = document.getElementById('assignedManager');
+            if (!managerSelect) {
+                console.error("Manager select dropdown not found.");
+                return;
+            }
+            if (managers && managers.length > 0) {
+                managers.forEach(m => {
+                    managerSelect.add(new Option(`${m.full_name} (${m.username})`, m.id));
+                });
+                console.log(`Populated ${managers.length} managers.`);
+            } else {
+                console.log("No managers to populate.");
+            }
+        }
+        
+        /**
+         * Initializes the event listeners for the transfer search dropdown.
+         */
         function initTransferSearch() {
             const searchInput = document.getElementById('transferSearch');
-            const dropdown = document.getElementById('transferDropdown');
-            searchInput.addEventListener('focus', () => {
-                updateTransferDropdown(searchInput.value);
-                toggleTransferDropdown(true);
-            });
-            searchInput.addEventListener('input', (e) => {
-                updateTransferDropdown(e.target.value);
-                toggleTransferDropdown(true);
-            });
+            if (!searchInput) {
+                console.error("Transfer search input not found.");
+                return;
+            }
+            searchInput.addEventListener('focus', () => toggleTransferDropdown(true));
+            searchInput.addEventListener('input', (e) => updateTransferDropdown(e.target.value));
             document.addEventListener('click', (e) => {
                 if (!searchInput.parentElement.contains(e.target)) {
                     toggleTransferDropdown(false);
                 }
             });
+             console.log("Transfer search initialized.");
         }
         
+        /**
+         * Shows or hides the transfer dropdown.
+         */
         function toggleTransferDropdown(show) {
             const dropdown = document.getElementById('transferDropdown');
             const arrowContainer = document.querySelector('.search-dropdown .dropdown-arrow');
@@ -180,26 +246,23 @@ if (empty($_SESSION['user_id'])) {
             }
         }
 
-        async function loadData(url, key) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Network error while fetching ${key}`);
-                const data = await response.json();
-                window[key] = data[key] || data.suggestions || [];
-            } catch (error) {
-                console.error(`Failed to load ${key}:`, error);
-                window[key] = []; // Default to an empty array on failure to prevent further errors
-            }
-        }
-
+        /**
+         * Updates the transfer dropdown options based on the filter text.
+         */
         function updateTransferDropdown(filter = '') {
             const container = document.getElementById('transferOptions');
+            if (!container) {
+                console.error("transferOptions container not found.");
+                return;
+            }
             container.innerHTML = '';
             const filtered = transfers.filter(t => `${t.plate || ''} ${t.name || ''}`.toLowerCase().includes(filter.toLowerCase()));
+            
             if(filtered.length === 0) {
                 container.innerHTML = '<div class="dropdown-option text-center text-gray-500">No transfers found.</div>';
                 return;
             }
+
             filtered.forEach(t => {
                 const option = document.createElement('div');
                 option.className = 'dropdown-option';
@@ -212,6 +275,9 @@ if (empty($_SESSION['user_id'])) {
                 container.appendChild(option);
             });
         }
+        
+        // Functions for adding/removing items, autocomplete, and form submission remain here...
+        // (These were correct in the previous version but are included in this complete rewrite for clarity)
 
         function addItem(type) {
             const container = document.getElementById(type === 'part' ? 'partsList' : 'laborList');
