@@ -768,13 +768,20 @@ try {
         $data = getJsonInput();
         $id = $data['id'] ?? null;
         $parts_list = $data['parts_list'] ?? [];
-        $status = $data['status'] ?? null;
+        $new_status = $data['status'] ?? null;
         $assigned_manager_id = $data['assigned_manager_id'] ?? null;
 
         if (!$id) {
             http_response_code(400);
             jsonResponse(['error' => 'Collection ID is required']);
         }
+
+        // Get OLD status and transfer_id before updating
+        $stmt = $pdo->prepare("SELECT status, transfer_id FROM parts_collections WHERE id = ?");
+        $stmt->execute([$id]);
+        $collection_info = $stmt->fetch(PDO::FETCH_ASSOC);
+        $old_status = $collection_info['status'] ?? null;
+        $transfer_id = $collection_info['transfer_id'] ?? null;
 
         // Calculate total cost
         $total_cost = 0;
@@ -785,9 +792,9 @@ try {
         $query = "UPDATE parts_collections SET parts_list = ?, total_cost = ?";
         $params = [json_encode($parts_list), $total_cost];
 
-        if ($status !== null) {
+        if ($new_status !== null) {
             $query .= ", status = ?";
-            $params[] = $status;
+            $params[] = $new_status;
         }
 
         if ($assigned_manager_id !== null) {
@@ -801,8 +808,40 @@ try {
         $stmt = $pdo->prepare($query);
         $stmt->execute($params);
 
-        // --- NEW: UPDATE SUGGESTIONS ---
-        update_suggestions_from_list($pdo, $parts_list);
+        // --- NEW LOGIC: Connect to processing queue ---
+        if ($new_status === 'collected' && $old_status !== 'collected' && $transfer_id) {
+            // 1. Update transfer status
+            $update_transfer_stmt = $pdo->prepare("UPDATE transfers SET status = 'Parts Arrived' WHERE id = ?");
+            $update_transfer_stmt->execute([$transfer_id]);
+
+            // 2. Send 'Parts Arrived' SMS
+            $stmt = $pdo->prepare("SELECT name, plate, phone, amount FROM transfers WHERE id = ?");
+            $stmt->execute([$transfer_id]);
+            $tr = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($tr && !empty($tr['phone'])) {
+                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'parts_arrived'");
+                $stmt->execute();
+                $template = $stmt->fetchColumn();
+                
+                if ($template) {
+                    $link = "https://portal.otoexpress.ge/public_view.php?id=" . $transfer_id;
+                    $smsText = str_replace(
+                        ['{name}', '{plate}', '{amount}', '{link}'],
+                        [$tr['name'], $tr['plate'], $tr['amount'], $link],
+                        $template
+                    );
+                    
+                    $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+                    @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to={$tr['phone']}&from=OTOMOTORS&text=" . urlencode($smsText));
+                }
+            }
+            
+            // 3. Add system log
+            $log_message = "Parts collection #{$id} marked 'collected'. Case status automatically updated to 'Parts Arrived' and confirmation SMS sent.";
+            $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+            $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'message' => $log_message]), $transfer_id]);
+        }
 
         jsonResponse(['success' => true]);
     }
