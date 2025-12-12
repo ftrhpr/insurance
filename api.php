@@ -358,10 +358,17 @@ try {
 
     // --- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
     if ($action === 'get_transfers_for_parts' && $method === 'GET') {
-        $stmt = $pdo->prepare("SELECT id, plate, name, status FROM transfers ORDER BY created_at DESC");
-        $stmt->execute();
-        $transfers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        jsonResponse(['transfers' => $transfers]);
+        try {
+            $stmt = $pdo->prepare("SELECT id, plate, name, status FROM transfers ORDER BY created_at DESC");
+            $stmt->execute();
+            $transfers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            error_log("get_transfers_for_parts: Found " . count($transfers) . " transfers.");
+            jsonResponse(['transfers' => $transfers]);
+        } catch (Exception $e) {
+            error_log("Error in get_transfers_for_parts: " . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error in get_transfers_for_parts']);
+        }
     }
 
     // --- SMS TEMPLATES ACTIONS ---

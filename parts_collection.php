@@ -465,7 +465,12 @@ if (empty($_SESSION['user_id'])) {
             try {
                 // Use endpoint that excludes Completed orders for parts collection
                 const response = await fetch('api.php?action=get_transfers_for_parts');
-                const data = await response.json();
+                const rawResponseText = await response.text();
+                console.log("Raw response from get_transfers_for_parts:", rawResponseText);
+                
+                const data = JSON.parse(rawResponseText);
+                console.log("Parsed data from get_transfers_for_parts:", data);
+
                 transfers = data.transfers || [];
 
                 // Populate searchable dropdown
