@@ -183,8 +183,21 @@ if (empty($_SESSION['user_id'])) {
                         </div>
                     </div>
 
-                    <form id="collectionForm" class="space-y-4">
-                        <!-- Transfer and Manager Row -->
+                    <form id="collectionForm" class="space-y-4" enctype="multipart/form-data">
+                        <!-- PDF Invoice Upload Row -->
+                        <div class="bg-white/50 rounded-xl p-4 border border-white/30 mb-2">
+                            <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                                <i data-lucide="file" class="w-4 h-4 mr-2 text-pink-600"></i>
+                                Upload Invoice PDF (optional)
+                            </label>
+                            <div class="flex items-center space-x-3">
+                                <input type="file" id="invoicePdf" accept="application/pdf" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100" />
+                                <button type="button" id="parsePdfBtn" class="btn-gradient px-4 py-2 rounded-lg text-white font-medium flex items-center">
+                                    <i data-lucide="scan" class="w-4 h-4 mr-1"></i> Parse Invoice
+                                </button>
+                            </div>
+                            <div id="pdfParseStatus" class="text-xs text-gray-500 mt-2"></div>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="bg-white/50 rounded-xl p-4 border border-white/30">
                                 <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
@@ -398,6 +411,46 @@ if (empty($_SESSION['user_id'])) {
                 editForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     await saveEdit();
+                });
+            }
+
+            // PDF Invoice Parse Button
+            const parseBtn = document.getElementById('parsePdfBtn');
+            if (parseBtn) {
+                parseBtn.addEventListener('click', async function() {
+                    const fileInput = document.getElementById('invoicePdf');
+                    const statusDiv = document.getElementById('pdfParseStatus');
+                    if (!fileInput.files.length) {
+                        statusDiv.textContent = 'Please select a PDF file.';
+                        return;
+                    }
+                    const file = fileInput.files[0];
+                    const formData = new FormData();
+                    formData.append('pdf', file);
+                    statusDiv.textContent = 'Parsing invoice...';
+                    try {
+                        const response = await fetch('api.php?action=parse_invoice_pdf', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.success && result.invoice) {
+                            statusDiv.textContent = 'Invoice parsed!';
+                            // Optionally fill fields if found
+                            if (result.invoice.total) {
+                                // Try to fill total cost in first part price or show as toast
+                                showToast('Invoice total: ' + result.invoice.total, 'info');
+                            }
+                            if (result.invoice.date) {
+                                showToast('Invoice date: ' + result.invoice.date, 'info');
+                            }
+                            // You can extend this to auto-populate parts, etc.
+                        } else {
+                            statusDiv.textContent = 'Could not parse invoice.';
+                        }
+                    } catch (e) {
+                        statusDiv.textContent = 'Error parsing PDF.';
+                    }
                 });
             }
 
