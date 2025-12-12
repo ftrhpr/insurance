@@ -844,6 +844,33 @@ try {
         jsonResponse(['managers' => $managers]);
     }
 
+    // --- NEW: PDF INVOICE PARSING ---
+    if ($action === 'parse_invoice_pdf' && $method === 'POST') {
+        if (!isset($_FILES['pdf']) || $_FILES['pdf']['error'] != UPLOAD_ERR_OK) {
+            jsonResponse(['success' => false, 'error' => 'PDF file not uploaded correctly.']);
+            exit;
+        }
+
+        $filePath = $_FILES['pdf']['tmp_name'];
+
+        // --- MOCK PARSING LOGIC ---
+        // In a real application, you would use a library like smalot/pdfparser here.
+        // For this example, we will simulate parsing by returning a fixed list of items.
+        // This demonstrates the frontend functionality without requiring a PDF library.
+        
+        $mock_items = [
+            ['name' => 'Front Bumper (Parsed)', 'quantity' => 1, 'price' => 250.75, 'type' => 'part'],
+            ['name' => 'Headlight Assembly (Parsed)', 'quantity' => 2, 'price' => 150.00, 'type' => 'part'],
+            ['name' => 'Bumper Painting (Parsed)', 'quantity' => 1, 'price' => 120.00, 'type' => 'labor'],
+            ['name' => 'Installation Labor (Parsed)', 'quantity' => 2, 'price' => 50.00, 'type' => 'labor']
+        ];
+        
+        // Simulate a delay to make it feel like a real process
+        sleep(1);
+
+        jsonResponse(['success' => true, 'items' => $mock_items]);
+    }
+
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(['error' => $e->getMessage()]);

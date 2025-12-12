@@ -53,6 +53,28 @@ if (empty($_SESSION['user_id'])) {
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <form id="collectionForm" class="space-y-6">
+                <!-- PDF Invoice Upload -->
+                <div class="glass-card shadow-xl rounded-3xl p-8 border border-white/20">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <i data-lucide="file-scan" class="w-5 h-5 mr-2 text-teal-600"></i>
+                        Auto-Parse PDF Invoice
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="md:col-span-2">
+                             <label for="pdf-upload" class="block text-sm font-medium text-gray-700 mb-1">Upload an invoice to automatically add parts and labor.</label>
+                            <input type="file" id="pdfInvoiceInput" accept="application/pdf" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                        </div>
+                        <div>
+                            <button type="button" id="parsePdfBtn" class="w-full btn-gradient px-4 py-2 text-white rounded-lg shadow-md mt-4" disabled>
+                                <i data-lucide="wand-2" class="w-4 h-4 mr-1 inline"></i>
+                                Parse PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div id="pdfParseStatus" class="text-xs text-gray-500 mt-2"></div>
+                    <div id="parsedPartsPreview" class="mt-4"></div>
+                </div>
+
                 <!-- General Info -->
                 <div class="glass-card shadow-xl rounded-3xl p-8 border border-white/20">
                     <h2 class="text-lg font-bold text-gray-900 mb-4">General Information</h2>
@@ -190,6 +212,7 @@ if (empty($_SESSION['user_id'])) {
             // Set up event listeners
             initTransferSearch();
             document.getElementById('collectionForm').addEventListener('submit', createCollection);
+            initPdfParsing();
 
             // Initialize icons
             lucide.createIcons();
@@ -232,6 +255,68 @@ if (empty($_SESSION['user_id'])) {
                 }
             });
              console.log("Transfer search initialized.");
+        }
+        
+        /**
+         * Initializes the PDF parsing functionality.
+         */
+        function initPdfParsing() {
+            const pdfInput = document.getElementById('pdfInvoiceInput');
+            const parseBtn = document.getElementById('parsePdfBtn');
+            const statusDiv = document.getElementById('pdfParseStatus');
+            const previewDiv = document.getElementById('parsedPartsPreview');
+
+            if (!pdfInput || !parseBtn) return;
+
+            pdfInput.addEventListener('change', () => {
+                parseBtn.disabled = !pdfInput.files.length;
+                statusDiv.textContent = '';
+                previewDiv.innerHTML = '';
+            });
+
+            parseBtn.addEventListener('click', async () => {
+                if (!pdfInput.files.length) return;
+
+                statusDiv.textContent = 'Parsing PDF, please wait...';
+                parseBtn.disabled = true;
+                const formData = new FormData();
+                formData.append('pdf', pdfInput.files[0]);
+
+                try {
+                    const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', body: formData });
+                    const data = await response.json();
+
+                    if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+                        statusDiv.textContent = `Successfully parsed ${data.items.length} items.`;
+                        let previewHtml = '<div class="bg-teal-50 border border-teal-200 rounded-lg p-3"><h4 class="font-bold mb-2">Parsed Items Preview</h4><ul class="list-disc ml-6 text-sm">';
+                        data.items.forEach(item => {
+                            previewHtml += `<li>[${item.type}] ${item.name} (Qty: ${item.quantity}, Price: ₾${item.price})</li>`;
+                        });
+                        previewHtml += '</ul><button type="button" id="addParsedItemsBtn" class="mt-3 btn-gradient text-white px-3 py-1 rounded-md text-sm">Add to Lists</button></div>';
+                        previewDiv.innerHTML = previewHtml;
+
+                        document.getElementById('addParsedItemsBtn').onclick = () => {
+                            data.items.forEach(item => {
+                                if (item.type === 'labor') {
+                                    addLabor(item.name, item.quantity, item.price);
+                                } else {
+                                    addPart(item.name, item.quantity, item.price);
+                                }
+                            });
+                            previewDiv.innerHTML = '';
+                            statusDiv.textContent = 'Items have been added to the lists below.';
+                        };
+
+                    } else {
+                        statusDiv.textContent = data.error || 'Could not parse any items from the PDF.';
+                    }
+                } catch (error) {
+                    console.error('PDF parsing error:', error);
+                    statusDiv.textContent = 'An error occurred while parsing the PDF.';
+                } finally {
+                    parseBtn.disabled = false;
+                }
+            });
         }
         
         /**
@@ -312,8 +397,70 @@ if (empty($_SESSION['user_id'])) {
             updateTotals();
         }
 
-        function addPart() { addItem('part'); }
-        function addLabor() { addItem('labor'); }
+        function addPart(name = '', quantity = 1, price = 0) {
+            const container = document.getElementById('partsList');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30';
+            itemDiv.innerHTML = `
+                <div class="grid grid-cols-12 gap-x-3 items-end">
+                    <div class="col-span-7">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Part Name</label>
+                        <div class="relative">
+                            <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" placeholder="Enter name..." autocomplete="off" value="${name}">
+                            <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
+                        <input type="number" class="part-quantity block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
+                        <input type="number" class="part-price block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()">
+                    </div>
+                    <div class="col-span-1 flex items-end">
+                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(itemDiv);
+            setupAutocomplete(itemDiv.querySelector('.part-name'), 'part');
+            lucide.createIcons();
+            updateTotals();
+        }
+
+        function addLabor(name = '', quantity = 1, price = 0) {
+            const container = document.getElementById('laborList');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'labor-item bg-white/40 rounded-lg p-3 border border-white/30';
+            itemDiv.innerHTML = `
+                <div class="grid grid-cols-12 gap-x-3 items-end">
+                    <div class="col-span-7">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Service Name</label>
+                        <div class="relative">
+                            <input type="text" class="labor-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" placeholder="Enter name..." autocomplete="off" value="${name}">
+                            <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
+                        <input type="number" class="labor-quantity block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
+                        <input type="number" class="labor-price block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()">
+                    </div>
+                    <div class="col-span-1 flex items-end">
+                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(itemDiv);
+            setupAutocomplete(itemDiv.querySelector('.labor-name'), 'labor');
+            lucide.createIcons();
+            updateTotals();
+        }
+
         function removeItem(button) { 
             button.closest('.part-item, .labor-item').remove();
             updateTotals();
