@@ -184,6 +184,17 @@ if (empty($_SESSION['user_id'])) {
                     </div>
 
                     <form id="collectionForm" class="space-y-4">
+                        <!-- PDF Invoice Upload Row -->
+                        <div class="bg-white/50 rounded-xl p-4 border border-white/30 mb-4">
+                            <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                                <i data-lucide="file" class="w-4 h-4 mr-2 text-pink-600"></i>
+                                Upload PDF Invoice (auto-parse parts/labors)
+                            </label>
+                            <input type="file" id="pdfInvoiceInput" accept="application/pdf" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100" />
+                            <button type="button" id="parsePdfBtn" class="mt-2 btn-gradient px-4 py-2 rounded-lg text-white font-medium shadow-sm" disabled>Parse PDF</button>
+                            <div id="pdfParseStatus" class="text-xs text-gray-500 mt-2"></div>
+                        </div>
+
                         <!-- Transfer and Manager Row -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="bg-white/50 rounded-xl p-4 border border-white/30">
@@ -231,6 +242,7 @@ if (empty($_SESSION['user_id'])) {
                             </div>
                             <div id="partsList" class="space-y-2 mb-3">
                                 <!-- Parts will be added here -->
+                                <div id="parsedPartsPreview" class="mb-2"></div>
                             </div>
                         </div>
 
@@ -398,6 +410,52 @@ if (empty($_SESSION['user_id'])) {
                 editForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     await saveEdit();
+                });
+            }
+
+            // PDF Invoice Upload logic
+            const pdfInput = document.getElementById('pdfInvoiceInput');
+            const parseBtn = document.getElementById('parsePdfBtn');
+            const statusDiv = document.getElementById('pdfParseStatus');
+            const partsList = document.getElementById('partsList');
+            const parsedPartsPreview = document.getElementById('parsedPartsPreview');
+
+            if (pdfInput && parseBtn) {
+                pdfInput.addEventListener('change', function() {
+                    parseBtn.disabled = !pdfInput.files.length;
+                    statusDiv.textContent = '';
+                    parsedPartsPreview.innerHTML = '';
+                });
+                parseBtn.addEventListener('click', async function() {
+                    if (!pdfInput.files.length) return;
+                    statusDiv.textContent = 'Parsing PDF, please wait...';
+                    parseBtn.disabled = true;
+                    const formData = new FormData();
+                    formData.append('pdf', pdfInput.files[0]);
+                    try {
+                        const resp = await fetch('api.php?action=parse_invoice_pdf', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        if (data.success && Array.isArray(data.items)) {
+                            statusDiv.textContent = 'Parsed ' + data.items.length + ' items. Click to add to parts list.';
+                            // Show preview and add button
+                            parsedPartsPreview.innerHTML = '<div class="bg-pink-50 border border-pink-200 rounded-lg p-2 mb-2"><b>Parsed Items:</b><ul class="list-disc ml-6">' +
+                                data.items.map(item => `<li>${item.type === 'labor' ? '[Labor]' : '[Part]'} <b>${item.name}</b> x${item.quantity} – ₾${item.price}</li>`).join('') +
+                                '</ul><button type="button" class="mt-2 btn-gradient px-3 py-1 rounded text-white" id="addParsedPartsBtn">Add to Parts List</button></div>';
+                            document.getElementById('addParsedPartsBtn').onclick = function() {
+                                data.items.forEach(item => addPart(item.name, item.quantity, item.price));
+                                parsedPartsPreview.innerHTML = '';
+                                statusDiv.textContent = 'Items added to parts list.';
+                            };
+                        } else {
+                            statusDiv.textContent = data.error || 'Could not parse PDF.';
+                        }
+                    } catch (e) {
+                        statusDiv.textContent = 'Error parsing PDF.';
+                    }
+                    parseBtn.disabled = false;
                 });
             }
 

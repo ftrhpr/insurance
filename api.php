@@ -1,3 +1,67 @@
+// --- PDF INVOICE PARSING ENDPOINT ---
+if ($action === 'parse_invoice_pdf' && $method === 'POST') {
+    // Check for file upload
+    if (!isset($_FILES['pdf']) || $_FILES['pdf']['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        jsonResponse(['error' => 'No PDF uploaded or upload error.']);
+    }
+
+    // Check for PDF parser library
+    $autoloadPath = __DIR__ . '/vendor/autoload.php';
+    if (!file_exists($autoloadPath)) {
+        http_response_code(500);
+        jsonResponse(['error' => 'PDF parser library not installed. Please run composer require smalot/pdfparser.']);
+    }
+    require_once $autoloadPath;
+
+    $pdfFile = $_FILES['pdf']['tmp_name'];
+    try {
+        $parser = new \Smalot\PdfParser\Parser();
+        $pdf = $parser->parseFile($pdfFile);
+        $text = $pdf->getText();
+    } catch (Exception $e) {
+        http_response_code(500);
+        jsonResponse(['error' => 'Failed to parse PDF: ' . $e->getMessage()]);
+    }
+
+    // Simple regex-based extraction: lines like "Part Name xQty – ₾Price" or "Labor: Name – ₾Price"
+    $lines = preg_split('/\r?\n/', $text);
+    $items = [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        // Match labor: "Labor: Name – ₾Price"
+        if (preg_match('/^(Labor|Service)[:\-\s]+(.+?)\s*[–-]\s*[₾]?(\d+[\.,]?\d*)/iu', $line, $m)) {
+            $items[] = [
+                'type' => 'labor',
+                'name' => trim($m[2]),
+                'quantity' => 1,
+                'price' => floatval(str_replace([','], ['.'], $m[3]))
+            ];
+            continue;
+        }
+        // Match part: "Part Name xQty – ₾Price" or "Name – ₾Price"
+        if (preg_match('/^(.+?)\s*x(\d+)\s*[–-]\s*[₾]?(\d+[\.,]?\d*)/iu', $line, $m)) {
+            $items[] = [
+                'type' => 'part',
+                'name' => trim($m[1]),
+                'quantity' => intval($m[2]),
+                'price' => floatval(str_replace([','], ['.'], $m[3]))
+            ];
+            continue;
+        }
+        // Fallback: "Name – ₾Price" (assume part, qty=1)
+        if (preg_match('/^(.+?)\s*[–-]\s*[₾]?(\d+[\.,]?\d*)/iu', $line, $m)) {
+            $items[] = [
+                'type' => 'part',
+                'name' => trim($m[1]),
+                'quantity' => 1,
+                'price' => floatval(str_replace([','], ['.'], $m[2]))
+            ];
+            continue;
+        }
+    }
+    jsonResponse(['success' => true, 'items' => $items]);
+}
 <?php
 require_once 'session_config.php';
 
