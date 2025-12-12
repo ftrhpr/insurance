@@ -131,18 +131,39 @@ if (empty($_SESSION['user_id'])) {
     <script>
         let transfers = [], managers = [], partSuggestions = [], laborSuggestions = [];
 
-        document.addEventListener('DOMContentLoaded', function() {
-            Promise.all([
-                loadTransfers(),
-                loadManagers(),
-                loadPartSuggestions(),
-                loadLaborSuggestions()
-            ]).then(() => {
-                initTransferSearch();
-                lucide.createIcons();
-            });
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Use await to ensure all data is loaded before proceeding
+            await Promise.all([
+                loadData('api.php?action=get_transfers_for_parts', 'transfers'),
+                loadData('api.php?action=get_managers', 'managers'),
+                loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions'),
+                loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions')
+            ]);
+            
+            // Now that all data is guaranteed to be loaded, populate the UI
+            const managerSelect = document.getElementById('assignedManager');
+            if (managers && managers.length > 0) {
+                managers.forEach(m => managerSelect.add(new Option(`${m.full_name} (${m.username})`, m.id)));
+            }
+            
+            updateTransferDropdown('');
+            
+            initTransferSearch();
+            lucide.createIcons();
             document.getElementById('collectionForm').addEventListener('submit', createCollection);
         });
+
+        async function loadData(url, key) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Network error while fetching ${key}`);
+                const data = await response.json();
+                window[key] = data[key] || data.suggestions || [];
+            } catch (error) {
+                console.error(`Failed to load ${key}:`, error);
+                window[key] = []; // Default to an empty array on failure to prevent further errors
+            }
+        }
 
         function initTransferSearch() {
             const searchInput = document.getElementById('transferSearch');
@@ -171,26 +192,6 @@ if (empty($_SESSION['user_id'])) {
             }
         }
 
-        async function loadData(url, key, callback) {
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                window[key] = data[key] || data.suggestions || [];
-                if(callback) callback();
-            } catch (error) {
-                console.error(`Error loading ${key}:`, error);
-            }
-        }
-
-        function loadTransfers() { loadData('api.php?action=get_transfers_for_parts', 'transfers', () => updateTransferDropdown('')); }
-        function loadManagers() { 
-            loadData('api.php?action=get_managers', 'managers', () => {
-                const managerSelect = document.getElementById('assignedManager');
-                managers.forEach(m => managerSelect.add(new Option(`${m.full_name} (${m.username})`, m.id)));
-            });
-        }
-        function loadPartSuggestions() { loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions'); }
-        function loadLaborSuggestions() { loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions'); }
 
         function updateTransferDropdown(filter = '') {
             const container = document.getElementById('transferOptions');
