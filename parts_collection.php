@@ -465,17 +465,27 @@ if (empty($_SESSION['user_id'])) {
             try {
                 const response = await fetch('api.php?action=get_transfers_for_parts');
                 if (!response.ok) {
-                    throw new Error(`API request failed with status ${response.status}`);
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
                 }
                 const data = await response.json();
-                transfers = data.transfers || [];
-                console.log(`Loaded ${transfers.length} transfers.`);
-                updateTransferDropdown(''); // Call with empty filter to populate initially
+                
+                // Add explicit logging
+                console.log("API Response Data:", JSON.stringify(data, null, 2));
+
+                if (!data || !Array.isArray(data.transfers)) {
+                    console.error("API response is not in the expected format. Expected { transfers: [...] }.", data);
+                    transfers = [];
+                } else {
+                    transfers = data.transfers;
+                }
+                
+                console.log(`Loaded and assigned ${transfers.length} transfers.`);
+                updateTransferDropdown(''); // Populate the dropdown initially
             } catch (error) {
-                console.error('Error loading transfers:', error);
-                showToast('Error loading transfers', 'error');
-                transfers = []; // Ensure transfers is an empty array on error
-                updateTransferDropdown(''); // Still try to update to show "no results"
+                console.error('A critical error occurred in loadTransfers:', error);
+                showToast('Could not load transfers due to a technical error.', 'error');
+                transfers = []; // Reset on error
+                updateTransferDropdown(''); // Show "no results"
             }
         }
 
@@ -483,46 +493,54 @@ if (empty($_SESSION['user_id'])) {
         function updateTransferDropdown(filter = '') {
             const optionsContainer = document.getElementById('transferOptions');
             if (!optionsContainer) {
-                console.error('Fatal: transferOptions container not found in DOM.');
+                console.error('CRITICAL: The element with id "transferOptions" was not found in the HTML.');
                 return;
             }
 
-            // Always clear previous options
-            optionsContainer.innerHTML = '';
-            
+            optionsContainer.innerHTML = ''; // Clear previous results
+            console.log(`Updating dropdown with ${transfers.length} total transfers and filter "${filter}"`);
+
             const lowercasedFilter = filter.toLowerCase();
-            
+
             const filteredTransfers = transfers.filter(transfer => {
-                const plate = transfer.plate || '';
-                const name = transfer.name || '';
-                const status = transfer.status || '';
+                // Defensive coding: ensure properties exist before trying to access them
+                const plate = transfer && transfer.plate ? transfer.plate : '';
+                const name = transfer && transfer.name ? transfer.name : '';
+                const status = transfer && transfer.status ? transfer.status : '';
                 const searchText = `${plate} ${name} ${status}`.toLowerCase();
                 return searchText.includes(lowercasedFilter);
             });
+            
+            console.log(`Found ${filteredTransfers.length} transfers matching the filter.`);
 
             if (filteredTransfers.length === 0) {
-                const noResults = document.createElement('div');
-                noResults.className = 'dropdown-option text-center text-gray-500';
-                noResults.textContent = 'No transfers found';
-                optionsContainer.appendChild(noResults);
+                optionsContainer.innerHTML = '<div class="dropdown-option text-center text-gray-500">No matching transfers found.</div>';
                 return;
             }
 
             filteredTransfers.forEach(transfer => {
                 const option = document.createElement('div');
-                option.setAttribute('data-id', transfer.id);
                 option.className = 'dropdown-option';
+                option.setAttribute('data-id', transfer.id);
+                
+                // Safely access properties for display
+                const plate = transfer.plate || 'NO PLATE';
+                const name = transfer.name || 'NO NAME';
+                const status = transfer.status || 'NO STATUS';
+
                 option.innerHTML = `
                     <div>
-                        <span class="font-bold">${transfer.plate || 'N/A'}</span> - ${transfer.name || 'N/A'}
+                        <span class="font-bold">${plate}</span> - ${name}
                     </div>
-                    <div class="text-xs text-gray-500">${transfer.status || 'N/A'}</div>
+                    <div class="text-xs text-gray-500">${status}</div>
                 `;
+                
                 option.addEventListener('click', () => {
-                    document.getElementById('transferSearch').value = `${transfer.plate || ''} - ${transfer.name || ''}`;
+                    document.getElementById('transferSearch').value = `${plate} - ${name}`;
                     document.getElementById('transferSelect').value = transfer.id;
                     toggleTransferDropdown(false);
                 });
+
                 optionsContainer.appendChild(option);
             });
         }
