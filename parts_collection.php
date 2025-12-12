@@ -220,7 +220,7 @@ if (empty($_SESSION['user_id'])) {
                         </div>
 
                         <!-- Parts Section -->
-                        <div class="bg-white/50 rounded-xl p-4 border border-white/30">
+                        <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
                             <div class="flex items-center justify-between mb-3">
                                 <label class="block text-sm font-semibold text-gray-800 flex items-center">
                                     <i data-lucide="package" class="w-4 h-4 mr-2 text-purple-600"></i>
@@ -358,6 +358,15 @@ if (empty($_SESSION['user_id'])) {
                             </div>
                             <div id="editPartsList" class="space-y-2">
                                 <!-- Parts will be added here -->
+                            </div>
+                            <!-- Totals Section -->
+                            <div id="editTotals" class="mt-4 pt-4 border-t-2 border-dashed border-gray-200/80 flex justify-end items-center space-x-6">
+                                <div class="text-sm font-semibold text-gray-700">
+                                    Total Items: <span id="editTotalItems" class="text-gray-900">0</span>
+                                </div>
+                                <div class="text-lg font-bold text-gray-800">
+                                    Total Price: <span class="gradient-text" id="editTotalPrice">₾0.00</span>
+                                </div>
                             </div>
                         </div>
 
@@ -992,60 +1001,71 @@ if (empty($_SESSION['user_id'])) {
                 editPartsList.innerHTML = '';
 
                 parts.forEach(part => {
-                    addEditPart(part.name, part.quantity, part.price);
+                    addEditPart(part.name, part.quantity, part.price, part.type || 'part');
                 });
-            }
+                updateEditTotals(); // Update totals after populating
 
-            // Show modal
-            const modal = document.getElementById('editModal');
-            if (modal) {
-                modal.classList.add('active');
+                // Show modal
+                const modal = document.getElementById('editModal');
+                if (modal) {
+                    modal.classList.add('active');
+                }
             }
         }
 
         // Add part to edit form
-        function addEditPart(name = '', quantity = 1, price = 0) {
+        function addEditPart(name = '', quantity = 1, price = 0, type = 'part') {
             const editPartsList = document.getElementById('editPartsList');
             const partDiv = document.createElement('div');
-            partDiv.className = 'flex space-x-2 items-end part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
-            const partId = 'edit-part-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            partDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
+            
             partDiv.innerHTML = `
-                <div class="flex-1">
-                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                        <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i>
-                        Part Name
-                    </label>
-                    <div class="relative search-dropdown">
-                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" placeholder="Search parts..." autocomplete="off" required>
-                        <div class="dropdown-arrow">
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
-                        </div>
-                        <div class="part-dropdown absolute z-10 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden dropdown-options" style="top: 100%; margin-top: 2px;">
-                            <div class="part-options py-1">
-                                <!-- Options will be populated here -->
-                            </div>
+                <div class="grid grid-cols-12 gap-x-3 items-end">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                            <i data-lucide="list" class="w-3 h-3 mr-1 text-gray-600"></i> Type
+                        </label>
+                        <select class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-type" onchange="updateEditTotals()">
+                            <option value="part">Part</option>
+                            <option value="labor">Labor</option>
+                        </select>
+                    </div>
+                    <div class="col-span-5">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                            <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i> Part/Service Name
+                        </label>
+                        <div class="relative search-dropdown">
+                            <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" placeholder="Search or describe..." autocomplete="off" required>
+                            <div class="dropdown-arrow"><i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i></div>
+                            <div class="part-dropdown absolute z-10 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden dropdown-options" style="top: 100%; margin-top: 2px;"><div class="part-options py-1"></div></div>
                         </div>
                     </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                            <i data-lucide="hash" class="w-3 h-3 mr-1 text-purple-600"></i> Qty
+                        </label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center part-quantity" value="${quantity}" min="1" required oninput="updateEditTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                            <span class="text-green-600 mr-1">₾</span> Price
+                        </label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required oninput="updateEditTotals()">
+                    </div>
+                    <div class="col-span-1 flex items-end">
+                        <button type="button" onclick="removeEditPart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="w-20">
-                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                        <i data-lucide="hash" class="w-3 h-3 mr-1 text-purple-600"></i>
-                        Qty
-                    </label>
-                    <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center part-quantity" value="${quantity}" min="1" required>
-                </div>
-                <div class="w-24">
-                    <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                        <span class="text-green-600 mr-1">₾</span>
-                        Price
-                    </label>
-                    <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-price" value="${price}" step="0.01" min="0" placeholder="0.00" required>
-                </div>
-                <button type="button" onclick="removeEditPart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
             `;
             editPartsList.appendChild(partDiv);
+
+            const typeSelect = partDiv.querySelector('.part-type');
+            if (typeSelect) {
+                typeSelect.value = type;
+            }
+            
             lucide.createIcons();
             
             // Add event listeners for the new part dropdown
@@ -1074,11 +1094,13 @@ if (empty($_SESSION['user_id'])) {
             if (name) {
                 searchInput.value = name;
             }
+            updateEditTotals();
         }
 
         // Remove part from edit form
         function removeEditPart(button) {
             button.closest('.part-item').remove();
+            updateEditTotals();
         }
 
         // Save edit
@@ -1104,12 +1126,14 @@ if (empty($_SESSION['user_id'])) {
                 const nameInput = item.querySelector('.part-name');
                 const quantityInput = item.querySelector('.part-quantity');
                 const priceInput = item.querySelector('.part-price');
+                const typeInput = item.querySelector('.part-type');
 
-                if (!nameInput || !quantityInput || !priceInput) {
+                if (!nameInput || !quantityInput || !priceInput || !typeInput) {
                     console.error(`Part item ${index} missing required inputs:`, {
                         nameInput,
                         quantityInput,
-                        priceInput
+                        priceInput,
+                        typeInput
                     });
                     return;
                 }
@@ -1117,9 +1141,10 @@ if (empty($_SESSION['user_id'])) {
                 const name = nameInput.value.trim();
                 const quantity = parseInt(quantityInput.value);
                 const price = parseFloat(priceInput.value);
+                const type = typeInput.value;
 
                 if (name && quantity > 0 && price >= 0) {
-                    parts.push({ name, quantity, price });
+                    parts.push({ name, quantity, price, type });
                 }
             });
 
@@ -1171,6 +1196,25 @@ if (empty($_SESSION['user_id'])) {
                 console.error('Error:', error);
                 showToast('Error deleting collection', 'error');
             }
+        }
+
+        // Update totals in edit modal
+        function updateEditTotals() {
+            const partItems = document.querySelectorAll('#editPartsList .part-item');
+            let totalItems = 0;
+            let totalPrice = 0;
+            partItems.forEach(item => {
+                const quantity = parseInt(item.querySelector('.part-quantity')?.value || 0);
+                const price = parseFloat(item.querySelector('.part-price')?.value || 0);
+                totalItems += quantity;
+                totalPrice += quantity * price;
+            });
+
+            const totalItemsEl = document.getElementById('editTotalItems');
+            const totalPriceEl = document.getElementById('editTotalPrice');
+
+            if (totalItemsEl) totalItemsEl.textContent = totalItems;
+            if (totalPriceEl) totalPriceEl.textContent = `₾${totalPrice.toFixed(2)}`;
         }
 
         // Close modal
