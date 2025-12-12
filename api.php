@@ -1,3 +1,11 @@
+// --- DB CONNECTION ---
+try {
+    $pdo = getDBConnection();
+} catch (Exception $e) {
+    http_response_code(500); 
+    die(json_encode(['error' => 'DB Connection failed: ' . $e->getMessage()]));
+}
+
 // --- PDF Invoice Parsing Endpoint ---
 if ($action === 'parse_invoice_pdf' && $method === 'POST') {
     if (empty($_FILES['pdf'])) {
