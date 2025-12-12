@@ -463,32 +463,41 @@ if (empty($_SESSION['user_id'])) {
         // Load transfers for dropdown
         async function loadTransfers() {
             try {
-                // Use endpoint that excludes Completed orders for parts collection
                 const response = await fetch('api.php?action=get_transfers_for_parts');
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
                 const data = await response.json();
                 transfers = data.transfers || [];
-
-                // Populate searchable dropdown
-                updateTransferDropdown();
+                console.log(`Loaded ${transfers.length} transfers.`);
+                updateTransferDropdown(''); // Call with empty filter to populate initially
             } catch (error) {
                 console.error('Error loading transfers:', error);
                 showToast('Error loading transfers', 'error');
+                transfers = []; // Ensure transfers is an empty array on error
+                updateTransferDropdown(''); // Still try to update to show "no results"
             }
         }
 
         // Update transfer dropdown with search functionality
         function updateTransferDropdown(filter = '') {
             const optionsContainer = document.getElementById('transferOptions');
-            if (!optionsContainer) return;
+            if (!optionsContainer) {
+                console.error('Fatal: transferOptions container not found in DOM.');
+                return;
+            }
 
+            // Always clear previous options
             optionsContainer.innerHTML = '';
-
+            
+            const lowercasedFilter = filter.toLowerCase();
+            
             const filteredTransfers = transfers.filter(transfer => {
                 const plate = transfer.plate || '';
                 const name = transfer.name || '';
                 const status = transfer.status || '';
                 const searchText = `${plate} ${name} ${status}`.toLowerCase();
-                return searchText.includes(filter.toLowerCase());
+                return searchText.includes(lowercasedFilter);
             });
 
             if (filteredTransfers.length === 0) {
@@ -505,12 +514,12 @@ if (empty($_SESSION['user_id'])) {
                 option.className = 'dropdown-option';
                 option.innerHTML = `
                     <div>
-                        <span class="font-bold">${transfer.plate}</span> - ${transfer.name}
+                        <span class="font-bold">${transfer.plate || 'N/A'}</span> - ${transfer.name || 'N/A'}
                     </div>
-                    <div class="text-xs text-gray-500">${transfer.status}</div>
+                    <div class="text-xs text-gray-500">${transfer.status || 'N/A'}</div>
                 `;
                 option.addEventListener('click', () => {
-                    document.getElementById('transferSearch').value = `${transfer.plate} - ${transfer.name}`;
+                    document.getElementById('transferSearch').value = `${transfer.plate || ''} - ${transfer.name || ''}`;
                     document.getElementById('transferSelect').value = transfer.id;
                     toggleTransferDropdown(false);
                 });
