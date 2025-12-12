@@ -851,23 +851,73 @@ try {
             exit;
         }
 
+        // Include the Composer autoloader
+        $autoloader = __DIR__ . '/vendor/autoload.php';
+        if (!file_exists($autoloader)) {
+            jsonResponse(['success' => false, 'error' => 'PDF parsing library not installed. Please run "composer require smalot/pdfparser".']);
+            exit;
+        }
+        require_once $autoloader;
+
         $filePath = $_FILES['pdf']['tmp_name'];
-
-        // --- MOCK PARSING LOGIC ---
-        // For this example, we will simulate parsing by returning a fixed list of items in Georgian.
-        // This demonstrates that the feature extracts text as-is, without translation.
+        $items = [];
         
-        $mock_items = [
-            ['name' => 'წინა ბამპერი (დაპარსული)', 'quantity' => 1, 'price' => 250.75, 'type' => 'part'],
-            ['name' => 'ფარი (დაპარსული)', 'quantity' => 2, 'price' => 150.00, 'type' => 'part'],
-            ['name' => 'ბამპერის შეღებვა (დაპარსული)', 'quantity' => 1, 'price' => 120.00, 'type' => 'labor'],
-            ['name' => 'მონტაჟი (დაპარსული)', 'quantity' => 2, 'price' => 50.00, 'type' => 'labor']
-        ];
-        
-        // Simulate a delay to make it feel like a real process
-        sleep(1);
+        try {
+            $parser = new \Smalot\PdfParser\Parser();
+            $pdf = $parser->parseFile($filePath);
+            $text = $pdf->getText();
+            $lines = explode("\n", $text);
 
-        jsonResponse(['success' => true, 'items' => $mock_items]);
+            // Regex patterns to identify item lines in an invoice. This is a best-effort approach.
+            // Pattern 1: Looks for description, quantity, and price.
+            $pattern1 = '/(.+?)\s+(\d{1,3})\s+([\d,.]+)$/';
+            // Pattern 2: Looks for description and a price.
+            $pattern2 = '/(.+?)\s+([\d,.]+)$/';
+
+            foreach ($lines as $line) {
+                $line = trim($line);
+                $matches = [];
+                $name = '';
+                $quantity = 1; // Default quantity
+                $price = 0;
+
+                // Try to match the more specific pattern first
+                if (preg_match($pattern1, $line, $matches)) {
+                    $name = trim($matches[1]);
+                    $quantity = (int)$matches[2];
+                    $price = (float)str_replace(',', '', $matches[3]);
+                } elseif (preg_match($pattern2, $line, $matches)) {
+                    $name = trim($matches[1]);
+                    // If a single number is found, assume quantity is 1
+                    $price = (float)str_replace(',', '', $matches[2]);
+                }
+
+                // Basic validation to filter out non-item lines
+                if (!empty($name) && $price > 0 && strlen($name) > 2 && !is_numeric($name)) {
+                    // Simple heuristic to determine type
+                    $type = 'part';
+                    if (preg_match('/(labor|service|installation|შეღებვა|მონტაჟი)/i', $name)) {
+                        $type = 'labor';
+                    }
+                    
+                    $items[] = [
+                        'name' => $name,
+                        'quantity' => $quantity,
+                        'price' => $price,
+                        'type' => $type
+                    ];
+                }
+            }
+
+            if (empty($items)) {
+                 jsonResponse(['success' => false, 'error' => 'Could not automatically detect any items. Please add them manually.']);
+            } else {
+                 jsonResponse(['success' => true, 'items' => $items]);
+            }
+
+        } catch (Exception $e) {
+            jsonResponse(['success' => false, 'error' => 'Failed to parse PDF: ' . $e->getMessage()]);
+        }
     }
 
 } catch (Exception $e) {
