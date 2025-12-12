@@ -874,36 +874,45 @@ try {
             $logContent .= "\n--- END OF PDF ---\n\n";
             file_put_contents(__DIR__ . '/error_log', $logContent, FILE_APPEND);
 
-            // Define Georgian keywords
+            // Define Georgian keywords from user specification
             $partsHeader = 'დეტალების ჩამონათვალი';
             $laborHeader = 'მომსახურების ჩამონათვალი';
             $statusKeyword = 'სტატუსი';
+            $quantityKeyword = 'რაოდენობა';
+            $priceKeyword = 'ფასი(ლარი)';
 
-            // Function to process a block of text
-            $processBlock = function($blockText, $type) use ($statusKeyword) {
+            // Function to process a block of text based on the user's specific rules
+            $processBlock = function($blockText, $type) use ($statusKeyword, $quantityKeyword, $priceKeyword, $partsHeader, $laborHeader) {
                 $lines = explode("\n", $blockText);
                 $foundItems = [];
                 
-                // Flexible regex: (Description) (maybe some text) (Quantity) (maybe some text) (Price)
-                // This is more robust against extra words or slightly different table structures.
-                $regex = '/^(.+?)\s+.*?(\d+)\s+.*?([\d,.]+)\s*$/u';
+                // This regex is more specific: (1. Name) (2. Quantity) (3. Price at the end of the line)
+                $itemRegex = '/^(.*[^\d\s])\s+(\d+)\s+([\d,.]+)$/u';
 
                 foreach ($lines as $line) {
                     $line = trim($line);
                     
-                    // Skip lines that are likely headers, footers, or contain ignored keywords
-                    if (empty($line) || mb_strlen($line, 'UTF-8') < 5 || mb_stripos($line, $statusKeyword, 0, 'UTF-8') !== false || is_numeric(trim(str_replace(['.', ','], '', $line)))) {
+                    // --- USE KEYWORDS TO IGNORE IRRELEVANT LINES ---
+                    if (empty($line) ||
+                        mb_strlen($line, 'UTF-8') < 3 || // Skip very short/empty lines
+                        mb_stripos($line, $statusKeyword, 0, 'UTF-8') !== false ||
+                        mb_stripos($line, $quantityKeyword, 0, 'UTF-8') !== false ||
+                        mb_stripos($line, $priceKeyword, 0, 'UTF-8') !== false ||
+                        mb_stripos($line, $partsHeader, 0, 'UTF-8') !== false ||
+                        mb_stripos($line, $laborHeader, 0, 'UTF-8') !== false
+                    ) {
                         continue;
                     }
 
                     $matches = [];
-                    if (preg_match($regex, $line, $matches)) {
+                    if (preg_match($itemRegex, $line, $matches)) {
+                        // Clean the item name: remove leading numbers, dots, spaces from any list format (e.g., "1.", "2 ", etc.)
                         $name = trim(preg_replace('/^\d+\.?\s*/u', '', $matches[1]));
                         $quantity = (int)$matches[2];
                         $price = (float)str_replace(',', '', $matches[3]);
 
-                        // Stronger validation to avoid capturing incorrect lines
-                        if (!empty($name) && $quantity > 0 && $price > 0 && !is_numeric($name)) {
+                        // Final validation to ensure we have a legitimate item
+                        if (!empty($name) && $quantity > 0 && $price >= 0 && !is_numeric($name)) {
                             $foundItems[] = ['name' => $name, 'quantity' => $quantity, 'price' => $price, 'type' => $type];
                         }
                     }
