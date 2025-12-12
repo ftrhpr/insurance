@@ -234,14 +234,32 @@ if (empty($_SESSION['user_id'])) {
                             <div id="partsList" class="space-y-2 mb-3">
                                 <!-- Parts will be added here -->
                             </div>
-                            <!-- Totals Section -->
-                            <div id="createTotals" class="mt-4 pt-4 border-t-2 border-dashed border-gray-200/80 flex justify-end items-center space-x-6">
-                                <div class="text-sm font-semibold text-gray-700">
-                                    Total Items: <span id="createTotalItems" class="text-gray-900">0</span>
-                                </div>
-                                <div class="text-lg font-bold text-gray-800">
-                                    Total Price: <span class="gradient-text" id="createTotalPrice">₾0.00</span>
-                                </div>
+                        </div>
+                        
+                        <!-- Labor Section -->
+                        <div class="bg-white/50 rounded-xl p-4 border border-white/30">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="block text-sm font-semibold text-gray-800 flex items-center">
+                                    <i data-lucide="wrench" class="w-4 h-4 mr-2 text-sky-600"></i>
+                                    Labor & Services
+                                </label>
+                                <button type="button" onclick="addLabor()" class="inline-flex items-center px-3 py-1.5 border-2 border-dashed border-sky-300 rounded-lg text-xs font-medium text-sky-600 bg-sky-50 hover:bg-sky-100 hover:border-sky-400 transition-all duration-200">
+                                    <i data-lucide="plus" class="w-3 h-3 mr-1"></i>
+                                    Add Labor
+                                </button>
+                            </div>
+                            <div id="laborList" class="space-y-2 mb-3">
+                                <!-- Labor items will be added here -->
+                            </div>
+                        </div>
+
+                        <!-- Totals Section -->
+                        <div id="createTotals" class="mt-4 pt-4 border-t-2 border-dashed border-gray-200/80 flex justify-end items-center space-x-6">
+                            <div class="text-sm font-semibold text-gray-700">
+                                Total Items: <span id="createTotalItems" class="text-gray-900">0</span>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">
+                                Total Price: <span class="gradient-text" id="createTotalPrice">₾0.00</span>
                             </div>
                         </div>
 
@@ -368,14 +386,32 @@ if (empty($_SESSION['user_id'])) {
                             <div id="editPartsList" class="space-y-2">
                                 <!-- Parts will be added here -->
                             </div>
-                            <!-- Totals Section -->
-                            <div id="editTotals" class="mt-4 pt-4 border-t-2 border-dashed border-gray-200/80 flex justify-end items-center space-x-6">
-                                <div class="text-sm font-semibold text-gray-700">
-                                    Total Items: <span id="editTotalItems" class="text-gray-900">0</span>
-                                </div>
-                                <div class="text-lg font-bold text-gray-800">
-                                    Total Price: <span class="gradient-text" id="editTotalPrice">₾0.00</span>
-                                </div>
+                        </div>
+
+                        <!-- Labor Section -->
+                        <div class="bg-white/60 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="block text-sm font-semibold text-gray-800 flex items-center">
+                                    <i data-lucide="wrench" class="w-4 h-4 mr-2 text-sky-600"></i>
+                                    Labor & Services
+                                </label>
+                                <button type="button" onclick="addEditLabor()" class="inline-flex items-center px-3 py-1.5 border-2 border-dashed border-sky-300 rounded-lg text-xs font-medium text-sky-600 bg-sky-50 hover:bg-sky-100 transition-all duration-200">
+                                    <i data-lucide="plus" class="w-3 h-3 mr-1"></i>
+                                    Add Labor
+                                </button>
+                            </div>
+                            <div id="editLaborList" class="space-y-2">
+                                <!-- Labor items will be added here -->
+                            </div>
+                        </div>
+
+                        <!-- Totals Section -->
+                        <div id="editTotals" class="mt-4 pt-4 border-t-2 border-dashed border-gray-200/80 flex justify-end items-center space-x-6">
+                            <div class="text-sm font-semibold text-gray-700">
+                                Total Items: <span id="editTotalItems" class="text-gray-900">0</span>
+                            </div>
+                            <div class="text-lg font-bold text-gray-800">
+                                Total Price: <span class="gradient-text" id="editTotalPrice">₾0.00</span>
                             </div>
                         </div>
 
@@ -625,23 +661,16 @@ if (empty($_SESSION['user_id'])) {
         }
 
         // Add part to the main collection form
-        function addPart(name = '', quantity = 1, price = 0, type = 'part') {
+        function addPart(name = '', quantity = 1, price = 0) {
             const partsList = document.getElementById('partsList');
             const partDiv = document.createElement('div');
             partDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
             
             partDiv.innerHTML = `
                 <div class="grid grid-cols-12 gap-x-3 items-end">
-                    <div class="col-span-2">
-                        <label class="block text-xs font-semibold text-gray-800 mb-1">Type</label>
-                        <select class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-type" onchange="updateCreateFormTotals()">
-                            <option value="part">Part</option>
-                            <option value="labor">Labor</option>
-                        </select>
-                    </div>
-                    <div class="col-span-5">
-                        <label class="block text-xs font-semibold text-gray-800 mb-1">Part/Service Name</label>
-                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-name" value="${name}" placeholder="Enter part or service name..." required>
+                    <div class="col-span-7">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Part Name</label>
+                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-name" value="${name}" placeholder="Enter part name..." required>
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
@@ -659,30 +688,58 @@ if (empty($_SESSION['user_id'])) {
                 </div>
             `;
             partsList.appendChild(partDiv);
+            lucide.createIcons();
+            updateCreateFormTotals();
+        }
 
-            const typeSelect = partDiv.querySelector('.part-type');
-            if (typeSelect) {
-                typeSelect.value = type;
-            }
+        // Add labor to the main collection form
+        function addLabor(name = '', quantity = 1, price = 0) {
+            const laborList = document.getElementById('laborList');
+            const laborDiv = document.createElement('div');
+            laborDiv.className = 'labor-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
             
+            laborDiv.innerHTML = `
+                <div class="grid grid-cols-12 gap-x-3 items-end">
+                    <div class="col-span-7">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Service Name</label>
+                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 labor-name" value="${name}" placeholder="Enter service name..." required>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center labor-quantity" value="${quantity}" min="1" required oninput="updateCreateFormTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 labor-price" value="${price}" step="0.01" min="0" placeholder="0.00" required oninput="updateCreateFormTotals()">
+                    </div>
+                    <div class="col-span-1 flex items-end">
+                        <button type="button" onclick="removePart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            laborList.appendChild(laborDiv);
             lucide.createIcons();
             updateCreateFormTotals();
         }
 
         // Remove part from the main form
         function removePart(button) {
-            button.closest('.part-item').remove();
+            button.closest('.part-item, .labor-item').remove();
             updateCreateFormTotals();
         }
 
         // Update totals in the main create form
         function updateCreateFormTotals() {
-            const partItems = document.querySelectorAll('#partsList .part-item');
+            const partItems = document.querySelectorAll('#partsList .part-item, #laborList .labor-item');
             let totalItems = 0;
             let totalPrice = 0;
             partItems.forEach(item => {
-                const quantity = parseInt(item.querySelector('.part-quantity')?.value || 0);
-                const price = parseFloat(item.querySelector('.part-price')?.value || 0);
+                const quantityInput = item.querySelector('.part-quantity, .labor-quantity');
+                const priceInput = item.querySelector('.part-price, .labor-price');
+                const quantity = parseInt(quantityInput?.value || 0);
+                const price = parseFloat(priceInput?.value || 0);
                 totalItems += quantity;
                 totalPrice += quantity * price;
             });
@@ -710,14 +767,22 @@ if (empty($_SESSION['user_id'])) {
                 const name = item.querySelector('.part-name').value.trim();
                 const quantity = parseInt(item.querySelector('.part-quantity').value);
                 const price = parseFloat(item.querySelector('.part-price').value);
-                const type = item.querySelector('.part-type').value;
                 if (name && quantity > 0 && price >= 0) {
-                    parts.push({ name, quantity, price, type });
+                    parts.push({ name, quantity, price, type: 'part' });
+                }
+            });
+
+            document.querySelectorAll('#laborList .labor-item').forEach(item => {
+                const name = item.querySelector('.labor-name').value.trim();
+                const quantity = parseInt(item.querySelector('.labor-quantity').value);
+                const price = parseFloat(item.querySelector('.labor-price').value);
+                if (name && quantity > 0 && price >= 0) {
+                    parts.push({ name, quantity, price, type: 'labor' });
                 }
             });
 
             if (parts.length === 0) {
-                showToast('Please add at least one part.', 'error');
+                showToast('Please add at least one part or service.', 'error');
                 return;
             }
 
@@ -749,6 +814,7 @@ if (empty($_SESSION['user_id'])) {
         function clearForm() {
             document.getElementById('collectionForm').reset();
             document.getElementById('partsList').innerHTML = '';
+            document.getElementById('laborList').innerHTML = '';
             document.getElementById('transferSearch').value = '';
             document.getElementById('transferSelect').value = '';
             updateCreateFormTotals();
@@ -852,10 +918,16 @@ if (empty($_SESSION['user_id'])) {
 
                 // Populate parts
                 const editPartsList = document.getElementById('editPartsList');
+                const editLaborList = document.getElementById('editLaborList');
                 editPartsList.innerHTML = ''; // Clear old parts
+                editLaborList.innerHTML = ''; // Clear old labor
                 if (collection.parts_list && Array.isArray(collection.parts_list)) {
-                    collection.parts_list.forEach(part => {
-                        addEditPart(part.name, part.quantity, part.price, part.type || 'part');
+                    collection.parts_list.forEach(item => {
+                        if (item.type === 'labor') {
+                            addEditLabor(item.name, item.quantity, item.price);
+                        } else {
+                            addEditPart(item.name, item.quantity, item.price);
+                        }
                     });
                 }
                 updateEditTotals(); // Update totals after populating
@@ -865,25 +937,16 @@ if (empty($_SESSION['user_id'])) {
         }
 
         // Add part to edit form
-        function addEditPart(name = '', quantity = 1, price = 0, type = 'part') {
+        function addEditPart(name = '', quantity = 1, price = 0) {
             const editPartsList = document.getElementById('editPartsList');
             const partDiv = document.createElement('div');
             partDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
             
             partDiv.innerHTML = `
                 <div class="grid grid-cols-12 gap-x-3 items-end">
-                    <div class="col-span-2">
+                    <div class="col-span-7">
                         <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                            <i data-lucide="list" class="w-3 h-3 mr-1 text-gray-600"></i> Type
-                        </label>
-                        <select class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-type" onchange="updateEditTotals()">
-                            <option value="part">Part</option>
-                            <option value="labor">Labor</option>
-                        </select>
-                    </div>
-                    <div class="col-span-5">
-                        <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
-                            <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i> Part/Service Name
+                            <i data-lucide="tag" class="w-3 h-3 mr-1 text-indigo-600"></i> Part Name
                         </label>
                         <div class="relative search-dropdown">
                             <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-indigo-400 focus:ring-indigo-400 px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 part-name" value="${name}" placeholder="Search or describe..." autocomplete="off" required>
@@ -911,11 +974,6 @@ if (empty($_SESSION['user_id'])) {
                 </div>
             `;
             editPartsList.appendChild(partDiv);
-
-            const typeSelect = partDiv.querySelector('.part-type');
-            if (typeSelect) {
-                typeSelect.value = type;
-            }
             
             lucide.createIcons();
             
@@ -948,9 +1006,47 @@ if (empty($_SESSION['user_id'])) {
             updateEditTotals();
         }
 
+        // Add labor to edit form
+        function addEditLabor(name = '', quantity = 1, price = 0) {
+            const editLaborList = document.getElementById('editLaborList');
+            const laborDiv = document.createElement('div');
+            laborDiv.className = 'labor-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
+            
+            laborDiv.innerHTML = `
+                <div class="grid grid-cols-12 gap-x-3 items-end">
+                    <div class="col-span-7">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                            <i data-lucide="wrench" class="w-3 h-3 mr-1 text-sky-600"></i> Service Name
+                        </label>
+                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 labor-name" value="${name}" placeholder="Describe service..." required>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                            <i data-lucide="hash" class="w-3 h-3 mr-1 text-purple-600"></i> Qty
+                        </label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 text-center labor-quantity" value="${quantity}" min="1" required oninput="updateEditTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1 flex items-center">
+                            <span class="text-green-600 mr-1">₾</span> Price
+                        </label>
+                        <input type="number" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 labor-price" value="${price}" step="0.01" min="0" placeholder="0.00" required oninput="updateEditTotals()">
+                    </div>
+                    <div class="col-span-1 flex items-end">
+                        <button type="button" onclick="removeEditPart(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            editLaborList.appendChild(laborDiv);
+            lucide.createIcons();
+            updateEditTotals();
+        }
+
         // Remove part from edit form
         function removeEditPart(button) {
-            button.closest('.part-item').remove();
+            button.closest('.part-item, .labor-item').remove();
             updateEditTotals();
         }
 
@@ -971,36 +1067,25 @@ if (empty($_SESSION['user_id'])) {
             const assigned_manager_id = editAssignedManagerElement ? editAssignedManagerElement.value : null;
 
             const parts = [];
-            const partItems = document.querySelectorAll('#editPartsList .part-item');
-
-            partItems.forEach((item, index) => {
-                const nameInput = item.querySelector('.part-name');
-                const quantityInput = item.querySelector('.part-quantity');
-                const priceInput = item.querySelector('.part-price');
-                const typeInput = item.querySelector('.part-type');
-
-                if (!nameInput || !quantityInput || !priceInput || !typeInput) {
-                    console.error(`Part item ${index} missing required inputs:`, {
-                        nameInput,
-                        quantityInput,
-                        priceInput,
-                        typeInput
-                    });
-                    return;
-                }
-
-                const name = nameInput.value.trim();
-                const quantity = parseInt(quantityInput.value);
-                const price = parseFloat(priceInput.value);
-                const type = typeInput.value;
-
+            document.querySelectorAll('#editPartsList .part-item').forEach(item => {
+                const name = item.querySelector('.part-name').value.trim();
+                const quantity = parseInt(item.querySelector('.part-quantity').value);
+                const price = parseFloat(item.querySelector('.part-price').value);
                 if (name && quantity > 0 && price >= 0) {
-                    parts.push({ name, quantity, price, type });
+                    parts.push({ name, quantity, price, type: 'part' });
+                }
+            });
+            document.querySelectorAll('#editLaborList .labor-item').forEach(item => {
+                const name = item.querySelector('.labor-name').value.trim();
+                const quantity = parseInt(item.querySelector('.labor-quantity').value);
+                const price = parseFloat(item.querySelector('.labor-price').value);
+                if (name && quantity > 0 && price >= 0) {
+                    parts.push({ name, quantity, price, type: 'labor' });
                 }
             });
 
             if (parts.length === 0) {
-                showToast('Please add at least one part', 'error');
+                showToast('Please add at least one part or service', 'error');
                 return;
             }
 
@@ -1051,12 +1136,14 @@ if (empty($_SESSION['user_id'])) {
 
         // Update totals in edit modal
         function updateEditTotals() {
-            const partItems = document.querySelectorAll('#editPartsList .part-item');
+            const partItems = document.querySelectorAll('#editPartsList .part-item, #editLaborList .labor-item');
             let totalItems = 0;
             let totalPrice = 0;
             partItems.forEach(item => {
-                const quantity = parseInt(item.querySelector('.part-quantity')?.value || 0);
-                const price = parseFloat(item.querySelector('.part-price')?.value || 0);
+                const quantityInput = item.querySelector('.part-quantity, .labor-quantity');
+                const priceInput = item.querySelector('.part-price, .labor-price');
+                const quantity = parseInt(quantityInput?.value || 0);
+                const price = parseFloat(priceInput?.value || 0);
                 totalItems += quantity;
                 totalPrice += quantity * price;
             });
@@ -1081,6 +1168,10 @@ if (empty($_SESSION['user_id'])) {
                 const editPartsList = document.getElementById('editPartsList');
                 if (editPartsList) {
                     editPartsList.innerHTML = '';
+                }
+                const editLaborList = document.getElementById('editLaborList');
+                if (editLaborList) {
+                    editLaborList.innerHTML = '';
                 }
                 const editTransferInfo = document.getElementById('editTransferInfo');
                 if (editTransferInfo) {
