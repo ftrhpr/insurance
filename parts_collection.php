@@ -498,49 +498,50 @@ if (empty($_SESSION['user_id'])) {
             }
 
             optionsContainer.innerHTML = ''; // Clear previous results
-            console.log(`Updating dropdown with ${transfers.length} total transfers and filter "${filter}"`);
-
+            
             const lowercasedFilter = filter.toLowerCase();
 
             const filteredTransfers = transfers.filter(transfer => {
-                // Defensive coding: ensure properties exist before trying to access them
-                const plate = transfer && transfer.plate ? transfer.plate : '';
-                const name = transfer && transfer.name ? transfer.name : '';
-                const status = transfer && transfer.status ? transfer.status : '';
+                const plate = (transfer && transfer.plate) ? transfer.plate : '';
+                const name = (transfer && transfer.name) ? transfer.name : '';
+                const status = (transfer && transfer.status) ? transfer.status : '';
                 const searchText = `${plate} ${name} ${status}`.toLowerCase();
                 return searchText.includes(lowercasedFilter);
             });
-            
-            console.log(`Found ${filteredTransfers.length} transfers matching the filter.`);
 
             if (filteredTransfers.length === 0) {
                 optionsContainer.innerHTML = '<div class="dropdown-option text-center text-gray-500">No matching transfers found.</div>';
                 return;
             }
 
-            filteredTransfers.forEach(transfer => {
+            // More robust DOM creation
+            filteredTransfers.forEach((transfer, index) => {
                 const option = document.createElement('div');
                 option.className = 'dropdown-option';
                 option.setAttribute('data-id', transfer.id);
-                
-                // Safely access properties for display
-                const plate = transfer.plate || 'NO PLATE';
-                const name = transfer.name || 'NO NAME';
-                const status = transfer.status || 'NO STATUS';
 
-                option.innerHTML = `
-                    <div>
-                        <span class="font-bold">${plate}</span> - ${name}
-                    </div>
-                    <div class="text-xs text-gray-500">${status}</div>
-                `;
+                const contentDiv = document.createElement('div');
+                const boldSpan = document.createElement('span');
+                boldSpan.className = 'font-bold';
+                boldSpan.textContent = transfer.plate || 'NO PLATE';
+                contentDiv.appendChild(boldSpan);
+                contentDiv.append(` - ${transfer.name || 'NO NAME'}`);
+
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'text-xs text-gray-500';
+                statusDiv.textContent = transfer.status || 'NO STATUS';
+
+                option.appendChild(contentDiv);
+                option.appendChild(statusDiv);
                 
                 option.addEventListener('click', () => {
-                    document.getElementById('transferSearch').value = `${plate} - ${name}`;
+                    document.getElementById('transferSearch').value = `${transfer.plate || ''} - ${transfer.name || ''}`;
                     document.getElementById('transferSelect').value = transfer.id;
                     toggleTransferDropdown(false);
                 });
-
+                
+                // Final diagnostic log
+                console.log(`Appending option ${index + 1}/${filteredTransfers.length} to the DOM:`, option);
                 optionsContainer.appendChild(option);
             });
         }
@@ -549,10 +550,22 @@ if (empty($_SESSION['user_id'])) {
         function toggleTransferDropdown(show) {
             const dropdown = document.getElementById('transferDropdown');
             const arrow = document.querySelector('#transferSearch + .dropdown-arrow i');
-            if (dropdown && arrow) {
-                dropdown.classList.toggle('hidden', !show);
-                arrow.parentElement.classList.toggle('open', show);
+
+            if (!dropdown || !arrow) {
+                console.error('Could not find dropdown or arrow element for toggling.');
+                return;
             }
+
+            console.log(`Toggling dropdown. Requested state: ${show ? 'SHOW' : 'HIDE'}. Current classes: "${dropdown.className}"`);
+            
+            if (show) {
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.classList.add('hidden');
+            }
+            
+            arrow.parentElement.classList.toggle('open', show);
+            console.log(`Dropdown classes after toggle: "${dropdown.className}"`);
         }
 
         // Load collections from the server
