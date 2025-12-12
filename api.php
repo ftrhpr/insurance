@@ -1027,7 +1027,7 @@ try {
         $stmt->execute($params);
         $collections = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        jsonResponse(['collections' => $collections]);
+        jsonResponse(['success' => true, 'collections' => $collections]);
     }
 
     if ($action === 'create_parts_collection' && $method === 'POST') {
