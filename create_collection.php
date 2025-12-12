@@ -153,18 +153,6 @@ if (empty($_SESSION['user_id'])) {
             document.getElementById('collectionForm').addEventListener('submit', createCollection);
         });
 
-        async function loadData(url, key) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Network error while fetching ${key}`);
-                const data = await response.json();
-                window[key] = data[key] || data.suggestions || [];
-            } catch (error) {
-                console.error(`Failed to load ${key}:`, error);
-                window[key] = []; // Default to an empty array on failure to prevent further errors
-            }
-        }
-
         function initTransferSearch() {
             const searchInput = document.getElementById('transferSearch');
             const dropdown = document.getElementById('transferDropdown');
@@ -192,6 +180,17 @@ if (empty($_SESSION['user_id'])) {
             }
         }
 
+        async function loadData(url, key) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Network error while fetching ${key}`);
+                const data = await response.json();
+                window[key] = data[key] || data.suggestions || [];
+            } catch (error) {
+                console.error(`Failed to load ${key}:`, error);
+                window[key] = []; // Default to an empty array on failure to prevent further errors
+            }
+        }
 
         function updateTransferDropdown(filter = '') {
             const container = document.getElementById('transferOptions');
