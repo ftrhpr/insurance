@@ -312,7 +312,7 @@ if (empty($_SESSION['user_id'])) {
         let transfers = [];
         let collections = [];
         let partSuggestions = [];
-        let currentParts = [];
+        let laborSuggestions = [];
         let managers = [];
 
         // Load data on page load
@@ -320,6 +320,7 @@ if (empty($_SESSION['user_id'])) {
             loadTransfers();
             loadCollections();
             loadPartSuggestions();
+            loadLaborSuggestions();
             loadManagers();
             lucide.createIcons();
 
@@ -494,11 +495,21 @@ if (empty($_SESSION['user_id'])) {
         // Load part suggestions for autocompletion
         async function loadPartSuggestions() {
             try {
-                const response = await fetch('api.php?action=get_parts_suggestions');
+                const response = await fetch('api.php?action=get_item_suggestions&type=part');
                 const data = await response.json();
                 partSuggestions = data.suggestions || [];
             } catch (error) {
                 console.error('Error loading part suggestions:', error);
+            }
+        }
+
+        async function loadLaborSuggestions() {
+            try {
+                const response = await fetch('api.php?action=get_item_suggestions&type=labor');
+                const data = await response.json();
+                laborSuggestions = data.suggestions || [];
+            } catch (error) {
+                console.error('Error loading labor suggestions:', error);
             }
         }
 
@@ -536,7 +547,10 @@ if (empty($_SESSION['user_id'])) {
                 <div class="grid grid-cols-12 gap-x-3 items-end">
                     <div class="col-span-7">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Part Name</label>
-                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-name" value="${name}" placeholder="Enter part name..." required>
+                        <div class="relative">
+                            <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 part-name" value="${name}" placeholder="Enter part name..." required autocomplete="off">
+                            <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
+                        </div>
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
@@ -554,6 +568,9 @@ if (empty($_SESSION['user_id'])) {
                 </div>
             `;
             partsList.appendChild(partDiv);
+
+            setupAutocomplete(partDiv.querySelector('.part-name'), 'part');
+            
             lucide.createIcons();
             updateCreateFormTotals();
         }
@@ -568,7 +585,10 @@ if (empty($_SESSION['user_id'])) {
                 <div class="grid grid-cols-12 gap-x-3 items-end">
                     <div class="col-span-7">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Service Name</label>
-                        <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 labor-name" value="${name}" placeholder="Enter service name..." required>
+                         <div class="relative">
+                            <input type="text" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 labor-name" value="${name}" placeholder="Enter service name..." required autocomplete="off">
+                            <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
+                        </div>
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
@@ -586,6 +606,9 @@ if (empty($_SESSION['user_id'])) {
                 </div>
             `;
             laborList.appendChild(laborDiv);
+
+            setupAutocomplete(laborDiv.querySelector('.labor-name'), 'labor');
+
             lucide.createIcons();
             updateCreateFormTotals();
         }
@@ -684,6 +707,45 @@ if (empty($_SESSION['user_id'])) {
             document.getElementById('transferSearch').value = '';
             document.getElementById('transferSelect').value = '';
             updateCreateFormTotals();
+        }
+
+        // --- AUTOCOMPLETE ---
+        function setupAutocomplete(inputElement, type) {
+            const resultsContainer = inputElement.nextElementSibling;
+            const suggestions = type === 'part' ? partSuggestions : laborSuggestions;
+
+            inputElement.addEventListener('input', () => {
+                const value = inputElement.value.toLowerCase();
+                resultsContainer.innerHTML = '';
+                if (!value) {
+                    resultsContainer.classList.add('hidden');
+                    return;
+                }
+
+                const filtered = suggestions.filter(item => item.toLowerCase().includes(value));
+
+                if (filtered.length) {
+                    resultsContainer.classList.remove('hidden');
+                    filtered.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                        div.textContent = item;
+                        div.addEventListener('click', () => {
+                            inputElement.value = item;
+                            resultsContainer.classList.add('hidden');
+                        });
+                        resultsContainer.appendChild(div);
+                    });
+                } else {
+                    resultsContainer.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (e.target !== inputElement) {
+                    resultsContainer.classList.add('hidden');
+                }
+            });
         }
 
         // Render collections in a card-based layout
