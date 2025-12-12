@@ -648,13 +648,28 @@ if (empty($_SESSION['user_id'])) {
             });
         }
 
-        // Load collections
+        // Load collections from the server
         async function loadCollections() {
             try {
                 const response = await fetch('api.php?action=get_parts_collections');
                 const data = await response.json();
-                collections = data.collections || [];
-                renderCollections();
+                if (data.success) {
+                    collections = data.collections || [];
+                    // Ensure parts_list is parsed from JSON string to array
+                    collections.forEach(c => {
+                        if (typeof c.parts_list === 'string') {
+                            try {
+                                c.parts_list = JSON.parse(c.parts_list);
+                            } catch (e) {
+                                console.error('Error parsing parts_list for collection:', c.id, e);
+                                c.parts_list = []; // Default to empty array on parse error
+                            }
+                        }
+                    });
+                    renderCollections();
+                } else {
+                    showToast(data.error || 'Could not load collections', 'error');
+                }
             } catch (error) {
                 console.error('Error loading collections:', error);
                 showToast('Error loading collections', 'error');
