@@ -358,7 +358,7 @@ try {
 
     // --- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
     if ($action === 'get_transfers_for_parts' && $method === 'GET') {
-        $stmt = $pdo->prepare("SELECT id, plate, name, status FROM transfers WHERE status NOT IN ('Completed', 'Cancelled') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT id, plate, name, status FROM transfers ORDER BY created_at DESC");
         $stmt->execute();
         $transfers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         jsonResponse(['transfers' => $transfers]);
