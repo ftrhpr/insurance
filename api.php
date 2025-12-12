@@ -1005,7 +1005,7 @@ try {
         $transfer_id = $_GET['transfer_id'] ?? null;
         $status = $_GET['status'] ?? null;
 
-        $query = "SELECT pc.*, t.plate, t.name, u.username as assigned_manager_username, u.full_name as assigned_manager_name 
+        $query = "SELECT pc.*, t.plate AS transfer_plate, t.name AS transfer_name, u.username as assigned_manager_username, u.full_name as manager_full_name 
                   FROM parts_collections pc 
                   JOIN transfers t ON pc.transfer_id = t.id
                   LEFT JOIN users u ON pc.assigned_manager_id = u.id";
