@@ -293,7 +293,7 @@ if (empty($_SESSION['user_id'])) {
                             <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                                 <i data-lucide="edit-3" class="w-6 h-6 text-white"></i>
                             </div>
-                            <div>
+                            <div>   
                                 <h3 class="text-xl font-bold text-white">Edit Parts Collection</h3>
                                 <p class="text-white/80 text-sm">Modify collection details</p>
                             </div>
