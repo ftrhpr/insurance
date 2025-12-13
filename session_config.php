@@ -37,7 +37,6 @@ if (session_status() === PHP_SESSION_NONE) {
         $current_fingerprint = md5($_SERVER['HTTP_USER_AGENT'] ?? '');
         if ($_SESSION['fingerprint'] !== $current_fingerprint) {
             // Possible session hijacking - destroy session and return JSON error
-            error_log("Session fingerprint mismatch - destroying session");
             session_unset();
             session_destroy();
             http_response_code(401);

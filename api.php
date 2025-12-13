@@ -33,7 +33,6 @@ if (empty($_SESSION['csrf_token'])) {
 // Check authentication for protected endpoints
 $publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
-    error_log("401 Unauthorized: action=$action, session_user_id=" . ($_SESSION['user_id'] ?? 'null') . ", session_role=" . ($_SESSION['role'] ?? 'null'));
     http_response_code(401);
     die(json_encode(['error' => 'Unauthorized']));
 }
@@ -481,13 +480,8 @@ try {
 
         $data = getJsonInput();
 
-        // Debug: log incoming payload to help diagnose issues
-        error_log('save_templates payload: ' . json_encode($data));
-        error_log('save_templates data count: ' . count($data));
-
         // Validate input data
         if (empty($data) || !is_array($data)) {
-            error_log('save_templates: Invalid data received');
             http_response_code(400);
             jsonResponse(['error' => 'Invalid or empty data received']);
             exit;
@@ -511,9 +505,7 @@ try {
                            ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT 1,
                            ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                            ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-                error_log("save_templates: ALTER TABLE completed successfully");
             } catch (Exception $alterError) {
-                error_log("save_templates: ALTER TABLE failed: " . $alterError->getMessage());
                 // Continue anyway - columns might already exist
             }
 
@@ -521,16 +513,13 @@ try {
             try {
                 $testStmt = $pdo->query("SELECT COUNT(*) as count FROM sms_templates");
                 $testResult = $testStmt->fetch(PDO::FETCH_ASSOC);
-                error_log("save_templates: Table query test successful, found {$testResult['count']} templates");
             } catch (Exception $testError) {
-                error_log("save_templates: Table query test failed: " . $testError->getMessage());
                 http_response_code(500);
                 jsonResponse(['error' => 'Cannot access SMS templates table: ' . $testError->getMessage()]);
                 exit;
             }
 
             $pdo->beginTransaction();
-            error_log("save_templates: Transaction started");
 
             foreach ($data as $slug => $templateData) {
                 $content = $templateData['content'] ?? '';
@@ -547,7 +536,6 @@ try {
 
                 // Validate slug and content
                 if (empty($slug) || !is_string($slug)) {
-                    error_log("save_templates: Invalid slug: " . json_encode($slug));
                     if ($pdo->inTransaction()) {
                         $pdo->rollBack();
                     }
@@ -557,7 +545,6 @@ try {
                 }
 
                 if (!is_string($content)) {
-                    error_log("save_templates: Invalid content for slug $slug: " . json_encode($content));
                     if ($pdo->inTransaction()) {
                         $pdo->rollBack();
                     }
@@ -579,8 +566,6 @@ try {
                                       updated_at = NOW()");
 
                 $stmt->execute([$slug, $content, $workflowStagesJson, $isActive ? 1 : 0]);
-
-                error_log("save_templates processed slug={$slug} stages=" . json_encode($workflowStages));
             }
 
             $pdo->commit();

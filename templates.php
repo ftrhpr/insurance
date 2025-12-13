@@ -261,13 +261,6 @@ try {
         const USER_ROLE = '<?php echo $current_user_role; ?>';
         const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager' || USER_ROLE === 'viewer';
         
-        // Debug session info
-        console.log('Session Info:', {
-            user_id: '<?php echo $_SESSION['user_id'] ?? 'null'; ?>',
-            role: '<?php echo $_SESSION['role'] ?? 'null'; ?>',
-            csrf_token: '<?php echo substr($_SESSION['csrf_token'] ?? '', 0, 10); ?>...'
-        });
-        
         let smsTemplates = <?php echo json_encode($templatesData); ?>;
         let workflowStages = <?php echo json_encode($workflowStages); ?>;
 
@@ -337,8 +330,6 @@ try {
         
         async function fetchAPI(action, method = 'GET', data = null) {
             const url = `${API_URL}?action=${action}`;
-            console.log('Making API request:', { url, method, data, csrf: CSRF_TOKEN ? 'present' : 'missing' });
-            
             const options = {
                 method,
                 headers: { 'Content-Type': 'application/json' },
@@ -354,20 +345,12 @@ try {
                 options.body = JSON.stringify(data);
             }
 
-            try {
-                const response = await fetch(url, options);
-                console.log('API response status:', response.status);
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    console.error('API error:', errorData);
-                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            } catch (error) {
-                console.error('Fetch error:', error);
-                throw error;
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
+            return response.json();
         }
 
         // Template Management Functions
