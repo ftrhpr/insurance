@@ -177,17 +177,30 @@ try {
             <!-- Left/Main Column: Order Details & Workflow Status (SaaS Dashboard Card) -->
             <div class="flex-1 flex flex-col gap-4 min-w-0">
                 <!-- SaaS Dashboard Card Header -->
-                <div class="bg-white border border-gray-200 rounded-t shadow-sm px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div class="bg-white border border-gray-200 rounded-t shadow-sm px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 transition-shadow hover:shadow-md">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="text-xs font-bold text-gray-400 uppercase tracking-wider">Case ID</div>
                         <span class="text-base font-mono font-bold text-blue-700 truncate">#<?php echo $case['id']; ?></span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold"
-                              style="background:<?php echo ($case['status']==='Completed') ? '#d1fae5' : ($case['status']==='Issue' ? '#fee2e2' : '#e0e7ff'); ?>;color:<?php echo ($case['status']==='Completed') ? '#059669' : ($case['status']==='Issue' ? '#b91c1c' : '#3730a3'); ?>">
-                            <?php echo htmlspecialchars($case['status']); ?>
+                        <?php
+                        $status = $case['status'];
+                        $statusColors = [
+                            'New' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700'],
+                            'Processing' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800'],
+                            'Called' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
+                            'Parts Ordered' => ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-700'],
+                            'Parts Arrived' => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
+                            'Scheduled' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-700'],
+                            'Completed' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-700'],
+                            'Issue' => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
+                        ];
+                        $color = $statusColors[$status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-700'];
+                        ?>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold <?php echo $color['bg'] . ' ' . $color['text']; ?>">
+                            <?php echo htmlspecialchars($status); ?>
                         </span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button id="btn-save" class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all">
+                        <button id="btn-save" class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all md:static fixed bottom-4 left-1/2 -translate-x-1/2 z-30 md:translate-x-0 md:bottom-auto md:left-auto">
                             <i data-lucide="save" class="w-4 h-4"></i>
                             <span>Save</span>
                         </button>
@@ -202,7 +215,7 @@ try {
                 </div>
                 <!-- SaaS Dashboard Card Body -->
                 <div class="bg-white border-x border-b border-gray-200 rounded-b shadow-sm p-4 flex flex-col md:flex-row gap-4 md:gap-8 items-start md:items-center">
-                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="col-span-2 mb-2">
                             <div class="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Details</div>
                         </div>
