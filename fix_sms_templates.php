@@ -36,29 +36,44 @@ try {
     $stmt = $pdo->query("SELECT slug, content FROM sms_templates");
     $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    if (empty($templates)) {
-        echo "<p>No templates found in database. Inserting default templates...</p>";
-        
-        $defaultTemplates = [
-            'registered' => "Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service.",
-            'schedule' => "Hello {name}, service scheduled for {date}. Ref: {plate}.",
-            'parts_ordered' => "Parts ordered for {plate}. We will notify you when ready.",
-            'parts_arrived' => "Hello {name}, your parts have arrived! Please confirm your visit here: {link}",
-            'parts_arrived_no_schedule' => "Hello {name}, your parts have arrived! We will contact you shortly to schedule your service. Ref: {plate}",
-            'rescheduled' => "Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}",
-            'completed' => "Service for {plate} is completed. Rate your experience: {link}",
-            'system' => "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
-        ];
-        
-        $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (?, ?)");
-        foreach ($defaultTemplates as $slug => $content) {
-            $stmt->execute([$slug, $content]);
-            echo "✓ Inserted template: <strong>$slug</strong><br>";
+    // --- NEW LOGIC: UPSERT DEFAULT TEMPLATES ---
+    echo "<h3>Checking for missing default templates...</h3>";
+    $defaultTemplates = [
+        'registered' => "Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service.",
+        'schedule' => "Hello {name}, service scheduled for {date}. Ref: {plate}.",
+        'parts_ordered' => "Parts ordered for {plate}. We will notify you when ready.",
+        'parts_arrived' => "Hello {name}, your parts have arrived! Please confirm your visit here: {link}",
+        'parts_arrived_no_schedule' => "Hello {name}, your parts have arrived! We will contact you shortly to schedule your service. Ref: {plate}",
+        'rescheduled' => "Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}",
+        'completed' => "Service for {plate} is completed. Rate your experience: {link}",
+        'system' => "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
+    ];
+    
+    $existingSlugs = array_column($templates, 'slug');
+    $insertStmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (?, ?) ON DUPLICATE KEY UPDATE slug=slug");
+    
+    $addedCount = 0;
+    foreach ($defaultTemplates as $slug => $content) {
+        if (!in_array($slug, $existingSlugs)) {
+            $insertStmt->execute([$slug, $content]);
+            echo "✓ Inserted new template: <strong>$slug</strong><br>";
+            $addedCount++;
         }
-        
-        echo "<p style='color: green;'>✓ All default templates inserted!</p>";
-        
+    }
+    
+    if ($addedCount > 0) {
+        echo "<p style='color:green;'>✓ Added $addedCount new default template(s).</p>";
     } else {
+        echo "<p>✓ All default templates are already present in the database.</p>";
+    }
+    echo "<hr>";
+    // --- END NEW LOGIC ---
+
+    if (empty($templates)) {
+        echo "<p>No templates found in database. The page will now reload to show the new templates.</p>";
+        echo '<script>setTimeout(() => window.location.reload(), 2000);</script>';
+    } else {
+        echo "<h3>Fixing legacy templates (if any)...</h3>";
         echo "<table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%;'>";
         echo "<tr><th>Slug</th><th>Current Content</th><th>Contains order_id?</th><th>Action</th></tr>";
         
