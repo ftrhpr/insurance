@@ -962,7 +962,6 @@ try {
             $query .= ", status = ?";
             $params[] = $new_status;
         }
-
         if ($assigned_manager_id !== null) {
             $query .= ", assigned_manager_id = ?";
             $params[] = $assigned_manager_id;
