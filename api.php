@@ -961,32 +961,39 @@ try {
     // PARTS COLLECTIONS ENDPOINTS
     // --------------------------------------------------
     if ($action === 'get_parts_collections' && $method === 'GET') {
-        $transfer_id = $_GET['transfer_id'] ?? null;
-        $status = $_GET['status'] ?? null;
+        error_log('get_parts_collections called with $_GET: ' . json_encode($_GET));
+        try {
+            $transfer_id = $_GET['transfer_id'] ?? null;
+            $status = $_GET['status'] ?? null;
 
-        $query = "SELECT pc.*, t.plate AS transfer_plate, t.name AS transfer_name, u.username as assigned_manager_username, u.full_name as manager_full_name 
-                  FROM parts_collections pc 
-                  JOIN transfers t ON pc.transfer_id = t.id
-                  LEFT JOIN users u ON pc.assigned_manager_id = u.id";
-        $params = [];
+            $query = "SELECT pc.*, t.plate AS transfer_plate, t.name AS transfer_name, u.username as assigned_manager_username, u.full_name as manager_full_name 
+                      FROM parts_collections pc 
+                      JOIN transfers t ON pc.transfer_id = t.id
+                      LEFT JOIN users u ON pc.assigned_manager_id = u.id";
+            $params = [];
 
-        if ($transfer_id) {
-            $query .= " WHERE pc.transfer_id = ?";
-            $params[] = $transfer_id;
+            if ($transfer_id) {
+                $query .= " WHERE pc.transfer_id = ?";
+                $params[] = $transfer_id;
+            }
+
+            if ($status) {
+                $query .= ($transfer_id ? " AND" : " WHERE") . " pc.status = ?";
+                $params[] = $status;
+            }
+
+            $query .= " ORDER BY pc.created_at DESC";
+
+            $stmt = $pdo->prepare($query);
+            $stmt->execute($params);
+            $collections = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            jsonResponse(['success' => true, 'collections' => $collections]);
+        } catch (Exception $e) {
+            error_log('get_parts_collections error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['success' => false, 'collections' => [], 'error' => 'Failed to load collections: ' . $e->getMessage()]);
         }
-
-        if ($status) {
-            $query .= ($transfer_id ? " AND" : " WHERE") . " pc.status = ?";
-            $params[] = $status;
-        }
-
-        $query .= " ORDER BY pc.created_at DESC";
-
-        $stmt = $pdo->prepare($query);
-        $stmt->execute($params);
-        $collections = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        jsonResponse(['success' => true, 'collections' => $collections]);
     }
 
     if ($action === 'create_parts_collection' && $method === 'POST') {
