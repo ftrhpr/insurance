@@ -722,6 +722,190 @@ try {
             return response.json();
         }
 
+        // Send SMS
+        async function sendSMS(phone, text, type) {
+            if (!phone) return showToast("No phone number", "error");
+            const clean = phone.replace(/\D/g, '');
+            try {
+                const result = await fetchAPI('send_sms', 'POST', { to: clean, text: text });
+
+                // Log SMS in activity
+                const newLog = {
+                    message: `SMS Sent (${type})`,
+                    timestamp: new Date().toISOString(),
+                    type: 'sms'
+                };
+                const logs = [...(currentCase.systemLogs || []), newLog];
+                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { systemLogs: logs });
+                currentCase.systemLogs = logs;
+
+                updateActivityLog();
+                showToast("SMS Sent", "success");
+
+            } catch (e) {
+                console.error(e);
+                showToast("SMS Failed", "error");
+            }
+        }
+
+        // Accept reschedule
+        async function acceptReschedule() {
+            if (!confirm('Accept reschedule request and update appointment?')) return;
+
+            try {
+                const rescheduleDateTime = currentCase.rescheduleDate.replace(' ', 'T');
+                await fetchAPI(`accept_reschedule&id=${CASE_ID}`, 'POST', {
+                    service_date: rescheduleDateTime
+                });
+
+                currentCase.serviceDate = rescheduleDateTime;
+                currentCase.userResponse = 'Confirmed';
+                currentCase.rescheduleDate = null;
+                currentCase.rescheduleComment = null;
+
+                document.getElementById('input-service-date').value = rescheduleDateTime;
+                showToast("Reschedule Accepted", "Appointment updated and SMS sent to customer", "success");
+
+                // Reload page to hide reschedule section
+                setTimeout(() => window.location.reload(), 1000);
+
+            } catch (e) {
+                console.error('Accept reschedule error:', e);
+                showToast("Error", "Failed to accept reschedule request", "error");
+            }
+        }
+
+        // Decline reschedule
+        async function declineReschedule() {
+            if (!confirm('Decline this reschedule request? The customer will need to be contacted manually.')) return;
+
+            try {
+                await fetchAPI(`decline_reschedule&id=${CASE_ID}`, 'POST', {});
+
+                currentCase.rescheduleDate = null;
+                currentCase.rescheduleComment = null;
+                currentCase.userResponse = 'Pending';
+
+                showToast("Request Declined", "Reschedule request removed", "info");
+
+                // Reload page to hide reschedule section
+                setTimeout(() => window.location.reload(), 1000);
+
+            } catch (e) {
+                console.error('Decline reschedule error:', e);
+                showToast("Error", "Failed to decline request", "error");
+            }
+        }
+
+        // Add note
+        async function addNote() {
+            const newNoteInputEl = document.getElementById('new-note-input');
+            const text = newNoteInputEl ? newNoteInputEl.value.trim() : '';
+            if (!text) return;
+
+            const newNote = {
+                text,
+                authorName: '<?php echo addslashes($current_user_name); ?>',
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const notes = [...(currentCase.internalNotes || []), newNote];
+                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { internalNotes: notes });
+                currentCase.internalNotes = notes;
+
+                // Update notes display
+                updateNotesDisplay();
+
+                if (newNoteInputEl) newNoteInputEl.value = '';
+                showToast("Note Added", "Internal note has been added", "success");
+
+            } catch (error) {
+                console.error('Add note error:', error);
+                showToast("Error", "Failed to add note", "error");
+            }
+        }
+
+        // Delete case
+        async function deleteCase() {
+            if (!confirm("Delete this case permanently?")) return;
+
+            try {
+                const result = await fetchAPI(`delete_transfer&id=${CASE_ID}`, 'POST');
+                if (result.status === 'deleted') {
+                    showToast("Case Deleted", "The case has been permanently removed", "success");
+                    setTimeout(() => window.location.href = 'index.php', 1000);
+                } else {
+                    showToast(result.message || "Failed to delete case", "error");
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast("Failed to delete case", "error");
+            }
+        }
+
+        // Update activity log display
+        function updateActivityLog() {
+            const activityLog = document.getElementById('activity-log-container');
+            if (!currentCase.systemLogs || currentCase.systemLogs.length === 0) {
+                activityLog.innerHTML = '<div class="text-sm text-slate-500 italic">No activity recorded</div>';
+                return;
+            }
+
+            const logHTML = currentCase.systemLogs.slice().reverse().map(log => {
+                const date = new Date(log.timestamp).toLocaleDateString('en-US');
+                const time = new Date(log.timestamp).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                return `
+                    <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="bg-slate-200 rounded-full p-1 mt-0.5">
+                            <i data-lucide="activity" class="w-3 h-3 text-slate-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-slate-500 mb-1">${date} at ${time}</div>
+                            <div class="text-sm text-slate-700">${escapeHtml(log.message)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            activityLog.innerHTML = logHTML;
+            initializeIcons();
+        }
+
+        // Update notes display
+        function updateNotesDisplay() {
+            const notesContainer = document.getElementById('notes-container');
+            if (!currentCase.internalNotes || currentCase.internalNotes.length === 0) {
+                notesContainer.innerHTML = '<div class="text-sm text-slate-500 italic text-center py-4">No internal notes yet</div>';
+                return;
+            }
+
+            const notesHTML = currentCase.internalNotes.map(note => {
+                const date = new Date(note.timestamp).toLocaleDateString('en-US');
+                const time = new Date(note.timestamp).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                return `
+                    <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm">
+                        <p class="text-sm text-slate-700">${escapeHtml(note.text)}</p>
+                        <div class="flex justify-end mt-2">
+                            <span class="text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(note.authorName || 'Manager')} - ${date} ${time}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            notesContainer.innerHTML = notesHTML;
+            initializeIcons();
+        }
+
+        // Print case
+        function printCase() {
+            window.print();
+        }
+
         // Save changes
         async function saveChanges() {
             if (!CAN_EDIT) {
@@ -846,190 +1030,6 @@ try {
                 console.error('Save error:', error);
                 showToast("Error", "Failed to save changes", "error");
             }
-        }
-
-        // Add note
-        async function addNote() {
-            const newNoteInputEl = document.getElementById('new-note-input');
-            const text = newNoteInputEl ? newNoteInputEl.value.trim() : '';
-            if (!text) return;
-
-            const newNote = {
-                text,
-                authorName: '<?php echo addslashes($current_user_name); ?>',
-                timestamp: new Date().toISOString()
-            };
-
-            try {
-                const notes = [...(currentCase.internalNotes || []), newNote];
-                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { internalNotes: notes });
-                currentCase.internalNotes = notes;
-
-                // Update notes display
-                updateNotesDisplay();
-
-                if (newNoteInputEl) newNoteInputEl.value = '';
-                showToast("Note Added", "Internal note has been added", "success");
-
-            } catch (error) {
-                console.error('Add note error:', error);
-                showToast("Error", "Failed to add note", "error");
-            }
-        }
-
-        // Send SMS
-        async function sendSMS(phone, text, type) {
-            if (!phone) return showToast("No phone number", "error");
-            const clean = phone.replace(/\D/g, '');
-            try {
-                const result = await fetchAPI('send_sms', 'POST', { to: clean, text: text });
-
-                // Log SMS in activity
-                const newLog = {
-                    message: `SMS Sent (${type})`,
-                    timestamp: new Date().toISOString(),
-                    type: 'sms'
-                };
-                const logs = [...(currentCase.systemLogs || []), newLog];
-                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { systemLogs: logs });
-                currentCase.systemLogs = logs;
-
-                updateActivityLog();
-                showToast("SMS Sent", "success");
-
-            } catch (e) {
-                console.error(e);
-                showToast("SMS Failed", "error");
-            }
-        }
-
-        // Accept reschedule
-        async function acceptReschedule() {
-            if (!confirm('Accept reschedule request and update appointment?')) return;
-
-            try {
-                const rescheduleDateTime = currentCase.rescheduleDate.replace(' ', 'T');
-                await fetchAPI(`accept_reschedule&id=${CASE_ID}`, 'POST', {
-                    service_date: rescheduleDateTime
-                });
-
-                currentCase.serviceDate = rescheduleDateTime;
-                currentCase.userResponse = 'Confirmed';
-                currentCase.rescheduleDate = null;
-                currentCase.rescheduleComment = null;
-
-                document.getElementById('input-service-date').value = rescheduleDateTime;
-                showToast("Reschedule Accepted", "Appointment updated and SMS sent to customer", "success");
-
-                // Reload page to hide reschedule section
-                setTimeout(() => window.location.reload(), 1000);
-
-            } catch (e) {
-                console.error('Accept reschedule error:', e);
-                showToast("Error", "Failed to accept reschedule request", "error");
-            }
-        }
-
-        // Decline reschedule
-        async function declineReschedule() {
-            if (!confirm('Decline this reschedule request? The customer will need to be contacted manually.')) return;
-
-            try {
-                await fetchAPI(`decline_reschedule&id=${CASE_ID}`, 'POST', {});
-
-                currentCase.rescheduleDate = null;
-                currentCase.rescheduleComment = null;
-                currentCase.userResponse = 'Pending';
-
-                showToast("Request Declined", "Reschedule request removed", "info");
-
-                // Reload page to hide reschedule section
-                setTimeout(() => window.location.reload(), 1000);
-
-            } catch (e) {
-                console.error('Decline reschedule error:', e);
-                showToast("Error", "Failed to decline request", "error");
-            }
-        }
-
-        // Delete case
-        async function deleteCase() {
-            if (!confirm("Delete this case permanently?")) return;
-
-            try {
-                const result = await fetchAPI(`delete_transfer&id=${CASE_ID}`, 'POST');
-                if (result.status === 'deleted') {
-                    showToast("Case Deleted", "The case has been permanently removed", "success");
-                    setTimeout(() => window.location.href = 'index.php', 1000);
-                } else {
-                    showToast(result.message || "Failed to delete case", "error");
-                }
-            } catch (error) {
-                console.error('Delete error:', error);
-                showToast("Failed to delete case", "error");
-            }
-        }
-
-        // Update activity log display
-        function updateActivityLog() {
-            const activityLog = document.getElementById('activity-log-container');
-            if (!currentCase.systemLogs || currentCase.systemLogs.length === 0) {
-                activityLog.innerHTML = '<div class="text-sm text-slate-500 italic">No activity recorded</div>';
-                return;
-            }
-
-            const logHTML = currentCase.systemLogs.slice().reverse().map(log => {
-                const date = new Date(log.timestamp).toLocaleDateString('en-US');
-                const time = new Date(log.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                return `
-                    <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <div class="bg-slate-200 rounded-full p-1 mt-0.5">
-                            <i data-lucide="activity" class="w-3 h-3 text-slate-600"></i>
-                        </div>
-                        <div class="flex-1">
-                            <div class="text-xs text-slate-500 mb-1">${date} at ${time}</div>
-                            <div class="text-sm text-slate-700">${escapeHtml(log.message)}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            activityLog.innerHTML = logHTML;
-            initializeIcons();
-        }
-
-        // Update notes display
-        function updateNotesDisplay() {
-            const notesContainer = document.getElementById('notes-container');
-            if (!currentCase.internalNotes || currentCase.internalNotes.length === 0) {
-                notesContainer.innerHTML = '<div class="text-sm text-slate-500 italic text-center py-4">No internal notes yet</div>';
-                return;
-            }
-
-            const notesHTML = currentCase.internalNotes.map(note => {
-                const date = new Date(note.timestamp).toLocaleDateString('en-US');
-                const time = new Date(note.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                return `
-                    <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm">
-                        <p class="text-sm text-slate-700">${escapeHtml(note.text)}</p>
-                        <div class="flex justify-end mt-2">
-                            <span class="text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(note.authorName || 'Manager')} - ${date} ${time}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            notesContainer.innerHTML = notesHTML;
-            initializeIcons();
-        }
-
-        // Print case
-        function printCase() {
-            window.print();
         }
 
         // Event listeners
