@@ -1,4 +1,50 @@
 <?php
+// Global error handling must be registered immediately so includes (session_config etc.) are also covered
+// --- GLOBAL: Safe fallback error handling ---
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) {
+        return false;
+    }
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+set_exception_handler(function ($ex) {
+    while (ob_get_level() > 0) {
+        @ob_end_clean();
+    }
+    http_response_code(500);
+    if (!headers_sent()) header('Content-Type: application/json');
+    $payload = ['error' => 'Unhandled Exception', 'message' => $ex->getMessage()];
+    if (ini_get('display_errors')) {
+        $payload['file'] = $ex->getFile();
+        $payload['line'] = $ex->getLine();
+    }
+    $json = @json_encode($payload, JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        echo '{"error":"Unhandled Exception"}';
+    } else {
+        echo $json;
+    }
+    exit;
+});
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err !== null && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR])) {
+        while (ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+        http_response_code(500);
+        if (!headers_sent()) header('Content-Type: application/json');
+        $payload = ['error' => 'Fatal Error', 'message' => $err['message'] ?? ''];
+        $json = @json_encode($payload, JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            echo '{"error":"Fatal Error"}';
+        } else {
+            echo $json;
+        }
+        exit;
+    }
+});
+
 require_once 'session_config.php';
 
 header("Content-Type: application/json");
@@ -9,6 +55,8 @@ header("Access-Control-Allow-Headers: Content-Type");
 // --- CONFIGURATION ---
 require_once 'config.php';
 
+
+
 // SERVICE ACCOUNT FILE PATH
 $service_account_file = __DIR__ . '/service-account.json';
 
@@ -16,8 +64,8 @@ $service_account_file = __DIR__ . '/service-account.json';
 try {
     $pdo = getDBConnection();
 } catch (Exception $e) {
-    http_response_code(500); 
-    die(json_encode(['error' => 'DB Connection failed: ' . $e->getMessage()]));
+    http_response_code(500);
+    jsonResponse(['error' => 'DB Connection failed: ' . $e->getMessage()]);
 }
 
 $action = $_GET['action'] ?? '';
@@ -34,7 +82,7 @@ if (empty($_SESSION['csrf_token'])) {
 $publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
     http_response_code(401);
-    die(json_encode(['error' => 'Unauthorized']));
+    jsonResponse(['error' => 'Unauthorized']);
 }
 
 // CSRF protection for state-changing operations (POST/DELETE)
@@ -65,7 +113,16 @@ function getCurrentUserId() {
 }
 
 function jsonResponse($data) {
-    echo json_encode($data);
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+    }
+    // Attempt to encode; if encoding fails, return a safe fallback JSON
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        $fallback = ['error' => 'Failed to encode response'];
+        $json = json_encode($fallback, JSON_UNESCAPED_UNICODE) ?: '{"error":"Failed to encode response"}';
+    }
+    echo $json;
     exit;
 }
 
@@ -602,6 +659,35 @@ try {
         }
     }
 
+    // --- NEW: GET MANAGERS ---
+    if ($action === 'get_managers' && $method === 'GET') {
+        try {
+            $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
+            $stmt->execute();
+            $managers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            jsonResponse(['managers' => $managers]);
+        } catch (Exception $e) {
+            error_log("Database error in get_managers: " . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
+    // --- ITEM SUGGESTIONS ENDPOINT ---
+    if ($action === 'get_item_suggestions' && $method === 'GET') {
+        $type = $_GET['type'] ?? 'part';
+        try {
+            $stmt = $pdo->prepare("SELECT name FROM item_suggestions WHERE type = ? ORDER BY usage_count DESC, name ASC LIMIT 100");
+            $stmt->execute([$type]);
+            $suggestions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            jsonResponse(['suggestions' => $suggestions]);
+        } catch (Exception $e) {
+            error_log("Database error in get_item_suggestions: " . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
     // --- CUSTOMER REVIEWS ENDPOINTS ---
     if ($action === 'get_reviews' && $method === 'GET') {
         try {
@@ -1037,9 +1123,25 @@ try {
         $franchise = $data['franchise'] ?? null;
         $rawText = $data['rawText'] ?? null;
 
-        if (!$collection_id || !$service_date || !$service_time) {
+        if (!$collection_id || !$service_date) {
             http_response_code(400);
-            jsonResponse(['error' => 'Collection ID, service date, and service time are required']);
+            jsonResponse(['error' => 'Collection ID and service date are required']);
+        }
+
+        // If service_time is not provided, see if service_date contains a time (datetime-local)
+        if (empty($service_time) && strpos($service_date, 'T') !== false) {
+            list($sdate, $stime) = explode('T', $service_date);
+            $service_date = $sdate;
+            $service_time = $stime;
+        } elseif (empty($service_time) && strpos($service_date, ' ') !== false) {
+            list($sdate, $stime) = explode(' ', $service_date);
+            $service_date = $sdate;
+            $service_time = $stime;
+        }
+
+        if (empty($service_time)) {
+            // default to 10:00 if not provided
+            $service_time = '10:00';
         }
 
         // --- NEW: AUTO DETECT PLATE AND NAME FROM TRANSFER ---
@@ -1071,6 +1173,7 @@ try {
         $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, phone, amount, franchise, rawText, status, serviceDate, created_at) 
                                VALUES (?, ?, ?, ?, ?, ?, 'Scheduled', ?, NOW())");
         
+        $serviceDateTime = $service_date . ' ' . $service_time;
         $stmt->execute([
             $plate,
             $name,
@@ -1078,7 +1181,7 @@ try {
             $amount,
             $franchise,
             $rawText,
-            $service_date . ' ' . $service_time
+            $serviceDateTime
         ]);
 
         $new_transfer_id = $pdo->lastInsertId();
@@ -1106,8 +1209,13 @@ try {
             }
         }
 
-        jsonResponse(['status' => 'success', 'transfer_id' => $new_transfer_id]);
+        jsonResponse(['success' => true, 'transfer_id' => $new_transfer_id]);
     }
+
+    // Default fallback for unmatched actions - ensure a valid JSON response is always returned
+    if (!headers_sent()) header('Content-Type: application/json');
+    http_response_code(400);
+    jsonResponse(['error' => 'Invalid action or no endpoint matched', 'action' => $action, 'method' => $method]);
 } catch (Exception $e) {
     http_response_code(500);
     jsonResponse(['error' => 'Unexpected error: ' . $e->getMessage()]);

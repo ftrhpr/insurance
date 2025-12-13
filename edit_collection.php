@@ -487,7 +487,7 @@ if (!$collection_id) {
                 const response = await fetch('api.php?action=schedule_service_from_collection', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ collection_id: id, service_date: serviceDate })
+                    body: JSON.stringify({ collection_id: id, service_date: serviceDate.split('T')[0], service_time: (serviceDate.split('T')[1] || '10:00') })
                 });
                 const result = await response.json();
 
