@@ -286,7 +286,6 @@ if (empty($_SESSION['user_id'])) {
                 const statusColors = {
                     pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'hourglass' },
                     collected: { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle' },
-                    collected_waiting: { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'clock', display: 'Collected, waiting for schedule' },
                     cancelled: { bg: 'bg-red-100', text: 'text-red-800', icon: 'x-circle' }
                 };
                 const statusInfo = statusColors[collection.status] || { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'help-circle' };
@@ -294,9 +293,6 @@ if (empty($_SESSION['user_id'])) {
                 const managerName = collection.manager_full_name || 'Unassigned';
                 const totalItems = collection.parts_list.reduce((sum, item) => sum + parseInt(item.quantity, 10), 0);
                 const totalPrice = collection.parts_list.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity, 10)), 0);
-
-                // Format status display text
-                const statusDisplayText = statusInfo.display || (collection.status.charAt(0).toUpperCase() + collection.status.slice(1).replace(/_/g, ' '));
 
                 html += `
                     <div class="glass-card rounded-2xl shadow-lg card-hover border border-white/30 overflow-hidden">
@@ -309,7 +305,7 @@ if (empty($_SESSION['user_id'])) {
                                 <div class="flex items-center space-x-2">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.bg} ${statusInfo.text}">
                                         <i data-lucide="${statusInfo.icon}" class="w-3 h-3 mr-1"></i>
-                                        ${statusDisplayText}
+                                        ${collection.status.charAt(0).toUpperCase() + collection.status.slice(1)}
                                     </span>
                                 </div>
                             </div>

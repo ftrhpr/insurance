@@ -40,9 +40,7 @@ if (session_status() === PHP_SESSION_NONE) {
             session_unset();
             session_destroy();
             http_response_code(401);
-            if (!headers_sent()) header('Content-Type: application/json');
-            echo json_encode(['error' => 'Session has expired or is invalid. Please log in again.']);
-            exit;
+            die(json_encode(['error' => 'Session has expired or is invalid. Please log in again.']));
         }
     }
 }

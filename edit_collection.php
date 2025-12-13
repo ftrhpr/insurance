@@ -103,7 +103,6 @@ if (!$collection_id) {
                             <select id="editStatus" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-blue-400 focus:ring-blue-400 px-3 py-2 text-sm text-gray-900">
                                 <option value="pending">Pending</option>
                                 <option value="collected">Collected</option>
-                                <option value="collected_waiting">Collected, waiting for schedule</option>
                                 <option value="cancelled">Cancelled</option>
                             </select>
                         </div>
@@ -160,101 +159,12 @@ if (!$collection_id) {
         </div>
     </div>
 
-    <!-- Collection Modal -->
-    <div id="collection-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div class="bg-gradient-to-r from-orange-500 to-red-500 p-6 text-white">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-white/20 p-2 rounded-lg">
-                            <i data-lucide="package" class="w-6 h-6"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-bold">Parts Collected</h3>
-                            <p class="text-sm opacity-90">Schedule service or choose next step</p>
-                        </div>
-                    </div>
-                    <button onclick="closeCollectionModal()" class="text-white/70 hover:text-white transition-colors">
-                        <i data-lucide="x" class="w-6 h-6"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="p-6 space-y-6">
-                <!-- Option 1: Schedule Service -->
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="bg-blue-500 p-2 rounded-lg">
-                            <i data-lucide="calendar-check" class="w-5 h-5 text-white"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-800">Schedule Service</h4>
-                            <p class="text-sm text-slate-600">Set date and time for service</p>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <input id="modal-service-date" type="datetime-local" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
-                        <button onclick="scheduleService()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all active:scale-95">
-                            <i data-lucide="check" class="w-4 h-4 inline mr-2"></i>Schedule Service
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Option 2: Choose Different Status -->
-                <div class="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="bg-slate-500 p-2 rounded-lg">
-                            <i data-lucide="arrow-right" class="w-5 h-5 text-white"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-800">Skip Scheduling</h4>
-                            <p class="text-sm text-slate-600">Choose a different status</p>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <select id="modal-alternative-status" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm font-medium focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none">
-                            <option value="">Select status...</option>
-                            <option value="collected_waiting">Collected, waiting for schedule</option>
-                            <option value="pending">Pending</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                        <button onclick="setAlternativeStatus()" class="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-all active:scale-95">
-                            <i data-lucide="arrow-right" class="w-4 h-4 inline mr-2"></i>Set Status
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             loadManagers();
             loadCollectionData();
             lucide.createIcons();
             document.getElementById('editForm').addEventListener('submit', saveEdit);
-
-            // Handle status change modal
-            document.getElementById('editStatus').addEventListener('change', function() {
-                const selectedStatus = this.value;
-                // Show collection modal when Collected status is selected
-                if (selectedStatus === 'collected') {
-                    // Reset to previous status temporarily
-                    const previousStatus = this.dataset.previousValue || 'pending';
-                    this.value = previousStatus;
-                    // Show modal
-                    openCollectionModal();
-                }
-                // Store current value for next change
-                this.dataset.previousValue = this.value;
-            });
-
-            // Close collection modal when clicking outside
-            document.getElementById('collection-modal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeCollectionModal();
-                }
-            });
         });
 
         async function loadManagers() {
@@ -287,7 +197,6 @@ if (!$collection_id) {
                 if (collection) {
                     document.getElementById('editTransferInfo').textContent = `For: ${collection.transfer_plate} - ${collection.transfer_name}`;
                     document.getElementById('editStatus').value = collection.status;
-                    document.getElementById('editStatus').dataset.previousValue = collection.status; // Initialize previous value
                     document.getElementById('editAssignedManager').value = collection.assigned_manager_id || "";
 
                     const partsList = JSON.parse(collection.parts_list || '[]');
@@ -455,77 +364,10 @@ if (!$collection_id) {
             });
         }
 
-        // Collection modal functions
-        function openCollectionModal() {
-            document.getElementById('collection-modal').classList.remove('hidden');
-            // Set default service date to next business day at 10 AM
-            const today = new Date();
-            const nextDay = new Date(today);
-            nextDay.setDate(today.getDate() + 1);
-            // Skip weekends
-            if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1);
-            if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2);
-            nextDay.setHours(10, 0, 0, 0);
-            const defaultDateTime = nextDay.toISOString().slice(0, 16);
-            document.getElementById('modal-service-date').value = defaultDateTime;
-        }
-
-        function closeCollectionModal() {
-            document.getElementById('collection-modal').classList.add('hidden');
-        }
-
-        async function scheduleService() {
-            const serviceDate = document.getElementById('modal-service-date').value;
-            if (!serviceDate) {
-                showToast('Date Required', 'Please select a service date and time', 'error');
-                return;
-            }
-
-            try {
-                // Update the transfer status to Scheduled with service date
-                const id = document.getElementById('editId').value;
-                const response = await fetch('api.php?action=schedule_service_from_collection', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ collection_id: id, service_date: serviceDate })
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    // Save the collection with "collected" status
-                    await saveEdit(null, 'collected');
-                    closeCollectionModal();
-                    // Manually update the dropdown for visual consistency
-                    document.getElementById('editStatus').value = 'collected';
-                } else {
-                    showToast(result.error || 'Error scheduling service', 'error');
-                }
-            } catch (error) {
-                console.error('Schedule service error:', error);
-                showToast("Error", "Failed to schedule service", "error");
-            }
-        }
-
-        async function setAlternativeStatus() {
-            const alternativeStatus = document.getElementById('modal-alternative-status').value;
-            if (!alternativeStatus) {
-                showToast('Status Required', 'Please select a status', 'error');
-                return;
-            }
-
-            // Save the collection with the selected alternative status
-            await saveEdit(null, alternativeStatus);
-            closeCollectionModal();
-            // Manually update the dropdown for visual consistency
-            document.getElementById('editStatus').value = alternativeStatus;
-        }
-
-        async function saveEdit(e, newStatus = null) {
-            if (e) {
-                e.preventDefault();
-            }
+        async function saveEdit(e) {
+            e.preventDefault();
             const id = document.getElementById('editId').value;
-            const status = newStatus || document.getElementById('editStatus').value;
+            const status = document.getElementById('editStatus').value;
             const assigned_manager_id = document.getElementById('editAssignedManager').value;
 
             const items = [];

@@ -949,9 +949,6 @@ try {
         $old_status = $collection_info['status'] ?? null;
         $transfer_id = $collection_info['transfer_id'] ?? null;
 
-        // --- DETAILED LOGGING ---
-        error_log("[SMS DEBUG] Collection ID: $id | Old Status: $old_status | New Status: $new_status");
-
         // Calculate total cost
         $total_cost = 0;
         foreach ($parts_list as $part) {
@@ -978,7 +975,7 @@ try {
         $stmt->execute($params);
 
         // --- NEW LOGIC: Connect to processing queue ---
-        if (($new_status === 'collected' || $new_status === 'collected_waiting') && ($old_status !== 'collected' && $old_status !== 'collected_waiting') && $transfer_id) {
+        if ($new_status === 'collected' && $old_status !== 'collected' && $transfer_id) {
             // 1. Update transfer status
             $update_transfer_stmt = $pdo->prepare("UPDATE transfers SET status = 'Parts Arrived' WHERE id = ?");
             $update_transfer_stmt->execute([$transfer_id]);
@@ -989,35 +986,20 @@ try {
             $tr = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($tr && !empty($tr['phone'])) {
-                // Choose template based on status
-                if ($new_status === 'collected') {
-                    $template_slug = 'parts_arrived';
-                } elseif ($new_status === 'collected_waiting') {
-                    $template_slug = 'parts_arrived_no_schedule';
-                } else {
-                    $template_slug = null; // No SMS for other status changes from here
-                }
-
-                // --- DETAILED LOGGING ---
-                error_log("[SMS DEBUG] Template Selected: " . ($template_slug ?? 'None'));
+                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'parts_arrived'");
+                $stmt->execute();
+                $template = $stmt->fetchColumn();
                 
-                if ($template_slug) {
-                    $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = ?");
-                    $stmt->execute([$template_slug]);
-                    $template = $stmt->fetchColumn();
+                if ($template) {
+                    $link = "https://portal.otoexpress.ge/public_view.php?id=" . $transfer_id;
+                    $smsText = str_replace(
+                        ['{name}', '{plate}', '{amount}', '{link}'],
+                        [$tr['name'], $tr['plate'], $tr['amount'], $link],
+                        $template
+                    );
                     
-                    if ($template) {
-                        $link = "https://portal.otoexpress.ge/public_view.php?id=" . $transfer_id;
-                        $smsText = str_replace(
-                            ['{name}', '{plate}', '{amount}', '{link}'],
-                            [$tr['name'], $tr['plate'],
-                            $tr['amount'], $link],
-                            $template
-                        );
-                        
-                        $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
-                        @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to={$tr['phone']}&from=OTOMOTORS&text=" . urlencode($smsText));
-                    }
+                    $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+                    @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to={$tr['phone']}&from=OTOMOTORS&text=" . urlencode($smsText));
                 }
             }
             
@@ -1026,38 +1008,6 @@ try {
             $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
             $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'message' => $log_message]), $transfer_id]);
         }
-
-        jsonResponse(['success' => true]);
-    }
-
-    if ($action === 'schedule_service_from_collection' && $method === 'POST') {
-        $data = getJsonInput();
-        $collection_id = $data['collection_id'] ?? null;
-        $service_date = $data['service_date'] ?? null;
-
-        if (!$collection_id || !$service_date) {
-            http_response_code(400);
-            jsonResponse(['error' => 'Collection ID and service date are required']);
-        }
-
-        // Get transfer_id from collection
-        $stmt = $pdo->prepare("SELECT transfer_id FROM parts_collections WHERE id = ?");
-        $stmt->execute([$collection_id]);
-        $transfer_id = $stmt->fetchColumn();
-
-        if (!$transfer_id) {
-            http_response_code(404);
-            jsonResponse(['error' => 'Collection not found']);
-        }
-
-        // Update transfer with service date and status
-        $stmt = $pdo->prepare("UPDATE transfers SET status = 'Scheduled', serviceDate = ? WHERE id = ?");
-        $stmt->execute([$service_date, $transfer_id]);
-
-        // Add system log
-        $log_message = "Service scheduled from parts collection #{$collection_id} for " . date('M j, Y g:i A', strtotime($service_date));
-        $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
-        $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'message' => $log_message, 'type' => 'info']), $transfer_id]);
 
         jsonResponse(['success' => true]);
     }
