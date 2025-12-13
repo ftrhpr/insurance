@@ -1090,6 +1090,64 @@ try {
         }
     }
 
+    // --- SEND SMS ENDPOINT ---
+    if ($action === 'send_sms' && $method === 'POST') {
+        $data = getJsonInput();
+        $to = $data['to'] ?? '';
+        $text = $data['text'] ?? '';
+
+        if (empty($to) || empty($text)) {
+            jsonResponse(['status' => 'error', 'message' => 'Phone number and message text are required']);
+        }
+
+        // Clean phone number - ensure it starts with country code
+        $to = preg_replace('/\D/', '', $to);
+        if (!preg_match('/^995/', $to)) {
+            $to = '995' . $to;
+        }
+
+        if (strlen($to) < 11) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid phone number format']);
+        }
+
+        try {
+            $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+            $url = "https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($text);
+            
+            error_log("SMS sending attempt: to=$to, text=" . substr($text, 0, 50) . "...");
+            
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 10,
+                    'user_agent' => 'OTOMOTORS Portal'
+                ]
+            ]);
+            
+            $response = @file_get_contents($url, false, $context);
+            
+            if ($response === false) {
+                $error = error_get_last();
+                error_log("SMS sending failed for $to: HTTP request failed - " . ($error['message'] ?? 'Unknown error'));
+                jsonResponse(['status' => 'error', 'message' => 'Failed to send SMS - network error']);
+            } else {
+                error_log("SMS API response for $to: $response");
+                
+                // gosms.ge API returns XML response, check for success
+                if (strpos($response, '<result>1</result>') !== false || 
+                    strpos($response, 'success') !== false || 
+                    strpos($response, '<status>success</status>') !== false) {
+                    jsonResponse(['status' => 'success', 'message' => 'SMS sent successfully']);
+                } else {
+                    error_log("SMS sending failed for $to: API response indicates failure: $response");
+                    jsonResponse(['status' => 'error', 'message' => 'SMS sending failed - API error']);
+                }
+            }
+        } catch (Exception $e) {
+            error_log("SMS sending exception for $to: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to send SMS - exception occurred']);
+        }
+    }
+
     // Default response if no action matched
     jsonResponse(['error' => 'Unknown action: ' . $action]);
 
