@@ -1,9 +1,5 @@
 <?php
-// test_connection.php - Test database connection and diagnose issues
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// test_connection.php - Simple script to test the database connection
 
 echo "<h2>Database Connection Test</h2>";
 echo "<hr>";
@@ -103,12 +99,23 @@ try {
         }
         echo "</ul>";
     } else {
-        echo "<p style='color: orange;'>⚠ orders table does NOT exist (you'll need to create it or update the code to match your table name)</p>";
+        echo "<p style='color: orange;'>⚠ orders table does NOT exist (you'll need to create it or update the code to match your table name)<br>";
     }
     
-} catch(PDOException $e) {
-    echo "✗ PDO Connection failed: " . $e->getMessage() . "<br>";
-    echo "Error code: " . $e->getCode() . "<br><br>";
+    // 2. Check for the main 'transfers' table
+    $stmt = $pdo->query("SELECT 1 FROM transfers LIMIT 1");
+    echo "✅ 'transfers' table exists<br>";
+} catch (PDOException $e) {
+    echo "❌ <b>Connection Error:</b> " . $e->getMessage() . "<br>";
+    if (strpos($e->getMessage(), 'Unknown database') !== false) {
+        echo "⚠ Database does not exist. Please create the database using the provided SQL script.<br>";
+    } elseif (strpos($e->getMessage(), 'Access denied') !== false) {
+        echo "⚠ Access denied. Check your username and password.<br>";
+    } elseif (strpos($e->getMessage(), 'Connection refused') !== false) {
+        echo "⚠ Connection refused. Is the MySQL server running?<br>";
+    } else {
+        echo "⚠ Unknown error. Please check your configuration.<br>";
+    }
     
     echo "<h3>Possible Solutions:</h3>";
     echo "<ol>";
