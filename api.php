@@ -482,46 +482,30 @@ try {
 
     if ($action === 'get_transfers' && $method === 'GET') {
         try {
-            try {
-                try {
-                    // Includes review columns and reschedule data, now includes completed transfers for processing queue
-                    $stmt = $pdo->prepare("SELECT *, serviceDate as service_date, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
-                    $stmt->execute();
-                    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    foreach ($rows as &$row) {
-                        $row['internalNotes'] = json_decode($row['internalNotes'] ?? '[]');
-             
-               $row['systemLogs'] = json_decode($row['systemLogs'] ?? '[]');
-                 
-            /   / serviceDate is already correctly named in the database
-                    }
-                    // Also get vehicles for vehicle DB page
-                    $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles ORDER BY plate ASC");
-                    $vehicleStmt->execute();
-                    $vehicles = $vehies
-            ]);
-        } catch (Exception $e) {
-            error_log('get_transfers error: ' . $c->getMelsage());eStmt->fetchAll(PDO::FETCH_ASSOC);
-            http_response_code(500);
-            jsonResponse(['error' => 'Failed to load transfers: ' . $e->getMessage()   
-        }     
-                jsonResponse([es
-            ]);
-        } catch (Exception $e) {
-            error_log('get_transfers error: ' . $->getMesage());
-            http_response_code(500);
-            jsonResponse(['error' => 'Failed to load transfers: ' . $e->getMessage()   
-        }     'transfers' => $rows,
+            // Includes review columns and reschedule data, now includes completed transfers for processing queue
+            $stmt = $pdo->prepare("SELECT *, serviceDate as service_date, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$row) {
+                $row['internalNotes'] = json_decode($row['internalNotes'] ?? '[]');
+                $row['systemLogs'] = json_decode($row['systemLogs'] ?? '[]');
+            }
+
+            // Also get vehicles for vehicle DB page
+            $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles ORDER BY plate ASC");
+            $vehicleStmt->execute();
+            $vehicles = $vehicleStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            jsonResponse([
+                'transfers' => $rows,
                 'vehicles' => $vehicles
             ]);
         } catch (Exception $e) {
             error_log('get_transfers error: ' . $e->getMessage());
-            http_response_code(500); {
-       try 
-            error_log('get_sms_templates called');
-                jsonResponse(['error' => 'Failed to load transfers: ' . $e->getMessage()]);
-            }
+            http_response_code(500);
+            jsonResponse(['error' => 'Failed to load transfers: ' . $e->getMessage()]);
         }
+    }
 
     // -    -- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
       if (  $action === 'get_transfers_for_parts' && $method === 'GET') {
