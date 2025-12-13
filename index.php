@@ -1466,11 +1466,32 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         async function loadSMSTemplates() {
             try {
                 const serverTemplates = await fetchAPI('get_sms_templates');
-                smsTemplates = { ...defaultTemplates, ...serverTemplates };
+                // Convert array format to object format for backward compatibility
+                const templateObj = {};
+                serverTemplates.forEach(template => {
+                    templateObj[template.slug] = template.content;
+                });
+                smsTemplates = { ...defaultTemplates, ...templateObj };
+                // Store workflow stage bindings for automatic SMS sending
+                window.smsWorkflowBindings = {};
+                serverTemplates.forEach(template => {
+                    if (template.workflow_stages && template.workflow_stages.length > 0) {
+                        template.workflow_stages.forEach(stage => {
+                            if (!window.smsWorkflowBindings[stage]) {
+                                window.smsWorkflowBindings[stage] = [];
+                            }
+                            window.smsWorkflowBindings[stage].push({
+                                slug: template.slug,
+                                content: template.content
+                            });
+                        });
+                    }
+                });
             } catch (e) {
                 console.error("Template load error:", e);
                 // Fallback to defaults
                 smsTemplates = defaultTemplates;
+                window.smsWorkflowBindings = {};
             }
         }
 
@@ -2382,83 +2403,42 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 window.sendSMS(phone, msg, 'rescheduled');
             }
 
-            // --- NEW AUTOMATED SMS LOGIC ---
+            // --- AUTOMATED SMS LOGIC BASED ON WORKFLOW STAGES ---
             if(status !== t.status) {
                 updates.systemLogs.push({ message: `Status: ${t.status} -> ${status}`, timestamp: new Date().toISOString(), type: 'status' });
-                
-                if (phone) {
-                    const templateData = { 
-                        id: t.id, 
-                        name: t.name, 
-                        plate: t.plate, 
-                        amount: t.amount, 
+
+                if (phone && window.smsWorkflowBindings && window.smsWorkflowBindings[status]) {
+                    const templateData = {
+                        id: t.id,
+                        name: t.name,
+                        plate: t.plate,
+                        amount: t.amount,
                         serviceDate: serviceDate || t.serviceDate // Use new date if set, else old
                     };
 
-                    // 1. Processing -> Auto-assign schedule and send schedule confirmation SMS
-                    if (status === 'Processing') {
-                        // Auto-assign next business day if no date set
-                        let assignedDate = serviceDate || t.serviceDate;
-                        if (!assignedDate) {
-                            const today = new Date();
-                            const nextDay = new Date(today);
-                            nextDay.setDate(today.getDate() + 1);
-                            // Skip weekends
-                            if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1); // Sunday -> Monday
-                            if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2); // Saturday -> Monday
-                            // Set default time to 10:00 AM
-                            nextDay.setHours(10, 0, 0, 0);
-                            assignedDate = nextDay.toISOString().slice(0, 16);
-                            updates.serviceDate = assignedDate;
-                            updates.systemLogs.push({ message: `Auto-assigned service date: ${assignedDate.replace('T', ' ')}`, timestamp: new Date().toISOString(), type: 'info' });
-                        }
-                        
-                        const templateDataWithDate = { 
-                            id: t.id, 
-                            name: t.name, 
-                            plate: t.plate, 
-                            amount: t.amount, 
-                            serviceDate: assignedDate 
-                        };
-                        const msg = getFormattedMessage('schedule', templateDataWithDate);
-                        window.sendSMS(phone, msg, 'schedule_sms');
-                    }
-                    
-                    // 2. Scheduled -> Service Schedule SMS
-                    else if (status === 'Scheduled') {
-                        if(!serviceDate) showToast("Note", "Status set to Scheduled without a date.", "info");
-                        const msg = getFormattedMessage('schedule', templateData);
-                        window.sendSMS(phone, msg, 'schedule_sms');
-                    }
+                    // Send SMS for all templates bound to this workflow stage
+                    window.smsWorkflowBindings[status].forEach(template => {
+                        const msg = getFormattedMessage(template.slug, templateData);
+                        window.sendSMS(phone, msg, `${template.slug}_sms`);
+                    });
+                }
 
-                    // 3. Contacted -> Called SMS
-                    else if (status === 'Called') {
-                        const msg = getFormattedMessage('called', templateData);
-                        window.sendSMS(phone, msg, 'contacted_sms');
-                    }
-
-                    // 4. Parts Ordered -> Parts Ordered SMS
-                    else if (status === 'Parts Ordered') {
-                        const msg = getFormattedMessage('parts_ordered', templateData);
-                        window.sendSMS(phone, msg, 'parts_ordered_sms');
-                    }
-
-                    // 5. Parts Arrived -> Parts Arrived SMS
-                    else if (status === 'Parts Arrived') {
-                        const msg = getFormattedMessage('parts_arrived', templateData);
-                        window.sendSMS(phone, msg, 'parts_arrived_sms');
-                    }
-
-                    // 6. Completed -> Completed SMS with review link
-                    else if (status === 'Completed') {
-                        const msg = getFormattedMessage('completed', templateData);
-                        window.sendSMS(phone, msg, 'completed_sms');
-                    }
-
-                    // 7. Issue -> Issue SMS
-                    else if (status === 'Issue') {
-                        const msg = getFormattedMessage('issue', templateData);
-                        window.sendSMS(phone, msg, 'issue_sms');
+                // Special handling for Processing status - auto-assign schedule
+                if (status === 'Processing') {
+                    // Auto-assign next business day if no date set
+                    let assignedDate = serviceDate || t.serviceDate;
+                    if (!assignedDate) {
+                        const today = new Date();
+                        const nextDay = new Date(today);
+                        nextDay.setDate(today.getDate() + 1);
+                        // Skip weekends
+                        if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1); // Sunday -> Monday
+                        if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2); // Saturday -> Monday
+                        // Set default time to 10:00 AM
+                        nextDay.setHours(10, 0, 0, 0);
+                        assignedDate = nextDay.toISOString().slice(0, 16);
+                        updates.serviceDate = assignedDate;
+                        updates.systemLogs.push({ message: `Auto-assigned service date: ${assignedDate.replace('T', ' ')}`, timestamp: new Date().toISOString(), type: 'info' });
                     }
                 }
             }

@@ -33,20 +33,40 @@ try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Fetch SMS templates
-    $stmt = $pdo->query("SELECT * FROM sms_templates");
+    // Fetch SMS templates with workflow bindings
+    $stmt = $pdo->query("SELECT slug, content, workflow_stages, is_active FROM sms_templates ORDER BY slug");
     $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Fetch workflow stages
+    $stmt = $pdo->query("SELECT stage_name, description FROM workflow_stages WHERE is_active = 1 ORDER BY stage_order");
+    $workflowStages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
     $templatesData = [];
+    $workflowBindings = [];
     foreach ($templates as $tpl) {
-        $templatesData[$tpl['slug']] = $tpl['content'];
+        $templatesData[$tpl['slug']] = [
+            'content' => $tpl['content'],
+            'workflow_stages' => json_decode($tpl['workflow_stages'] ?? '[]', true),
+            'is_active' => $tpl['is_active']
+        ];
+        $workflowBindings[$tpl['slug']] = $templatesData[$tpl['slug']]['workflow_stages'];
     }
     
     // Merge with defaults (use database values if exist, otherwise use defaults)
-    $templatesData = array_merge($defaultTemplatesData, $templatesData);
+    foreach ($defaultTemplatesData as $slug => $content) {
+        if (!isset($templatesData[$slug])) {
+            $templatesData[$slug] = [
+                'content' => $content,
+                'workflow_stages' => [],
+                'is_active' => true
+            ];
+        }
+    }
     
 } catch (PDOException $e) {
     $templatesData = $defaultTemplatesData;
+    $workflowStages = [];
+    $workflowBindings = [];
     error_log("Database error in templates.php: " . $e->getMessage());
 }
 ?>
@@ -116,14 +136,36 @@ try {
                 <div class="space-y-4">
                     <!-- Welcome SMS -->
                     <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                                <i data-lucide="user-check" class="w-4 h-4 text-emerald-600"></i>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                    <i data-lucide="user-check" class="w-4 h-4 text-emerald-600"></i>
+                                </div>
+                                <h3 class="font-bold text-slate-800">Welcome SMS</h3>
                             </div>
-                            <h3 class="font-bold text-slate-800">Welcome SMS</h3>
-                            <span class="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full ml-auto">Processing</span>
+                            <div class="flex items-center gap-2">
+                                <label class="flex items-center gap-1 text-xs">
+                                    <input type="checkbox" id="active-registered" <?php echo ($templatesData['registered']['is_active'] ?? true) ? 'checked' : ''; ?> class="w-3 h-3">
+                                    Active
+                                </label>
+                            </div>
                         </div>
-                        <textarea id="tpl-registered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['registered'] ?? ''); ?></textarea>
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Workflow Stages:</label>
+                            <div class="flex flex-wrap gap-1">
+                                <?php foreach ($workflowStages as $stage): ?>
+                                <label class="flex items-center gap-1 text-xs bg-slate-100 px-2 py-1 rounded">
+                                    <input type="checkbox" 
+                                           name="stages-registered[]" 
+                                           value="<?php echo $stage['stage_name']; ?>" 
+                                           <?php echo in_array($stage['stage_name'], $templatesData['registered']['workflow_stages'] ?? []) ? 'checked' : ''; ?>
+                                           class="w-3 h-3">
+                                    <?php echo $stage['stage_name']; ?>
+                                </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <textarea id="tpl-registered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['registered']['content'] ?? ''); ?></textarea>
                     </div>
 
                     <!-- Customer Contacted -->
@@ -399,17 +441,25 @@ try {
             }
 
             try {
-                smsTemplates.registered = getVal('tpl-registered');
-                smsTemplates.called = getVal('tpl-called');
-                smsTemplates.contacted = getVal('tpl-contacted');
-                smsTemplates.schedule = getVal('tpl-schedule');
-                smsTemplates.parts_ordered = getVal('tpl-parts_ordered');
-                smsTemplates.parts_arrived = getVal('tpl-parts_arrived');
-                smsTemplates.rescheduled = getVal('tpl-rescheduled');
-                smsTemplates.reschedule_accepted = getVal('tpl-reschedule_accepted');
-                smsTemplates.completed = getVal('tpl-completed');
-                smsTemplates.issue = getVal('tpl-issue');
-                smsTemplates.system = getVal('tpl-system');
+                const smsTemplates = {};
+
+                // Collect data for each template
+                const templateSlugs = ['registered', 'called', 'contacted', 'schedule', 'parts_ordered', 'parts_arrived', 'rescheduled', 'reschedule_accepted', 'completed', 'issue', 'system'];
+                
+                for (const slug of templateSlugs) {
+                    const content = getVal(`tpl-${slug}`);
+                    const isActive = document.getElementById(`active-${slug}`)?.checked ?? true;
+                    
+                    // Collect selected workflow stages
+                    const stageCheckboxes = document.querySelectorAll(`input[name="stages-${slug}[]"]:checked`);
+                    const workflowStages = Array.from(stageCheckboxes).map(cb => cb.value);
+                    
+                    smsTemplates[slug] = {
+                        content: content,
+                        workflow_stages: workflowStages,
+                        is_active: isActive
+                    };
+                }
 
                 await fetchAPI('save_templates', 'POST', smsTemplates);
                 showToast('Success', 'All templates saved successfully', 'success');

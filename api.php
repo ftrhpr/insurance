@@ -453,12 +453,31 @@ try {
 
     // --- SMS TEMPLATES ACTIONS ---
     if ($action === 'get_sms_templates' && $method === 'GET') {
-        $stmt = $pdo->prepare("SELECT slug, content FROM sms_templates");
+        $stmt = $pdo->prepare("SELECT slug, content, workflow_stages, is_active FROM sms_templates WHERE is_active = 1 ORDER BY slug");
         $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-        jsonResponse($rows ?: new stdClass());
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Convert workflow_stages JSON to array
+        foreach ($rows as &$row) {
+            $row['workflow_stages'] = json_decode($row['workflow_stages'] ?? '[]', true);
+        }
+
+        jsonResponse($rows ?: []);
     }
+
+    if ($action === 'get_workflow_stages' && $method === 'GET') {
+        $stmt = $pdo->prepare("SELECT stage_name, description, stage_order FROM workflow_stages WHERE is_active = 1 ORDER BY stage_order");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        jsonResponse($rows ?: []);
+    }
+
     if ($action === 'save_templates' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required to manage SMS templates']);
+        }
+
         $data = getJsonInput();
 
         // Debug: log incoming payload to help diagnose 500 errors
@@ -472,34 +491,57 @@ try {
         }
 
         try {
-            // Ensure table exists (defensive migration) to avoid missing-table 500 errors
-            $createSql = "CREATE TABLE IF NOT EXISTS sms_templates (
-                slug VARCHAR(50) PRIMARY KEY,
-                content TEXT
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-            $pdo->exec($createSql);
+            // Ensure table has new columns (defensive migration)
+            $pdo->exec("ALTER TABLE sms_templates
+                       ADD COLUMN IF NOT EXISTS workflow_stages JSON DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT 1,
+                       ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
-            // Use distinct parameter names for the UPDATE clause to avoid PDO native-prep bug
-            $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content) VALUES (:slug, :content) ON DUPLICATE KEY UPDATE content = :content_update");
-            foreach ($data as $slug => $content) {
-                // Log each insert attempt for debugging
-                error_log("save_templates inserting slug={$slug} len=" . strlen($content));
-                $params = [':slug' => $slug, ':content' => $content, ':content_update' => $content];
-                try {
-                    $stmt->execute($params);
-                } catch (Exception $ex) {
-                    // Log detailed context for debugging parameter issues
-                    error_log("save_templates execute failed for slug={$slug}: " . $ex->getMessage());
-                    error_log("Query: " . $stmt->queryString);
-                    error_log("Params: " . var_export($params, true));
-                    throw $ex; // rethrow to be caught by outer catch
+            $pdo->beginTransaction();
+
+            foreach ($data as $slug => $templateData) {
+                $content = $templateData['content'] ?? '';
+                $workflowStages = $templateData['workflow_stages'] ?? [];
+                $isActive = $templateData['is_active'] ?? true;
+
+                // Validate slug and content
+                if (empty($slug) || !is_string($slug)) {
+                    $pdo->rollBack();
+                    http_response_code(400);
+                    jsonResponse(['error' => 'Invalid template slug']);
                 }
+
+                if (empty($content) || !is_string($content)) {
+                    $pdo->rollBack();
+                    http_response_code(400);
+                    jsonResponse(['error' => 'Invalid template content']);
+                }
+
+                // Convert workflow stages to JSON
+                $workflowStagesJson = json_encode($workflowStages);
+
+                // Insert or update template
+                $stmt = $pdo->prepare("INSERT INTO sms_templates (slug, content, workflow_stages, is_active, updated_at)
+                                      VALUES (?, ?, ?, ?, NOW())
+                                      ON DUPLICATE KEY UPDATE
+                                      content = VALUES(content),
+                                      workflow_stages = VALUES(workflow_stages),
+                                      is_active = VALUES(is_active),
+                                      updated_at = NOW()");
+
+                $stmt->execute([$slug, $content, $workflowStagesJson, $isActive ? 1 : 0]);
+
+                error_log("save_templates processed slug={$slug} stages=" . json_encode($workflowStages));
             }
-            jsonResponse(['status' => 'saved']);
+
+            $pdo->commit();
+            jsonResponse(['status' => 'success', 'message' => 'Templates saved successfully']);
+
         } catch (Exception $e) {
+            $pdo->rollBack();
             error_log("Database error in save_templates: " . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['message' => 'Database error: ' . $e->getMessage(), 'error' => true]);
+            jsonResponse(['error' => 'Failed to save templates: ' . $e->getMessage()]);
         }
     }
 
