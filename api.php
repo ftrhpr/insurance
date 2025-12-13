@@ -912,6 +912,41 @@ try {
         jsonResponse(['success' => true]);
     }
 
+    // --- DELETE TRANSFER ENDPOINT ---
+    if ($action === 'delete_transfer' && $method === 'POST') {
+        // Check permissions - managers and admins can delete transfers
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Manager access required to delete transfers']);
+        }
+
+        $id = $_GET['id'] ?? null;
+
+        if (!$id) {
+            http_response_code(400);
+            jsonResponse(['status' => 'error', 'message' => 'Transfer ID is required']);
+        }
+
+        try {
+            // Check if transfer exists
+            $stmt = $pdo->prepare("SELECT id FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            if ($stmt->rowCount() === 0) {
+                jsonResponse(['status' => 'error', 'message' => 'Transfer not found']);
+            }
+
+            // Delete the transfer (CASCADE will handle related parts_collections)
+            $stmt = $pdo->prepare("DELETE FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+
+            jsonResponse(['status' => 'deleted', 'message' => 'Transfer deleted successfully']);
+        } catch (Exception $e) {
+            error_log("Delete transfer error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to delete transfer: ' . $e->getMessage()]);
+        }
+    }
+
     // --------------------------------------------------
     // PARTS SUGGESTIONS ENDPOINT
     // --------------------------------------------------
