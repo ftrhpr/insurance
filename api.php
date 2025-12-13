@@ -481,23 +481,30 @@ try {
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
-        // Includes review columns and reschedule data, now includes completed transfers for processing queue
-        $stmt = $pdo->prepare("SELECT *, serviceDate as service_date, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rows as &$row) {
-            $row['internalNotes'] = json_decode($row['internalNotes'] ?? '[]');
-            $row['systemLogs'] = json_decode($row['systemLogs'] ?? '[]');
-            // serviceDate is already correctly named in the database
-        }        // Also get vehicles for vehicle DB page
-        $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles ORDER BY plate ASC");
-        $vehicleStmt->execute();
-        $vehicles = $vehicleStmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        jsonResponse([
-            'transfers' => $rows,
-            'vehicles' => $vehicles
-        ]);
+        try {
+            // Includes review columns and reschedule data, now includes completed transfers for processing queue
+            $stmt = $pdo->prepare("SELECT *, serviceDate as service_date, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$row) {
+                $row['internalNotes'] = json_decode($row['internalNotes'] ?? '[]');
+                $row['systemLogs'] = json_decode($row['systemLogs'] ?? '[]');
+                // serviceDate is already correctly named in the database
+            }
+            // Also get vehicles for vehicle DB page
+            $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles ORDER BY plate ASC");
+            $vehicleStmt->execute();
+            $vehicles = $vehicleStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            jsonResponse([
+                'transfers' => $rows,
+                'vehicles' => $vehicles
+            ]);
+        } catch (Exception $e) {
+            error_log('get_transfers error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Failed to load transfers: ' . $e->getMessage()]);
+        }
     }
 
     // --- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
@@ -510,16 +517,23 @@ try {
 
     // --- SMS TEMPLATES ACTIONS ---
     if ($action === 'get_sms_templates' && $method === 'GET') {
-        $stmt = $pdo->prepare("SELECT slug, content, workflow_stages, is_active FROM sms_templates WHERE is_active = 1 ORDER BY slug");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            error_log('get_sms_templates called');
+            $stmt = $pdo->prepare("SELECT slug, content, workflow_stages, is_active FROM sms_templates WHERE is_active = 1 ORDER BY slug");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Convert workflow_stages JSON to array
-        foreach ($rows as &$row) {
-            $row['workflow_stages'] = json_decode($row['workflow_stages'] ?? '[]', true);
+            // Convert workflow_stages JSON to array
+            foreach ($rows as &$row) {
+                $row['workflow_stages'] = json_decode($row['workflow_stages'] ?? '[]', true);
+            }
+
+            jsonResponse($rows ?: []);
+        } catch (Exception $e) {
+            error_log('get_sms_templates error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Failed to load SMS templates: ' . $e->getMessage()]);
         }
-
-        jsonResponse($rows ?: []);
     }
 
     if ($action === 'get_workflow_stages' && $method === 'GET') {
@@ -642,6 +656,7 @@ try {
     // --- SMS PARSING TEMPLATES ENDPOINTS ---
     if ($action === 'get_parsing_templates' && $method === 'GET') {
         try {
+            error_log('get_parsing_templates called');
             $stmt = $pdo->prepare("SELECT id, name, insurance_company, template_pattern, field_mappings, is_active FROM sms_parsing_templates WHERE is_active = 1 ORDER BY insurance_company, name");
             $stmt->execute();
             $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -653,7 +668,7 @@ try {
             
             jsonResponse($templates ?: []);
         } catch (Exception $e) {
-            error_log("Database error in get_parsing_templates: " . $e->getMessage());
+            error_log("get_parsing_templates error: " . $e->getMessage());
             http_response_code(500);
             jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
         }
@@ -1244,7 +1259,8 @@ try {
     http_response_code(400);
     jsonResponse(['error' => 'Invalid action or no endpoint matched', 'action' => $action, 'method' => $method]);
 } catch (Exception $e) {
-    error_log('API exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    $requestBody = file_get_contents('php://input');
+    error_log('API exception: action=' . ($action ?? 'unknown') . ' method=' . ($method ?? $_SERVER['REQUEST_METHOD'] ?? 'unknown') . ' GET=' . json_encode($_GET) . ' BODY=' . substr($requestBody ?? '', 0, 500) . ' error=' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
     jsonResponse(['error' => 'Unexpected error: ' . $e->getMessage()]);
 }
