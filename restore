@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Wrapper script to run tools/fx.php from shell
+php "$(dirname "$0")/tools/fx.php" restore "$1"

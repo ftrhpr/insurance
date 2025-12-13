@@ -166,6 +166,12 @@ try {
 
                 <!-- Action Buttons -->
                 <div class="relative flex items-center gap-3">
+                    <button onclick="saveChanges()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all" title="Save Case" <?php echo $CAN_EDIT ? '' : 'disabled title="Permission Denied"'; ?>>
+                        <i data-lucide="save" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="deleteCase()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all" title="Delete Case" <?php echo $CAN_EDIT ? '' : 'disabled title="Permission Denied"'; ?>>
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
                     <button onclick="window.printCase()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all" title="Print Case">
                         <i data-lucide="printer" class="w-5 h-5"></i>
                     </button>
@@ -335,7 +341,7 @@ try {
                     </div>
                 </div>
 
-                <!-- Quick SMS Actions -->
+                <!-- Communication Card: Quick Actions + Advanced Templates -->
                 <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-indigo-600 p-2 rounded-lg shadow-sm">
@@ -371,19 +377,7 @@ try {
                                 <i data-lucide="calendar-check" class="w-5 h-5 text-orange-600 group-hover:text-white"></i>
                             </div>
                         </button>
-                    </div>
-                </div>
-
-                <!-- Advanced SMS Template Selector -->
-                <div class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-100 shadow-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-violet-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="message-square" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-violet-900 uppercase tracking-wider">Advanced SMS</h3>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
+                        <div class="my-2 border-t border-slate-100 pt-4">
                             <label class="block text-xs text-violet-600 font-bold uppercase mb-2">Select Template</label>
                             <select id="sms-template-selector" class="w-full bg-white border-2 border-violet-200 rounded-xl p-3 text-base font-medium focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20 outline-none shadow-sm">
                                 <option value="">Choose a template...</option>
@@ -393,17 +387,21 @@ try {
                                 </option>
                                 <?php endforeach; ?>
                             </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-violet-600 font-bold uppercase mb-2">Message Preview</label>
-                            <div id="sms-preview" class="bg-white border-2 border-violet-200 rounded-xl p-4 min-h-[80px] text-sm text-slate-700 whitespace-pre-wrap shadow-sm">
-                                <span class="text-slate-400 italic">Select a template to see preview...</span>
+                            <div class="mt-3">
+                                <label class="block text-xs text-violet-600 font-bold uppercase mb-2">Message Preview</label>
+                                <div id="sms-preview" class="bg-white border-2 border-violet-200 rounded-xl p-4 min-h-[80px] text-sm text-slate-700 whitespace-pre-wrap shadow-sm">
+                                    <span class="text-slate-400 italic">Select a template to see preview...</span>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <button id="btn-send-custom-sms" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" disabled>
+                                    <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
+                                    Send Custom SMS
+                                </button>
                             </div>
                         </div>
-                        <button id="btn-send-custom-sms" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" disabled>
-                            <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
-                            Send Custom SMS
-                        </button>
+                    </div>
+                </div>
                     </div>
                 </div>
             </div>
@@ -475,7 +473,7 @@ try {
                 </div>
 
                 <!-- Reschedule Request Preview -->
-                <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
+                <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['reschedule_date'])): ?>
                 <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl border-2 border-purple-200 overflow-hidden shadow-lg">
                     <div class="px-4 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
                         <div class="flex items-center gap-2">
@@ -493,7 +491,7 @@ try {
                                 <div class="bg-purple-100 p-2 rounded-lg">
                                     <i data-lucide="calendar" class="w-5 h-5 text-purple-600"></i>
                                 </div>
-                                <span class="text-lg font-bold text-slate-800"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span>
+                                <span class="text-lg font-bold text-slate-800"><?php echo date('M j, Y g:i A', strtotime($case['reschedule_date'])); ?></span>
                             </div>
                         </div>
                         <?php if (!empty($case['rescheduleComment'])): ?>
@@ -589,6 +587,18 @@ try {
             if (!currentCase) {
                 currentCase = {};
             }
+            // Normalize keys to support snake_case and camelCase across scripts
+            currentCase.serviceDate = currentCase.serviceDate || currentCase.service_date || '';
+            currentCase.rescheduleDate = currentCase.rescheduleDate || currentCase.reschedule_date || null;
+            currentCase.userResponse = currentCase.userResponse || currentCase.user_response || null;
+            currentCase.internalNotes = currentCase.internalNotes || currentCase.internal_notes || [];
+            currentCase.systemLogs = currentCase.systemLogs || currentCase.system_logs || [];
+            // Mirror back to underscore keys for PHP-style references
+            currentCase.service_date = currentCase.service_date || currentCase.serviceDate || null;
+            currentCase.reschedule_date = currentCase.reschedule_date || currentCase.rescheduleDate || null;
+            currentCase.user_response = currentCase.user_response || currentCase.userResponse || null;
+            currentCase.internal_notes = currentCase.internal_notes || currentCase.internalNotes || [];
+            currentCase.system_logs = currentCase.system_logs || currentCase.systemLogs || [];
         } catch (e) {
             console.error('Error parsing case data:', e);
             currentCase = {};
@@ -772,14 +782,21 @@ try {
             if (!confirm('Accept reschedule request and update appointment?')) return;
 
             try {
+                if (!currentCase.rescheduleDate) {
+                    showToast('No Reschedule Date', 'There is no reschedule date to accept', 'error');
+                    return;
+                }
                 const rescheduleDateTime = currentCase.rescheduleDate.replace(' ', 'T');
                 await fetchAPI(`accept_reschedule&id=${CASE_ID}`, 'POST', {
                     service_date: rescheduleDateTime
                 });
 
                 currentCase.serviceDate = rescheduleDateTime;
+                currentCase.service_date = rescheduleDateTime;
                 currentCase.userResponse = 'Confirmed';
+                currentCase.user_response = 'Confirmed';
                 currentCase.rescheduleDate = null;
+                currentCase.reschedule_date = null;
                 currentCase.rescheduleComment = null;
 
                 document.getElementById('input-service-date').value = rescheduleDateTime;
@@ -802,8 +819,10 @@ try {
                 await fetchAPI(`decline_reschedule&id=${CASE_ID}`, 'POST', {});
 
                 currentCase.rescheduleDate = null;
+                currentCase.reschedule_date = null;
                 currentCase.rescheduleComment = null;
                 currentCase.userResponse = 'Pending';
+                currentCase.user_response = 'Pending';
 
                 showToast("Request Declined", "Reschedule request removed", "info");
 
@@ -1068,6 +1087,17 @@ try {
                 if (e.key === 'Enter') addNote();
             });
 
+            // Keep call link updated on phone change
+            const phoneInput = document.getElementById('input-phone');
+            const callButton = document.getElementById('btn-call-real');
+            if (phoneInput && callButton) {
+                phoneInput.addEventListener('input', () => {
+                    const raw = phoneInput.value || '';
+                    const tel = raw.replace(/\D/g, '');
+                    callButton.href = tel ? 'tel:' + tel : '#';
+                });
+            }
+
             // SMS button handlers
             document.getElementById('btn-sms-register').addEventListener('click', () => {
                 const phone = document.getElementById('input-phone').value;
@@ -1116,12 +1146,31 @@ try {
                 sendSMS(phone, msg, 'schedule');
             });
 
+            // Enable/disable SMS action buttons based on phone and service date
+            function updateSmsButtons() {
+                const phone = (document.getElementById('input-phone')?.value || '').trim();
+                const svc = (document.getElementById('input-service-date')?.value || '').trim();
+                const btnRegister = document.getElementById('btn-sms-register');
+                const btnArrived = document.getElementById('btn-sms-arrived');
+                const btnSchedule = document.getElementById('btn-sms-schedule');
+                if (btnRegister) btnRegister.disabled = !phone;
+                if (btnArrived) btnArrived.disabled = !phone;
+                if (btnSchedule) btnSchedule.disabled = !(phone && svc);
+            }
+
+            // Update on boot
+            updateSmsButtons();
+            // Update on phone/service date change
+            document.getElementById('input-phone')?.addEventListener('input', updateSmsButtons);
+            document.getElementById('input-service-date')?.addEventListener('input', updateSmsButtons);
+
             // SMS Template Selector
             document.getElementById('sms-template-selector').addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const templateSlug = this.value;
                 const sendButton = document.getElementById('btn-send-custom-sms');
                 const previewDiv = document.getElementById('sms-preview');
+                const phone = document.getElementById('input-phone').value || '';
 
                 if (!templateSlug) {
                     previewDiv.innerHTML = '<span class="text-slate-400 italic">Select a template to see preview...</span>';
@@ -1143,7 +1192,8 @@ try {
 
                     const formattedMessage = getFormattedMessage(templateSlug, templateData);
                     previewDiv.textContent = formattedMessage;
-                    sendButton.disabled = false;
+                    // Enable send only if phone exists and template is selected
+                    sendButton.disabled = !(phone && phone.trim() !== '');
                 }
             });
 
@@ -1212,5 +1262,11 @@ try {
             initializeIcons();
         });
     </script>
+        <!-- Mobile sticky action bar -->
+        <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 border border-slate-200 rounded-2xl shadow-lg p-3 z-50 flex items-center gap-2 px-4" <?php echo $CAN_EDIT ? '' : 'style="display:none;"'; ?>>
+            <button onclick="saveChanges()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold">Save</button>
+            <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold">Delete</button>
+            <button id="mobile-sms-arrived" onclick="(function(){document.getElementById('btn-sms-arrived').click();})();" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-bold">SMS Arrived</button>
+        </div>
 </body>
 </html>
