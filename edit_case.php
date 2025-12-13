@@ -173,126 +173,74 @@ try {
         <!-- Main Content Grid (responsive, compact) -->
         <div class="flex flex-col md:flex-row gap-2 flex-1 w-full px-1 py-2 overflow-auto">
 
-
-            <!-- Left/Main Column: Order Details & Workflow Status (SaaS Dashboard Card) -->
-            <div class="flex-1 flex flex-col gap-4 min-w-0">
-                <!-- SaaS Dashboard Card Header -->
-                <div class="bg-white border border-gray-200 rounded-t shadow-sm px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 transition-shadow hover:shadow-md">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="text-xs font-bold text-gray-400 uppercase tracking-wider">Case ID</div>
-                        <span class="text-base font-mono font-bold text-blue-700 truncate">#<?php echo $case['id']; ?></span>
-                        <?php
-                        $status = $case['status'];
-                        $statusColors = [
-                            'New' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700'],
-                            'Processing' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800'],
-                            'Called' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-700'],
-                            'Parts Ordered' => ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-700'],
-                            'Parts Arrived' => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
-                            'Scheduled' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-700'],
-                            'Completed' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-700'],
-                            'Issue' => ['bg' => 'bg-red-100', 'text' => 'text-red-700'],
-                        ];
-                        $color = $statusColors[$status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-700'];
-                        ?>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold <?php echo $color['bg'] . ' ' . $color['text']; ?>">
-                            <?php echo htmlspecialchars($status); ?>
-                        </span>
+            <!-- Left/Main Column: Order Details & Actions -->
+            <div class="flex-1 flex flex-col gap-2 min-w-0">
+                <!-- Order Information Card -->
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="bg-blue-600 p-2 rounded-lg shadow-sm">
+                            <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-blue-900 uppercase tracking-wider">Order Details</h3>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button id="btn-save" class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all md:static fixed bottom-4 left-1/2 -translate-x-1/2 z-30 md:translate-x-0 md:bottom-auto md:left-auto">
-                            <i data-lucide="save" class="w-4 h-4"></i>
-                            <span>Save</span>
-                        </button>
-                        <button id="btn-print" class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold shadow-sm transition-all">
-                            <i data-lucide="printer" class="w-4 h-4"></i>
-                            <span>Print</span>
-                        </button>
-                        <button id="btn-more" class="inline-flex items-center gap-1 px-2 py-1.5 rounded bg-gray-50 hover:bg-gray-100 text-gray-400 text-xs font-bold shadow-sm transition-all">
-                            <i data-lucide="more-horizontal" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-                <!-- SaaS Dashboard Card Body -->
-                <div class="bg-white border-x border-b border-gray-200 rounded-b shadow-sm p-4 flex flex-col md:flex-row gap-4 md:gap-8 items-start md:items-center">
-                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="col-span-2 mb-2">
-                            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Details</div>
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-lg p-4 border border-blue-100">
+                            <div class="text-xs text-blue-600 font-bold uppercase mb-2">Customer Name</div>
+                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
                         </div>
-                        <div>
-                            <div class="text-xs text-gray-500 font-bold uppercase mb-1">Customer Name</div>
-                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full p-2 bg-white border border-gray-200 rounded text-base font-bold text-gray-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
+                        <div class="bg-white rounded-lg p-4 border border-blue-100">
+                            <div class="text-xs text-blue-600 font-bold uppercase mb-2">Vehicle Plate</div>
+                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
                         </div>
-                        <div>
-                            <div class="text-xs text-gray-500 font-bold uppercase mb-1">Vehicle Plate</div>
-                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full p-2 bg-white border border-gray-200 rounded text-base font-bold text-gray-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-500 font-bold uppercase mb-1">Amount</div>
+                        <div class="bg-white rounded-lg p-4 border border-blue-100">
+                            <div class="text-xs text-blue-600 font-bold uppercase mb-2">Amount</div>
                             <div class="flex items-center gap-2">
-                                <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
-                                <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 p-2 bg-white border border-gray-200 rounded text-lg font-bold text-emerald-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none">
-                                <span class="text-lg font-bold text-emerald-600">₾</span>
+                                <i data-lucide="coins" class="w-6 h-6 text-emerald-500"></i>
+                                <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 p-3 bg-white border border-slate-200 rounded-lg text-3xl font-bold text-emerald-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none">
+                                <span class="text-3xl font-bold text-emerald-600">₾</span>
                             </div>
                         </div>
-                        <div>
-                            <div class="text-xs text-gray-500 font-bold uppercase mb-1">Franchise</div>
-                            <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full p-2 bg-white border border-gray-200 rounded text-base font-bold text-orange-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none">
+                        <div class="bg-white rounded-lg p-4 border border-blue-100">
+                            <div class="text-xs text-blue-600 font-bold uppercase mb-2">Franchise</div>
+                            <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-lg font-bold text-orange-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none">
                         </div>
-                        <div class="col-span-2">
-                            <div class="text-xs text-gray-500 font-bold uppercase mb-1">Created At</div>
-                            <div class="flex items-center gap-2 text-xs text-gray-700">
-                                <i data-lucide="clock" class="w-4 h-4 text-gray-400"></i>
+                        <div class="bg-white rounded-lg p-4 border border-blue-100">
+                            <div class="text-xs text-blue-600 font-bold uppercase mb-2">Created At</div>
+                            <div class="flex items-center gap-2 text-sm text-slate-700">
+                                <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
                                 <span id="case-created-date" class="font-medium"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></span>
                             </div>
                         </div>
-                        <!-- Summary Row: Phone, Service Date, User Response -->
-                        <div class="col-span-2 mt-2">
-                            <div class="flex flex-wrap gap-4 items-center text-xs">
-                                <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                                    <i data-lucide="phone" class="w-3.5 h-3.5"></i>
-                                    <?php echo htmlspecialchars($case['phone']); ?>
-                                </span>
-                                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded">
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                                    <?php echo $case['service_date'] ? date('M j, Y', strtotime($case['service_date'])) : 'No Date'; ?>
-                                </span>
-                                <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                                    <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
-                                    <?php echo htmlspecialchars($case['user_response'] ?? 'Pending'); ?>
-                                </span>
-                            </div>
-                        </div>
                     </div>
-                    <div class="flex flex-col gap-2 min-w-[180px] w-full md:w-auto">
-                        <div class="block md:hidden h-4"></div>
-                        <div class="hidden md:block h-8 border-l border-gray-200 mx-4"></div>
-                        <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Workflow Stage</div>
-                        <div class="relative">
-                            <select id="input-status" class="w-full appearance-none bg-white border border-gray-300 text-gray-800 py-2 pl-8 pr-8 rounded leading-tight focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-base font-bold shadow-sm transition-all cursor-pointer">
-                                <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
-                                <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>🟡 Processing</option>
-                                <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>🟣 Contacted</option>
-                                <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>📦 Parts Ordered</option>
-                                <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>🏁 Parts Arrived</option>
-                                <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>🟠 Scheduled</option>
-                                <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>🟢 Completed</option>
-                                <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>🔴 Issue</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 left-2 flex items-center text-blue-500">
-                                <i data-lucide="git-branch" class="w-5 h-5"></i>
-                            </div>
-                            <div class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400">
-                                <i data-lucide="chevron-down" class="w-5 h-5"></i>
-                            </div>
+                </div>
+
+                <!-- Status Selection -->
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="bg-purple-600 p-2 rounded-lg shadow-sm">
+                            <i data-lucide="activity" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-purple-900 uppercase tracking-wider">Workflow Stage</h3>
+                    </div>
+                    <div class="relative">
+                        <select id="input-status" class="w-full appearance-none bg-white border-2 border-purple-200 text-slate-800 py-4 pl-12 pr-10 rounded-xl leading-tight focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-base font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
+                            <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
+                            <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>🟡 Processing</option>
+                            <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>🟣 Contacted</option>
+                            <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>📦 Parts Ordered</option>
+                            <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>🏁 Parts Arrived</option>
+                            <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>🟠 Scheduled</option>
+                            <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>🟢 Completed</option>
+                            <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>🔴 Issue</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-purple-500">
+                            <i data-lucide="git-branch" class="w-6 h-6"></i>
+                        </div>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-purple-400">
+                            <i data-lucide="chevron-down" class="w-6 h-6"></i>
                         </div>
                     </div>
                 </div>
-                <!-- Order Information Card -->
-
-
-                <!-- Status Selection -->
-
 
                 <!-- System Activity Log -->
                 <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
