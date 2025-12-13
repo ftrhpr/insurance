@@ -44,6 +44,7 @@ try {
             'schedule' => "Hello {name}, service scheduled for {date}. Ref: {plate}.",
             'parts_ordered' => "Parts ordered for {plate}. We will notify you when ready.",
             'parts_arrived' => "Hello {name}, your parts have arrived! Please confirm your visit here: {link}",
+            'parts_arrived_no_schedule' => "Hello {name}, your parts have arrived! We will contact you shortly to schedule your service. Ref: {plate}",
             'rescheduled' => "Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}",
             'completed' => "Service for {plate} is completed. Rate your experience: {link}",
             'system' => "System Alert: {count} new transfer(s) added to OTOMOTORS portal."

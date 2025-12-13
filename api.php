@@ -986,8 +986,11 @@ try {
             $tr = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($tr && !empty($tr['phone'])) {
-                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'parts_arrived'");
-                $stmt->execute();
+                // Choose template based on status
+                $template_slug = ($new_status === 'collected_waiting') ? 'parts_arrived_no_schedule' : 'parts_arrived';
+                
+                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = ?");
+                $stmt->execute([$template_slug]);
                 $template = $stmt->fetchColumn();
                 
                 if ($template) {
