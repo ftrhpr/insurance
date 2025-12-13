@@ -2395,10 +2395,33 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         serviceDate: serviceDate || t.serviceDate // Use new date if set, else old
                     };
 
-                    // 1. Processing -> Welcome SMS
+                    // 1. Processing -> Auto-assign schedule and send schedule confirmation SMS
                     if (status === 'Processing') {
-                        const msg = getFormattedMessage('registered', templateData);
-                        window.sendSMS(phone, msg, 'welcome_sms');
+                        // Auto-assign next business day if no date set
+                        let assignedDate = serviceDate || t.serviceDate;
+                        if (!assignedDate) {
+                            const today = new Date();
+                            const nextDay = new Date(today);
+                            nextDay.setDate(today.getDate() + 1);
+                            // Skip weekends
+                            if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1); // Sunday -> Monday
+                            if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2); // Saturday -> Monday
+                            // Set default time to 10:00 AM
+                            nextDay.setHours(10, 0, 0, 0);
+                            assignedDate = nextDay.toISOString().slice(0, 16);
+                            updates.serviceDate = assignedDate;
+                            updates.systemLogs.push({ message: `Auto-assigned service date: ${assignedDate.replace('T', ' ')}`, timestamp: new Date().toISOString(), type: 'info' });
+                        }
+                        
+                        const templateDataWithDate = { 
+                            id: t.id, 
+                            name: t.name, 
+                            plate: t.plate, 
+                            amount: t.amount, 
+                            serviceDate: assignedDate 
+                        };
+                        const msg = getFormattedMessage('schedule', templateDataWithDate);
+                        window.sendSMS(phone, msg, 'schedule_sms');
                     }
                     
                     // 2. Scheduled -> Service Schedule SMS
