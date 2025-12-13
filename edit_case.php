@@ -83,6 +83,7 @@ try {
     <title>Edit Case #<?php echo $case_id; ?> - OTOMOTORS Manager Portal</title>
 
     <!-- Tailwind CSS -->
+    <!-- Note: Using CDN for development/demo. For production, install Tailwind via npm/yarn and build with PostCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Lucide Icons -->
@@ -1031,16 +1032,19 @@ try {
                 setTimeout(initializeIcons, 100);
             });
             // Update workflow progress on status change
-            document.getElementById('input-status').addEventListener('change', updateWorkflowProgress);
+            const statusEl = document.getElementById('input-status');
+            if (statusEl) statusEl.addEventListener('change', updateWorkflowProgress);
 
             // Enter key for notes
-            document.getElementById('new-note-input').addEventListener('keypress', (e) => {
+            const noteInputEl = document.getElementById('new-note-input');
+            if (noteInputEl) noteInputEl.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') addNote();
             });
 
             // SMS button handlers
-            document.getElementById('btn-sms-register').addEventListener('click', () => {
-                const phone = document.getElementById('input-phone').value;
+            const smsRegisterBtn = document.getElementById('btn-sms-register');
+            if (smsRegisterBtn) smsRegisterBtn.addEventListener('click', () => {
+                const phone = document.getElementById('input-phone')?.value;
                 const templateData = {
                     name: currentCase.name,
                     plate: currentCase.plate,
@@ -1050,8 +1054,9 @@ try {
                 sendSMS(phone, msg, 'welcome');
             });
 
-            document.getElementById('btn-sms-arrived').addEventListener('click', () => {
-                const phone = document.getElementById('input-phone').value;
+            const smsArrivedBtn = document.getElementById('btn-sms-arrived');
+            if (smsArrivedBtn) smsArrivedBtn.addEventListener('click', () => {
+                const phone = document.getElementById('input-phone')?.value;
                 const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
                 const templateData = {
                     name: currentCase.name,
@@ -1063,9 +1068,10 @@ try {
                 sendSMS(phone, msg, 'parts_arrived');
             });
 
-            document.getElementById('btn-sms-schedule').addEventListener('click', () => {
-                const phone = document.getElementById('input-phone').value;
-                const serviceDate = document.getElementById('input-service-date').value;
+            const smsScheduleBtn = document.getElementById('btn-sms-schedule');
+            if (smsScheduleBtn) smsScheduleBtn.addEventListener('click', () => {
+                const phone = document.getElementById('input-phone')?.value;
+                const serviceDate = document.getElementById('input-service-date')?.value;
                 if (!serviceDate) {
                     showToast('No Service Date', 'Please set a service date first', 'error');
                     return;
@@ -1086,8 +1092,9 @@ try {
                 sendSMS(phone, msg, 'schedule');
             });
 
-            // SMS Template Selector
-            document.getElementById('sms-template-selector').addEventListener('change', function() {
+            // SMS template selector
+            const smsSelector = document.getElementById('sms-template-selector');
+            if (smsSelector) smsSelector.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const templateSlug = this.value;
                 const sendButton = document.getElementById('btn-send-custom-sms');
@@ -1118,10 +1125,11 @@ try {
             });
 
             // Send Custom SMS Button
-            document.getElementById('btn-send-custom-sms').addEventListener('click', () => {
+            const sendSmsBtn = document.getElementById('btn-send-custom-sms');
+            if (sendSmsBtn) sendSmsBtn.addEventListener('click', () => {
                 const templateSelector = document.getElementById('sms-template-selector');
-                const templateSlug = templateSelector.value;
-                const phone = document.getElementById('input-phone').value;
+                const templateSlug = templateSelector?.value;
+                const phone = document.getElementById('input-phone')?.value;
 
                 if (!templateSlug) {
                     showToast('No Template Selected', 'Please select an SMS template first', 'error');
@@ -1142,19 +1150,26 @@ try {
             });
 
             // Review Editing
-            document.getElementById('btn-edit-review').addEventListener('click', () => {
-                document.getElementById('review-display').classList.add('hidden');
-                document.getElementById('review-edit').classList.remove('hidden');
+            const editReviewBtn = document.getElementById('btn-edit-review');
+            if (editReviewBtn) editReviewBtn.addEventListener('click', () => {
+                const reviewDisplay = document.getElementById('review-display');
+                const reviewEdit = document.getElementById('review-edit');
+                if (reviewDisplay) reviewDisplay.classList.add('hidden');
+                if (reviewEdit) reviewEdit.classList.remove('hidden');
             });
 
-            document.getElementById('btn-cancel-review').addEventListener('click', () => {
-                document.getElementById('review-edit').classList.add('hidden');
-                document.getElementById('review-display').classList.remove('hidden');
+            const cancelReviewBtn = document.getElementById('btn-cancel-review');
+            if (cancelReviewBtn) cancelReviewBtn.addEventListener('click', () => {
+                const reviewEdit = document.getElementById('review-edit');
+                const reviewDisplay = document.getElementById('review-display');
+                if (reviewEdit) reviewEdit.classList.add('hidden');
+                if (reviewDisplay) reviewDisplay.classList.remove('hidden');
             });
 
-            document.getElementById('btn-save-review').addEventListener('click', async () => {
-                const stars = document.getElementById('input-review-stars').value;
-                const comment = document.getElementById('input-review-comment').value.trim();
+            const saveReviewBtn = document.getElementById('btn-save-review');
+            if (saveReviewBtn) saveReviewBtn.addEventListener('click', async () => {
+                const stars = document.getElementById('input-review-stars')?.value;
+                const comment = document.getElementById('input-review-comment')?.value?.trim();
 
                 try {
                     await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', {
