@@ -1042,12 +1042,13 @@ try {
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(['error' => $e->getMessage()]);
+    exit;
 }
 
 // --- HELPER FUNCTION FOR SUGGESTIONS ---
 function update_suggestions_from_list($pdo, $items) {
     if (empty($items)) {
-        return;
+        return true;
     }
     
     $stmt = $pdo->prepare("
@@ -1064,5 +1065,14 @@ function update_suggestions_from_list($pdo, $items) {
             ]);
         }
     }
+    return true;
+    }
+}
+
+// --- GLOBAL FALLBACK: If script reaches here without output, return error JSON ---
+if (!headers_sent()) {
+    http_response_code(400);
+    echo json_encode(['error' => 'No valid API response generated.']);
+    exit;
 }
 ?>
