@@ -83,7 +83,26 @@ try {
     <title>Edit Case #<?php echo $case_id; ?> - OTOMOTORS Manager Portal</title>
 
     <!-- Tailwind CSS -->
-    <!-- Note: Using CDN for development/demo. For production, install Tailwind via npm/yarn and build with PostCSS -->
+    <!-- DEVELOPMENT NOTE: Using CDN for rapid prototyping and development.
+         For production deployment, consider:
+         1. Install Tailwind: npm install -D tailwindcss
+         2. Initialize: npx tailwindcss init
+         3. Configure content paths in tailwind.config.js
+         4. Build: npx tailwindcss -i input.css -o output.css --watch
+         5. Replace CDN with: <link href="/path/to/output.css" rel="stylesheet">
+         This warning is expected in development and can be safely ignored.
+    -->
+    <script>
+        // Suppress Tailwind CDN warning in development
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && args[0].includes && args[0].includes('cdn.tailwindcss.com should not be used in production')) {
+                // Silently ignore this expected development warning
+                return;
+            }
+            originalWarn.apply(console, args);
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Lucide Icons -->
@@ -166,9 +185,15 @@ try {
             <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden mb-3">
                 <div id="workflow-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500" style="width: 12.5%"></div>
             </div>
-            <div class="grid grid-cols-4 lg:grid-cols-8 gap-2 text-xs text-slate-500 font-medium">
-                <span>New</span><span>Processing</span><span>Contacted</span><span>Parts Ordered</span>
-                <span>Parts Arrived</span><span>Scheduled</span><span>Completed</span><span>Issue</span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1 text-xs text-slate-500 font-medium">
+                <span class="text-center py-1 px-1 rounded bg-slate-50">New</span>
+                <span class="text-center py-1 px-1 rounded bg-slate-50">Processing</span>
+                <span class="text-center py-1 px-1 rounded bg-slate-50">Called</span>
+                <span class="text-center py-1 px-1 rounded bg-slate-50">Parts Ordered</span>
+                <span class="text-center py-1 px-1 rounded bg-slate-50">Parts Arrived</span>
+                <span class="text-center py-1 px-1 rounded bg-slate-50">Scheduled</span>
+                <span class="text-center py-1 px-1 rounded bg-slate-50">Completed</span>
+                <span class="text-center py-1 px-1 rounded bg-slate-50">Issue</span>
             </div>
         </div>
 
@@ -215,6 +240,35 @@ try {
                             <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                                 <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
                                 <span id="case-created-date" class="font-medium text-slate-700"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Selection -->
+                <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
+                                <i data-lucide="activity" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white uppercase tracking-wider">Workflow Stage</h3>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="relative">
+                            <select id="input-status" class="w-full appearance-none bg-slate-50 border-2 border-purple-200 text-slate-800 py-4 px-4 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-lg font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
+                                <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
+                                <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>🟡 Processing</option>
+                                <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>🟣 Contacted</option>
+                                <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>📦 Parts Ordered</option>
+                                <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>🏁 Parts Arrived</option>
+                                <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>🟠 Scheduled</option>
+                                <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>🟢 Completed</option>
+                                <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>🔴 Issue</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-purple-400">
+                                <i data-lucide="chevron-down" class="w-6 h-6"></i>
                             </div>
                         </div>
                     </div>
@@ -681,13 +735,19 @@ try {
 
         // Update workflow progress bar
         function updateWorkflowProgress() {
-            const status = document.getElementById('input-status').value;
+            const statusElement = document.getElementById('input-status');
+            if (!statusElement) return;
+
+            const status = statusElement.value;
             const stages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
             const currentIndex = stages.indexOf(status);
             const progress = ((currentIndex + 1) / stages.length) * 100;
 
-            document.getElementById('workflow-stage-number').textContent = currentIndex + 1;
-            document.getElementById('workflow-progress-bar').style.width = progress + '%';
+            const stageNumberEl = document.getElementById('workflow-stage-number');
+            const progressBarEl = document.getElementById('workflow-progress-bar');
+
+            if (stageNumberEl) stageNumberEl.textContent = currentIndex + 1;
+            if (progressBarEl) progressBarEl.style.width = progress + '%';
         }
 
         // API call helper
@@ -753,7 +813,8 @@ try {
                 currentCase.rescheduleDate = null;
                 currentCase.rescheduleComment = null;
 
-                document.getElementById('input-service-date').value = rescheduleDateTime;
+                const serviceDateInput = document.getElementById('input-service-date');
+                if (serviceDateInput) serviceDateInput.value = rescheduleDateTime;
                 showToast("Reschedule Accepted", "Appointment updated and SMS sent to customer", "success");
 
                 // Reload page to hide reschedule section
@@ -1111,11 +1172,11 @@ try {
                 if (template) {
                     const templateData = {
                         id: CASE_ID,
-                        name: document.getElementById('input-name').value || currentCase.name,
-                        plate: document.getElementById('input-plate').value || currentCase.plate,
-                        amount: document.getElementById('input-amount').value || currentCase.amount,
-                        serviceDate: document.getElementById('input-service-date').value || currentCase.serviceDate,
-                        date: document.getElementById('input-service-date').value || currentCase.serviceDate
+                        name: (document.getElementById('input-name')?.value || currentCase.name),
+                        plate: (document.getElementById('input-plate')?.value || currentCase.plate),
+                        amount: (document.getElementById('input-amount')?.value || currentCase.amount),
+                        serviceDate: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
+                        date: (document.getElementById('input-service-date')?.value || currentCase.serviceDate)
                     };
 
                     const formattedMessage = getFormattedMessage(templateSlug, templateData);
@@ -1138,11 +1199,11 @@ try {
 
                 const templateData = {
                     id: CASE_ID,
-                    name: document.getElementById('input-name').value || currentCase.name,
-                    plate: document.getElementById('input-plate').value || currentCase.plate,
-                    amount: document.getElementById('input-amount').value || currentCase.amount,
-                    serviceDate: document.getElementById('input-service-date').value || currentCase.serviceDate,
-                    date: document.getElementById('input-service-date').value || currentCase.serviceDate
+                    name: (document.getElementById('input-name')?.value || currentCase.name),
+                    plate: (document.getElementById('input-plate')?.value || currentCase.plate),
+                    amount: (document.getElementById('input-amount')?.value || currentCase.amount),
+                    serviceDate: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
+                    date: (document.getElementById('input-service-date')?.value || currentCase.serviceDate)
                 };
 
                 const msg = getFormattedMessage(templateSlug, templateData);
