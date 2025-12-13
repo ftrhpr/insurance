@@ -103,6 +103,7 @@ if (!$collection_id) {
                             <select id="editStatus" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-blue-400 focus:ring-blue-400 px-3 py-2 text-sm text-gray-900">
                                 <option value="pending">Pending</option>
                                 <option value="collected">Collected</option>
+                                <option value="collected_waiting">Collected, waiting for schedule</option>
                                 <option value="cancelled">Cancelled</option>
                             </select>
                         </div>
@@ -213,6 +214,7 @@ if (!$collection_id) {
                     <div class="space-y-3">
                         <select id="modal-alternative-status" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm font-medium focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none">
                             <option value="">Select status...</option>
+                            <option value="collected_waiting">Collected, waiting for schedule</option>
                             <option value="pending">Pending</option>
                             <option value="cancelled">Cancelled</option>
                         </select>

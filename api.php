@@ -975,7 +975,7 @@ try {
         $stmt->execute($params);
 
         // --- NEW LOGIC: Connect to processing queue ---
-        if ($new_status === 'collected' && $old_status !== 'collected' && $transfer_id) {
+        if (($new_status === 'collected' || $new_status === 'collected_waiting') && ($old_status !== 'collected' && $old_status !== 'collected_waiting') && $transfer_id) {
             // 1. Update transfer status
             $update_transfer_stmt = $pdo->prepare("UPDATE transfers SET status = 'Parts Arrived' WHERE id = ?");
             $update_transfer_stmt->execute([$transfer_id]);
