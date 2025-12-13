@@ -494,7 +494,7 @@ if (!$collection_id) {
                 if (result.success) {
                     // Update the main form status to collected and save
                     document.getElementById('editStatus').value = 'collected';
-                    await saveEdit(new Event('submit')); // Programmatically trigger save
+                    await saveEdit(); // Programmatically trigger save
                     closeCollectionModal();
                 } else {
                     showToast(result.error || 'Error scheduling service', 'error');
@@ -514,12 +514,14 @@ if (!$collection_id) {
 
             // Update the main form status and save
             document.getElementById('editStatus').value = alternativeStatus;
-            await saveEdit(new Event('submit')); // Programmatically trigger save
+            await saveEdit(); // Programmatically trigger save
             closeCollectionModal();
         }
 
         async function saveEdit(e) {
-            e.preventDefault();
+            if (e) {
+                e.preventDefault();
+            }
             const id = document.getElementById('editId').value;
             const status = document.getElementById('editStatus').value;
             const assigned_manager_id = document.getElementById('editAssignedManager').value;

@@ -931,9 +931,6 @@ try {
     }
 
     if ($action === 'update_parts_collection' && $method === 'POST') {
-        error_log("DEBUG: update_parts_collection endpoint hit."); // Temporary debug log
-        error_log("DEBUG: Received data: " . file_get_contents('php://input')); // Log raw input
-
         $data = getJsonInput();
         $id = $data['id'] ?? null;
         $parts_list = $data['parts_list'] ?? [];
@@ -951,6 +948,9 @@ try {
         $collection_info = $stmt->fetch(PDO::FETCH_ASSOC);
         $old_status = $collection_info['status'] ?? null;
         $transfer_id = $collection_info['transfer_id'] ?? null;
+
+        // --- DETAILED LOGGING ---
+        error_log("[SMS DEBUG] Collection ID: $id | Old Status: $old_status | New Status: $new_status");
 
         // Calculate total cost
         $total_cost = 0;
@@ -997,6 +997,9 @@ try {
                 } else {
                     $template_slug = null; // No SMS for other status changes from here
                 }
+
+                // --- DETAILED LOGGING ---
+                error_log("[SMS DEBUG] Template Selected: " . ($template_slug ?? 'None'));
                 
                 if ($template_slug) {
                     $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = ?");
