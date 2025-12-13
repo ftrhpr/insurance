@@ -481,42 +481,89 @@ try {
 
         $data = getJsonInput();
 
-        // Debug: log incoming payload to help diagnose 500 errors
+        // Debug: log incoming payload to help diagnose issues
         error_log('save_templates payload: ' . json_encode($data));
+        error_log('save_templates data count: ' . count($data));
 
         // Validate input data
         if (empty($data) || !is_array($data)) {
+            error_log('save_templates: Invalid data received');
             http_response_code(400);
             jsonResponse(['error' => 'Invalid or empty data received']);
             exit;
         }
 
         try {
-            // Ensure table has new columns (defensive migration)
-            $pdo->exec("ALTER TABLE sms_templates
-                       ADD COLUMN IF NOT EXISTS workflow_stages JSON DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT 1,
-                       ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            // Check if table exists first
+            $tableExists = $pdo->query("SHOW TABLES LIKE 'sms_templates'")->rowCount() > 0;
+            
+            if (!$tableExists) {
+                error_log("save_templates: sms_templates table does not exist");
+                http_response_code(500);
+                jsonResponse(['error' => 'SMS templates table does not exist. Please run database setup scripts.']);
+                exit;
+            }
+
+            // Ensure table has new columns (defensive migration) - outside transaction
+            try {
+                $pdo->exec("ALTER TABLE sms_templates
+                           ADD COLUMN IF NOT EXISTS workflow_stages JSON DEFAULT NULL,
+                           ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT 1,
+                           ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+                error_log("save_templates: ALTER TABLE completed successfully");
+            } catch (Exception $alterError) {
+                error_log("save_templates: ALTER TABLE failed: " . $alterError->getMessage());
+                // Continue anyway - columns might already exist
+            }
+
+            // Check if we can query the table
+            try {
+                $testStmt = $pdo->query("SELECT COUNT(*) as count FROM sms_templates");
+                $testResult = $testStmt->fetch(PDO::FETCH_ASSOC);
+                error_log("save_templates: Table query test successful, found {$testResult['count']} templates");
+            } catch (Exception $testError) {
+                error_log("save_templates: Table query test failed: " . $testError->getMessage());
+                http_response_code(500);
+                jsonResponse(['error' => 'Cannot access SMS templates table: ' . $testError->getMessage()]);
+                exit;
+            }
 
             $pdo->beginTransaction();
+            error_log("save_templates: Transaction started");
 
             foreach ($data as $slug => $templateData) {
                 $content = $templateData['content'] ?? '';
                 $workflowStages = $templateData['workflow_stages'] ?? [];
                 $isActive = $templateData['is_active'] ?? true;
 
-                // Validate slug and content
-                if (empty($slug) || !is_string($slug)) {
-                    $pdo->rollBack();
-                    http_response_code(400);
-                    jsonResponse(['error' => 'Invalid template slug']);
+                // Validate data types
+                if (!is_array($workflowStages)) {
+                    $workflowStages = [];
+                }
+                if (!is_bool($isActive)) {
+                    $isActive = (bool)$isActive;
                 }
 
-                if (empty($content) || !is_string($content)) {
-                    $pdo->rollBack();
+                // Validate slug and content
+                if (empty($slug) || !is_string($slug)) {
+                    error_log("save_templates: Invalid slug: " . json_encode($slug));
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    http_response_code(400);
+                    jsonResponse(['error' => 'Invalid template slug']);
+                    exit;
+                }
+
+                if (!is_string($content)) {
+                    error_log("save_templates: Invalid content for slug $slug: " . json_encode($content));
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
                     http_response_code(400);
                     jsonResponse(['error' => 'Invalid template content']);
+                    exit;
                 }
 
                 // Convert workflow stages to JSON
@@ -540,8 +587,12 @@ try {
             jsonResponse(['status' => 'success', 'message' => 'Templates saved successfully']);
 
         } catch (Exception $e) {
-            $pdo->rollBack();
+            // Only rollback if there's an active transaction
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             error_log("Database error in save_templates: " . $e->getMessage());
+            http_response_code(500);
             jsonResponse(['error' => 'Failed to save templates: ' . $e->getMessage()]);
         }
     }
