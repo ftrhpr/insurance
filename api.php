@@ -990,18 +990,16 @@ try {
     }
 
     if ($action === 'create_parts_collection' && $method === 'POST') {
-        try {
-            $data = getJsonInput();
-            $transfer_id = $data['transfer_id'] ?? null;
-            $parts_list = is_array($data['parts_list'] ?? null) ? $data['parts_list'] : [];
-            $assigned_manager_id = $data['assigned_manager_id'] ?? null;
+        $data = getJsonInput();
+        $transfer_id = $data['transfer_id'] ?? null;
+        $parts_list = $data['parts_list'] ?? [];
+        $assigned_manager_id = $data['assigned_manager_id'] ?? null;
 
-            error_log('create_parts_collection called with payload: ' . json_encode($data));
+        if (!$transfer_id || empty($parts_list)) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Transfer ID and parts list are required']);
+        }
 
-            if (!$transfer_id || empty($parts_list)) {
-                http_response_code(400);
-                jsonResponse(['error' => 'Transfer ID and parts list are required']);
-            }
         // Calculate total cost
         $total_cost = 0;
         foreach ($parts_list as $part) {
@@ -1016,16 +1014,12 @@ try {
         update_suggestions_from_list($pdo, $parts_list);
 
         jsonResponse(['success' => true, 'id' => $new_collection_id]);
-        } catch (Exception $e) {
-            error_log('create_parts_collection exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-            http_response_code(500);
-            jsonResponse(['success' => false, 'error' => 'Failed to create parts collection: ' . $e->getMessage()]);
-        }
+    }
 
     if ($action === 'update_parts_collection' && $method === 'POST') {
         $data = getJsonInput();
         $id = $data['id'] ?? null;
-        $parts_list = is_array($data['parts_list'] ?? null) ? $data['parts_list'] : [];
+        $parts_list = $data['parts_list'] ?? [];
         $new_status = $data['status'] ?? null;
         $assigned_manager_id = $data['assigned_manager_id'] ?? null;
 
@@ -1040,7 +1034,6 @@ try {
         $stmt = $pdo->prepare("SELECT status, transfer_id FROM parts_collections WHERE id = ?");
         $stmt->execute([$id]);
         $collection_info = $stmt->fetch(PDO::FETCH_ASSOC);
-        error_log('update_parts_collection fetched collection: ' . json_encode($collection_info));
         if (!$collection_info) {
             http_response_code(404);
             jsonResponse(['error' => 'Parts collection not found', 'id' => $id]);
@@ -1071,7 +1064,6 @@ try {
 
         $stmt = $pdo->prepare($query);
         $stmt->execute($params);
-        error_log('update_parts_collection executed update: query=' . $query . ' params=' . json_encode($params) . ' affected=' . $stmt->rowCount());
         
         // --- UPDATE SUGGESTIONS ---
         update_suggestions_from_list($pdo, $parts_list);
@@ -1118,17 +1110,11 @@ try {
             
             // 3. Add system log
             $log_message = "Parts collection #{$id} marked '$new_status'. Case status automatically updated to 'Parts Arrived' and confirmation SMS sent.";
-            $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(NULLIF(system_logs, ''), '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+            $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
             $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'message' => $log_message]), $transfer_id]);
         }
 
         jsonResponse(['success' => true]);
-        } catch (Exception $e) {
-            // Log and return a safe JSON error
-            error_log('update_parts_collection exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-            http_response_code(500);
-            jsonResponse(['success' => false, 'error' => 'Failed to update parts collection: ' . $e->getMessage()]);
-        }
     }
 
     if ($action === 'schedule_service_from_collection' && $method === 'POST') {
