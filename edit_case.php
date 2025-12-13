@@ -548,21 +548,20 @@ try {
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6">
-                    <div class="flex gap-4">
-                        <button onclick="saveChanges()" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-3 active:scale-95">
-                            <i data-lucide="save" class="w-5 h-5"></i>
-                            Save Changes
-                        </button>
-                        <button onclick="deleteCase()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-3 active:scale-95">
-                            <i data-lucide="trash-2" class="w-5 h-5"></i>
-                            Delete
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+        <button onclick="saveChanges()" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 group">
+            <i data-lucide="save" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
+            <span class="hidden lg:inline ml-2">Save Changes</span>
+        </button>
+        <button onclick="deleteCase()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white p-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 group">
+            <i data-lucide="trash-2" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
+            <span class="hidden lg:inline ml-2">Delete</span>
+        </button>
     </div>
 
     <!-- JavaScript -->
