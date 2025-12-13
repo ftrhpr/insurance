@@ -276,9 +276,9 @@ try {
             </div>
 
             <!-- Right Column: Communication, Feedback, Notes -->
-            <section class="flex-1 flex flex-col gap-4 min-w-0">
+            <div class="flex-1 flex flex-col gap-2 min-w-0">
                 <!-- Contact Information -->
-                <section class="bg-white border border-gray-200 p-4 rounded shadow-sm text-sm flex flex-col gap-2">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-teal-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="phone" class="w-4 h-4 text-white"></i>
@@ -297,7 +297,7 @@ try {
                 </div>
 
                 <!-- Service Appointment -->
-                <section class="bg-white border border-gray-200 p-4 rounded shadow-sm text-sm flex flex-col gap-2">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-orange-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="calendar-check" class="w-4 h-4 text-white"></i>
@@ -311,7 +311,7 @@ try {
                 </div>
 
                 <!-- Quick SMS Actions -->
-                <section class="bg-white border border-gray-200 p-4 rounded shadow-sm text-sm flex flex-col gap-2">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-indigo-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
@@ -350,7 +350,7 @@ try {
                 </div>
 
                 <!-- Advanced SMS Template Selector -->
-                <section class="bg-white border border-gray-200 p-4 rounded shadow-sm text-sm flex flex-col gap-2">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-violet-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="message-square" class="w-4 h-4 text-white"></i>
@@ -386,7 +386,7 @@ try {
             <!-- Right Column: Customer Feedback & Notes -->
             <div class="space-y-6">
                 <!-- Customer Review Section -->
-                <section class="bg-white border border-yellow-200 rounded shadow-sm text-sm flex flex-col gap-2">
+                <div class="bg-white border border-yellow-200 rounded shadow-sm text-sm">
                     <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="bg-white/20 p-2 rounded-lg">
@@ -451,7 +451,7 @@ try {
 
                 <!-- Reschedule Request Preview -->
                 <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
-                <section class="bg-white border border-purple-200 rounded shadow-sm text-sm flex flex-col gap-2">
+                <div class="bg-white border border-purple-200 rounded shadow-sm text-sm">
                     <div class="px-4 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="bg-white/20 p-2 rounded-lg">
