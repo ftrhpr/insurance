@@ -987,22 +987,31 @@ try {
 
             if ($tr && !empty($tr['phone'])) {
                 // Choose template based on status
-                $template_slug = ($new_status === 'collected_waiting') ? 'parts_arrived_no_schedule' : 'parts_arrived';
+                if ($new_status === 'collected') {
+                    $template_slug = 'parts_arrived';
+                } elseif ($new_new_status === 'collected_waiting') {
+                    $template_slug = 'parts_arrived_no_schedule';
+                } else {
+                    $template_slug = null; // No SMS for other status changes from here
+                }
                 
-                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = ?");
-                $stmt->execute([$template_slug]);
-                $template = $stmt->fetchColumn();
-                
-                if ($template) {
-                    $link = "https://portal.otoexpress.ge/public_view.php?id=" . $transfer_id;
-                    $smsText = str_replace(
-                        ['{name}', '{plate}', '{amount}', '{link}'],
-                        [$tr['name'], $tr['plate'], $tr['amount'], $link],
-                        $template
-                    );
+                if ($template_slug) {
+                    $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = ?");
+                    $stmt->execute([$template_slug]);
+                    $template = $stmt->fetchColumn();
                     
-                    $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
-                    @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to={$tr['phone']}&from=OTOMOTORS&text=" . urlencode($smsText));
+                    if ($template) {
+                        $link = "https://portal.otoexpress.ge/public_view.php?id=" . $transfer_id;
+                        $smsText = str_replace(
+                            ['{name}', '{plate}', '{amount}', '{link}'],
+                            [$tr['name'], $tr['plate'],
+                            $tr['amount'], $link],
+                            $template
+                        );
+                        
+                        $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+                        @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to={$tr['phone']}&from=OTOMOTORS&text=" . urlencode($smsText));
+                    }
                 }
             }
             
