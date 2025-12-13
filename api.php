@@ -312,6 +312,9 @@ try {
 
         try {
             $field_map = [
+                'name' => 'name',
+                'plate' => 'plate',
+                'amount' => 'amount',
                 'status' => 'status',
                 'phone' => 'phone',
                 'serviceDate' => 'serviceDate',
