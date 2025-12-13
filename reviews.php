@@ -194,8 +194,11 @@ try {
                 const res = await fetch(`${API_URL}?action=${action}`, opts);
                 
                 if (!res.ok) {
-                    const errorData = await res.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${res.status}`);
+                    const clone = res.clone();
+                    const jsonErr = await clone.json().catch(() => ({}));
+                    const txtErr = await res.text().catch(() => '');
+                    const message = jsonErr?.message || jsonErr?.error || txtErr || `HTTP ${res.status}`;
+                    throw new Error(message);
                 }
                 
                 return await res.json();

@@ -556,8 +556,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const response = await fetch(url, options);
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                const clone = response.clone();
+                const jsonErr = await clone.json().catch(() => ({}));
+                const txtErr = await response.text().catch(() => '');
+                const message = jsonErr?.message || jsonErr?.error || txtErr || `HTTP error! status: ${response.status}`;
+                throw new Error(message);
             }
             return response.json();
         }

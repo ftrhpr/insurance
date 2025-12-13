@@ -282,11 +282,6 @@ if (!$collection_id) {
 
                 const response = await fetch(`api.php?action=get_parts_collections`);
                 const data = await response.json();
-                if (!data || !Array.isArray(data.collections)) {
-                    console.error('Unexpected get_parts_collections response:', data);
-                    showToast('Error loading collection data: invalid response', 'error');
-                    return;
-                }
                 const collection = data.collections.find(c => c.id == id);
 
                 if (collection) {
@@ -295,16 +290,7 @@ if (!$collection_id) {
                     document.getElementById('editStatus').dataset.previousValue = collection.status; // Initialize previous value
                     document.getElementById('editAssignedManager').value = collection.assigned_manager_id || "";
 
-                    let partsList = [];
-                    if (typeof collection.parts_list === 'string') {
-                        try {
-                            partsList = JSON.parse(collection.parts_list || '[]');
-                        } catch(e) { partsList = []; }
-                    } else if (Array.isArray(collection.parts_list)) {
-                        partsList = collection.parts_list;
-                    } else {
-                        partsList = [];
-                    }
+                    const partsList = JSON.parse(collection.parts_list || '[]');
                     partsList.forEach(item => {
                         if (item.type === 'labor') {
                             addLabor(item.name, item.quantity, item.price);
@@ -501,7 +487,7 @@ if (!$collection_id) {
                 const response = await fetch('api.php?action=schedule_service_from_collection', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ collection_id: id, service_date: serviceDate.split('T')[0], service_time: (serviceDate.split('T')[1] || '10:00') })
+                    body: JSON.stringify({ collection_id: id, service_date: serviceDate })
                 });
                 const result = await response.json();
 
