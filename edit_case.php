@@ -112,7 +112,7 @@ try {
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen">
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3 pointer-events-none"></div>
 
@@ -120,7 +120,7 @@ try {
     <?php include 'header.php'; ?>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto px-2 py-6">
         <!-- Back Button -->
         <div class="mb-6">
             <a href="index.php" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors">
@@ -130,72 +130,43 @@ try {
         </div>
 
         <!-- Case Header -->
-        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden mb-6">
-            <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 flex justify-between items-center">
-                <!-- Decorative Background Pattern -->
-                <div class="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
-                <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
-
-                <div class="relative flex items-center gap-4 overflow-hidden">
-                     <!-- Vehicle Badge -->
-                     <div class="relative shrink-0">
-                         <div class="absolute inset-0 bg-white/30 blur-xl rounded-2xl"></div>
-                         <div class="relative bg-white/20 backdrop-blur-md border-2 border-white/40 px-5 py-3 rounded-xl font-mono font-extrabold text-white shadow-2xl flex items-center gap-2">
-                            <div class="bg-white/20 p-1.5 rounded-lg">
-                                <i data-lucide="car" class="w-5 h-5"></i>
-                            </div>
-                            <span class="tracking-wider text-lg"><?php echo htmlspecialchars($case['plate']); ?></span>
-                         </div>
-                     </div>
-
-                     <!-- Divider -->
-                     <div class="h-12 w-px bg-white/30 shrink-0"></div>
-
-                     <!-- Customer Info -->
-                     <div class="flex flex-col gap-1 min-w-0 flex-1">
-                         <div class="flex items-center gap-2 flex-wrap">
-                             <span class="text-[10px] text-white/60 font-bold uppercase tracking-widest">Order</span>
-                             <span class="text-sm font-mono text-white bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg border border-white/30 shadow-lg">#<?php echo $case_id; ?></span>
-                         </div>
-                         <div class="flex items-center gap-2">
-                             <i data-lucide="user" class="w-4 h-4 text-white/70 shrink-0"></i>
-                             <span class="text-lg font-bold text-white truncate"><?php echo htmlspecialchars($case['name']); ?></span>
-                         </div>
-                     </div>
+        <div class="bg-white rounded-lg shadow border border-gray-200 mb-4 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4 flex-1 min-w-0">
+                <div class="bg-gray-100 p-2 rounded">
+                    <i data-lucide="car" class="w-6 h-6 text-blue-600"></i>
                 </div>
-
-                <!-- Action Buttons -->
-                <div class="relative flex items-center gap-3">
-                    <button onclick="window.printCase()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all" title="Print Case">
-                        <i data-lucide="printer" class="w-5 h-5"></i>
-                    </button>
-                    <a href="index.php" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Workflow Progress -->
-            <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Case Progress</h4>
-                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
-                        <div id="workflow-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500" style="width: 12.5%"></div>
+                <div class="min-w-0">
+                    <div class="text-xs text-gray-500 uppercase font-bold tracking-widest">Order #<?php echo $case_id; ?></div>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-lg font-bold text-gray-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
+                        <span class="text-gray-400">/</span>
+                        <span class="font-mono text-base text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
                     </div>
                 </div>
-                <div class="flex justify-between mt-2 text-xs text-slate-500 font-medium">
-                    <span>New</span>
-                    <span>Processing</span>
-                    <span>Contacted</span>
-                    <span>Parts Ordered</span>
-                    <span>Parts Arrived</span>
-                    <span>Scheduled</span>
-                    <span>Completed</span>
-                    <span>Issue</span>
+            </div>
+            <div class="flex items-center gap-2 mt-3 md:mt-0">
+                <button onclick="window.printCase()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded transition" title="Print Case">
+                    <i data-lucide="printer" class="w-5 h-5"></i>
+                </button>
+                <a href="index.php" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Workflow Progress (Lightweight) -->
+        <div class="bg-white rounded-lg shadow border border-gray-200 mb-4 px-4 py-2">
+            <div class="flex items-center justify-between mb-1">
+                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Case Progress</h4>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div id="workflow-progress-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
                 </div>
+            </div>
+            <div class="flex flex-wrap justify-between mt-1 text-[11px] text-gray-400 font-medium gap-1">
+                <span>New</span><span>Processing</span><span>Contacted</span><span>Parts Ordered</span><span>Parts Arrived</span><span>Scheduled</span><span>Completed</span><span>Issue</span>
             </div>
         </div>
 
@@ -519,54 +490,48 @@ try {
                 <?php endif; ?>
 
                 <!-- Internal Notes -->
-                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                    <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
-                        <i data-lucide="sticky-note" class="w-4 h-4 text-white"></i>
-                        <label class="text-sm font-bold text-white uppercase tracking-wider">Internal Notes</label>
-                    </div>
-                    <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
-                        <i data-lucide="sticky-note" class="w-4 h-4 text-white"></i>
-                        <label class="text-sm font-bold text-white uppercase tracking-wider">Internal Notes</label>
-                    </div>
+                <details class="bg-white rounded border border-gray-200 shadow-sm" open>
+                    <summary class="px-4 py-2 cursor-pointer select-none flex items-center gap-2 bg-gray-50 border-b border-gray-100 rounded-t">
+                        <i data-lucide="sticky-note" class="w-4 h-4 text-gray-500"></i>
+                        <span class="text-sm font-bold text-gray-700 uppercase tracking-wider">Internal Notes</span>
+                    </summary>
                     <div class="p-4">
                         <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
                             <?php
                             if (!empty($case['internalNotes'])) {
                                 foreach ($case['internalNotes'] as $note) {
                                     $date = date('M j, g:i A', strtotime($note['timestamp']));
-                                    echo "<div class='bg-white p-3 rounded-lg border border-yellow-100 shadow-sm'>";
-                                    echo "<p class='text-sm text-slate-700'>" . htmlspecialchars($note['text']) . "</p>";
+                                    echo "<div class='bg-white p-3 rounded border border-yellow-100 shadow-sm'>";
+                                    echo "<p class='text-sm text-gray-700'>" . htmlspecialchars($note['text']) . "</p>";
                                     echo "<div class='flex justify-end mt-2'>";
-                                    echo "<span class='text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full'>" . htmlspecialchars($note['authorName'] ?? 'Manager') . " - {$date}</span>";
+                                    echo "<span class='text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full'>" . htmlspecialchars($note['authorName'] ?? 'Manager') . " - {$date}</span>";
                                     echo "</div>";
                                     echo "</div>";
                                 }
                             } else {
-                                echo "<div class='text-sm text-slate-500 italic text-center py-4'>No internal notes yet</div>";
+                                echo "<div class='text-sm text-gray-500 italic text-center py-4'>No internal notes yet</div>";
                             }
                             ?>
                         </div>
                         <div class="flex gap-2">
-                            <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none">
-                            <button onclick="addNote()" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all active:scale-95">
+                            <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none">
+                            <button onclick="addNote()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-bold text-sm transition-all">
                                 <i data-lucide="plus" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
-                </div>
+                </details>
 
                 <!-- Action Buttons -->
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <div class="flex gap-3">
-                        <button onclick="saveChanges()" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
-                            <i data-lucide="save" class="w-5 h-5"></i>
-                            Save Changes
-                        </button>
-                        <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
-                            <i data-lucide="trash-2" class="w-5 h-5"></i>
-                            Delete
-                        </button>
-                    </div>
+                <div class="bg-white rounded border border-gray-200 p-4 shadow-sm flex gap-3">
+                    <button onclick="saveChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-bold text-base shadow transition flex items-center justify-center gap-2">
+                        <i data-lucide="save" class="w-5 h-5"></i>
+                        Save Changes
+                    </button>
+                    <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-bold text-base shadow transition flex items-center justify-center gap-2">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        Delete
+                    </button>
                 </div>
             </div>
         </div>
