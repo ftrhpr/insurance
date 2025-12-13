@@ -83,7 +83,7 @@ try {
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.js"></script>
 
     <!-- Custom Styles -->
     <style>
@@ -610,7 +610,7 @@ try {
                     border: 'border-emerald-200/60',
                     iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50',
                     iconColor: 'text-emerald-600',
-                    icon: 'check-circle-2',
+                    icon: 'check-circle',
                     shadow: 'shadow-emerald-500/20'
                 },
                 error: {
@@ -634,7 +634,7 @@ try {
                     border: 'border-purple-300',
                     iconBg: 'bg-gradient-to-br from-purple-100 to-pink-100',
                     iconColor: 'text-purple-700',
-                    icon: 'bell-ring',
+                    icon: 'bell',
                     shadow: 'shadow-purple-500/30'
                 }
             };
@@ -657,7 +657,7 @@ try {
             `;
 
             container.appendChild(toast);
-            if(window.lucide) lucide.createIcons();
+            initializeIcons();
 
             // Animate In
             requestAnimationFrame(() => {
@@ -670,6 +670,22 @@ try {
                     toast.classList.add('translate-y-4', 'opacity-0');
                     setTimeout(() => toast.remove(), 500);
                 }, duration);
+            }
+        }
+
+        // Initialize Lucide icons with retry
+        function initializeIcons() {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                try {
+                    window.lucide.createIcons();
+                } catch (e) {
+                    console.warn('Lucide icon initialization failed:', e);
+                    // Retry after a short delay
+                    setTimeout(initializeIcons, 500);
+                }
+            } else {
+                // Retry after a short delay if Lucide hasn't loaded yet
+                setTimeout(initializeIcons, 100);
             }
         }
 
@@ -981,6 +997,7 @@ try {
                 `;
             }).join('');
             activityLog.innerHTML = logHTML;
+            initializeIcons();
         }
 
         // Update notes display
@@ -1007,6 +1024,7 @@ try {
                 `;
             }).join('');
             notesContainer.innerHTML = notesHTML;
+            initializeIcons();
         }
 
         // Print case
@@ -1016,6 +1034,13 @@ try {
 
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize icons when DOM is ready
+            initializeIcons();
+
+            // Also try to initialize when window loads (backup)
+            window.addEventListener('load', function() {
+                setTimeout(initializeIcons, 100);
+            });
             // Update workflow progress on status change
             document.getElementById('input-status').addEventListener('change', updateWorkflowProgress);
 
@@ -1165,7 +1190,7 @@ try {
 
             // Initialize
             updateWorkflowProgress();
-            lucide.createIcons();
+            initializeIcons();
         });
     </script>
 </body>
