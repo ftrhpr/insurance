@@ -492,10 +492,10 @@ if (!$collection_id) {
                 const result = await response.json();
 
                 if (result.success) {
-                    // Update the main form status to collected
+                    // Update the main form status to collected and save
                     document.getElementById('editStatus').value = 'collected';
+                    await saveEdit(new Event('submit')); // Programmatically trigger save
                     closeCollectionModal();
-                    showToast("Service Scheduled", "Parts collected and service scheduled successfully", "success");
                 } else {
                     showToast(result.error || 'Error scheduling service', 'error');
                 }
@@ -512,11 +512,10 @@ if (!$collection_id) {
                 return;
             }
 
-            // Update the main form status
+            // Update the main form status and save
             document.getElementById('editStatus').value = alternativeStatus;
-
+            await saveEdit(new Event('submit')); // Programmatically trigger save
             closeCollectionModal();
-            showToast("Status Updated", `Status changed to ${alternativeStatus}`, "success");
         }
 
         async function saveEdit(e) {

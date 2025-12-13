@@ -932,6 +932,7 @@ try {
 
     if ($action === 'update_parts_collection' && $method === 'POST') {
         error_log("DEBUG: update_parts_collection endpoint hit."); // Temporary debug log
+        error_log("DEBUG: Received data: " . file_get_contents('php://input')); // Log raw input
 
         $data = getJsonInput();
         $id = $data['id'] ?? null;
