@@ -1886,7 +1886,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                     // Service date formatting
                     let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
-                    if (t.service_date) {
+                    
+                    // Show reschedule date if pending reschedule request
+                    if (t.rescheduleDate && t.user_response === 'Reschedule Requested') {
+                        const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                        const rescheduleDateStr = rescheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 w-fit">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
+                            <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
+                        </div>`;
+                    } else if (t.service_date) {
                         const svcDate = new Date(t.service_date.replace(' ', 'T'));
                         const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                         serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
