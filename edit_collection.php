@@ -492,10 +492,11 @@ if (!$collection_id) {
                 const result = await response.json();
 
                 if (result.success) {
-                    // Update the main form status to collected and save
-                    document.getElementById('editStatus').value = 'collected';
-                    await saveEdit(); // Programmatically trigger save
+                    // Save the collection with "collected" status
+                    await saveEdit(null, 'collected');
                     closeCollectionModal();
+                    // Manually update the dropdown for visual consistency
+                    document.getElementById('editStatus').value = 'collected';
                 } else {
                     showToast(result.error || 'Error scheduling service', 'error');
                 }
@@ -512,18 +513,19 @@ if (!$collection_id) {
                 return;
             }
 
-            // Update the main form status and save
-            document.getElementById('editStatus').value = alternativeStatus;
-            await saveEdit(); // Programmatically trigger save
+            // Save the collection with the selected alternative status
+            await saveEdit(null, alternativeStatus);
             closeCollectionModal();
+            // Manually update the dropdown for visual consistency
+            document.getElementById('editStatus').value = alternativeStatus;
         }
 
-        async function saveEdit(e) {
+        async function saveEdit(e, newStatus = null) {
             if (e) {
                 e.preventDefault();
             }
             const id = document.getElementById('editId').value;
-            const status = document.getElementById('editStatus').value;
+            const status = newStatus || document.getElementById('editStatus').value;
             const assigned_manager_id = document.getElementById('editAssignedManager').value;
 
             const items = [];
