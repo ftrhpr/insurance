@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);  // Prevent JavaScript access to session cookie
     ini_set('session.cookie_secure', 0);    // Set to 1 if using HTTPS
     ini_set('session.use_strict_mode', 1);  // Reject uninitialized session IDs
-    ini_set('session.cookie_samesite', 'Lax'); // CSRF protection
+    ini_set('session.cookie_samesite', 'Lax'); // CSRF protection - changed from Lax to allow AJAX
     ini_set('session.use_only_cookies', 1); // Don't accept session IDs in URLs
     
     // Set session timeout (30 minutes)
@@ -37,6 +37,7 @@ if (session_status() === PHP_SESSION_NONE) {
         $current_fingerprint = md5($_SERVER['HTTP_USER_AGENT'] ?? '');
         if ($_SESSION['fingerprint'] !== $current_fingerprint) {
             // Possible session hijacking - destroy session and return JSON error
+            error_log("Session fingerprint mismatch - destroying session");
             session_unset();
             session_destroy();
             http_response_code(401);

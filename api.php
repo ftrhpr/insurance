@@ -33,6 +33,7 @@ if (empty($_SESSION['csrf_token'])) {
 // Check authentication for protected endpoints
 $publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
+    error_log("401 Unauthorized: action=$action, session_user_id=" . ($_SESSION['user_id'] ?? 'null') . ", session_role=" . ($_SESSION['role'] ?? 'null'));
     http_response_code(401);
     die(json_encode(['error' => 'Unauthorized']));
 }
@@ -473,9 +474,9 @@ try {
     }
 
     if ($action === 'save_templates' && $method === 'POST') {
-        if (!checkPermission('admin')) {
+        if (!checkPermission('manager')) {
             http_response_code(403);
-            jsonResponse(['error' => 'Admin access required to manage SMS templates']);
+            jsonResponse(['error' => 'Manager or Admin access required to manage SMS templates']);
         }
 
         $data = getJsonInput();
