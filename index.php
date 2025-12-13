@@ -529,69 +529,38 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         </div>
     </div>
 
-    <!-- Premium Edit Modal -->
-    <div id="edit-modal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
-        <!-- Enhanced Backdrop with Animation -->
-        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeModal()"></div>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-        <!-- Fullscreen Dialog Container -->
-        <div class="fixed inset-0 flex items-stretch p-0 sm:p-2 md:p-4 lg:p-6">
-            <div class="relative flex-1 flex flex-col rounded-none sm:rounded-2xl lg:rounded-3xl bg-gradient-to-br from-white to-slate-50 text-left shadow-2xl shadow-blue-900/30 transition-all border-0 sm:border sm:border-slate-200/50 ring-0 sm:ring-1 sm:ring-white/50 w-full h-full">
+    <!-- Manual Create Order Modal -->
+    <div id="manual-create-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-emerald-900/40 to-teal-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
+
+        <!-- Modal Container -->
+        <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl z-[10001]">
                 
-                <!-- Premium Header with Enhanced Gradient - Fixed -->
-                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 flex justify-between items-center shadow-2xl shrink-0">
-                    <!-- Decorative Background Pattern -->
-                    <div class="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
-                    
-                    <div class="relative flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 overflow-hidden">
-                         <!-- Vehicle Badge -->
-                         <div class="relative shrink-0">
-                             <div class="absolute inset-0 bg-white/30 blur-xl rounded-2xl"></div>
-                             <div class="relative bg-white/20 backdrop-blur-md border-2 border-white/40 px-2 sm:px-3 md:px-4 lg:px-5 py-2 sm:py-2.5 md:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-mono font-extrabold text-white shadow-2xl flex items-center gap-1.5 sm:gap-2 md:gap-3">
-                                <div class="bg-white/20 p-1 sm:p-1.5 rounded-lg">
-                                    <i data-lucide="car" class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5"></i>
-                                </div>
-                                <span id="modal-title-ref" class="tracking-wider text-sm sm:text-base md:text-lg truncate max-w-[80px] sm:max-w-[120px] md:max-w-none">AB-123-CD</span>
-                             </div>
-                         </div>
-                         
-                         <!-- Divider - Hidden on mobile -->
-                         <div class="hidden sm:block h-8 md:h-10 lg:h-12 w-px bg-white/30 shrink-0"></div>
-                         
-                         <!-- Customer Info -->
-                         <div class="flex flex-col gap-0.5 sm:gap-1 md:gap-1.5 min-w-0 flex-1">
-                             <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
-                                 <span class="text-[8px] sm:text-[10px] text-white/60 font-bold uppercase tracking-widest">Order</span>
-                                 <span class="text-xs sm:text-sm font-mono text-white bg-white/20 backdrop-blur-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-md sm:rounded-lg border border-white/30 shadow-lg" id="modal-order-id">#0</span>
-                             </div>
-                             <div class="flex items-center gap-1 sm:gap-2">
-                                 <i data-lucide="user" class="w-3 sm:w-4 h-3 sm:h-4 text-white/70 shrink-0"></i>
-                                 <span class="text-sm sm:text-base md:text-lg font-bold text-white truncate" id="modal-title-name">Customer Name</span>
-                             </div>
-                         </div>
+                <!-- Header -->
+                <div class="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 backdrop-blur-md border-2 border-white/40 p-2 rounded-xl">
+                            <i data-lucide="plus-circle" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Create New Order</h3>
+                            <p class="text-xs text-white/80">Manually add a new insurance order</p>
+                        </div>
                     </div>
-                    
-                    <button onclick="window.closeModal()" class="relative text-white/80 hover:text-white hover:bg-white/20 p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl transition-all hover:rotate-90 duration-300 group shrink-0">
-                        <i data-lucide="x" class="w-5 sm:w-5 md:w-6 h-5 sm:h-5 md:h-6 group-hover:scale-110 transition-transform"></i>
+                    <button onclick="window.closeManualCreateModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all">
+                        <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
-                <!-- Enhanced Body with Structured Workflow Layout -->
-                <div class="flex-1 overflow-y-auto custom-scrollbar">
-                    <!-- Workflow Progress Indicator -->
-                    <div class="px-3 sm:px-4 md:px-6 py-3 bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Case Progress</h4>
-                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <div class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                                <div id="workflow-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500" style="width: 12.5%"></div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between mt-1 text-[10px] text-slate-500 font-medium">
-                            <span>New</span>
+                <!-- Body -->
+                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                             <span>Processing</span>
                             <span>Contacted</span>
                             <span>Parts Ordered</span>
@@ -1986,7 +1955,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 ${t.franchise ? `<p class="text-[10px] text-orange-500 mt-1">Franchise: ${escapeHtml(t.franchise)}</p>` : ''}
                             </div>
                             <div class="pl-3 text-right">
-                                <button onclick="window.openEditModal(${t.id})" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 ml-auto group-hover:bg-primary-50">
+                                <button onclick="window.location.href='edit_case.php?id=${t.id}'" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 ml-auto group-hover:bg-primary-50">
                                     Process Case <i data-lucide="arrow-right" class="w-3 h-3"></i>
                                 </button>
                             </div>
@@ -2065,7 +2034,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     }
 
                     activeContainer.innerHTML += `
-                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.openEditModal(${t.id})">
+                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all">
@@ -2112,14 +2081,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-end gap-1">
-                                    <button onclick="window.viewInvoice(${t.id})" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Invoice">
+                                    <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Invoice">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
                                     </button>
                                     ${CAN_EDIT ? 
-                                        `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95">
+                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95">
                                             <i data-lucide="edit-2" class="w-4 h-4"></i>
                                         </button>` :
-                                        `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
+                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </button>`
                                     }
@@ -2493,7 +2462,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     
                     // Open the newly created order
                     if (result.id) {
-                        setTimeout(() => window.openEditModal(result.id), 500);
+                        setTimeout(() => window.location.href = `edit_case.php?id=${result.id}`, 500);
                     }
                 } else {
                     const errorMsg = result?.message || 'Failed to create order';
@@ -2512,20 +2481,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         };
 
         window.viewCase = function(id) {
-            window.openEditModal(id);
-            // Disable all form inputs for viewers
-            if (!CAN_EDIT) {
-                const modal = document.getElementById('edit-modal');
-                modal.querySelectorAll('input, select, textarea, button[onclick*="save"]').forEach(el => {
-                    el.disabled = true;
-                });
-                // Change save button to close
-                const saveBtn = modal.querySelector('button[onclick*="saveEdit"]');
-                if (saveBtn) {
-                    saveBtn.textContent = 'Close';
-                    saveBtn.onclick = window.closeModal;
-                }
-            }
+            window.location.href = `edit_case.php?id=${id}`;
         };
 
         window.saveEdit = async () => {
