@@ -1,79 +1,38 @@
 <?php
-session_start();
 require_once 'session_config.php';
 require_once 'config.php';
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+$id = intval($_GET['id'] ?? 0);
+if (!$id) {
+    echo '<div class="p-8 text-red-600 font-bold">Invalid case ID</div>';
     exit;
 }
-
-// Get case ID from URL
-$case_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if (!$case_id) {
-    header('Location: index.php');
-    exit;
-}
-
-// Get current user info
-$current_user_name = $_SESSION['full_name'] ?? 'Manager';
-$current_user_role = $_SESSION['role'] ?? 'manager';
-
-// Check permissions
-$CAN_EDIT = in_array($current_user_role, ['admin', 'manager']);
-
-// Manager phone number for notifications
-define('MANAGER_PHONE', '511144486');
-
-// Database connection
-try {
-    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
-
-// Fetch case data
-$stmt = $pdo->prepare("
-    SELECT t.*, v.ownerName as vehicle_owner, v.model as vehicle_model
-    FROM transfers t
-    LEFT JOIN vehicles v ON t.plate = v.plate
-    WHERE t.id = ?
-");
-$stmt->execute([$case_id]);
-$case = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$case) {
-    header('Location: index.php');
-    exit;
-}
-
-// Decode JSON fields
-$case['internalNotes'] = json_decode($case['internalNotes'] ?? '[]', true);
-$case['systemLogs'] = json_decode($case['systemLogs'] ?? '[]', true);
-
-// Get SMS templates for workflow bindings
-$smsTemplates = [];
-$smsWorkflowBindings = [];
 
 try {
-    $stmt = $pdo->query("SELECT * FROM sms_templates WHERE is_active = 1 ORDER BY slug");
-    while ($template = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $smsTemplates[$template['slug']] = $template;
-        $workflowStages = json_decode($template['workflow_stages'] ?? '[]', true);
-        foreach ($workflowStages as $stage) {
-            if (!isset($smsWorkflowBindings[$stage])) {
-                $smsWorkflowBindings[$stage] = [];
-            }
-            $smsWorkflowBindings[$stage][] = $template;
-        }
+    $pdo = getDBConnection();
+    $stmt = $pdo->prepare("SELECT * FROM transfers WHERE id = ?");
+    $stmt->execute([$id]);
+    $case = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$case) {
+        echo '<div class="p-8 text-red-600 font-bold">Case not found</div>';
+        exit;
     }
+    $case['internalNotes'] = json_decode($case['internalNotes'] ?? '[]', true) ?: [];
+    $case['systemLogs'] = json_decode($case['systemLogs'] ?? '[]', true) ?: [];
 } catch (Exception $e) {
-    // SMS templates table might not exist yet
-    $smsTemplates = [];
-    $smsWorkflowBindings = [];
+    echo '<div class="p-8 text-red-600 font-bold">DB error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+    exit;
 }
+
+// Fetch SMS templates
+$smsTemplates = [];
+try {
+    $stmt = $pdo->prepare("SELECT slug, content FROM sms_templates WHERE is_active = 1");
+    $stmt->execute();
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $tpl) {
+        $smsTemplates[$tpl['slug']] = $tpl['content'];
+    }
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -280,145 +239,145 @@ try {
                     <div id="activity-log-container" class="p-4 h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
                         <?php
                         if (!empty($case['systemLogs'])) {
-                            foreach (array_reverse($case['systemLogs']) as $log) {
-                                $date = date('M j, g:i A', strtotime($log['timestamp']));
-                                echo "<div class='flex items-start gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200'>";
-                                echo "<div class='bg-slate-200 rounded-full p-1 mt-0.5'>";
-                                echo "<i data-lucide='activity' class='w-3 h-3 text-slate-600'></i>";
-                                echo "</div>";
-                                echo "<div class='flex-1'>";
-                                echo "<div class='text-xs text-slate-500 mb-1'>{$date}</div>";
-                                echo "<div class='text-sm text-slate-700'>" . htmlspecialchars($log['message']) . "</div>";
-                                echo "</div>";
-                                echo "</div>";
-                            }
-                        } else {
-                            echo "<div class='text-sm text-slate-500 italic'>No activity recorded</div>";
-                        }
-                        ?>
-                    </div>
-                </div>
-            </div>
+                            <body class="bg-slate-50 min-h-screen">
+                            <div class="max-w-4xl mx-auto my-8 bg-white rounded-2xl shadow-xl p-8">
+                                <div class="flex items-center gap-4 mb-6">
+                                    <a href="index.php" class="text-blue-600 hover:underline flex items-center gap-1"><i data-lucide="arrow-left"></i>Back</a>
+                                    <h1 class="text-2xl font-bold flex-1">Edit Case: <?php echo htmlspecialchars($case['plate']); ?> <span class="ml-2 px-2 py-1 rounded text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-600"><?php echo htmlspecialchars($case['status']); ?></span></h1>
+                                </div>
+                                <form id="edit-case-form" class="space-y-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-bold mb-1">Name</label>
+                                            <input name="name" type="text" class="w-full px-3 py-2 border rounded-lg" value="<?php echo htmlspecialchars($case['name']); ?>" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold mb-1">Phone</label>
+                                            <input name="phone" type="text" class="w-full px-3 py-2 border rounded-lg" value="<?php echo htmlspecialchars($case['phone']); ?>" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold mb-1">Amount</label>
+                                            <input name="amount" type="number" step="0.01" class="w-full px-3 py-2 border rounded-lg" value="<?php echo htmlspecialchars($case['amount']); ?>" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold mb-1">Franchise</label>
+                                            <input name="franchise" type="text" class="w-full px-3 py-2 border rounded-lg" value="<?php echo htmlspecialchars($case['franchise']); ?>">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold mb-1">Status</label>
+                                            <select name="status" class="w-full px-3 py-2 border rounded-lg" required>
+                                                <?php
+                                                $statuses = ['New','Processing','Called','Parts Ordered','Parts Arrived','Scheduled','Completed','Issue','Collected','Collected Waiting'];
+                                                foreach ($statuses as $s) {
+                                                    $sel = $case['status'] === $s ? 'selected' : '';
+                                                    echo "<option value=\"$s\" $sel>$s</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold mb-1">Service Date</label>
+                                            <input name="serviceDate" type="datetime-local" class="w-full px-3 py-2 border rounded-lg" value="<?php echo $case['serviceDate'] ? date('Y-m-d\TH:i', strtotime($case['serviceDate'])) : ''; ?>">
+                                        </div>
+                                    </div>
+                                    <div class="mt-6">
+                                        <label class="block text-sm font-bold mb-1">Parts List</label>
+                                        <textarea name="parts_list" class="w-full px-3 py-2 border rounded-lg min-h-[60px]" placeholder="JSON array or comma-separated list"><?php echo htmlspecialchars(json_encode($case['parts_list'] ?? [])); ?></textarea>
+                                        <button type="button" class="mt-2 px-4 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200" onclick="openPartsModal()">Edit Parts</button>
+                                    </div>
+                                    <div class="mt-6">
+                                        <label class="block text-sm font-bold mb-1">Customer Response</label>
+                                        <div class="flex items-center gap-4">
+                                            <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-600"><?php echo htmlspecialchars($case['user_response'] ?? 'Pending'); ?></span>
+                                            <?php if (($case['user_response'] ?? '') === 'Reschedule Requested'): ?>
+                                                <span class="text-sm text-slate-600">Requested: <?php echo htmlspecialchars($case['reschedule_date'] ?? ''); ?> <?php echo htmlspecialchars($case['reschedule_comment'] ?? ''); ?></span>
+                                                <button type="button" class="ml-2 px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200" onclick="acceptReschedule()">Accept</button>
+                                                <button type="button" class="ml-2 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200" onclick="declineReschedule()">Decline</button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6">
+                                        <label class="block text-sm font-bold mb-1">Internal Notes</label>
+                                        <textarea name="internalNotes" class="w-full px-3 py-2 border rounded-lg min-h-[60px]" placeholder="Notes (JSON array)"><?php echo htmlspecialchars(json_encode($case['internalNotes'])); ?></textarea>
+                                    </div>
+                                    <div class="mt-6">
+                                        <label class="block text-sm font-bold mb-1">System Logs</label>
+                                        <div class="bg-slate-50 border rounded-lg p-3 max-h-40 overflow-y-auto text-xs">
+                                            <?php foreach ($case['systemLogs'] as $log) {
+                                                echo '<div class="mb-1">' . htmlspecialchars(is_array($log) ? ($log['timestamp'] ?? '') . ' ' . ($log['message'] ?? '') : $log) . '</div>';
+                                            } ?>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 flex gap-4">
+                                        <button type="button" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="openSmsModal()">Send SMS</button>
+                                        <button type="button" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700" onclick="testFCM()">Test FCM</button>
+                                        <button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 font-bold">Save</button>
+                                        <button type="button" class="px-6 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300" onclick="window.location='index.php'">Cancel</button>
+                                    </div>
+                                </form>
+                                <div class="mt-8">
+                                    <h2 class="text-lg font-bold mb-2">Review</h2>
+                                    <?php if ($case['review_stars']): ?>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-yellow-500 font-bold text-xl"><?php echo str_repeat('★', intval($case['review_stars'])); ?></span>
+                                            <span class="text-slate-600">(<?php echo intval($case['review_stars']); ?> stars)</span>
+                                        </div>
+                                        <div class="text-slate-700 mt-1"><?php echo htmlspecialchars($case['review_comment']); ?></div>
+                                        <button class="mt-2 px-4 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">Moderate Review</button>
+                                    <?php else: ?>
+                                        <button class="px-4 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Request Review</button>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="mt-8">
+                                    <h2 class="text-lg font-bold mb-2">Audit Timeline</h2>
+                                    <div class="bg-slate-50 border rounded-lg p-3 max-h-40 overflow-y-auto text-xs">
+                                        <?php foreach ($case['systemLogs'] as $log) {
+                                            echo '<div class="mb-1">' . htmlspecialchars(is_array($log) ? ($log['timestamp'] ?? '') . ' ' . ($log['message'] ?? '') : $log) . '</div>';
+                                        } ?>
+                                    </div>
+                                </div>
+                            </div>
 
-            <!-- Middle Column: Communication & Actions -->
-            <div class="space-y-6">
-                <!-- Contact Information -->
-                <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 border border-teal-100 shadow-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-teal-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="phone" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-teal-900 uppercase tracking-wider">Contact Information</h3>
-                    </div>
-                    <div class="flex gap-3">
-                        <div class="relative flex-1">
-                            <i data-lucide="smartphone" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-teal-500"></i>
-                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-teal-200 rounded-xl text-base font-semibold text-slate-800 focus:ring-4 focus:ring-teal-500/20 focus:border-teal-400 outline-none shadow-sm">
-                        </div>
-                        <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="bg-white text-teal-600 border-2 border-teal-200 p-4 rounded-xl hover:bg-teal-50 hover:border-teal-300 hover:scale-105 transition-all shadow-lg active:scale-95">
-                            <i data-lucide="phone-call" class="w-6 h-6"></i>
-                        </a>
-                    </div>
-                </div>
+                            <!-- Modals (Parts, SMS, etc.) would go here -->
+                            <script>
+                            // JS helpers for modals, API, validation, etc.
+                            function openPartsModal() { alert('Parts modal not implemented in this demo.'); }
+                            function openSmsModal() { alert('SMS modal not implemented in this demo.'); }
+                            function testFCM() { alert('FCM test not implemented in this demo.'); }
+                            function acceptReschedule() { alert('Accept reschedule not implemented.'); }
+                            function declineReschedule() { alert('Decline reschedule not implemented.'); }
 
-                <!-- Service Appointment -->
-                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-100 shadow-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-orange-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="calendar-check" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-orange-900 uppercase tracking-wider">Service Appointment</h3>
-                    </div>
-                    <div class="relative">
-                        <i data-lucide="calendar" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-orange-500"></i>
-                        <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-orange-200 rounded-xl text-base font-semibold focus:border-orange-400 focus:ring-4 focus:ring-orange-400/20 outline-none shadow-sm">
-                    </div>
-                </div>
+                            // Save handler
+                            const form = document.getElementById('edit-case-form');
+                            form.addEventListener('submit', async function(e) {
+                                e.preventDefault();
+                                const data = Object.fromEntries(new FormData(form).entries());
+                                // Parse JSON fields
+                                try {
+                                    data.internalNotes = JSON.parse(data.internalNotes);
+                                } catch { data.internalNotes = []; }
+                                try {
+                                    data.parts_list = JSON.parse(data.parts_list);
+                                } catch { data.parts_list = []; }
+                                // API call
+                                try {
+                                    const res = await fetch('api.php?action=update_transfer&id=<?php echo $id; ?>', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(data)
+                                    });
+                                    if (!res.ok) throw new Error(await res.text());
+                                    alert('Saved!');
+                                    window.location.reload();
+                                } catch (err) {
+                                    alert('Save failed: ' + err.message);
+                                }
+                            });
 
-                <!-- Quick SMS Actions -->
-                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-100 shadow-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-indigo-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-indigo-900 uppercase tracking-wider">Quick SMS Actions</h3>
-                    </div>
-                    <div class="space-y-3">
-                        <button id="btn-sms-register" class="group w-full flex justify-between items-center px-5 py-4 bg-white border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
-                            <div>
-                                <div class="text-base font-bold text-slate-800 group-hover:text-indigo-700">Send Welcome SMS</div>
-                                <div class="text-xs text-slate-500 mt-1">Registration confirmation</div>
-                            </div>
-                            <div class="bg-indigo-100 group-hover:bg-indigo-600 p-3 rounded-lg transition-colors">
-                                <i data-lucide="message-square" class="w-5 h-5 text-indigo-600 group-hover:text-white"></i>
-                            </div>
-                        </button>
-                        <button id="btn-sms-arrived" class="group w-full flex justify-between items-center px-5 py-4 bg-white border-2 border-teal-200 rounded-xl hover:border-teal-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
-                            <div>
-                                <div class="text-base font-bold text-slate-800 group-hover:text-teal-700">Parts Arrived SMS</div>
-                                <div class="text-xs text-slate-500 mt-1">Includes customer link</div>
-                            </div>
-                            <div class="bg-teal-100 group-hover:bg-teal-600 p-3 rounded-lg transition-colors">
-                                <i data-lucide="package-check" class="w-5 h-5 text-teal-600 group-hover:text-white"></i>
-                            </div>
-                        </button>
-                        <button id="btn-sms-schedule" class="group w-full flex justify-between items-center px-5 py-4 bg-white border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
-                            <div>
-                                <div class="text-base font-bold text-slate-800 group-hover:text-orange-700">Send Schedule SMS</div>
-                                <div class="text-xs text-slate-500 mt-1">Appointment reminder</div>
-                            </div>
-                            <div class="bg-orange-100 group-hover:bg-orange-600 p-3 rounded-lg transition-colors">
-                                <i data-lucide="calendar-check" class="w-5 h-5 text-orange-600 group-hover:text-white"></i>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Advanced SMS Template Selector -->
-                <div class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-100 shadow-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-violet-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="message-square" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-violet-900 uppercase tracking-wider">Advanced SMS</h3>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs text-violet-600 font-bold uppercase mb-2">Select Template</label>
-                            <select id="sms-template-selector" class="w-full bg-white border-2 border-violet-200 rounded-xl p-3 text-base font-medium focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20 outline-none shadow-sm">
-                                <option value="">Choose a template...</option>
-                                <?php foreach ($smsTemplates as $slug => $template): ?>
-                                <option value="<?php echo htmlspecialchars($slug); ?>" data-content="<?php echo htmlspecialchars($template['content']); ?>">
-                                    <?php echo htmlspecialchars($template['name'] ?? ucfirst(str_replace('_', ' ', $slug))); ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-violet-600 font-bold uppercase mb-2">Message Preview</label>
-                            <div id="sms-preview" class="bg-white border-2 border-violet-200 rounded-xl p-4 min-h-[80px] text-sm text-slate-700 whitespace-pre-wrap shadow-sm">
-                                <span class="text-slate-400 italic">Select a template to see preview...</span>
-                            </div>
-                        </div>
-                        <button id="btn-send-custom-sms" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" disabled>
-                            <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
-                            Send Custom SMS
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Customer Feedback & Notes -->
-            <div class="space-y-6">
-                <!-- Customer Review Section -->
-                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 overflow-hidden shadow-lg">
-                    <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="bg-white/20 p-2 rounded-lg">
-                                <i data-lucide="star" class="w-5 h-5 text-white"></i>
-                            </div>
-                            <label class="text-sm font-bold text-white uppercase tracking-wider">Customer Review</label>
-                        </div>
+                            lucide.createIcons();
+                            </script>
+                            </body>
+                            </html>
                         <button id="btn-edit-review" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-1 rounded-lg transition-all text-xs font-bold">
                             <i data-lucide="edit" class="w-4 h-4 inline mr-1"></i>
                             Edit
