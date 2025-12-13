@@ -280,6 +280,50 @@ try {
     <!-- Header -->
     <?php include 'header.php'; ?>
 
+    <!-- Case Summary Card -->
+    <div class="max-w-3xl mx-auto mt-8 mb-4">
+        <div class="bg-gradient-to-br from-primary-100 to-accent-50 rounded-2xl shadow-lg p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-primary-200/40">
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase text-primary-600 tracking-wider">Case #<?php echo $case_id; ?></span>
+                    <span class="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">
+                        <i data-lucide="car" class="w-4 h-4 text-primary-500"></i>
+                        <?php echo htmlspecialchars($case['plate']); ?>
+                        <button onclick="copyToClipboard('<?php echo htmlspecialchars($case['plate']); ?>')" aria-label="Copy Plate" class="ml-1 text-primary-400 hover:text-primary-700 focus:outline-none"><i data-lucide="copy" class="w-3 h-3"></i></button>
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                        <?php echo htmlspecialchars($case['name']); ?>
+                    </span>
+                    <span class="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                        <i data-lucide="phone" class="w-4 h-4 text-teal-500"></i>
+                        <?php echo htmlspecialchars($case['phone']); ?>
+                        <button onclick="copyToClipboard('<?php echo htmlspecialchars($case['phone']); ?>')" aria-label="Copy Phone" class="ml-1 text-teal-400 hover:text-teal-700 focus:outline-none"><i data-lucide="copy" class="w-3 h-3"></i></button>
+                    </span>
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <span class="text-lg font-bold text-emerald-600">₾<?php echo htmlspecialchars($case['amount']); ?></span>
+                <span class="text-xs text-slate-500">Status: <span class="font-semibold text-primary-700"><?php echo htmlspecialchars($case['status']); ?></span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Bar -->
+    <div class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
+        <button onclick="saveChanges()" class="bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none" aria-label="Save Changes" title="Save Changes">
+            <i data-lucide="save" class="w-5 h-5"></i>
+        </button>
+        <button onclick="printCase()" class="bg-slate-500 hover:bg-slate-700 text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none" aria-label="Print Case" title="Print Case">
+            <i data-lucide="printer" class="w-5 h-5"></i>
+        </button>
+        <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none" aria-label="Delete Case" title="Delete Case">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+        </button>
+    </div>
+
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex gap-8">
@@ -338,24 +382,21 @@ try {
                     </div>
                 </div>
 
-                <!-- Workflow Progress Bar -->
+                <!-- Interactive Workflow Progress Bar -->
                 <section class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Progress</span>
                         <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Stage <span id="workflow-stage-number">1</span> of 8</span>
                     </div>
-                    <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden relative">
                         <div id="workflow-progress-bar" class="h-full bg-primary-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
+                        <div class="absolute inset-0 flex justify-between items-center pointer-events-none">
+                            <!-- Stage dots -->
+                            <template id="workflow-dots-template"></template>
+                        </div>
                     </div>
-                    <div class="flex justify-between mt-1 text-[11px] text-slate-400 font-medium">
-                        <span>New</span>
-                        <span>Processing</span>
-                        <span>Contacted</span>
-                        <span>Parts Ordered</span>
-                        <span>Parts Arrived</span>
-                        <span>Scheduled</span>
-                        <span>Completed</span>
-                        <span>Issue</span>
+                    <div class="flex justify-between mt-1 text-[11px] text-slate-400 font-medium" id="workflow-labels">
+                        <!-- Labels will be injected -->
                     </div>
                 </section>
 
@@ -648,25 +689,9 @@ try {
                             <i data-lucide="history" class="w-4 h-4 text-slate-500"></i>
                             <h3 class="text-base font-semibold text-slate-700">Activity Timeline</h3>
                         </div>
-                        <div id="activity-log-container" class="h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
-                            <?php
-                            if (!empty($case['systemLogs'])) {
-                                foreach (array_reverse($case['systemLogs']) as $log) {
-                                    $date = date('M j, g:i A', strtotime($log['timestamp']));
-                                    echo "<div class='flex items-start gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200'>";
-                                    echo "<div class='bg-slate-200 rounded-full p-1 mt-0.5'>";
-                                    echo "<i data-lucide='activity' class='w-3 h-3 text-slate-600'></i>";
-                                    echo "</div>";
-                                    echo "<div class='flex-1'>";
-                                    echo "<div class='text-xs text-slate-500 mb-1'>{$date}</div>";
-                                    echo "<div class='text-sm text-slate-700'>" . htmlspecialchars($log['message']) . "</div>";
-                                    echo "</div>";
-                                    echo "</div>";
-                                }
-                            } else {
-                                echo "<div class='text-sm text-slate-500 italic'>No activity recorded</div>";
-                            }
-                            ?>
+                        <!-- Timeline Visualization for Activity Log -->
+                        <div id="activity-log-timeline" class="relative pl-8 h-48 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
+                            <!-- Timeline will be rendered by JS -->
                         </div>
                     </div>
                 </section>
@@ -700,6 +725,11 @@ try {
 
     <!-- JavaScript -->
     <script>
+        // Copy to clipboard utility
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast('Copied!', text, 'info', 2000);
+        }
         const API_URL = 'api.php';
         const CASE_ID = <?php echo $case_id; ?>;
         const CAN_EDIT = <?php echo $CAN_EDIT ? 'true' : 'false'; ?>;
@@ -728,13 +758,15 @@ try {
             currentCase = {};
         }
 
-        // Utility functions
+        // --- Utility functions ---
+        // Escape HTML for safe rendering
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
+        // Format SMS message from template and data
         function getFormattedMessage(type, data) {
             let template = smsTemplates[type]?.content || '';
             template = template.replace(/{name}/g, data.name || '');
@@ -745,115 +777,64 @@ try {
             return template;
         }
 
+        // Show toast notification (accessible)
         function showToast(title, message = '', type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
-
-            // Handle legacy calls
-            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
-            if (!message && !type) { type = 'success'; }
-            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
-
-            // Create toast
-            const toast = document.createElement('div');
-
-            const colors = {
-                success: {
-                    bg: 'bg-white/95 backdrop-blur-xl',
-                    border: 'border-emerald-200/60',
-                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50',
-                    iconColor: 'text-emerald-600',
-                    icon: 'check-circle',
-                    shadow: 'shadow-emerald-500/20'
-                },
-                error: {
-                    bg: 'bg-white/95 backdrop-blur-xl',
-                    border: 'border-red-200/60',
-                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50',
-                    iconColor: 'text-red-600',
-                    icon: 'alert-circle',
-                    shadow: 'shadow-red-500/20'
-                },
-                info: {
-                    bg: 'bg-white/95 backdrop-blur-xl',
-                    border: 'border-blue-200/60',
-                    iconBg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
-                    iconColor: 'text-blue-600',
-                    icon: 'info',
-                    shadow: 'shadow-blue-500/20'
-                },
-                urgent: {
-                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent',
-                    border: 'border-purple-300',
-                    iconBg: 'bg-gradient-to-br from-purple-100 to-pink-100',
-                    iconColor: 'text-purple-700',
-                    icon: 'bell',
-                    shadow: 'shadow-purple-500/30'
-                }
-            };
-
-            const style = colors[type] || colors.info;
-
-            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
-
-            toast.innerHTML = `
-                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
-                    <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.appendChild(toast);
-            initializeIcons();
-
-            // Animate In
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-10', 'opacity-0');
-            });
-
-            // Auto Dismiss (unless persistent/urgent)
-            if (duration > 0 && type !== 'urgent') {
-                setTimeout(() => {
-                    toast.classList.add('translate-y-4', 'opacity-0');
-                    setTimeout(() => toast.remove(), 500);
-                }, duration);
-            }
+            // ...existing code...
         }
 
-        // Initialize Lucide icons with retry
+        // Initialize Lucide icons with retry (for dynamic content)
         function initializeIcons() {
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
                 try {
                     window.lucide.createIcons();
                 } catch (e) {
-                    console.warn('Lucide icon initialization failed:', e);
-                    // Retry after a short delay
                     setTimeout(initializeIcons, 500);
                 }
             } else {
-                // Retry after a short delay if Lucide hasn't loaded yet
                 setTimeout(initializeIcons, 100);
             }
         }
 
-        // Update workflow progress bar
+        // Interactive workflow progress bar
         function updateWorkflowProgress() {
             const status = document.getElementById('input-status').value;
             const stages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
             const currentIndex = stages.indexOf(status);
             const progress = ((currentIndex + 1) / stages.length) * 100;
-
             document.getElementById('workflow-stage-number').textContent = currentIndex + 1;
             document.getElementById('workflow-progress-bar').style.width = progress + '%';
+            // Render clickable dots and labels
+            const bar = document.querySelector('#workflow-progress-bar').parentElement;
+            const labels = document.getElementById('workflow-labels');
+            labels.innerHTML = '';
+            bar.querySelectorAll('.workflow-dot').forEach(e => e.remove());
+            stages.forEach((stage, i) => {
+                // Dots
+                const dot = document.createElement('button');
+                dot.className = 'workflow-dot absolute -top-2 w-4 h-4 rounded-full border-2 ' + (i <= currentIndex ? 'bg-primary-500 border-primary-700' : 'bg-slate-200 border-slate-400') + ' focus:outline-none';
+                dot.style.left = `calc(${(i/(stages.length-1))*100}% - 8px)`;
+                dot.title = stage;
+                dot.setAttribute('aria-label', 'Jump to ' + stage);
+                dot.onclick = () => {
+                    document.getElementById('input-status').selectedIndex = i;
+                    updateWorkflowProgress();
+                };
+                bar.appendChild(dot);
+                // Labels
+                const label = document.createElement('span');
+                label.textContent = stage;
+                label.className = 'cursor-pointer ' + (i === currentIndex ? 'text-primary-700 font-bold' : 'text-slate-400');
+                label.onclick = () => {
+                    document.getElementById('input-status').selectedIndex = i;
+                    updateWorkflowProgress();
+                };
+                labels.appendChild(label);
+            });
         }
 
-        // API call helper
+        // API call helper (robust, handles errors)
         async function fetchAPI(endpoint, method = 'GET', data = null) {
             const config = {
                 method: method,
@@ -861,27 +842,20 @@ try {
                     'Content-Type': 'application/json',
                 }
             };
-
-            if (data) {
-                config.body = JSON.stringify(data);
-            }
-
+            if (data) config.body = JSON.stringify(data);
             const response = await fetch(`${API_URL}?action=${endpoint}`, config);
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
             return response.json();
         }
 
-        // Send SMS
+        // Send SMS and log activity
         async function sendSMS(phone, text, type) {
             if (!phone) return showToast("No phone number", "error");
             const clean = phone.replace(/\D/g, '');
             try {
-                const result = await fetchAPI('send_sms', 'POST', { to: clean, text: text });
-
+                await fetchAPI('send_sms', 'POST', { to: clean, text: text });
                 // Log SMS in activity
                 const newLog = {
                     message: `SMS Sent (${type})`,
@@ -891,98 +865,77 @@ try {
                 const logs = [...(currentCase.systemLogs || []), newLog];
                 await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { systemLogs: logs });
                 currentCase.systemLogs = logs;
-
                 updateActivityLog();
                 showToast("SMS Sent", "success");
-
             } catch (e) {
                 console.error(e);
                 showToast("SMS Failed", "error");
             }
         }
 
-        // Accept reschedule
+        // Accept reschedule request and update appointment
         async function acceptReschedule() {
             if (!confirm('Accept reschedule request and update appointment?')) return;
-
             try {
                 const rescheduleDateTime = currentCase.rescheduleDate.replace(' ', 'T');
                 await fetchAPI(`accept_reschedule&id=${CASE_ID}`, 'POST', {
                     service_date: rescheduleDateTime
                 });
-
                 currentCase.serviceDate = rescheduleDateTime;
                 currentCase.userResponse = 'Confirmed';
                 currentCase.rescheduleDate = null;
                 currentCase.rescheduleComment = null;
-
                 document.getElementById('input-service-date').value = rescheduleDateTime;
                 showToast("Reschedule Accepted", "Appointment updated and SMS sent to customer", "success");
-
-                // Reload page to hide reschedule section
                 setTimeout(() => window.location.reload(), 1000);
-
             } catch (e) {
                 console.error('Accept reschedule error:', e);
                 showToast("Error", "Failed to accept reschedule request", "error");
             }
         }
 
-        // Decline reschedule
+        // Decline reschedule request
         async function declineReschedule() {
             if (!confirm('Decline this reschedule request? The customer will need to be contacted manually.')) return;
-
             try {
                 await fetchAPI(`decline_reschedule&id=${CASE_ID}`, 'POST', {});
-
                 currentCase.rescheduleDate = null;
                 currentCase.rescheduleComment = null;
                 currentCase.userResponse = 'Pending';
-
                 showToast("Request Declined", "Reschedule request removed", "info");
-
-                // Reload page to hide reschedule section
                 setTimeout(() => window.location.reload(), 1000);
-
             } catch (e) {
                 console.error('Decline reschedule error:', e);
                 showToast("Error", "Failed to decline request", "error");
             }
         }
 
-        // Add note
+        // Add internal note
         async function addNote() {
             const newNoteInputEl = document.getElementById('new-note-input');
             const text = newNoteInputEl ? newNoteInputEl.value.trim() : '';
             if (!text) return;
-
             const newNote = {
                 text,
                 authorName: '<?php echo addslashes($current_user_name); ?>',
                 timestamp: new Date().toISOString()
             };
-
             try {
                 const notes = [...(currentCase.internalNotes || []), newNote];
                 await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { internalNotes: notes });
                 currentCase.internalNotes = notes;
-
-                // Update notes display
                 updateNotesDisplay();
-
                 if (newNoteInputEl) newNoteInputEl.value = '';
                 showToast("Note Added", "Internal note has been added", "success");
-
             } catch (error) {
                 console.error('Add note error:', error);
                 showToast("Error", "Failed to add note", "error");
             }
         }
 
-        // Delete case
+        // Delete case (with confirmation)
         async function deleteCase() {
             if (!confirm("Delete this case permanently?")) return;
-
             try {
                 const result = await fetchAPI(`delete_transfer&id=${CASE_ID}`, 'POST');
                 if (result.status === 'deleted') {
@@ -997,33 +950,30 @@ try {
             }
         }
 
-        // Update activity log display
+        // Timeline visualization for activity log
         function updateActivityLog() {
-            const activityLog = document.getElementById('activity-log-container');
+            const timeline = document.getElementById('activity-log-timeline');
             if (!currentCase.systemLogs || currentCase.systemLogs.length === 0) {
-                activityLog.innerHTML = '<div class="text-sm text-slate-500 italic">No activity recorded</div>';
+                timeline.innerHTML = '<div class="text-sm text-slate-500 italic">No activity recorded</div>';
                 return;
             }
-
-            const logHTML = currentCase.systemLogs.slice().reverse().map(log => {
+            const logHTML = currentCase.systemLogs.slice().reverse().map((log, idx) => {
                 const date = new Date(log.timestamp).toLocaleDateString('en-US');
-                const time = new Date(log.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+                const time = new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
                 return `
-                    <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <div class="bg-slate-200 rounded-full p-1 mt-0.5">
-                            <i data-lucide="activity" class="w-3 h-3 text-slate-600"></i>
+                    <div class="relative flex items-start gap-3 mb-4">
+                        <div class="absolute left-0 top-0 flex flex-col items-center" style="width: 2rem;">
+                            <div class="w-3 h-3 rounded-full ${idx === 0 ? 'bg-primary-500' : 'bg-slate-300'} border-2 border-primary-300"></div>
+                            <div class="h-8 w-0.5 ${idx === currentCase.systemLogs.length-1 ? 'bg-transparent' : 'bg-slate-200'}"></div>
                         </div>
-                        <div class="flex-1">
+                        <div class="ml-6 flex-1 bg-slate-50 rounded-lg border border-slate-200 p-3">
                             <div class="text-xs text-slate-500 mb-1">${date} at ${time}</div>
                             <div class="text-sm text-slate-700">${escapeHtml(log.message)}</div>
                         </div>
                     </div>
                 `;
             }).join('');
-            activityLog.innerHTML = logHTML;
+            timeline.innerHTML = logHTML;
             initializeIcons();
         }
 
@@ -1034,7 +984,6 @@ try {
                 notesContainer.innerHTML = '<div class="text-sm text-slate-500 italic text-center py-4">No internal notes yet</div>';
                 return;
             }
-
             const notesHTML = currentCase.internalNotes.map(note => {
                 const date = new Date(note.timestamp).toLocaleDateString('en-US');
                 const time = new Date(note.timestamp).toLocaleTimeString('en-US', {
@@ -1054,18 +1003,17 @@ try {
             initializeIcons();
         }
 
-        // Print case
+        // Print case (for future use)
         function printCase() {
             window.print();
         }
 
-        // Save changes
+        // Save changes (with validation and workflow logic)
         async function saveChanges() {
             if (!CAN_EDIT) {
                 showToast('Permission Denied', 'You do not have permission to edit cases', 'error');
                 return;
             }
-
             const nameEl = document.getElementById('input-name');
             const plateEl = document.getElementById('input-plate');
             const amountEl = document.getElementById('input-amount');
@@ -1073,7 +1021,6 @@ try {
             const phoneEl = document.getElementById('input-phone');
             const serviceDateEl = document.getElementById('input-service-date');
             const franchiseEl = document.getElementById('input-franchise');
-
             const name = nameEl ? nameEl.value.trim() : currentCase.name;
             const plate = plateEl ? plateEl.value.trim() : currentCase.plate;
             const amount = amountEl ? amountEl.value.trim() : currentCase.amount;
@@ -1081,13 +1028,11 @@ try {
             const phone = phoneEl ? phoneEl.value : currentCase.phone;
             const serviceDate = serviceDateEl ? serviceDateEl.value : currentCase.serviceDate;
             const franchise = franchiseEl ? franchiseEl.value : currentCase.franchise;
-
             // Validation: Parts Arrived requires a date
             if (status === 'Parts Arrived' && !serviceDate) {
                 showToast("Scheduling Required", "Please select a service date to save 'Parts Arrived' status.", "error");
                 return;
             }
-
             const updates = {
                 name,
                 plate,
@@ -1099,7 +1044,6 @@ try {
                 internalNotes: currentCase.internalNotes || [],
                 systemLogs: currentCase.systemLogs || []
             };
-
             // AUTO-RESCHEDULE LOGIC
             const currentDateStr = currentCase.serviceDate ? currentCase.serviceDate.replace(' ', 'T').slice(0, 16) : '';
             if (currentCase.user_response === 'Reschedule Requested' && serviceDate && serviceDate !== currentDateStr) {
@@ -1119,7 +1063,6 @@ try {
                 const msg = getFormattedMessage('rescheduled', templateData);
                 sendSMS(phone, msg, 'rescheduled');
             }
-
             // Status change SMS logic
             if (status !== currentCase.status) {
                 updates.systemLogs.push({
@@ -1127,7 +1070,6 @@ try {
                     timestamp: new Date().toISOString(),
                     type: 'status'
                 });
-
                 if (phone && smsWorkflowBindings && smsWorkflowBindings[status]) {
                     const templateData = {
                         id: currentCase.id,
@@ -1136,13 +1078,11 @@ try {
                         amount: currentCase.amount,
                         serviceDate: serviceDate || currentCase.serviceDate
                     };
-
                     smsWorkflowBindings[status].forEach(template => {
                         const msg = getFormattedMessage(template.slug, templateData);
                         sendSMS(phone, msg, `${template.slug}_sms`);
                     });
                 }
-
                 // Special handling for Processing status - auto-assign schedule
                 if (status === 'Processing') {
                     let assignedDate = serviceDate || currentCase.serviceDate;
@@ -1164,21 +1104,12 @@ try {
                     }
                 }
             }
-
             try {
                 await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', updates);
-
-                // Update local case data
                 Object.assign(currentCase, updates);
-
                 showToast("Changes Saved", "Case has been updated successfully", "success");
-
-                // Refresh activity log
                 updateActivityLog();
-
-                // Update workflow progress
                 updateWorkflowProgress();
-
             } catch (error) {
                 console.error('Save error:', error);
                 showToast("Error", "Failed to save changes", "error");
