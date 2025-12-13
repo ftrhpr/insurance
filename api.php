@@ -162,7 +162,6 @@ function sendFCM_V1($pdo, $keyFile, $title, $body) {
 }
 
 try {
-    // --- PUBLIC ACTIONS ---
 
     if ($action === 'get_public_transfer' && $method === 'GET') {
         $id = intval($_GET['id'] ?? 0);
@@ -279,10 +278,10 @@ try {
             $field_map = [
                 'status' => 'status',
                 'phone' => 'phone',
-                'serviceDate' => 'service_date',
+                'serviceDate' => 'serviceDate',
                 'franchise' => 'franchise',
-                'internalNotes' => 'internal_notes',
-                'systemLogs' => 'system_logs',
+                'internalNotes' => 'internalNotes',
+                'systemLogs' => 'systemLogs',
                 'user_response' => 'user_response'
             ];
 
