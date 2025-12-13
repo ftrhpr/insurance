@@ -1,32 +1,29 @@
 <?php
+// --- OTOMOTORS Edit Case Page ---
 session_start();
 require_once 'session_config.php';
 require_once 'config.php';
 
-// Check if user is logged in
+// --- Auth ---
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
 
-// Get case ID from URL
+// --- Get Case ID ---
 $case_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if (!$case_id) {
     header('Location: index.php');
     exit;
 }
 
-// Get current user info
+// --- User Info & Permissions ---
 $current_user_name = $_SESSION['full_name'] ?? 'Manager';
 $current_user_role = $_SESSION['role'] ?? 'manager';
-
-// Check permissions
 $CAN_EDIT = in_array($current_user_role, ['admin', 'manager']);
-
-// Manager phone number for notifications
 define('MANAGER_PHONE', '511144486');
 
-// Database connection
+// --- DB Connection ---
 try {
     $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -34,7 +31,7 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// Fetch case data
+// --- Fetch Case Data ---
 $stmt = $pdo->prepare("
     SELECT t.*, v.ownerName as vehicle_owner, v.model as vehicle_model
     FROM transfers t
@@ -43,20 +40,16 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$case_id]);
 $case = $stmt->fetch(PDO::FETCH_ASSOC);
-
 if (!$case) {
     header('Location: index.php');
     exit;
 }
-
-// Decode JSON fields
 $case['internalNotes'] = json_decode($case['internalNotes'] ?? '[]', true);
 $case['systemLogs'] = json_decode($case['systemLogs'] ?? '[]', true);
 
-// Get SMS templates for workflow bindings
+// --- SMS Templates & Workflow Bindings ---
 $smsTemplates = [];
 $smsWorkflowBindings = [];
-
 try {
     $stmt = $pdo->query("SELECT * FROM sms_templates WHERE is_active = 1 ORDER BY slug");
     while ($template = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -70,10 +63,10 @@ try {
         }
     }
 } catch (Exception $e) {
-    // SMS templates table might not exist yet
     $smsTemplates = [];
     $smsWorkflowBindings = [];
 }
+// ...existing code...
 ?>
 <!DOCTYPE html>
 <html lang="en">
