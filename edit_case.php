@@ -23,6 +23,9 @@ $current_user_role = $_SESSION['role'] ?? 'manager';
 // Check permissions
 $CAN_EDIT = in_array($current_user_role, ['admin', 'manager']);
 
+// Manager phone number for notifications
+define('MANAGER_PHONE', '511144486');
+
 // Database connection
 try {
     $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
@@ -569,11 +572,27 @@ try {
         const MANAGER_PHONE = "<?php echo MANAGER_PHONE; ?>";
 
         // SMS Templates and workflow bindings
-        const smsTemplates = <?php echo json_encode($smsTemplates); ?>;
-        const smsWorkflowBindings = <?php echo json_encode($smsWorkflowBindings); ?>;
+        let smsTemplates, smsWorkflowBindings;
+        try {
+            smsTemplates = <?php echo json_encode($smsTemplates, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
+            smsWorkflowBindings = <?php echo json_encode($smsWorkflowBindings, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
+        } catch (e) {
+            console.error('Error parsing SMS templates:', e);
+            smsTemplates = {};
+            smsWorkflowBindings = {};
+        }
 
         // Current case data
-        let currentCase = <?php echo json_encode($case); ?>;
+        let currentCase;
+        try {
+            currentCase = <?php echo json_encode($case, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: 'null'; ?>;
+            if (!currentCase) {
+                currentCase = {};
+            }
+        } catch (e) {
+            console.error('Error parsing case data:', e);
+            currentCase = {};
+        }
 
         // Utility functions
         function escapeHtml(text) {
