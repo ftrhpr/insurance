@@ -952,7 +952,7 @@ try {
         // --- FINAL DEBUG LOGGING ---
         error_log("[SMS FINAL DEBUG] Collection Update for ID: $id");
         error_log("[SMS FINAL DEBUG] Old Status: '$old_status', New Status: '$new_status', Transfer ID: '$transfer_id'");
-        
+
         // Calculate total cost
         $total_cost = 0;
         foreach ($parts_list as $part) {
@@ -1025,3 +1025,19 @@ try {
                         $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
                         @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to={$tr['phone']}&from=OTOMOTORS&text=" . urlencode($smsText));
                         error_log("[SMS FINAL DEBUG] SMS request sent for collection ID: $id to phone: {$tr['phone']}");
+                    }
+                }
+            }
+            
+            // 3. Add system log
+            $log_message = "Parts collection #{$id} marked 'collected'. Case status automatically updated to 'Parts Arrived' and confirmation SMS sent.";
+            $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+            $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'message' => $log_message]), $transfer_id]);
+        }
+
+        jsonResponse(['success' => true]);
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    jsonResponse(['error' => 'Unexpected error: ' . $e->getMessage()]);
+}
