@@ -110,6 +110,9 @@ try {
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3 pointer-events-none"></div>
+
     <!-- Header -->
     <?php include 'header.php'; ?>
 
@@ -208,10 +211,19 @@ try {
                     </div>
                     <div class="space-y-4">
                         <div class="bg-white rounded-lg p-4 border border-blue-100">
+                            <div class="text-xs text-blue-600 font-bold uppercase mb-2">Customer Name</div>
+                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
+                        </div>
+                        <div class="bg-white rounded-lg p-4 border border-blue-100">
+                            <div class="text-xs text-blue-600 font-bold uppercase mb-2">Vehicle Plate</div>
+                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
+                        </div>
+                        <div class="bg-white rounded-lg p-4 border border-blue-100">
                             <div class="text-xs text-blue-600 font-bold uppercase mb-2">Amount</div>
                             <div class="flex items-center gap-2">
                                 <i data-lucide="coins" class="w-6 h-6 text-emerald-500"></i>
-                                <span class="text-3xl font-bold text-emerald-600" id="case-amount"><?php echo htmlspecialchars($case['amount']); ?>₾</span>
+                                <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 p-3 bg-white border border-slate-200 rounded-lg text-3xl font-bold text-emerald-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none">
+                                <span class="text-3xl font-bold text-emerald-600">₾</span>
                             </div>
                         </div>
                         <div class="bg-white rounded-lg p-4 border border-blue-100">
@@ -358,20 +370,59 @@ try {
                         </button>
                     </div>
                 </div>
+
+                <!-- Advanced SMS Template Selector -->
+                <div class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-100 shadow-sm">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="bg-violet-600 p-2 rounded-lg shadow-sm">
+                            <i data-lucide="message-square" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-violet-900 uppercase tracking-wider">Advanced SMS</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs text-violet-600 font-bold uppercase mb-2">Select Template</label>
+                            <select id="sms-template-selector" class="w-full bg-white border-2 border-violet-200 rounded-xl p-3 text-base font-medium focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20 outline-none shadow-sm">
+                                <option value="">Choose a template...</option>
+                                <?php foreach ($smsTemplates as $slug => $template): ?>
+                                <option value="<?php echo htmlspecialchars($slug); ?>" data-content="<?php echo htmlspecialchars($template['content']); ?>">
+                                    <?php echo htmlspecialchars($template['name'] ?? ucfirst(str_replace('_', ' ', $slug))); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-violet-600 font-bold uppercase mb-2">Message Preview</label>
+                            <div id="sms-preview" class="bg-white border-2 border-violet-200 rounded-xl p-4 min-h-[80px] text-sm text-slate-700 whitespace-pre-wrap shadow-sm">
+                                <span class="text-slate-400 italic">Select a template to see preview...</span>
+                            </div>
+                        </div>
+                        <button id="btn-send-custom-sms" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" disabled>
+                            <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
+                            Send Custom SMS
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Right Column: Customer Feedback & Notes -->
             <div class="space-y-6">
-                <!-- Customer Review Preview -->
-                <?php if (!empty($case['reviewStars'])): ?>
+                <!-- Customer Review Section -->
                 <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 overflow-hidden shadow-lg">
-                    <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center gap-2">
-                        <div class="bg-white/20 p-2 rounded-lg">
-                            <i data-lucide="star" class="w-5 h-5 text-white"></i>
+                    <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="bg-white/20 p-2 rounded-lg">
+                                <i data-lucide="star" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <label class="text-sm font-bold text-white uppercase tracking-wider">Customer Review</label>
                         </div>
-                        <label class="text-sm font-bold text-white uppercase tracking-wider">Customer Review</label>
+                        <button id="btn-edit-review" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-1 rounded-lg transition-all text-xs font-bold">
+                            <i data-lucide="edit" class="w-4 h-4 inline mr-1"></i>
+                            Edit
+                        </button>
                     </div>
-                    <div class="p-4 space-y-3">
+                    <div id="review-display" class="p-4 space-y-3">
+                        <?php if (!empty($case['reviewStars'])): ?>
                         <div class="flex items-center gap-4">
                             <div class="flex gap-1">
                                 <?php for ($i = 1; $i <= 5; $i++): ?>
@@ -385,9 +436,40 @@ try {
                             <p class="text-sm text-slate-700 italic leading-relaxed"><?php echo htmlspecialchars($case['reviewComment']); ?></p>
                         </div>
                         <?php endif; ?>
+                        <?php else: ?>
+                        <div class="text-center py-6">
+                            <i data-lucide="star" class="w-12 h-12 text-amber-300 mx-auto mb-2"></i>
+                            <p class="text-sm text-slate-500">No review yet</p>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div id="review-edit" class="p-4 space-y-3 hidden">
+                        <div>
+                            <label class="block text-xs text-amber-700 font-bold uppercase mb-2">Rating</label>
+                            <select id="input-review-stars" class="w-full bg-white border-2 border-amber-200 rounded-xl p-3 text-base font-bold focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20 outline-none">
+                                <option value="">No rating</option>
+                                <option value="1" <?php echo $case['reviewStars'] == 1 ? 'selected' : ''; ?>>⭐ 1 Star</option>
+                                <option value="2" <?php echo $case['reviewStars'] == 2 ? 'selected' : ''; ?>>⭐⭐ 2 Stars</option>
+                                <option value="3" <?php echo $case['reviewStars'] == 3 ? 'selected' : ''; ?>>⭐⭐⭐ 3 Stars</option>
+                                <option value="4" <?php echo $case['reviewStars'] == 4 ? 'selected' : ''; ?>>⭐⭐⭐⭐ 4 Stars</option>
+                                <option value="5" <?php echo $case['reviewStars'] == 5 ? 'selected' : ''; ?>>⭐⭐⭐⭐⭐ 5 Stars</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-amber-700 font-bold uppercase mb-2">Comment</label>
+                            <textarea id="input-review-comment" rows="3" placeholder="Customer feedback..." class="w-full bg-white border-2 border-amber-200 rounded-xl p-3 text-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20 outline-none resize-none"><?php echo htmlspecialchars($case['reviewComment'] ?? ''); ?></textarea>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="btn-save-review" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95">
+                                <i data-lucide="save" class="w-4 h-4 inline mr-2"></i>
+                                Save Review
+                            </button>
+                            <button id="btn-cancel-review" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all">
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <?php endif; ?>
 
                 <!-- Reschedule Request Preview -->
                 <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
@@ -510,9 +592,85 @@ try {
             return template;
         }
 
-        function showToast(title, message = '', type = 'success') {
-            // Simple toast implementation
-            alert(`${title}${message ? ': ' + message : ''}`);
+        function showToast(title, message = '', type = 'success', duration = 4000) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            // Handle legacy calls
+            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
+            if (!message && !type) { type = 'success'; }
+            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
+
+            // Create toast
+            const toast = document.createElement('div');
+
+            const colors = {
+                success: {
+                    bg: 'bg-white/95 backdrop-blur-xl',
+                    border: 'border-emerald-200/60',
+                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50',
+                    iconColor: 'text-emerald-600',
+                    icon: 'check-circle-2',
+                    shadow: 'shadow-emerald-500/20'
+                },
+                error: {
+                    bg: 'bg-white/95 backdrop-blur-xl',
+                    border: 'border-red-200/60',
+                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50',
+                    iconColor: 'text-red-600',
+                    icon: 'alert-circle',
+                    shadow: 'shadow-red-500/20'
+                },
+                info: {
+                    bg: 'bg-white/95 backdrop-blur-xl',
+                    border: 'border-blue-200/60',
+                    iconBg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
+                    iconColor: 'text-blue-600',
+                    icon: 'info',
+                    shadow: 'shadow-blue-500/20'
+                },
+                urgent: {
+                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent',
+                    border: 'border-purple-300',
+                    iconBg: 'bg-gradient-to-br from-purple-100 to-pink-100',
+                    iconColor: 'text-purple-700',
+                    icon: 'bell-ring',
+                    shadow: 'shadow-purple-500/30'
+                }
+            };
+
+            const style = colors[type] || colors.info;
+
+            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
+
+            toast.innerHTML = `
+                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
+                    <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
+                </div>
+                <div class="flex-1 pt-1">
+                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
+                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            if(window.lucide) lucide.createIcons();
+
+            // Animate In
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            });
+
+            // Auto Dismiss (unless persistent/urgent)
+            if (duration > 0 && type !== 'urgent') {
+                setTimeout(() => {
+                    toast.classList.add('translate-y-4', 'opacity-0');
+                    setTimeout(() => toast.remove(), 500);
+                }, duration);
+            }
         }
 
         // Update workflow progress bar
@@ -555,11 +713,17 @@ try {
                 return;
             }
 
+            const nameEl = document.getElementById('input-name');
+            const plateEl = document.getElementById('input-plate');
+            const amountEl = document.getElementById('input-amount');
             const statusEl = document.getElementById('input-status');
             const phoneEl = document.getElementById('input-phone');
             const serviceDateEl = document.getElementById('input-service-date');
             const franchiseEl = document.getElementById('input-franchise');
 
+            const name = nameEl ? nameEl.value.trim() : currentCase.name;
+            const plate = plateEl ? plateEl.value.trim() : currentCase.plate;
+            const amount = amountEl ? amountEl.value.trim() : currentCase.amount;
             const status = statusEl ? statusEl.value : currentCase.status;
             const phone = phoneEl ? phoneEl.value : currentCase.phone;
             const serviceDate = serviceDateEl ? serviceDateEl.value : currentCase.serviceDate;
@@ -572,6 +736,9 @@ try {
             }
 
             const updates = {
+                name,
+                plate,
+                amount,
                 status,
                 phone,
                 serviceDate: serviceDate || null,
@@ -903,6 +1070,97 @@ try {
                 };
                 const msg = getFormattedMessage('schedule', templateData);
                 sendSMS(phone, msg, 'schedule');
+            });
+
+            // SMS Template Selector
+            document.getElementById('sms-template-selector').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const templateSlug = this.value;
+                const sendButton = document.getElementById('btn-send-custom-sms');
+                const previewDiv = document.getElementById('sms-preview');
+
+                if (!templateSlug) {
+                    previewDiv.innerHTML = '<span class="text-slate-400 italic">Select a template to see preview...</span>';
+                    sendButton.disabled = true;
+                    return;
+                }
+
+                // Get template data and format message
+                const template = smsTemplates[templateSlug];
+                if (template) {
+                    const templateData = {
+                        id: CASE_ID,
+                        name: document.getElementById('input-name').value || currentCase.name,
+                        plate: document.getElementById('input-plate').value || currentCase.plate,
+                        amount: document.getElementById('input-amount').value || currentCase.amount,
+                        serviceDate: document.getElementById('input-service-date').value || currentCase.serviceDate,
+                        date: document.getElementById('input-service-date').value || currentCase.serviceDate
+                    };
+
+                    const formattedMessage = getFormattedMessage(templateSlug, templateData);
+                    previewDiv.textContent = formattedMessage;
+                    sendButton.disabled = false;
+                }
+            });
+
+            // Send Custom SMS Button
+            document.getElementById('btn-send-custom-sms').addEventListener('click', () => {
+                const templateSelector = document.getElementById('sms-template-selector');
+                const templateSlug = templateSelector.value;
+                const phone = document.getElementById('input-phone').value;
+
+                if (!templateSlug) {
+                    showToast('No Template Selected', 'Please select an SMS template first', 'error');
+                    return;
+                }
+
+                const templateData = {
+                    id: CASE_ID,
+                    name: document.getElementById('input-name').value || currentCase.name,
+                    plate: document.getElementById('input-plate').value || currentCase.plate,
+                    amount: document.getElementById('input-amount').value || currentCase.amount,
+                    serviceDate: document.getElementById('input-service-date').value || currentCase.serviceDate,
+                    date: document.getElementById('input-service-date').value || currentCase.serviceDate
+                };
+
+                const msg = getFormattedMessage(templateSlug, templateData);
+                sendSMS(phone, msg, `custom_${templateSlug}`);
+            });
+
+            // Review Editing
+            document.getElementById('btn-edit-review').addEventListener('click', () => {
+                document.getElementById('review-display').classList.add('hidden');
+                document.getElementById('review-edit').classList.remove('hidden');
+            });
+
+            document.getElementById('btn-cancel-review').addEventListener('click', () => {
+                document.getElementById('review-edit').classList.add('hidden');
+                document.getElementById('review-display').classList.remove('hidden');
+            });
+
+            document.getElementById('btn-save-review').addEventListener('click', async () => {
+                const stars = document.getElementById('input-review-stars').value;
+                const comment = document.getElementById('input-review-comment').value.trim();
+
+                try {
+                    await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', {
+                        reviewStars: stars || null,
+                        reviewComment: comment || null
+                    });
+
+                    // Update local case data
+                    currentCase.reviewStars = stars || null;
+                    currentCase.reviewComment = comment || null;
+
+                    showToast("Review Updated", "Customer review has been saved successfully", "success");
+
+                    // Refresh the page to show updated review
+                    setTimeout(() => window.location.reload(), 1000);
+
+                } catch (error) {
+                    console.error('Save review error:', error);
+                    showToast("Error", "Failed to save review", "error");
+                }
             });
 
             // Initialize
