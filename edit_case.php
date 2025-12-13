@@ -120,9 +120,9 @@ try {
     <?php include 'header.php'; ?>
 
     <!-- Main Content -->
-    <div class="max-w-3xl mx-auto px-2 py-8">
+    <div class="w-full min-h-screen px-4 py-8">
         <!-- Back Button and Case Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 max-w-7xl mx-auto">
             <a href="index.php" class="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 text-sm">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 Back to Dashboard
@@ -163,8 +163,8 @@ try {
             </div>
         </div>
 
-        <!-- Main Content: All Cards Stacked -->
-        <div class="flex flex-col gap-6">
+        <!-- Main Content: All Cards Horizontal Responsive Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
 
             <!-- Order Details Card -->
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
