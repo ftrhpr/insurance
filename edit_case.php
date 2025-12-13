@@ -170,13 +170,13 @@ try {
             </div>
         </div>
 
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content Grid (responsive, compact) -->
+        <div class="flex flex-col md:flex-row gap-2 flex-1 w-full px-1 py-2 overflow-auto">
 
-            <!-- Left Column: Order Details & Status -->
-            <div class="space-y-6">
+            <!-- Left/Main Column: Order Details & Actions -->
+            <div class="flex-1 flex flex-col gap-2 min-w-0">
                 <!-- Order Information Card -->
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-blue-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
@@ -215,7 +215,7 @@ try {
                 </div>
 
                 <!-- Status Selection -->
-                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100 shadow-sm">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-purple-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="activity" class="w-4 h-4 text-white"></i>
@@ -275,10 +275,10 @@ try {
                 </div>
             </div>
 
-            <!-- Middle Column: Communication & Actions -->
-            <div class="space-y-6">
+            <!-- Right Column: Communication, Feedback, Notes -->
+            <div class="flex-1 flex flex-col gap-2 min-w-0">
                 <!-- Contact Information -->
-                <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 border border-teal-100 shadow-sm">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-teal-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="phone" class="w-4 h-4 text-white"></i>
@@ -297,7 +297,7 @@ try {
                 </div>
 
                 <!-- Service Appointment -->
-                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-100 shadow-sm">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-orange-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="calendar-check" class="w-4 h-4 text-white"></i>
@@ -311,7 +311,7 @@ try {
                 </div>
 
                 <!-- Quick SMS Actions -->
-                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-100 shadow-sm">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-indigo-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
@@ -350,7 +350,7 @@ try {
                 </div>
 
                 <!-- Advanced SMS Template Selector -->
-                <div class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-100 shadow-sm">
+                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-violet-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="message-square" class="w-4 h-4 text-white"></i>
@@ -386,7 +386,7 @@ try {
             <!-- Right Column: Customer Feedback & Notes -->
             <div class="space-y-6">
                 <!-- Customer Review Section -->
-                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 overflow-hidden shadow-lg">
+                <div class="bg-white border border-yellow-200 rounded shadow-sm text-sm">
                     <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="bg-white/20 p-2 rounded-lg">
@@ -451,7 +451,7 @@ try {
 
                 <!-- Reschedule Request Preview -->
                 <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
-                <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl border-2 border-purple-200 overflow-hidden shadow-lg">
+                <div class="bg-white border border-purple-200 rounded shadow-sm text-sm">
                     <div class="px-4 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="bg-white/20 p-2 rounded-lg">
