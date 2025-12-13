@@ -90,27 +90,76 @@ try {
 
     <!-- Custom Styles -->
     <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        /* Compact layout helpers */
+        .compact-card { padding: 0.75rem; }
+        .compact-input { padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+        .compact-title { font-size: 0.76rem; }
+        details.compact { border-radius: .75rem; overflow: hidden; border: 1px solid #e6e9ef; }
+        details.compact summary { list-style: none; cursor: pointer; padding: 0.5rem 0.75rem; display:flex; justify-content:space-between; align-items:center; }
+        details.compact[open] summary { background: rgba(15,23,42,0.02); }
+        details.compact summary::-webkit-details-marker { display: none; }
+        .compact-toggle { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; background: #fff; border: 1px solid #e2e8f0; border-radius: 9999px; box-shadow: 0 2px 8px 0 #0001; padding: 0.25rem 1rem; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
+        .compact-mode .compact-card, .compact-mode .p-6 { padding: 0.5rem !important; }
+        .compact-mode .p-4 { padding: 0.5rem !important; }
+        .compact-mode .p-3 { padding: 0.25rem !important; }
+        .compact-mode .py-4 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+        .compact-mode .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
+        .compact-mode .rounded-xl { border-radius: 0.5rem !important; }
+        .compact-mode .text-lg { font-size: 1rem !important; }
+        .compact-mode .text-3xl { font-size: 1.25rem !important; }
+        .compact-mode .text-base { font-size: 0.95rem !important; }
+        .compact-mode .gap-4 { gap: 0.5rem !important; }
+        .compact-mode .gap-3 { gap: 0.25rem !important; }
+        .compact-mode .mb-6 { margin-bottom: 0.5rem !important; }
+        .compact-mode .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.5rem !important; }
+        @media (max-width: 900px) {
+            .max-w-7xl { max-width: 100vw !important; }
+            .grid-cols-1, .lg\:grid-cols-3 { grid-template-columns: 1fr !important; }
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 3px;
+        @media (max-width: 600px) {
+            .compact-toggle { top: 0.5rem; right: 0.5rem; font-size: 0.8rem; padding: 0.15rem 0.7rem; }
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
+        .tooltip {
+            position: relative;
+            cursor: pointer;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: max-content;
+            background-color: #222;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 2px 8px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.8em;
         }
-        .bg-grid-white\/\[0\.05\] {
-            background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
-        }
-        .bg-\[size\:20px_20px\] {
-            background-size: 20px 20px;
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
         }
     </style>
+    <!-- Compact Mode Toggle -->
+    <button id="compact-toggle" class="compact-toggle" title="Toggle compact mode">
+        <i data-lucide="minimize-2" class="w-4 h-4"></i>
+        <span>Compact Mode</span>
+    </button>
+    <script>
+    // Compact mode toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('compact-toggle');
+        toggle.addEventListener('click', function() {
+            document.body.classList.toggle('compact-mode');
+        });
+    });
+    </script>
 </head>
 <body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
     <!-- Toast Container -->
@@ -166,17 +215,21 @@ try {
 
                 <!-- Action Buttons -->
                 <div class="relative flex items-center gap-3">
-                    <button onclick="saveChanges()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all" title="Save Case" <?php echo $CAN_EDIT ? '' : 'disabled title="Permission Denied"'; ?>>
+                    <button onclick="saveChanges()" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all tooltip" title="Save Case" <?php echo $CAN_EDIT ? '' : 'disabled title=\"Permission Denied\"'; ?>>
                         <i data-lucide="save" class="w-5 h-5"></i>
+                        <span class="tooltiptext">Save</span>
                     </button>
-                    <button onclick="deleteCase()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all" title="Delete Case" <?php echo $CAN_EDIT ? '' : 'disabled title="Permission Denied"'; ?>>
+                    <button onclick="deleteCase()" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all tooltip" title="Delete Case" <?php echo $CAN_EDIT ? '' : 'disabled title=\"Permission Denied\"'; ?>>
                         <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        <span class="tooltiptext">Delete</span>
                     </button>
-                    <button onclick="window.printCase()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all" title="Print Case">
+                    <button onclick="window.printCase()" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all tooltip" title="Print Case">
                         <i data-lucide="printer" class="w-5 h-5"></i>
+                        <span class="tooltiptext">Print</span>
                     </button>
-                    <a href="index.php" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all">
+                    <a href="index.php" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all tooltip" title="Back to Dashboard">
                         <i data-lucide="x" class="w-5 h-5"></i>
+                        <span class="tooltiptext">Back</span>
                     </a>
                 </div>
             </div>
@@ -211,7 +264,7 @@ try {
             <!-- Left Column: Order Details & Status -->
             <div class="space-y-6">
                 <!-- Order Information Card -->
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl compact-card border border-blue-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-blue-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
@@ -221,23 +274,23 @@ try {
                     <div class="space-y-4">
                         <div class="bg-white rounded-lg p-4 border border-blue-100">
                             <div class="text-xs text-blue-600 font-bold uppercase mb-2">Customer Name</div>
-                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
+                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full compact-input bg-white border border-slate-200 rounded-lg font-semibold text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
                         </div>
                         <div class="bg-white rounded-lg p-4 border border-blue-100">
                             <div class="text-xs text-blue-600 font-bold uppercase mb-2">Vehicle Plate</div>
-                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
+                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full compact-input bg-white border border-slate-200 rounded-lg font-semibold text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none">
                         </div>
                         <div class="bg-white rounded-lg p-4 border border-blue-100">
                             <div class="text-xs text-blue-600 font-bold uppercase mb-2">Amount</div>
                             <div class="flex items-center gap-2">
                                 <i data-lucide="coins" class="w-6 h-6 text-emerald-500"></i>
-                                <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 p-3 bg-white border border-slate-200 rounded-lg text-3xl font-bold text-emerald-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none">
+                                <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 compact-input bg-white border border-slate-200 rounded-lg text-xl font-bold text-emerald-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none">
                                 <span class="text-3xl font-bold text-emerald-600">₾</span>
                             </div>
                         </div>
                         <div class="bg-white rounded-lg p-4 border border-blue-100">
                             <div class="text-xs text-blue-600 font-bold uppercase mb-2">Franchise</div>
-                            <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full p-3 bg-white border border-slate-200 rounded-lg text-lg font-bold text-orange-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none">
+                            <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full compact-input bg-white border border-slate-200 rounded-lg text-base font-bold text-orange-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none">
                         </div>
                         <div class="bg-white rounded-lg p-4 border border-blue-100">
                             <div class="text-xs text-blue-600 font-bold uppercase mb-2">Created At</div>
@@ -250,7 +303,7 @@ try {
                 </div>
 
                 <!-- Status Selection -->
-                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100 shadow-sm">
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl compact-card border border-purple-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-purple-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="activity" class="w-4 h-4 text-white"></i>
@@ -258,7 +311,7 @@ try {
                         <h3 class="text-sm font-bold text-purple-900 uppercase tracking-wider">Workflow Stage</h3>
                     </div>
                     <div class="relative">
-                        <select id="input-status" class="w-full appearance-none bg-white border-2 border-purple-200 text-slate-800 py-4 pl-12 pr-10 rounded-xl leading-tight focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-base font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
+                        <select id="input-status" class="w-full appearance-none bg-white border-2 border-purple-200 text-slate-800 py-2 pl-10 pr-8 rounded-xl leading-tight focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm font-semibold shadow-sm transition-all cursor-pointer hover:border-purple-300">
                             <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
                             <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>🟡 Processing</option>
                             <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>🟣 Contacted</option>
@@ -277,13 +330,10 @@ try {
                     </div>
                 </div>
 
-                <!-- System Activity Log -->
-                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                    <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
-                        <i data-lucide="history" class="w-4 h-4 text-white"></i>
-                        <label class="text-sm font-bold text-white uppercase tracking-wider">Activity Timeline</label>
-                    </div>
-                    <div id="activity-log-container" class="p-4 h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
+                <!-- System Activity Log (compact) -->
+                <details class="compact open">
+                    <summary class="compact-title text-sm font-bold text-slate-700 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4 text-slate-700"></i> Activity Timeline</summary>
+                    <div id="activity-log-container" class="p-2 h-28 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50 compact-card">
                         <?php
                         if (!empty($case['systemLogs'])) {
                             foreach (array_reverse($case['systemLogs']) as $log) {
@@ -302,14 +352,12 @@ try {
                             echo "<div class='text-sm text-slate-500 italic'>No activity recorded</div>";
                         }
                         ?>
-                    </div>
-                </div>
-            </div>
+                    </div></details>
 
             <!-- Middle Column: Communication & Actions -->
             <div class="space-y-6">
                 <!-- Contact Information -->
-                <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 border border-teal-100 shadow-sm">
+                <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl compact-card border border-teal-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-teal-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="phone" class="w-4 h-4 text-white"></i>
@@ -319,7 +367,7 @@ try {
                     <div class="flex gap-3">
                         <div class="relative flex-1">
                             <i data-lucide="smartphone" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-teal-500"></i>
-                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-teal-200 rounded-xl text-base font-semibold text-slate-800 focus:ring-4 focus:ring-teal-500/20 focus:border-teal-400 outline-none shadow-sm">
+                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="w-full pl-10 pr-3 compact-input bg-white border-2 border-teal-200 rounded-xl text-sm font-medium text-slate-800 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 outline-none shadow-sm">
                         </div>
                         <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="bg-white text-teal-600 border-2 border-teal-200 p-4 rounded-xl hover:bg-teal-50 hover:border-teal-300 hover:scale-105 transition-all shadow-lg active:scale-95">
                             <i data-lucide="phone-call" class="w-6 h-6"></i>
@@ -337,12 +385,12 @@ try {
                     </div>
                     <div class="relative">
                         <i data-lucide="calendar" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-orange-500"></i>
-                        <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-orange-200 rounded-xl text-base font-semibold focus:border-orange-400 focus:ring-4 focus:ring-orange-400/20 outline-none shadow-sm">
+                        <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full pl-10 pr-3 compact-input bg-white border-2 border-orange-200 rounded-xl text-sm font-medium focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none shadow-sm">
                     </div>
                 </div>
 
                 <!-- Communication Card: Quick Actions + Advanced Templates -->
-                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-100 shadow-sm">
+                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl compact-card border border-indigo-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-indigo-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
@@ -409,7 +457,9 @@ try {
             <!-- Right Column: Customer Feedback & Notes -->
             <div class="space-y-6">
                 <!-- Customer Review Section -->
-                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 overflow-hidden shadow-lg">
+                <details class="compact">
+                        <summary class="compact-title text-sm font-bold text-slate-700">Customer Review</summary>
+                        <div class="p-3 bg-white rounded-b-xl border border-amber-100 shadow-sm">
                     <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="bg-white/20 p-2 rounded-lg">
@@ -472,19 +522,11 @@ try {
                     </div>
                 </div>
 
-                <!-- Reschedule Request Preview -->
+                <!-- Reschedule Request Preview (compact) -->
                 <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['reschedule_date'])): ?>
-                <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl border-2 border-purple-200 overflow-hidden shadow-lg">
-                    <div class="px-4 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="bg-white/20 p-2 rounded-lg">
-                                <i data-lucide="calendar-clock" class="w-5 h-5 text-white"></i>
-                            </div>
-                            <label class="text-sm font-bold text-white uppercase tracking-wider">Reschedule Request</label>
-                        </div>
-                        <span class="text-xs bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold border border-white/30">Pending</span>
-                    </div>
-                    <div class="p-4 space-y-3">
+                <details class="compact open">
+                    <summary class="compact-title text-sm font-bold text-purple-700 flex items-center gap-2"><i data-lucide="calendar-clock" class="w-4 h-4 text-purple-600"></i> Reschedule Request <span class="ml-auto text-xs bg-purple-100 px-2 py-1 rounded-full text-purple-700 font-semibold">Pending</span></summary>
+                    <div class="p-2 space-y-2 bg-white compact-card">
                         <div class="bg-white/80 p-3 rounded-lg border-2 border-purple-200">
                             <span class="text-xs text-purple-700 font-bold block mb-2 uppercase tracking-wider">Requested Date</span>
                             <div class="flex items-center gap-2">
@@ -512,13 +554,10 @@ try {
                 </div>
                 <?php endif; ?>
 
-                <!-- Internal Notes -->
-                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                    <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
-                        <i data-lucide="sticky-note" class="w-4 h-4 text-white"></i>
-                        <label class="text-sm font-bold text-white uppercase tracking-wider">Internal Notes</label>
-                    </div>
-                    <div class="p-4">
+                <!-- Internal Notes (compact) -->
+                <details class="compact">
+                    <summary class="compact-title text-sm font-bold text-slate-700 flex items-center gap-2"><i data-lucide="sticky-note" class="w-4 h-4 text-slate-700"></i> Internal Notes</summary>
+                    <div class="p-2 bg-white compact-card">
                         <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
                             <?php
                             if (!empty($case['internalNotes'])) {
@@ -548,13 +587,15 @@ try {
                 <!-- Action Buttons -->
                 <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
                     <div class="flex gap-3">
-                        <button onclick="saveChanges()" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <button onclick="saveChanges()" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 tooltip" title="Save Changes">
                             <i data-lucide="save" class="w-5 h-5"></i>
-                            Save Changes
+                            <span>Save</span>
+                            <span class="tooltiptext">Save Changes</span>
                         </button>
-                        <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 tooltip" title="Delete Case">
                             <i data-lucide="trash-2" class="w-5 h-5"></i>
-                            Delete
+                            <span>Delete</span>
+                            <span class="tooltiptext">Delete Case</span>
                         </button>
                     </div>
                 </div>
@@ -1263,10 +1304,19 @@ try {
         });
     </script>
         <!-- Mobile sticky action bar -->
-        <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 border border-slate-200 rounded-2xl shadow-lg p-3 z-50 flex items-center gap-2 px-4" <?php echo $CAN_EDIT ? '' : 'style="display:none;"'; ?>>
-            <button onclick="saveChanges()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold">Save</button>
-            <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold">Delete</button>
-            <button id="mobile-sms-arrived" onclick="(function(){document.getElementById('btn-sms-arrived').click();})();" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-bold">SMS Arrived</button>
+        <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 border border-slate-200 rounded-2xl shadow-lg p-2 z-50 flex items-center gap-2 px-2" <?php echo $CAN_EDIT ? '' : 'style="display:none;"'; ?>>
+            <button onclick="saveChanges()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-bold tooltip" title="Save">
+                <i data-lucide="save" class="w-5 h-5"></i>
+                <span class="tooltiptext">Save</span>
+            </button>
+            <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-bold tooltip" title="Delete">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                <span class="tooltiptext">Delete</span>
+            </button>
+            <button id="mobile-sms-arrived" onclick="(function(){document.getElementById('btn-sms-arrived').click();})();" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg font-bold tooltip" title="Send SMS Arrived">
+                <i data-lucide="mail" class="w-5 h-5"></i>
+                <span class="tooltiptext">Send SMS Arrived</span>
+            </button>
         </div>
 </body>
 </html>
