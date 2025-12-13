@@ -270,6 +270,10 @@ try {
     }
 
     if ($action === 'update_transfer' && $method === 'POST') {
+        // --- HARDCODED TEST ---
+        jsonResponse(['status' => 'success', 'message' => 'Test response from update_transfer.']);
+        return;
+
         $id = $_GET['id'] ?? null;
         $data = getJsonInput();
 
