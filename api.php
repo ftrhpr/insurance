@@ -1023,6 +1023,8 @@ try {
         $new_status = $data['status'] ?? null;
         $assigned_manager_id = $data['assigned_manager_id'] ?? null;
 
+        error_log('update_parts_collection called: id=' . json_encode($id) . ', status=' . json_encode($new_status));
+
         if (!$id) {
             http_response_code(400);
             jsonResponse(['error' => 'Collection ID is required']);
@@ -1032,6 +1034,10 @@ try {
         $stmt = $pdo->prepare("SELECT status, transfer_id FROM parts_collections WHERE id = ?");
         $stmt->execute([$id]);
         $collection_info = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$collection_info) {
+            http_response_code(404);
+            jsonResponse(['error' => 'Parts collection not found', 'id' => $id]);
+        }
         $old_status = $collection_info['status'] ?? null;
         $transfer_id = $collection_info['transfer_id'] ?? null;
 
@@ -1217,6 +1223,33 @@ try {
     http_response_code(400);
     jsonResponse(['error' => 'Invalid action or no endpoint matched', 'action' => $action, 'method' => $method]);
 } catch (Exception $e) {
+    error_log('API exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
     jsonResponse(['error' => 'Unexpected error: ' . $e->getMessage()]);
+}
+
+// --- HELPER: Update item suggestions from parts list (no-op safe fallback)
+if (!function_exists('update_suggestions_from_list')) {
+    function update_suggestions_from_list($pdo, $parts_list) {
+        if (empty($parts_list) || !is_array($parts_list)) return false;
+        try {
+            // If the table doesn't exist, bail out gracefully
+            $tableExists = $pdo->query("SHOW TABLES LIKE 'item_suggestions'")->rowCount() > 0;
+            if (!$tableExists) return false;
+
+            $insertStmt = $pdo->prepare("INSERT INTO item_suggestions (name, type, usage_count, created_at, updated_at) VALUES (?, ?, 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE usage_count = usage_count + 1, updated_at = NOW()");
+
+            foreach ($parts_list as $part) {
+                $name = trim($part['name'] ?? $part['item'] ?? $part['label'] ?? '');
+                if ($name === '') continue;
+                $type = ($part['type'] ?? 'part');
+                $insertStmt->execute([$name, $type]);
+            }
+            return true;
+        } catch (Exception $e) {
+            // Swallow errors and log, don't break main flow
+            error_log('update_suggestions_from_list error: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
