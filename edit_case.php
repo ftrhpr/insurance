@@ -9,45 +9,45 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-    <div class="container mx-auto max-w-6xl py-4 px-1 md:px-2">
-        <div class="flex flex-col md:flex-row gap-4">
+    <div class="container mx-auto max-w-6xl py-8 px-2 md:px-4">
+        <div class="flex flex-col md:flex-row gap-8">
             <!-- Left: Main Details & Actions -->
-            <div class="flex-1 flex flex-col gap-3">
+            <div class="flex-1 flex flex-col gap-6">
                 <!-- Case Details Card -->
-                <div class="bg-white rounded-xl border border-slate-200 shadow p-3 flex flex-col gap-2">
-                    <div class="flex items-center gap-2 mb-1">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-lg p-6 flex flex-col gap-4">
+                    <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
                         <span class="text-base font-bold text-blue-700 uppercase tracking-wider">Case Details</span>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs text-slate-700 font-bold uppercase mb-2">Customer Name</label>
-                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
+                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-base font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
                         </div>
                         <div>
                             <label class="block text-xs text-slate-700 font-bold uppercase mb-2">Plate Number</label>
-                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
+                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-base font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
                         </div>
                         <div>
                             <label class="block text-xs text-slate-700 font-bold uppercase mb-2">Amount</label>
-                            <input id="input-amount" type="number" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
+                            <input id="input-amount" type="number" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-base font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
                         </div>
                         <div>
                             <label class="block text-xs text-slate-700 font-bold uppercase mb-2">Franchise</label>
-                            <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
+                            <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-base font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
                         </div>
                         <div>
                             <label class="block text-xs text-slate-700 font-bold uppercase mb-2">Phone</label>
-                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
+                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-base font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
                         </div>
                         <div>
                             <label class="block text-xs text-slate-700 font-bold uppercase mb-2">Service Date</label>
-                            <input id="input-service-date" type="datetime-local" value="<?php echo htmlspecialchars($case['serviceDate']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
+                            <input id="input-service-date" type="datetime-local" value="<?php echo htmlspecialchars($case['serviceDate']); ?>" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-base font-bold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" <?php echo $CAN_EDIT ? '' : 'disabled'; ?>>
                         </div>
                     </div>
                 </div>
                 <!-- Status & Workflow Card -->
-                <div class="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-blue-200 shadow p-3 flex flex-col gap-2">
+                <div class="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl border border-blue-200 shadow-lg p-6 flex flex-col gap-4">
                     <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
                         <span class="text-base font-bold text-blue-700 uppercase tracking-wider">Status & Workflow</span>
@@ -69,7 +69,7 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <!-- Activity Log Card -->
-                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 shadow p-3 flex flex-col gap-1">
+                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200 shadow p-6 flex flex-col gap-2">
                     <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="clock" class="w-5 h-5 text-slate-700"></i>
                         <span class="text-base font-bold text-slate-700 uppercase tracking-wider">Activity Log</span>
@@ -79,7 +79,7 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <!-- SMS Actions Card -->
-                <div class="bg-gradient-to-br from-violet-50 to-fuchsia-50 rounded-xl border-2 border-violet-200 shadow p-3 flex flex-col gap-2">
+                <div class="bg-gradient-to-br from-violet-50 to-fuchsia-50 rounded-2xl border-2 border-violet-200 shadow-lg p-6 flex flex-col gap-4">
                     <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="message-circle" class="w-5 h-5 text-violet-700"></i>
                         <span class="text-base font-bold text-violet-700 uppercase tracking-wider">SMS Actions</span>
@@ -116,7 +116,7 @@ if (!isset($_SESSION['user_id'])) {
                     </button>
                 </div>
                 <!-- Action Buttons -->
-                <div class="flex gap-2 mt-1">
+                <div class="flex gap-3 mt-2">
                     <button onclick="saveChanges()" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
                         <i data-lucide="save" class="w-5 h-5"></i>
                         Save Changes
@@ -128,10 +128,10 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
             </div>
             <!-- Right: Feedback, Notes, Reschedule -->
-            <div class="flex-1 flex flex-col gap-3">
+            <div class="flex-1 flex flex-col gap-6">
                 <!-- Customer Review Section -->
-                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 shadow p-3 flex flex-col gap-2">
-                    <div class="flex items-center gap-2 mb-1">
+                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-200 shadow-lg p-6 flex flex-col gap-4">
+                    <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="star" class="w-5 h-5 text-amber-500"></i>
                         <span class="text-base font-bold text-amber-700 uppercase tracking-wider">Customer Review</span>
                         <button id="btn-edit-review" class="ml-auto text-amber-700 hover:bg-amber-100 px-3 py-1 rounded-lg transition-all text-xs font-bold flex items-center gap-1">
@@ -139,7 +139,7 @@ if (!isset($_SESSION['user_id'])) {
                             Edit
                         </button>
                     </div>
-                    <div id="review-display" class="space-y-2">
+                    <div id="review-display" class="space-y-3">
                         <?php if (!empty($case['reviewStars'])): ?>
                         <div class="flex items-center gap-4">
                             <div class="flex gap-1">
@@ -161,7 +161,7 @@ if (!isset($_SESSION['user_id'])) {
                         </div>
                         <?php endif; ?>
                     </div>
-                    <div id="review-edit" class="space-y-2 hidden">
+                    <div id="review-edit" class="space-y-3 hidden">
                         <div>
                             <label class="block text-xs text-amber-700 font-bold uppercase mb-2">Rating</label>
                             <select id="input-review-stars" class="w-full bg-white border-2 border-amber-200 rounded-xl p-3 text-base font-bold focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20 outline-none">
@@ -190,7 +190,7 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
                 <!-- Reschedule Request Preview -->
                 <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
-                <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl border-2 border-purple-200 shadow p-3 flex flex-col gap-2">
+                <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-2xl border-2 border-purple-200 shadow-lg p-6 flex flex-col gap-4">
                     <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="calendar-clock" class="w-5 h-5 text-purple-700"></i>
                         <span class="text-base font-bold text-purple-700 uppercase tracking-wider">Reschedule Request</span>
@@ -222,12 +222,12 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
                 <?php endif; ?>
                 <!-- Internal Notes -->
-                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 shadow p-3 flex flex-col gap-1">
+                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200 shadow p-6 flex flex-col gap-2">
                     <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="sticky-note" class="w-5 h-5 text-slate-700"></i>
                         <span class="text-base font-bold text-slate-700 uppercase tracking-wider">Internal Notes</span>
                     </div>
-                    <div id="notes-container" class="space-y-2 mb-2 max-h-48 overflow-y-auto">
+                    <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
                         <?php
                         if (!empty($case['internalNotes'])) {
                             foreach ($case['internalNotes'] as $note) {
@@ -244,7 +244,7 @@ if (!isset($_SESSION['user_id'])) {
                         }
                         ?>
                     </div>
-                    <div class="flex gap-1">
+                    <div class="flex gap-2">
                         <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none">
                         <button onclick="addNote()" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all active:scale-95">
                             <i data-lucide="plus" class="w-4 h-4"></i>
