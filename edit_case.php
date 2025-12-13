@@ -76,6 +76,23 @@ try {
     <title>Edit Case #<?php echo $case_id; ?> - OTOMOTORS Manager Portal</title>
     <!-- Custom Brand Colors & Dark Mode -->
     <script>
+        // Suppress Tailwind config warnings
+        console.warn = (function(warn) {
+            return function(message) {
+                if (message.includes('tailwind.config')) return;
+                warn.apply(console, arguments);
+            };
+        })(console.warn);
+    </script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -92,27 +109,6 @@ try {
                     transitionProperty: {
                         'height': 'height',
                         'spacing': 'margin, padding',
-                    },
-                }
-            }
-        }
-    </script>
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        primary: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e' },
-                        accent: { 50: '#fdf4ff', 100: '#fae8ff', 500: '#d946ef', 600: '#c026d3' }
                     },
                     animation: { 'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite', 'float': 'float 3s ease-in-out infinite', 'shimmer': 'shimmer 2s linear infinite' },
                     keyframes: {
@@ -159,14 +155,14 @@ try {
     <!-- Custom Header with Branding and Profile -->
     <header class="w-full bg-gradient-to-r from-brand-accent to-primary-200 shadow-brand py-4 px-6 flex items-center justify-between sticky top-0 z-50">
         <div class="flex items-center gap-3">
-            <img src="/logo.svg" alt="OTOMOTORS" class="h-10 w-10 rounded-full shadow-lg border-2 border-brand-gold bg-white" />
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE5IDl2MmgtMmwtMS41IDktMS41LTlINWMtMS4xIDAtMi0uOS0yLTJWOWMwLTEuMS45LTIgMi0yem0tNSAxMEg2djJoNnYtMnoiIGZpbGw9IiNmZmQ3MDAiLz4KPHBhdGggZD0iTTkgMTJINXYtMmg0djJ6IiBmaWxsPSIjZmZkNzAwIi8+Cjwvc3ZnPg==" alt="OTOMOTORS" class="h-10 w-10 rounded-full shadow-lg border-2 border-brand-gold bg-white" />
             <span class="font-display text-2xl font-bold tracking-tight text-brand-dark dark:text-brand-gold">OTOMOTORS</span>
             <span class="ml-4 px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold font-semibold text-xs tracking-widest">Manager Portal</span>
         </div>
         <div class="flex items-center gap-4">
             <button id="darkModeToggle" class="rounded-full p-2 bg-brand-light dark:bg-brand-dark border border-brand-gold hover:bg-brand-gold/20 transition" aria-label="Toggle dark mode"><i data-lucide="moon" class="w-5 h-5"></i></button>
             <div class="flex items-center gap-2">
-                <img src="/avatar.png" alt="User Avatar" class="h-9 w-9 rounded-full border-2 border-brand-gold shadow" />
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzYiIGhlaWdodD0iMzYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVjMC0xLjEuOS0yIDItMnpNMTIgNWMtMS4xIDAtMi0uOS0yLTJWOWMwLTEuMS45LTIgMi0yem0wIDloNnYtMkg2djJ6IiBmaWxsPSIjZmZkNzAwIi8+Cjwvc3ZnPg==" alt="User Avatar" class="h-9 w-9 rounded-full border-2 border-brand-gold shadow" />
                 <span class="font-semibold text-brand-dark dark:text-brand-gold text-sm"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?></span>
             </div>
         </div>
