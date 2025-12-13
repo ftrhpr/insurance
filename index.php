@@ -2488,6 +2488,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const notes = [...(t.internalNotes || []), newNote];
                 await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', { internalNotes: notes });
                 t.internalNotes = notes;
+                loadData(); // Refresh to ensure data consistency
             }
             
             if (newNoteInputEl) newNoteInputEl.value = '';
@@ -2637,6 +2638,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     } else {
                         const logs = [...(t.systemLogs || []), newLog];
                         await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', { systemLogs: logs });
+                        loadData(); // Refresh to ensure data consistency
                     }
                     // Refresh Logs
                     const logsToRender = statusEl && statusEl.innerText.includes('Offline') ? t.systemLogs : [...(t.systemLogs || []), newLog];

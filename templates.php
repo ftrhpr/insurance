@@ -384,6 +384,11 @@ try {
 
                 await fetchAPI('save_templates', 'POST', smsTemplates);
                 showToast('Success', 'All templates saved successfully', 'success');
+                
+                // Refresh data if on a page with processing queue
+                if (typeof loadData === 'function') {
+                    loadData();
+                }
             } catch (err) {
                 console.error('Error saving templates:', err);
                 showToast('Error', err.message || 'Failed to save templates', 'error');
