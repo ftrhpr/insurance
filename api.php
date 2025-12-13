@@ -221,6 +221,48 @@ try {
         jsonResponse(['status' => 'success']);
     }
 
+    if ($action === 'update_transfer' && $method === 'POST') {
+        $id = $_GET['id'] ?? null;
+        $data = getJsonInput();
+
+        if (!$id || empty($data)) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Invalid ID or data']);
+            return;
+        }
+
+        try {
+            $allowed_fields = ['status', 'phone', 'serviceDate', 'franchise', 'internalNotes', 'systemLogs', 'user_response'];
+            $update_fields = [];
+            $params = [];
+
+            foreach ($data as $key => $value) {
+                if (in_array($key, $allowed_fields)) {
+                    $update_fields[] = "`$key` = ?"; // Use backticks for safety
+                    // Handle JSON encoding for array fields
+                    if (is_array($value)) {
+                        $params[] = json_encode($value);
+                    } else {
+                        $params[] = ($value === '') ? null : $value; // Allow setting fields to null
+                    }
+                }
+            }
+
+            if (!empty($update_fields)) {
+                $sql = "UPDATE transfers SET " . implode(', ', $update_fields) . " WHERE id = ?";
+                $params[] = $id;
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+            }
+
+            jsonResponse(['status' => 'success']);
+        } catch (Exception $e) {
+            http_response_code(500);
+            error_log("Update transfer error for ID $id: " . $e->getMessage());
+            jsonResponse(['error' => 'Database error during update.']);
+        }
+    }
+
     // --- NEW: SUBMIT REVIEW ---
     if ($action === 'submit_review' && $method === 'POST') {
         $data = getJsonInput();
@@ -1036,48 +1078,6 @@ try {
 
         } catch (Exception $e) {
             jsonResponse(['success' => false, 'error' => 'Failed to parse PDF: ' . $e->getMessage()]);
-        }
-    }
-
-    if ($action === 'update_transfer' && $method === 'POST') {
-        $id = $_GET['id'] ?? null;
-        $data = getJsonInput();
-
-        if (!$id || empty($data)) {
-            http_response_code(400);
-            jsonResponse(['error' => 'Invalid ID or data']);
-            return;
-        }
-
-        try {
-            $allowed_fields = ['status', 'phone', 'serviceDate', 'franchise', 'internalNotes', 'systemLogs', 'user_response'];
-            $update_fields = [];
-            $params = [];
-
-            foreach ($data as $key => $value) {
-                if (in_array($key, $allowed_fields)) {
-                    $update_fields[] = "$key = ?";
-                    // Handle JSON encoding for array fields
-                    if (is_array($value)) {
-                        $params[] = json_encode($value);
-                    } else {
-                        $params[] = ($value === '') ? null : $value; // Allow setting fields to null
-                    }
-                }
-            }
-
-            if (!empty($update_fields)) {
-                $sql = "UPDATE transfers SET " . implode(', ', $update_fields) . " WHERE id = ?";
-                $params[] = $id;
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($params);
-            }
-
-            jsonResponse(['status' => 'success']);
-        } catch (Exception $e) {
-            http_response_code(500);
-            error_log("Update transfer error for ID $id: " . $e->getMessage());
-            jsonResponse(['error' => 'Database error during update.']);
         }
     }
 
