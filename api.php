@@ -507,46 +507,40 @@ try {
         }
     }
 
-    // -    -- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
-      if (  $action === 'get_transfers_for_parts' && $method === 'GET') {
-            $stmt = $pdo->prepare("SELECT id, plate, name, status {
-            try F
-            error_log('get_sms_templates called');ROM transfers WHERE status != 'Completed' ORDER BY created_at DESC");
-                $stmt->execute(); []);
-        } catch (Exception $e) {
-            error_log('get_sms_templates error: ' . $e->getMessage());
-            http_response_code(500);
-           jsonResponse('error' => 'Failed to load SMS templates: ' . $e->getMessage()
-        }
+    // --- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
+    if ($action === 'get_transfers_for_parts' && $method === 'GET') {
+        try {
+            $stmt = $pdo->prepare("SELECT id, plate, name, status FROM transfers WHERE status != 'Completed' ORDER BY created_at DESC");
+            $stmt->execute();
             $transfers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             jsonResponse(['transfers' => $transfers]);
+        } catch (Exception $e) {
+            error_log('get_transfers_for_parts error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Failed to load transfers for parts: ' . $e->getMessage()]);
+        }
     }
     
       // -  -- SMS TEMPLATES ACTIONS ---
         if ($action === 'get_sms_templates' && $method === 'GET') {
             try {
-            error_log('get_sms_templates called');
-                $stmt = $pdo->pre []);
-        } catch (Exception $e) {
-            error_log('get_sms_templates error: ' . $e->getMessage());
-            http_response_code(500);
-p           jsonResponse(a'error' => 'Failed to load SMS templates: ' . $e->getMessage()re(
-        }"SELECT slug, content, workflow_stages, is_active FROM sms_templates WHERE is_active = 1 ORDER BY slug");
-            $stmt->execute();
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                error_log('get_sms_templates called');
+                $stmt = $pdo->prepare("SELECT slug, content, workflow_stages, is_active FROM sms_templates WHERE is_active = 1 ORDER BY slug");
+                $stmt->execute();
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Convert workflow_stages JSON to array
-            foreach ($rows as &$row) {
-                $row['workflow_stages'] = json_decode($row['workflow_stages'] ?? '[]', true);
+                // Convert workflow_stages JSON to array
+                foreach ($rows as &$row) {
+                    $row['workflow_stages'] = json_decode($row['workflow_stages'] ?? '[]', true);
+                }
+
+                jsonResponse($rows ?: []);
+            } catch (Exception $e) {
+                error_log('get_sms_templates error: ' . $e->getMessage());
+                http_response_code(500);
+                jsonResponse(['error' => 'Failed to load SMS templates: ' . $e->getMessage()]);
             }
-
-            jsonResponse($rows ?: []);
-        } catch (Exception $e) {
-            error_log('get_sms_templates error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['error' => 'Failed to load SMS templates: ' . $e->getMessage()]);
         }
-    }
 
     if ($action === 'get_workflow_stages' && $method === 'GET') {
         $stmt = $pdo->prepare("SELECT stage_name, description, stage_order FROM workflow_stages WHERE is_active = 1 ORDER BY stage_order");
