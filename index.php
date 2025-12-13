@@ -1465,7 +1465,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         // Load templates from API
         async function loadSMSTemplates() {
             try {
-                const serverTemplates = await fetchAPI('get_templates');
+                const serverTemplates = await fetchAPI('get_sms_templates');
                 smsTemplates = { ...defaultTemplates, ...serverTemplates };
             } catch (e) {
                 console.error("Template load error:", e);
