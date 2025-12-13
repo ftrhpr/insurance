@@ -1,8 +1,9 @@
 <?php
 // test_connection.php - Test database connection and diagnose issues
 
-error_reporting(E_ALL);
 ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 echo "<h2>Database Connection Test</h2>";
 echo "<hr>";
