@@ -112,11 +112,7 @@ try {
         }
     </style>
 </head>
-<<<<<<< HEAD
 <body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-=======
-<body class="bg-gray-50 min-h-screen">
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3 pointer-events-none"></div>
 
@@ -124,7 +120,6 @@ try {
     <?php include 'header.php'; ?>
 
     <!-- Main Content -->
-<<<<<<< HEAD
     <div class="max-w-3xl mx-auto px-2 py-8">
         <!-- Back Button and Case Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
@@ -144,173 +139,18 @@ try {
                 <span class="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded font-mono">
                     #<?php echo $case_id; ?>
                 </span>
-=======
-    <div class="w-full flex flex-col items-center justify-center px-0 py-0">
-        <!-- Dashboard Card: All-in-one, tabbed, compact -->
-        <div class="bg-white border border-gray-200 rounded shadow-sm w-full max-w-3xl mx-auto mt-2 mb-4">
-            <!-- Tab Navigation -->
-            <div class="flex border-b border-gray-100 text-xs font-bold text-gray-600">
-                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('details', event)">Details</button>
-                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('communication', event)">Communication</button>
-                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('activity', event)">Activity</button>
-                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('notes', event)">Notes</button>
-                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('review', event)">Review</button>
             </div>
-            <!-- Tab Contents -->
-            <div class="p-2">
-                <!-- Details Tab -->
-                <div id="tab-details" class="tab-content">
-                    <div class="flex flex-col sm:flex-row gap-2 mb-2">
-                        <div class="flex-1">
-                            <div class="text-xs text-gray-500 uppercase font-bold mb-1">Order #<?php echo $case_id; ?></div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <i data-lucide="car" class="w-5 h-5 text-blue-600"></i>
-                                <span class="font-mono text-base text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
-                                <span class="text-gray-400">/</span>
-                                <span class="text-lg font-bold text-gray-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="window.printCase()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition" title="Print Case">
-                                <i data-lucide="printer" class="w-4 h-4"></i>
-                            </button>
-                            <a href="index.php" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Workflow Progress -->
-                    <div class="mb-2">
-                        <div class="flex items-center justify-between mb-1">
-                            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Case Progress</h4>
-                            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div id="workflow-progress-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
-                            </div>
-                        </div>
-                        <div class="flex flex-wrap justify-between mt-1 text-[11px] text-gray-400 font-medium gap-1">
-                            <span>New</span><span>Processing</span><span>Contacted</span><span>Parts Ordered</span><span>Parts Arrived</span><span>Scheduled</span><span>Completed</span><span>Issue</span>
-                        </div>
-                    </div>
-                    <!-- Order Details, Status, Appointment, Franchise, etc. -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs text-gray-500 font-bold mb-1">Customer Name</label>
-                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
-                            <label class="block text-xs text-gray-500 font-bold mb-1">Vehicle Plate</label>
-                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
-                            <label class="block text-xs text-gray-500 font-bold mb-1">Amount</label>
-                            <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
-                            <label class="block text-xs text-gray-500 font-bold mb-1">Franchise</label>
-                            <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 font-bold mb-1">Status</label>
-                            <select id="input-status" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
-                                <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>New Case</option>
-                                <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
-                                <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>Contacted</option>
-                                <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>Parts Ordered</option>
-                                <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>Parts Arrived</option>
-                                <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>Scheduled</option>
-                                <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>Completed</option>
-                                <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>Issue</option>
-                            </select>
-                            <label class="block text-xs text-gray-500 font-bold mb-1">Service Date</label>
-                            <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
-                            <label class="block text-xs text-gray-500 font-bold mb-1">Phone</label>
-                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
-                            <label class="block text-xs text-gray-500 font-bold mb-1">Created At</label>
-                            <div class="text-xs text-gray-700 mb-2"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></div>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 mt-2">
-                        <button onclick="saveChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-2 rounded font-bold text-xs shadow transition flex items-center justify-center gap-1">
-                            <i data-lucide="save" class="w-4 h-4"></i>Save
-                        </button>
-                        <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-2 px-2 rounded font-bold text-xs shadow transition flex items-center justify-center gap-1">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>Delete
-                        </button>
-                    </div>
-                </div>
-                <!-- Communication Tab -->
-                <div id="tab-communication" class="tab-content hidden">
-                    ...existing code for communication cards...
-                </div>
-                <!-- Activity Tab -->
-                <div id="tab-activity" class="tab-content hidden">
-                    ...existing code for activity log...
-                </div>
-                <!-- Notes Tab -->
-                <div id="tab-notes" class="tab-content hidden">
-                    ...existing code for internal notes...
-                </div>
-                <!-- Review Tab -->
-                <div id="tab-review" class="tab-content hidden">
-                    ...existing code for review section...
-                </div>
-            </div>
-        </div>
-                            <script>
-                            // Tab switching logic
-                            function showTab(tab, event) {
-                                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-                                document.getElementById('tab-' + tab).classList.remove('hidden');
-                                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('bg-gray-100'));
-                                if(event) event.target.classList.add('bg-gray-100');
-                            }
-                            // Show first tab by default
-                            document.addEventListener('DOMContentLoaded', function() {
-                                showTab('details');
-                            });
-                            </script>
-                        <span class="text-lg font-bold text-gray-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
-                        <span class="text-gray-400">/</span>
-                        <span class="font-mono text-base text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
-                    </div>
-                </div>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
-            </div>
-<<<<<<< HEAD
-=======
-            <div class="flex items-center gap-2 mt-3 md:mt-0">
-                <button onclick="window.printCase()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded transition" title="Print Case">
-                    <i data-lucide="printer" class="w-5 h-5"></i>
-                </button>
-                <a href="index.php" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded transition">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </a>
-            </div>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
         </div>
 
-<<<<<<< HEAD
         <!-- Workflow Progress Bar -->
         <div class="mb-6">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Progress</span>
                 <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Stage <span id="workflow-stage-number">1</span> of 8</span>
-=======
-        <!-- Workflow Progress (Lightweight) -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 mb-4 px-4 py-2">
-            <div class="flex items-center justify-between mb-1">
-                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Case Progress</h4>
-                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
             </div>
-<<<<<<< HEAD
             <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                 <div id="workflow-progress-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
-=======
-            <div class="flex items-center gap-2">
-                <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div id="workflow-progress-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
-                </div>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
             </div>
-<<<<<<< HEAD
             <div class="flex justify-between mt-1 text-[11px] text-slate-400 font-medium">
                 <span>New</span>
                 <span>Processing</span>
@@ -320,22 +160,12 @@ try {
                 <span>Scheduled</span>
                 <span>Completed</span>
                 <span>Issue</span>
-=======
-            <div class="flex flex-wrap justify-between mt-1 text-[11px] text-gray-400 font-medium gap-1">
-                <span>New</span><span>Processing</span><span>Contacted</span><span>Parts Ordered</span><span>Parts Arrived</span><span>Scheduled</span><span>Completed</span><span>Issue</span>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
             </div>
         </div>
 
-<<<<<<< HEAD
         <!-- Main Content: All Cards Stacked -->
         <div class="flex flex-col gap-6">
-=======
-        <!-- Main Content Grid (responsive, compact) -->
-        <div class="flex flex-col md:flex-row gap-2 flex-1 w-full px-1 py-2 overflow-auto">
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
 
-<<<<<<< HEAD
             <!-- Order Details Card -->
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
                 <div class="mb-4 flex items-center gap-2">
@@ -346,37 +176,16 @@ try {
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Customer Name</label>
                         <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-=======
-            <!-- Left/Main Column: Order Details & Actions -->
-            <div class="flex-1 flex flex-col gap-2 min-w-0">
-                <!-- Order Information Card -->
-                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-blue-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-blue-900 uppercase tracking-wider">Order Details</h3>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Vehicle Plate</label>
                         <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
                     </div>
-<<<<<<< HEAD
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Amount</label>
                         <div class="flex items-center gap-2">
                             <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-lg font-bold text-emerald-600">
                             <span class="text-lg font-bold text-emerald-600">₾</span>
-=======
-                </div>
-
-                <!-- Status Selection -->
-                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-purple-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="activity" class="w-4 h-4 text-white"></i>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                         </div>
                     </div>
                     <div>
@@ -416,15 +225,7 @@ try {
                         <i data-lucide="history" class="w-4 h-4 text-white"></i>
                         <label class="text-sm font-bold text-white uppercase tracking-wider">Activity Timeline</label>
                     </div>
-<<<<<<< HEAD
                     <div id="activity-log-container" class="p-4 h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
-=======
-                    <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
-                        <i data-lucide="history" class="w-4 h-4 text-white"></i>
-                        <label class="text-sm font-bold text-white uppercase tracking-wider">Activity Timeline</label>
-                    </div>
-                    <div id="activity-log-container" class="p-4 h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                         <?php
                         if (!empty($case['systemLogs'])) {
                             foreach (array_reverse($case['systemLogs']) as $log) {
@@ -447,33 +248,11 @@ try {
                 </div>
             </div>
 
-<<<<<<< HEAD
             <!-- Contact Card -->
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
                 <div class="mb-4 flex items-center gap-2">
                     <i data-lucide="phone" class="w-4 h-4 text-teal-500"></i>
                     <h3 class="text-base font-semibold text-slate-700">Contact</h3>
-=======
-            <!-- Right Column: Communication, Feedback, Notes -->
-            <div class="flex-1 flex flex-col gap-2 min-w-0">
-                <!-- Contact Information -->
-                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-teal-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="phone" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-teal-900 uppercase tracking-wider">Contact Information</h3>
-                    </div>
-                    <div class="flex gap-3">
-                        <div class="relative flex-1">
-                            <i data-lucide="smartphone" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-teal-500"></i>
-                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-teal-200 rounded-xl text-base font-semibold text-slate-800 focus:ring-4 focus:ring-teal-500/20 focus:border-teal-400 outline-none shadow-sm">
-                        </div>
-                        <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="bg-white text-teal-600 border-2 border-teal-200 p-4 rounded-xl hover:bg-teal-50 hover:border-teal-300 hover:scale-105 transition-all shadow-lg active:scale-95">
-                            <i data-lucide="phone-call" class="w-6 h-6"></i>
-                        </a>
-                    </div>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                 </div>
                 <div class="flex gap-2">
                     <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-base">
@@ -483,75 +262,20 @@ try {
                 </div>
             </div>
 
-<<<<<<< HEAD
             <!-- Appointment Card -->
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
                 <div class="mb-4 flex items-center gap-2">
                     <i data-lucide="calendar-check" class="w-4 h-4 text-orange-500"></i>
                     <h3 class="text-base font-semibold text-slate-700">Service Appointment</h3>
-=======
-                <!-- Service Appointment -->
-                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-orange-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="calendar-check" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-orange-900 uppercase tracking-wider">Service Appointment</h3>
-                    </div>
-                    <div class="relative">
-                        <i data-lucide="calendar" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-orange-500"></i>
-                        <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-orange-200 rounded-xl text-base font-semibold focus:border-orange-400 focus:ring-4 focus:ring-orange-400/20 outline-none shadow-sm">
-                    </div>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                 </div>
                 <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
             </div>
 
-<<<<<<< HEAD
             <!-- Quick SMS Actions Card -->
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
                 <div class="mb-4 flex items-center gap-2">
                     <i data-lucide="message-circle" class="w-4 h-4 text-blue-500"></i>
                     <h3 class="text-base font-semibold text-slate-700">Quick SMS</h3>
-=======
-                <!-- Quick SMS Actions -->
-                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-indigo-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-indigo-900 uppercase tracking-wider">Quick SMS Actions</h3>
-                    </div>
-                    <div class="space-y-3">
-                        <button id="btn-sms-register" class="group w-full flex justify-between items-center px-5 py-4 bg-white border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
-                            <div>
-                                <div class="text-base font-bold text-slate-800 group-hover:text-indigo-700">Send Welcome SMS</div>
-                                <div class="text-xs text-slate-500 mt-1">Registration confirmation</div>
-                            </div>
-                            <div class="bg-indigo-100 group-hover:bg-indigo-600 p-3 rounded-lg transition-colors">
-                                <i data-lucide="message-square" class="w-5 h-5 text-indigo-600 group-hover:text-white"></i>
-                            </div>
-                        </button>
-                        <button id="btn-sms-arrived" class="group w-full flex justify-between items-center px-5 py-4 bg-white border-2 border-teal-200 rounded-xl hover:border-teal-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
-                            <div>
-                                <div class="text-base font-bold text-slate-800 group-hover:text-teal-700">Parts Arrived SMS</div>
-                                <div class="text-xs text-slate-500 mt-1">Includes customer link</div>
-                            </div>
-                            <div class="bg-teal-100 group-hover:bg-teal-600 p-3 rounded-lg transition-colors">
-                                <i data-lucide="package-check" class="w-5 h-5 text-teal-600 group-hover:text-white"></i>
-                            </div>
-                        </button>
-                        <button id="btn-sms-schedule" class="group w-full flex justify-between items-center px-5 py-4 bg-white border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
-                            <div>
-                                <div class="text-base font-bold text-slate-800 group-hover:text-orange-700">Send Schedule SMS</div>
-                                <div class="text-xs text-slate-500 mt-1">Appointment reminder</div>
-                            </div>
-                            <div class="bg-orange-100 group-hover:bg-orange-600 p-3 rounded-lg transition-colors">
-                                <i data-lucide="calendar-check" class="w-5 h-5 text-orange-600 group-hover:text-white"></i>
-                            </div>
-                        </button>
-                    </div>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                 </div>
                 <div class="flex flex-col gap-2">
                     <button id="btn-sms-register" class="w-full bg-slate-100 hover:bg-blue-100 text-slate-700 font-semibold py-2 px-4 rounded transition">Send Welcome SMS</button>
@@ -560,7 +284,6 @@ try {
                 </div>
             </div>
 
-<<<<<<< HEAD
             <!-- Advanced SMS (Collapsible) -->
             <details class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm" style="margin-top: -8px;">
                 <summary class="flex items-center gap-2 cursor-pointer select-none text-base font-semibold text-slate-700 mb-2">
@@ -578,15 +301,6 @@ try {
                             </option>
                             <?php endforeach; ?>
                         </select>
-=======
-                <!-- Advanced SMS Template Selector -->
-                <div class="bg-white border border-gray-200 p-2 rounded shadow-sm text-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-violet-600 p-2 rounded-lg shadow-sm">
-                            <i data-lucide="message-square" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-violet-900 uppercase tracking-wider">Advanced SMS</h3>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Message Preview</label>
@@ -602,7 +316,6 @@ try {
             </details>
             </div>
 
-<<<<<<< HEAD
             <!-- Customer Review Card -->
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
                 <div class="mb-4 flex items-center gap-2 justify-between">
@@ -615,25 +328,6 @@ try {
                     </button>
                 </div>
                 <div id="review-display" class="space-y-3">
-=======
-            <!-- Right Column: Customer Feedback & Notes -->
-            <div class="space-y-6">
-                <!-- Customer Review Section -->
-                <div class="bg-white border border-yellow-200 rounded shadow-sm text-sm">
-                    <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="bg-white/20 p-2 rounded-lg">
-                                <i data-lucide="star" class="w-5 h-5 text-white"></i>
-                            </div>
-                            <label class="text-sm font-bold text-white uppercase tracking-wider">Customer Review</label>
-                        </div>
-                        <button id="btn-edit-review" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-1 rounded-lg transition-all text-xs font-bold">
-                            <i data-lucide="edit" class="w-4 h-4 inline mr-1"></i>
-                            Edit
-                        </button>
-                    </div>
-                    <div id="review-display" class="p-4 space-y-3">
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                         <?php if (!empty($case['reviewStars'])): ?>
                         <div class="flex items-center gap-2">
                             <div class="flex gap-1">
@@ -678,7 +372,6 @@ try {
                 </div>
                 </div>
 
-<<<<<<< HEAD
             <!-- Reschedule Request Card -->
             <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
             <div class="bg-white rounded-xl p-5 border border-purple-200 shadow-sm">
@@ -690,12 +383,6 @@ try {
                 <div class="space-y-2">
                     <div class="bg-slate-50 p-3 rounded border border-slate-200">
                         <span class="block text-xs font-semibold text-purple-700 mb-1">Requested Date</span>
-=======
-                <!-- Reschedule Request Preview -->
-                <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
-                <div class="bg-white border border-purple-200 rounded shadow-sm text-sm">
-                    <div class="px-4 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                         <div class="flex items-center gap-2">
                             <i data-lucide="calendar" class="w-4 h-4 text-purple-500"></i>
                             <span class="text-base font-bold text-slate-800"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span>
@@ -715,7 +402,6 @@ try {
             </div>
             <?php endif; ?>
 
-<<<<<<< HEAD
             <!-- Internal Notes Card -->
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
                 <div class="mb-4 flex items-center gap-2">
@@ -724,55 +410,31 @@ try {
                 </div>
                 <div>
                     <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
-=======
-                <!-- Internal Notes -->
-                <details class="bg-white rounded border border-gray-200 shadow-sm" open>
-                    <summary class="px-4 py-2 cursor-pointer select-none flex items-center gap-2 bg-gray-50 border-b border-gray-100 rounded-t">
-                        <i data-lucide="sticky-note" class="w-4 h-4 text-gray-500"></i>
-                        <span class="text-sm font-bold text-gray-700 uppercase tracking-wider">Internal Notes</span>
-                    </summary>
-                    <div class="p-4">
-                        <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                             <?php
                             if (!empty($case['internalNotes'])) {
                                 foreach ($case['internalNotes'] as $note) {
                                     $date = date('M j, g:i A', strtotime($note['timestamp']));
-                                    echo "<div class='bg-white p-3 rounded border border-yellow-100 shadow-sm'>";
-                                    echo "<p class='text-sm text-gray-700'>" . htmlspecialchars($note['text']) . "</p>";
+                                    echo "<div class='bg-white p-3 rounded-lg border border-yellow-100 shadow-sm'>";
+                                    echo "<p class='text-sm text-slate-700'>" . htmlspecialchars($note['text']) . "</p>";
                                     echo "<div class='flex justify-end mt-2'>";
-                                    echo "<span class='text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full'>" . htmlspecialchars($note['authorName'] ?? 'Manager') . " - {$date}</span>";
+                                    echo "<span class='text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full'>" . htmlspecialchars($note['authorName'] ?? 'Manager') . " - {$date}</span>";
                                     echo "</div>";
                                     echo "</div>";
                                 }
                             } else {
-                                echo "<div class='text-sm text-gray-500 italic text-center py-4'>No internal notes yet</div>";
+                                echo "<div class='text-sm text-slate-500 italic text-center py-4'>No internal notes yet</div>";
                             }
                             ?>
                         </div>
-<<<<<<< HEAD
                     <div class="flex gap-2">
                         <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 px-2 py-2 bg-slate-50 border border-slate-200 rounded text-sm">
                         <button onclick="addNote()" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded font-bold text-sm transition">
                             <i data-lucide="plus" class="w-4 h-4"></i>
                         </button>
-=======
-                        <div class="flex gap-2">
-                            <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded text-sm focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none">
-                            <button onclick="addNote()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-bold text-sm transition-all">
-                                <i data-lucide="plus" class="w-4 h-4"></i>
-                            </button>
-                        </div>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
                     </div>
-<<<<<<< HEAD
                     </div>
                 </div>
-=======
-                </details>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
 
-<<<<<<< HEAD
             <!-- Action Buttons Card -->
             <div class="flex gap-2 mt-2">
                 <button onclick="saveChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-bold text-base transition flex items-center justify-center gap-2">
@@ -783,19 +445,6 @@ try {
                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                     Delete
                 </button>
-=======
-                <!-- Action Buttons -->
-                <div class="bg-white rounded border border-gray-200 p-4 shadow-sm flex gap-3">
-                    <button onclick="saveChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-bold text-base shadow transition flex items-center justify-center gap-2">
-                        <i data-lucide="save" class="w-5 h-5"></i>
-                        Save Changes
-                    </button>
-                    <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-bold text-base shadow transition flex items-center justify-center gap-2">
-                        <i data-lucide="trash-2" class="w-5 h-5"></i>
-                        Delete
-                    </button>
-                </div>
->>>>>>> 9a42821d21570341171092082dbfc1defa065674
             </div>
             </div>
         </div>
