@@ -36,11 +36,11 @@ if (session_status() === PHP_SESSION_NONE) {
         // Verify fingerprint matches
         $current_fingerprint = md5($_SERVER['HTTP_USER_AGENT'] ?? '');
         if ($_SESSION['fingerprint'] !== $current_fingerprint) {
-            // Possible session hijacking - destroy session
+            // Possible session hijacking - destroy session and return JSON error
             session_unset();
             session_destroy();
-            header('Location: login.php?error=session_invalid');
-            exit();
+            http_response_code(401);
+            die(json_encode(['error' => 'Session has expired or is invalid. Please log in again.']));
         }
     }
 }

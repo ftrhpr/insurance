@@ -1,8 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 require_once 'session_config.php';
 
 header("Content-Type: application/json");
@@ -270,10 +266,6 @@ try {
     }
 
     if ($action === 'update_transfer' && $method === 'POST') {
-        // --- HARDCODED TEST ---
-        jsonResponse(['status' => 'success', 'message' => 'Test response from update_transfer.']);
-        return;
-
         $id = $_GET['id'] ?? null;
         $data = getJsonInput();
 
