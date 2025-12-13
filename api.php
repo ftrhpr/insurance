@@ -131,6 +131,29 @@ function getJsonInput() {
     return (json_last_error() === JSON_ERROR_NONE) ? $input : [];
 }
 
+// Normalize and validate date/time input into 'Y-m-d H:i:s' or return null
+function normalizeDateTimeForDB($date, $time = null) {
+    if (empty($date)) return null;
+    // If a combined datetime was passed like 2023-01-01T10:00
+    if (strpos($date, 'T') !== false) {
+        $date = str_replace('T', ' ', $date);
+    }
+
+    // If time is provided, combine explicitly
+    if (!empty($time) && strpos($date, ' ') === false) {
+        $date = trim($date) . ' ' . trim($time);
+    }
+
+    // If $date contains only a date (no time), default to 10:00
+    if (strpos($date, ' ') === false) {
+        $date .= ' 10:00:00';
+    }
+
+    $ts = strtotime($date);
+    if ($ts === false) return null;
+    return date('Y-m-d H:i:s', $ts);
+}
+
 // --- HELPER: GET ACCESS TOKEN (V1) ---
 function getAccessToken($keyFile) {
     if (!file_exists($keyFile)) return null;
@@ -340,6 +363,7 @@ try {
             $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, amount, franchise, rawText, status, created_at) 
                                    VALUES (?, ?, ?, ?, ?, 'New', NOW())");
             
+            error_log('schedule_service_from_collection inserting transfer with serviceDate=' . $serviceDateTime . ' transfer_id=' . $collection_id);
             $stmt->execute([
                 trim($data['plate']),
                 trim($data['name']), 
@@ -386,10 +410,24 @@ try {
                     $db_field = $field_map[$key];
                     $update_fields[] = "`$db_field` = ?";
                     
-                    if (is_array($value)) {
-                        $params[] = json_encode($value);
+                    // Special handling for serviceDate - normalize and validate
+                    if ($db_field === 'serviceDate') {
+                        if ($value === '') {
+                            $params[] = null;
+                        } else {
+                            $normalized = normalizeDateTimeForDB($value, null);
+                            if ($normalized === null) {
+                                http_response_code(400);
+                                jsonResponse(['error' => 'Invalid serviceDate format']);
+                            }
+                            $params[] = $normalized;
+                        }
                     } else {
-                        $params[] = ($value === '') ? null : $value;
+                        if (is_array($value)) {
+                            $params[] = json_encode($value);
+                        } else {
+                            $params[] = ($value === '') ? null : $value;
+                        }
                     }
                 }
             }
@@ -398,6 +436,7 @@ try {
                 $sql = "UPDATE transfers SET " . implode(', ', $update_fields) . " WHERE id = ?";
                 $params[] = $id;
                 $stmt = $pdo->prepare($sql);
+                error_log('update_transfer executing: sql=' . $sql . ' params=' . json_encode($params));
                 $stmt->execute($params);
             }
 
@@ -416,9 +455,15 @@ try {
         $serviceDate = $data['service_date'] ?? null;
 
         if ($id > 0 && $serviceDate) {
+            $normalized = normalizeDateTimeForDB($serviceDate, null);
+            if ($normalized === null) {
+                http_response_code(400);
+                jsonResponse(['status' => 'error', 'message' => 'Invalid service date format']);
+            }
             // Update service date and clear reschedule request, mark as confirmed
+            error_log('accept_reschedule updating transfer id=' . $id . ' serviceDate=' . $normalized);
             $pdo->prepare("UPDATE transfers SET serviceDate = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
-                ->execute([$serviceDate, $id]);
+                ->execute([$normalized, $id]);
 
             // Get transfer details for SMS
             $stmt = $pdo->prepare("SELECT name, plate, phone, amount FROM transfers WHERE id = ?");
@@ -1223,8 +1268,12 @@ try {
         $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, phone, amount, franchise, rawText, status, serviceDate, created_at) 
                                VALUES (?, ?, ?, ?, ?, ?, 'Scheduled', ?, NOW())");
         
-        $serviceDateTime = $service_date . ' ' . $service_time;
-        $stmt->execute([
+        $serviceDateTime = normalizeDateTimeForDB($service_date, $service_time);
+        if ($serviceDateTime === null) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Invalid service date/time provided']);
+        }
+            $stmt->execute([
             $plate,
             $name,
             $phone,
