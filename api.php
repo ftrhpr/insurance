@@ -264,6 +264,42 @@ try {
         jsonResponse(['status' => 'success']);
     }
 
+    // --- ADD TRANSFER ENDPOINT ---
+    if ($action === 'add_transfer' && $method === 'POST') {
+        $data = getJsonInput();
+
+        if (empty($data) || !isset($data['plate']) || !isset($data['name']) || !isset($data['amount'])) {
+            http_response_code(400);
+            jsonResponse(['status' => 'error', 'message' => 'Missing required fields: plate, name, amount']);
+        }
+
+        try {
+            // Clean and validate amount
+            $amount = str_replace([',', ' '], ['', ''], $data['amount']);
+            if (!is_numeric($amount)) {
+                jsonResponse(['status' => 'error', 'message' => 'Invalid amount format']);
+            }
+            
+            $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, amount, franchise, rawText, status, created_at) 
+                                   VALUES (?, ?, ?, ?, ?, 'New', NOW())");
+            
+            $stmt->execute([
+                trim($data['plate']),
+                trim($data['name']), 
+                $amount,
+                isset($data['franchise']) ? trim($data['franchise']) : '',
+                isset($data['rawText']) ? trim($data['rawText']) : ''
+            ]);
+
+            $newId = $pdo->lastInsertId();
+            
+            jsonResponse(['status' => 'success', 'id' => $newId, 'message' => 'Transfer added successfully']);
+        } catch (Exception $e) {
+            error_log("Add transfer error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to add transfer: ' . $e->getMessage()]);
+        }
+    }
+
     if ($action === 'update_transfer' && $method === 'POST') {
         $id = $_GET['id'] ?? null;
         $data = getJsonInput();
@@ -944,6 +980,63 @@ try {
         } catch (Exception $e) {
             error_log("Delete transfer error: " . $e->getMessage());
             jsonResponse(['status' => 'error', 'message' => 'Failed to delete transfer: ' . $e->getMessage()]);
+        }
+    }
+
+    // --- SYNC VEHICLE ENDPOINT ---
+    if ($action === 'sync_vehicle' && $method === 'POST') {
+        $data = getJsonInput();
+
+        if (empty($data) || !isset($data['plate'])) {
+            http_response_code(400);
+            jsonResponse(['status' => 'error', 'message' => 'Plate number is required']);
+        }
+
+        try {
+            $plate = trim($data['plate']);
+            $ownerName = isset($data['ownerName']) ? trim($data['ownerName']) : null;
+            $phone = isset($data['phone']) ? trim($data['phone']) : null;
+            $model = isset($data['model']) ? trim($data['model']) : null;
+
+            // Check if vehicle exists
+            $stmt = $pdo->prepare("SELECT id FROM vehicles WHERE plate = ?");
+            $stmt->execute([$plate]);
+            $existing = $stmt->fetch();
+
+            if ($existing) {
+                // Update existing vehicle
+                $updateFields = [];
+                $params = [];
+
+                if ($ownerName !== null) {
+                    $updateFields[] = "ownerName = ?";
+                    $params[] = $ownerName;
+                }
+                if ($phone !== null) {
+                    $updateFields[] = "phone = ?";
+                    $params[] = $phone;
+                }
+                if ($model !== null) {
+                    $updateFields[] = "model = ?";
+                    $params[] = $model;
+                }
+
+                if (!empty($updateFields)) {
+                    $sql = "UPDATE vehicles SET " . implode(', ', $updateFields) . " WHERE plate = ?";
+                    $params[] = $plate;
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute($params);
+                }
+            } else {
+                // Insert new vehicle
+                $stmt = $pdo->prepare("INSERT INTO vehicles (plate, ownerName, phone, model) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$plate, $ownerName, $phone, $model]);
+            }
+
+            jsonResponse(['status' => 'success', 'message' => 'Vehicle synced successfully']);
+        } catch (Exception $e) {
+            error_log("Sync vehicle error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to sync vehicle: ' . $e->getMessage()]);
         }
     }
 
