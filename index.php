@@ -968,6 +968,156 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         </div>
     </div>
 
+    <!-- Invoice View Modal -->
+    <div id="invoice-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-indigo-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeInvoiceModal()"></div>
+
+        <!-- Modal Container -->
+        <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl z-[10001] max-h-[90vh] overflow-hidden">
+
+                <!-- Header -->
+                <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 backdrop-blur-md border-2 border-white/40 p-2 rounded-xl">
+                            <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Service Invoice</h3>
+                            <p class="text-xs text-white/80" id="invoice-subtitle">Order details and service information</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="window.printInvoice()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all" title="Print Invoice">
+                            <i data-lucide="printer" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="window.closeInvoiceModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Body -->
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)] custom-scrollbar">
+                    <!-- Invoice Header -->
+                    <div class="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-6 border border-slate-200 mb-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-2xl font-bold text-slate-800 mb-2">OTOMOTORS Insurance Service</h4>
+                                <p class="text-sm text-slate-600">Professional Automotive Insurance Claims</p>
+                                <p class="text-xs text-slate-500 mt-1">Order #<span id="invoice-order-id" class="font-mono">000</span></p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-slate-600">Date:</div>
+                                <div class="font-semibold text-slate-800" id="invoice-date">-</div>
+                            </div>
+                        </div>
+
+                        <!-- Customer & Vehicle Info -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white rounded-lg p-4 border border-slate-200">
+                                <h5 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                    <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+                                    Customer Information
+                                </h5>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-slate-600">Name:</span>
+                                        <span class="font-semibold text-slate-800" id="invoice-customer-name">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-slate-600">Phone:</span>
+                                        <span class="font-semibold text-slate-800" id="invoice-customer-phone">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border border-slate-200">
+                                <h5 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                    <i data-lucide="car" class="w-4 h-4 text-blue-600"></i>
+                                    Vehicle Information
+                                </h5>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-slate-600">Plate:</span>
+                                        <span class="font-mono font-bold text-slate-800" id="invoice-vehicle-plate">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-slate-600">Amount:</span>
+                                        <span class="font-bold text-emerald-600" id="invoice-amount">-</span>
+                                    </div>
+                                    <div class="flex justify-between" id="invoice-franchise-row">
+                                        <span class="text-sm text-slate-600">Franchise:</span>
+                                        <span class="font-semibold text-orange-600" id="invoice-franchise">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Service Details -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+                        <h5 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i data-lucide="wrench" class="w-5 h-5 text-slate-600"></i>
+                            Service Details
+                        </h5>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Status</div>
+                                <div class="font-bold text-slate-800" id="invoice-status">-</div>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Service Date</div>
+                                <div class="font-bold text-slate-800" id="invoice-service-date">-</div>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Created</div>
+                                <div class="font-bold text-slate-800" id="invoice-created-date">-</div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Response -->
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200" id="invoice-response-section">
+                            <div class="text-xs text-blue-600 uppercase tracking-wider mb-2">Customer Response</div>
+                            <div class="font-semibold text-blue-800" id="invoice-customer-response">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Log -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+                        <h5 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-5 h-5 text-slate-600"></i>
+                            Activity History
+                        </h5>
+                        <div id="invoice-activity-log" class="space-y-3 max-h-48 overflow-y-auto">
+                            <!-- Activity items will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Internal Notes -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-6" id="invoice-notes-section">
+                        <h5 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i data-lucide="sticky-note" class="w-5 h-5 text-slate-600"></i>
+                            Internal Notes
+                        </h5>
+                        <div id="invoice-internal-notes" class="space-y-3 max-h-32 overflow-y-auto">
+                            <!-- Notes will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 bg-slate-50 border-t-2 border-slate-200 flex justify-end rounded-b-2xl">
+                    <button type="button" onclick="window.closeInvoiceModal()" class="px-6 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-bold text-sm transition-all">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'api.php';
         const MANAGER_PHONE = "511144486";
@@ -1961,14 +2111,19 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 ${replyBadge}
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
-                                ${CAN_EDIT ? 
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2.5 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95 group-hover:bg-white">
-                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                    </button>` :
-                                    `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-blue-600 p-2.5 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                    </button>`
-                                }
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="window.viewInvoice(${t.id})" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Invoice">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                                    </button>
+                                    ${CAN_EDIT ? 
+                                        `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95">
+                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                        </button>` :
+                                        `<button onclick="window.openEditModal(${t.id})" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </button>`
+                                    }
+                                </div>
                             </td>
                         </tr>`;
                 }
@@ -2650,6 +2805,206 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             } catch(e) { console.error(e); showToast("SMS Failed", "error"); }
         };
 
+        window.viewInvoice = (id) => {
+            const t = transfers.find(i => i.id == id);
+            if (!t) {
+                showToast('Error', 'Order not found', 'error');
+                return;
+            }
+
+            // Populate invoice data
+            document.getElementById('invoice-order-id').textContent = t.id;
+            document.getElementById('invoice-date').textContent = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('invoice-customer-name').textContent = t.name || '-';
+            document.getElementById('invoice-customer-phone').textContent = t.phone || '-';
+            document.getElementById('invoice-vehicle-plate').textContent = t.plate || '-';
+            document.getElementById('invoice-amount').textContent = t.amount ? `${t.amount}₾` : '-';
+            document.getElementById('invoice-status').textContent = t.status || '-';
+            document.getElementById('invoice-created-date').textContent = t.created_at ?
+                new Date(t.created_at.replace(' ', 'T')).toLocaleDateString('en-US') : '-';
+
+            // Service date
+            let serviceDateText = 'Not scheduled';
+            if (t.rescheduleDate && t.user_response === 'Reschedule Requested') {
+                const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                serviceDateText = `Requested: ${rescheduleDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}`;
+            } else if (t.service_date) {
+                const svcDate = new Date(t.service_date.replace(' ', 'T'));
+                serviceDateText = svcDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            document.getElementById('invoice-service-date').textContent = serviceDateText;
+
+            // Franchise
+            const franchiseRow = document.getElementById('invoice-franchise-row');
+            const franchiseValue = document.getElementById('invoice-franchise');
+            if (t.franchise && t.franchise > 0) {
+                franchiseRow.style.display = 'flex';
+                franchiseValue.textContent = `${t.franchise}₾`;
+            } else {
+                franchiseRow.style.display = 'none';
+            }
+
+            // Customer response
+            const responseSection = document.getElementById('invoice-response-section');
+            const responseValue = document.getElementById('invoice-customer-response');
+            if (t.user_response && t.user_response !== 'Pending') {
+                responseSection.style.display = 'block';
+                let responseText = t.user_response;
+                if (t.user_response === 'Reschedule Requested' && t.rescheduleDate) {
+                    const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                    responseText += ` - ${rescheduleDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}`;
+                }
+                responseValue.textContent = responseText;
+            } else {
+                responseSection.style.display = 'none';
+            }
+
+            // Activity log
+            const activityLog = document.getElementById('invoice-activity-log');
+            if (t.systemLogs && t.systemLogs.length > 0) {
+                const logHTML = t.systemLogs.slice().reverse().map(log => {
+                    const date = new Date(log.timestamp).toLocaleDateString('en-US');
+                    const time = new Date(log.timestamp).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    return `
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="bg-slate-200 rounded-full p-1 mt-0.5">
+                                <i data-lucide="activity" class="w-3 h-3 text-slate-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-xs text-slate-500 mb-1">${date} at ${time}</div>
+                                <div class="text-sm text-slate-700">${escapeHtml(log.message)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                activityLog.innerHTML = logHTML;
+            } else {
+                activityLog.innerHTML = '<div class="text-sm text-slate-500 italic">No activity recorded</div>';
+            }
+
+            // Internal notes
+            const notesSection = document.getElementById('invoice-notes-section');
+            const notesContainer = document.getElementById('invoice-internal-notes');
+            if (t.internalNotes && t.internalNotes.length > 0) {
+                notesSection.style.display = 'block';
+                const notesHTML = t.internalNotes.map(note => {
+                    const date = new Date(note.timestamp).toLocaleDateString('en-US');
+                    return `
+                        <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <div class="bg-yellow-200 rounded-full p-1 mt-0.5">
+                                <i data-lucide="user" class="w-3 h-3 text-yellow-700"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-xs text-yellow-700 mb-1">${date} - ${escapeHtml(note.authorName || 'Manager')}</div>
+                                <div class="text-sm text-slate-700">${escapeHtml(note.text)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                notesContainer.innerHTML = notesHTML;
+            } else {
+                notesSection.style.display = 'none';
+            }
+
+            // Show modal
+            document.getElementById('invoice-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closeInvoiceModal = () => {
+            document.getElementById('invoice-modal').classList.add('hidden');
+        };
+
+        window.printInvoice = () => {
+            const modal = document.getElementById('invoice-modal');
+            const printContent = modal.innerHTML;
+            const originalContent = document.body.innerHTML;
+
+            // Create print-friendly version
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Service Invoice - Order #${document.getElementById('invoice-order-id').textContent}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .invoice-header { background: linear-gradient(to right, #3b82f6, #6366f1, #8b5cf6); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+                        .invoice-section { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+                        .invoice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                        .invoice-info { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+                        .activity-item, .note-item { background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 10px; }
+                        @media print { body { margin: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="invoice-header">
+                        <h1>OTOMOTORS Insurance Service</h1>
+                        <p>Professional Automotive Insurance Claims</p>
+                    </div>
+                    <div class="invoice-section">
+                        <h2>Service Invoice - Order #${document.getElementById('invoice-order-id').textContent}</h2>
+                        <div class="invoice-grid">
+                            <div class="invoice-info">
+                                <h3>Customer Information</h3>
+                                <p><strong>Name:</strong> ${document.getElementById('invoice-customer-name').textContent}</p>
+                                <p><strong>Phone:</strong> ${document.getElementById('invoice-customer-phone').textContent}</p>
+                            </div>
+                            <div class="invoice-info">
+                                <h3>Vehicle Information</h3>
+                                <p><strong>Plate:</strong> ${document.getElementById('invoice-vehicle-plate').textContent}</p>
+                                <p><strong>Amount:</strong> ${document.getElementById('invoice-amount').textContent}</p>
+                                ${document.getElementById('invoice-franchise-row').style.display !== 'none' ?
+                                    `<p><strong>Franchise:</strong> ${document.getElementById('invoice-franchise').textContent}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="invoice-section">
+                        <h3>Service Details</h3>
+                        <p><strong>Status:</strong> ${document.getElementById('invoice-status').textContent}</p>
+                        <p><strong>Service Date:</strong> ${document.getElementById('invoice-service-date').textContent}</p>
+                        <p><strong>Created:</strong> ${document.getElementById('invoice-created-date').textContent}</p>
+                        ${document.getElementById('invoice-response-section').style.display !== 'none' ?
+                            `<p><strong>Customer Response:</strong> ${document.getElementById('invoice-customer-response').textContent}</p>` : ''}
+                    </div>
+                    <div class="invoice-section" id="print-activity-log">
+                        <h3>Activity History</h3>
+                        ${document.getElementById('invoice-activity-log').innerHTML}
+                    </div>
+                    ${document.getElementById('invoice-notes-section').style.display !== 'none' ?
+                        `<div class="invoice-section">
+                            <h3>Internal Notes</h3>
+                            ${document.getElementById('invoice-internal-notes').innerHTML}
+                        </div>` : ''}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        };
+
         const searchInputEl = document.getElementById('search-input');
         const statusFilterEl = document.getElementById('status-filter');
         const replyFilterEl = document.getElementById('reply-filter');
@@ -2666,7 +3021,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         // Ensure all modals are hidden on page load
         const editModalEl = document.getElementById('edit-modal');
+        const manualCreateModalEl = document.getElementById('manual-create-modal');
+        const invoiceModalEl = document.getElementById('invoice-modal');
         if (editModalEl) editModalEl.classList.add('hidden');
+        if (manualCreateModalEl) manualCreateModalEl.classList.add('hidden');
+        if (invoiceModalEl) invoiceModalEl.classList.add('hidden');
         
         // Initialize data and icons
         try {
