@@ -1,8 +1,0 @@
-# Exclude backups
-/backups/
-
-# Node and other defaults
-node_modules/
-.DS_Store
-.env
-.vscode/

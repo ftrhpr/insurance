@@ -1170,22 +1170,23 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             try {
                 const res = await fetch(`${API_URL}?action=${action}`, opts);
-
+                
                 // Check if response is NOT OK (e.g. 500 Error)
                 if (!res.ok) {
-                    const clone = res.clone();
-                    let errorText = res.statusText || `HTTP ${res.status}`;
-                    const jsonErr = await clone.json().catch(() => ({}));
-                    if (jsonErr && (jsonErr.error || jsonErr.message)) {
-                        errorText = jsonErr.error || jsonErr.message;
-                    } else {
-                        const txt = await res.text().catch(() => '');
-                        if (txt) errorText = txt.substring(0, 200);
+                    // Try to parse the JSON error message from api.php
+                    let errorText = res.statusText;
+                    try {
+                        const errorJson = await res.json();
+                        if (errorJson.error) errorText = errorJson.error;
+                    } catch (parseErr) {
+                        // If parsing fails, use the text body or generic status
+                        const text = await res.text();
+                        if(text) errorText = text.substring(0, 100); // Limit length
                     }
                     throw new Error(`Server Error (${res.status}): ${errorText}`);
                 }
 
-                const data = await res.json().catch(() => ({}));
+                const data = await res.json();
                 
                 // Update UI Connection Status
                 const statusEl = document.getElementById('connection-status');
