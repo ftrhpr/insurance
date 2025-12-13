@@ -1012,6 +1012,38 @@ try {
         jsonResponse(['success' => true]);
     }
 
+    if ($action === 'schedule_service_from_collection' && $method === 'POST') {
+        $data = getJsonInput();
+        $collection_id = $data['collection_id'] ?? null;
+        $service_date = $data['service_date'] ?? null;
+
+        if (!$collection_id || !$service_date) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Collection ID and service date are required']);
+        }
+
+        // Get transfer_id from collection
+        $stmt = $pdo->prepare("SELECT transfer_id FROM parts_collections WHERE id = ?");
+        $stmt->execute([$collection_id]);
+        $transfer_id = $stmt->fetchColumn();
+
+        if (!$transfer_id) {
+            http_response_code(404);
+            jsonResponse(['error' => 'Collection not found']);
+        }
+
+        // Update transfer with service date and status
+        $stmt = $pdo->prepare("UPDATE transfers SET status = 'Scheduled', serviceDate = ? WHERE id = ?");
+        $stmt->execute([$service_date, $transfer_id]);
+
+        // Add system log
+        $log_message = "Service scheduled from parts collection #{$collection_id} for " . date('M j, Y g:i A', strtotime($service_date));
+        $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+        $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'message' => $log_message, 'type' => 'info']), $transfer_id]);
+
+        jsonResponse(['success' => true]);
+    }
+
     if ($action === 'delete_parts_collection' && $method === 'POST') {
         $data = getJsonInput();
         $id = $data['id'] ?? null;
