@@ -74,6 +74,29 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Case #<?php echo $case_id; ?> - OTOMOTORS Manager Portal</title>
+    <!-- Custom Brand Colors & Dark Mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Montserrat', 'sans-serif'] },
+                    colors: {
+                        brand: { DEFAULT: '#1e293b', light: '#f1f5f9', accent: '#d946ef', dark: '#0f172a', gold: '#ffd700' },
+                        primary: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e' },
+                        accent: { 50: '#fdf4ff', 100: '#fae8ff', 500: '#d946ef', 600: '#c026d3' },
+                    },
+                    boxShadow: {
+                        'brand': '0 4px 32px 0 rgba(217,70,239,0.10), 0 1.5px 4px 0 rgba(30,41,59,0.08)'
+                    },
+                    transitionProperty: {
+                        'height': 'height',
+                        'spacing': 'margin, padding',
+                    },
+                }
+            }
+        }
+    </script>
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,7 +155,22 @@ try {
         @media (max-width: 640px) { .max-w-7xl, .max-w-3xl { padding-left: 0.5rem; padding-right: 0.5rem; } }
     </style>
 </head>
-    <body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen selection:bg-primary-200 selection:text-primary-900">
+    <body class="bg-brand-light dark:bg-brand-dark text-brand-dark dark:text-brand-light font-sans min-h-screen selection:bg-accent-100 selection:text-brand-dark transition-colors duration-300">
+    <!-- Custom Header with Branding and Profile -->
+    <header class="w-full bg-gradient-to-r from-brand-accent to-primary-200 shadow-brand py-4 px-6 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <img src="/logo.svg" alt="OTOMOTORS" class="h-10 w-10 rounded-full shadow-lg border-2 border-brand-gold bg-white" />
+            <span class="font-display text-2xl font-bold tracking-tight text-brand-dark dark:text-brand-gold">OTOMOTORS</span>
+            <span class="ml-4 px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold font-semibold text-xs tracking-widest">Manager Portal</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="darkModeToggle" class="rounded-full p-2 bg-brand-light dark:bg-brand-dark border border-brand-gold hover:bg-brand-gold/20 transition" aria-label="Toggle dark mode"><i data-lucide="moon" class="w-5 h-5"></i></button>
+            <div class="flex items-center gap-2">
+                <img src="/avatar.png" alt="User Avatar" class="h-9 w-9 rounded-full border-2 border-brand-gold shadow" />
+                <span class="font-semibold text-brand-dark dark:text-brand-gold text-sm"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?></span>
+            </div>
+        </div>
+    </header>
     <!--
         OTOMOTORS Edit Case Page
         - Fully standardized, accessible, and modernized
@@ -149,47 +187,41 @@ try {
 
     <!-- Case Summary Card -->
     <div class="max-w-3xl mx-auto mt-8 mb-4">
-        <div class="bg-gradient-to-br from-primary-100 to-accent-50 rounded-2xl shadow-lg p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-primary-200/40">
+        <div class="bg-gradient-to-br from-brand-gold/10 to-accent-50 rounded-2xl shadow-brand p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-brand-gold/30 animate-fade-in">
             <div class="flex flex-col gap-2">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold uppercase text-primary-600 tracking-wider">Case #<?php echo $case_id; ?></span>
-                    <span class="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">
-                        <i data-lucide="car" class="w-4 h-4 text-primary-500"></i>
+                    <span class="text-xs font-bold uppercase text-brand-gold tracking-wider">Case #<?php echo $case_id; ?></span>
+                    <span class="inline-flex items-center gap-1 bg-brand-light px-2 py-0.5 rounded text-xs font-mono">
+                        <i data-lucide="car" class="w-4 h-4 text-brand-accent"></i>
                         <?php echo htmlspecialchars($case['plate']); ?>
-                        <button onclick="copyToClipboard('<?php echo htmlspecialchars($case['plate']); ?>')" aria-label="Copy Plate" class="ml-1 text-primary-400 hover:text-primary-700 focus:outline-none"><i data-lucide="copy" class="w-3 h-3"></i></button>
+                        <button onclick="copyToClipboard('<?php echo htmlspecialchars($case['plate']); ?>')" aria-label="Copy Plate" class="ml-1 text-brand-accent hover:text-brand-gold focus:outline-none"><i data-lucide="copy" class="w-3 h-3"></i></button>
                     </span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs">
-                        <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                    <span class="inline-flex items-center gap-1 bg-brand-light px-2 py-0.5 rounded text-xs">
+                        <i data-lucide="user" class="w-4 h-4 text-brand-dark"></i>
                         <?php echo htmlspecialchars($case['name']); ?>
                     </span>
-                    <span class="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs">
-                        <i data-lucide="phone" class="w-4 h-4 text-teal-500"></i>
+                    <span class="inline-flex items-center gap-1 bg-brand-light px-2 py-0.5 rounded text-xs">
+                        <i data-lucide="phone" class="w-4 h-4 text-brand-accent"></i>
                         <?php echo htmlspecialchars($case['phone']); ?>
-                        <button onclick="copyToClipboard('<?php echo htmlspecialchars($case['phone']); ?>')" aria-label="Copy Phone" class="ml-1 text-teal-400 hover:text-teal-700 focus:outline-none"><i data-lucide="copy" class="w-3 h-3"></i></button>
+                        <button onclick="copyToClipboard('<?php echo htmlspecialchars($case['phone']); ?>')" aria-label="Copy Phone" class="ml-1 text-brand-accent hover:text-brand-gold focus:outline-none"><i data-lucide="copy" class="w-3 h-3"></i></button>
                     </span>
                 </div>
             </div>
             <div class="flex flex-col items-end gap-2">
-                <span class="text-lg font-bold text-emerald-600">₾<?php echo htmlspecialchars($case['amount']); ?></span>
-                <span class="text-xs text-slate-500">Status: <span class="font-semibold text-primary-700"><?php echo htmlspecialchars($case['status']); ?></span></span>
+                <span class="text-lg font-bold text-brand-gold">₾<?php echo htmlspecialchars($case['amount']); ?></span>
+                <span class="text-xs text-brand-dark">Status: <span class="font-semibold text-brand-accent"><?php echo htmlspecialchars($case['status']); ?></span></span>
             </div>
         </div>
     </div>
 
-    <!-- Floating Action Bar -->
-    <div class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
-        <button onclick="saveChanges()" class="bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none" aria-label="Save Changes" title="Save Changes">
-            <i data-lucide="save" class="w-5 h-5"></i>
-        </button>
-        <button onclick="printCase()" class="bg-slate-500 hover:bg-slate-700 text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none" aria-label="Print Case" title="Print Case">
-            <i data-lucide="printer" class="w-5 h-5"></i>
-        </button>
-        <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none" aria-label="Delete Case" title="Delete Case">
-            <i data-lucide="trash-2" class="w-5 h-5"></i>
-        </button>
-    </div>
+    <!-- Persistent Case Actions Sidebar (mobile-friendly) -->
+    <aside class="fixed top-1/2 right-0 z-50 flex flex-col gap-3 items-end transform -translate-y-1/2 p-2 bg-brand-light/80 dark:bg-brand-dark/80 rounded-l-2xl shadow-brand border-l border-brand-gold/30 animate-slide-in hidden md:flex">
+        <button onclick="saveChanges()" class="bg-brand-accent hover:bg-brand-gold text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none transition-all duration-200" aria-label="Save Changes" title="Save Changes"><i data-lucide="save" class="w-5 h-5"></i></button>
+        <button onclick="printCase()" class="bg-brand-dark hover:bg-brand-gold text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none transition-all duration-200" aria-label="Print Case" title="Print Case"><i data-lucide="printer" class="w-5 h-5"></i></button>
+        <button onclick="deleteCase()" class="bg-red-600 hover:bg-brand-gold text-white rounded-full shadow-lg p-4 flex items-center gap-2 focus:outline-none transition-all duration-200" aria-label="Delete Case" title="Delete Case"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+    </aside>
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -592,6 +624,28 @@ try {
 
     <!-- JavaScript -->
     <script>
+        // Dark mode toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('darkModeToggle');
+            if (toggle) {
+                toggle.addEventListener('click', () => {
+                    document.documentElement.classList.toggle('dark');
+                });
+            }
+        });
+                // Animated transitions for modals, toasts, workflow
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.querySelectorAll('.card-hover, .shadow-brand').forEach(el => {
+                        el.classList.add('transition-all', 'duration-300');
+                    });
+                });
+                // Onboarding hint (first time only)
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (!localStorage.getItem('editCaseOnboarded')) {
+                        showToast('Tip', 'Use the sidebar for quick actions and try dark mode!', 'info', 6000);
+                        localStorage.setItem('editCaseOnboarded', '1');
+                    }
+                });
         // --- Accessibility: Focus first input on load ---
         document.addEventListener('DOMContentLoaded', function() {
             const firstInput = document.querySelector('input, select, textarea');
