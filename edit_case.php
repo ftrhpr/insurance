@@ -112,7 +112,7 @@ try {
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3 pointer-events-none"></div>
 
@@ -120,7 +120,7 @@ try {
     <?php include 'header.php'; ?>
 
     <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-2 py-6">
+    <div class="max-w-7xl mx-auto px-4 py-6">
         <!-- Back Button -->
         <div class="mb-6">
             <a href="index.php" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors">
@@ -129,54 +129,83 @@ try {
             </a>
         </div>
 
-        <!-- Case Header (Sticky) -->
-        <div class="bg-white rounded-xl shadow border border-slate-200 mb-4 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between sticky top-0 z-30">
-            <div class="flex items-center gap-4 flex-1 min-w-0">
-                <div class="bg-blue-100 p-2 rounded-lg">
-                    <i data-lucide="car" class="w-6 h-6 text-blue-600"></i>
+        <!-- Case Header -->
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden mb-6">
+            <div class="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 flex justify-between items-center">
+                <!-- Decorative Background Pattern -->
+                <div class="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
+
+                <div class="relative flex items-center gap-4 overflow-hidden">
+                     <!-- Vehicle Badge -->
+                     <div class="relative shrink-0">
+                         <div class="absolute inset-0 bg-white/30 blur-xl rounded-2xl"></div>
+                         <div class="relative bg-white/20 backdrop-blur-md border-2 border-white/40 px-5 py-3 rounded-xl font-mono font-extrabold text-white shadow-2xl flex items-center gap-2">
+                            <div class="bg-white/20 p-1.5 rounded-lg">
+                                <i data-lucide="car" class="w-5 h-5"></i>
+                            </div>
+                            <span class="tracking-wider text-lg"><?php echo htmlspecialchars($case['plate']); ?></span>
+                         </div>
+                     </div>
+
+                     <!-- Divider -->
+                     <div class="h-12 w-px bg-white/30 shrink-0"></div>
+
+                     <!-- Customer Info -->
+                     <div class="flex flex-col gap-1 min-w-0 flex-1">
+                         <div class="flex items-center gap-2 flex-wrap">
+                             <span class="text-[10px] text-white/60 font-bold uppercase tracking-widest">Order</span>
+                             <span class="text-sm font-mono text-white bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg border border-white/30 shadow-lg">#<?php echo $case_id; ?></span>
+                         </div>
+                         <div class="flex items-center gap-2">
+                             <i data-lucide="user" class="w-4 h-4 text-white/70 shrink-0"></i>
+                             <span class="text-lg font-bold text-white truncate"><?php echo htmlspecialchars($case['name']); ?></span>
+                         </div>
+                     </div>
                 </div>
-                <div class="min-w-0">
-                    <div class="text-xs text-slate-500 uppercase font-bold tracking-widest">Order #<?php echo $case_id; ?></div>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-lg font-bold text-slate-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
-                        <span class="text-slate-400">/</span>
-                        <span class="font-mono text-base text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
+
+                <!-- Action Buttons -->
+                <div class="relative flex items-center gap-3">
+                    <button onclick="window.printCase()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all" title="Print Case">
+                        <i data-lucide="printer" class="w-5 h-5"></i>
+                    </button>
+                    <a href="index.php" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Workflow Progress -->
+            <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Case Progress</h4>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <div class="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
+                        <div id="workflow-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500" style="width: 12.5%"></div>
                     </div>
                 </div>
-            </div>
-            <div class="flex items-center gap-2 mt-3 md:mt-0">
-                <button onclick="window.printCase()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg transition" title="Print Case">
-                    <i data-lucide="printer" class="w-5 h-5"></i>
-                </button>
-                <a href="index.php" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg transition">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </a>
-            </div>
-        </div>
-
-        <!-- Workflow Progress (Simple) -->
-        <div class="bg-white rounded-xl shadow border border-slate-200 mb-6 px-4 py-3">
-            <div class="flex items-center justify-between mb-2">
-                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Case Progress</h4>
-                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div id="workflow-progress-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
+                <div class="flex justify-between mt-2 text-xs text-slate-500 font-medium">
+                    <span>New</span>
+                    <span>Processing</span>
+                    <span>Contacted</span>
+                    <span>Parts Ordered</span>
+                    <span>Parts Arrived</span>
+                    <span>Scheduled</span>
+                    <span>Completed</span>
+                    <span>Issue</span>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-between mt-2 text-[11px] text-slate-400 font-medium gap-1">
-                <span>New</span><span>Processing</span><span>Contacted</span><span>Parts Ordered</span><span>Parts Arrived</span><span>Scheduled</span><span>Completed</span><span>Issue</span>
-            </div>
         </div>
 
-        <!-- Main Content Grid (2 columns on desktop) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Left/Main Column: Order Details & Actions -->
+            <!-- Left Column: Order Details & Status -->
             <div class="space-y-6">
                 <!-- Order Information Card -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-blue-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
@@ -215,7 +244,7 @@ try {
                 </div>
 
                 <!-- Status Selection -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-purple-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="activity" class="w-4 h-4 text-white"></i>
@@ -243,16 +272,16 @@ try {
                 </div>
 
                 <!-- System Activity Log -->
-                <details class="bg-white rounded-xl border border-slate-200 shadow-sm" open>
-                    <summary class="px-4 py-3 cursor-pointer select-none flex items-center gap-2 bg-slate-50 border-b border-slate-100 rounded-t-xl">
-                        <i data-lucide="history" class="w-4 h-4 text-slate-500"></i>
-                        <span class="text-sm font-bold text-slate-700 uppercase tracking-wider">Activity Timeline</span>
-                    </summary>
+                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                     <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
                         <i data-lucide="history" class="w-4 h-4 text-white"></i>
                         <label class="text-sm font-bold text-white uppercase tracking-wider">Activity Timeline</label>
                     </div>
-                    <div id="activity-log-container" class="p-4 h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white">
+                    <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
+                        <i data-lucide="history" class="w-4 h-4 text-white"></i>
+                        <label class="text-sm font-bold text-white uppercase tracking-wider">Activity Timeline</label>
+                    </div>
+                    <div id="activity-log-container" class="p-4 h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
                         <?php
                         if (!empty($case['systemLogs'])) {
                             foreach (array_reverse($case['systemLogs']) as $log) {
@@ -275,10 +304,10 @@ try {
                 </div>
             </div>
 
-            <!-- Right Column: Communication, Feedback, Notes -->
+            <!-- Middle Column: Communication & Actions -->
             <div class="space-y-6">
                 <!-- Contact Information -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 border border-teal-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-teal-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="phone" class="w-4 h-4 text-white"></i>
@@ -297,7 +326,7 @@ try {
                 </div>
 
                 <!-- Service Appointment -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-orange-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="calendar-check" class="w-4 h-4 text-white"></i>
@@ -311,7 +340,7 @@ try {
                 </div>
 
                 <!-- Quick SMS Actions -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-indigo-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="message-circle" class="w-4 h-4 text-white"></i>
@@ -350,7 +379,7 @@ try {
                 </div>
 
                 <!-- Advanced SMS Template Selector -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <div class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-100 shadow-sm">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="bg-violet-600 p-2 rounded-lg shadow-sm">
                             <i data-lucide="message-square" class="w-4 h-4 text-white"></i>
@@ -386,7 +415,7 @@ try {
             <!-- Right Column: Customer Feedback & Notes -->
             <div class="space-y-6">
                 <!-- Customer Review Section -->
-                <div class="bg-white rounded-xl border border-yellow-200 overflow-hidden shadow-sm">
+                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 overflow-hidden shadow-lg">
                     <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="bg-white/20 p-2 rounded-lg">
@@ -451,7 +480,7 @@ try {
 
                 <!-- Reschedule Request Preview -->
                 <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
-                <div class="bg-white rounded-xl border border-purple-200 overflow-hidden shadow-sm">
+                <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl border-2 border-purple-200 overflow-hidden shadow-lg">
                     <div class="px-4 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="bg-white/20 p-2 rounded-lg">
@@ -490,11 +519,11 @@ try {
                 <?php endif; ?>
 
                 <!-- Internal Notes -->
-                <details class="bg-white rounded-xl border border-slate-200 shadow-sm" open>
-                    <summary class="px-4 py-3 cursor-pointer select-none flex items-center gap-2 bg-slate-50 border-b border-slate-100 rounded-t-xl">
-                        <i data-lucide="sticky-note" class="w-4 h-4 text-slate-500"></i>
-                        <span class="text-sm font-bold text-slate-700 uppercase tracking-wider">Internal Notes</span>
-                    </summary>
+                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                    <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
+                        <i data-lucide="sticky-note" class="w-4 h-4 text-white"></i>
+                        <label class="text-sm font-bold text-white uppercase tracking-wider">Internal Notes</label>
+                    </div>
                     <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
                         <i data-lucide="sticky-note" class="w-4 h-4 text-white"></i>
                         <label class="text-sm font-bold text-white uppercase tracking-wider">Internal Notes</label>
@@ -527,15 +556,17 @@ try {
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex gap-3">
-                    <button onclick="saveChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-bold text-base shadow transition flex items-center justify-center gap-2">
-                        <i data-lucide="save" class="w-5 h-5"></i>
-                        Save Changes
-                    </button>
-                    <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-bold text-base shadow transition flex items-center justify-center gap-2">
-                        <i data-lucide="trash-2" class="w-5 h-5"></i>
-                        Delete
-                    </button>
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <div class="flex gap-3">
+                        <button onclick="saveChanges()" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-5 h-5"></i>
+                            Save Changes
+                        </button>
+                        <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            Delete
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
