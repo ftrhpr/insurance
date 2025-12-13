@@ -176,27 +176,6 @@ try {
             </div>
         </div>
 
-        <!-- Workflow Progress -->
-        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 mb-6 p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Case Progress</h4>
-                <span class="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
-            </div>
-            <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden mb-3">
-                <div id="workflow-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500" style="width: 12.5%"></div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1 text-xs text-slate-500 font-medium">
-                <span class="text-center py-1 px-1 rounded bg-slate-50">New</span>
-                <span class="text-center py-1 px-1 rounded bg-slate-50">Processing</span>
-                <span class="text-center py-1 px-1 rounded bg-slate-50">Called</span>
-                <span class="text-center py-1 px-1 rounded bg-slate-50">Parts Ordered</span>
-                <span class="text-center py-1 px-1 rounded bg-slate-50">Parts Arrived</span>
-                <span class="text-center py-1 px-1 rounded bg-slate-50">Scheduled</span>
-                <span class="text-center py-1 px-1 rounded bg-slate-50">Completed</span>
-                <span class="text-center py-1 px-1 rounded bg-slate-50">Issue</span>
-            </div>
-        </div>
-
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -733,23 +712,6 @@ try {
             }
         }
 
-        // Update workflow progress bar
-        function updateWorkflowProgress() {
-            const statusElement = document.getElementById('input-status');
-            if (!statusElement) return;
-
-            const status = statusElement.value;
-            const stages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
-            const currentIndex = stages.indexOf(status);
-            const progress = ((currentIndex + 1) / stages.length) * 100;
-
-            const stageNumberEl = document.getElementById('workflow-stage-number');
-            const progressBarEl = document.getElementById('workflow-progress-bar');
-
-            if (stageNumberEl) stageNumberEl.textContent = currentIndex + 1;
-            if (progressBarEl) progressBarEl.style.width = progress + '%';
-        }
-
         // API call helper
         async function fetchAPI(endpoint, method = 'GET', data = null) {
             const config = {
@@ -1074,9 +1036,6 @@ try {
                 // Refresh activity log
                 updateActivityLog();
 
-                // Update workflow progress
-                updateWorkflowProgress();
-
             } catch (error) {
                 console.error('Save error:', error);
                 showToast("Error", "Failed to save changes", "error");
@@ -1092,9 +1051,6 @@ try {
             window.addEventListener('load', function() {
                 setTimeout(initializeIcons, 100);
             });
-            // Update workflow progress on status change
-            const statusEl = document.getElementById('input-status');
-            if (statusEl) statusEl.addEventListener('change', updateWorkflowProgress);
 
             // Enter key for notes
             const noteInputEl = document.getElementById('new-note-input');
@@ -1254,7 +1210,6 @@ try {
             });
 
             // Initialize
-            updateWorkflowProgress();
             initializeIcons();
         });
     </script>
