@@ -200,26 +200,23 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             animation: float 3s ease-in-out infinite;
         }
 
-        /* Sidebar Styles */
-        .sidebar-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Modern Badge Styles */
+        .badge-modern {
+            position: relative;
+            overflow: hidden;
         }
-
-        @media (max-width: 768px) {
-            #sidebar {
-                transform: translateX(-100%);
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                z-index: 50;
-            }
-            #sidebar.open {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-            }
+        .badge-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        .badge-modern:hover::before {
+            left: 100%;
         }
     </style>
 </head>
@@ -245,115 +242,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </div>
 
     <!-- App Content -->
-    <div id="app-content" class="hidden pb-20 relative z-0 flex">
+    <div id="app-content" class="hidden pb-20 relative z-0">
         
-        <!-- Sidebar Navigation -->
-        <aside id="sidebar" class="w-64 bg-white/95 backdrop-blur-xl border-r border-slate-200/80 shadow-xl shadow-slate-200/20 flex flex-col transition-all duration-300">
-            <!-- Logo Section -->
-            <div class="p-6 border-b border-slate-200/50">
-                <div class="flex items-center gap-3">
-                    <div class="relative w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg shadow-primary-500/30 flex items-center justify-center">
-                        <i data-lucide="car" class="w-5 h-5 text-white"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-lg font-bold text-slate-800">OTOMOTORS</h1>
-                        <p class="text-xs text-slate-500 font-medium">Manager Portal</p>
-                    </div>
-                </div>
-            </div>
+        <?php include 'header.php'; ?>
 
-            <!-- Navigation Menu -->
-            <nav class="flex-1 p-4 space-y-2">
-                <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all nav-active">
-                    <div class="p-2 bg-primary-100 rounded-lg">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4 text-primary-600"></i>
-                    </div>
-                    <span class="font-medium">Dashboard</span>
-                </button>
-
-                <button onclick="switchView('vehicles')" id="nav-vehicles" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all nav-inactive">
-                    <div class="p-2 bg-slate-100 rounded-lg">
-                        <i data-lucide="database" class="w-4 h-4 text-slate-600"></i>
-                    </div>
-                    <span class="font-medium">Vehicle Registry</span>
-                </button>
-
-                <button onclick="switchView('parts')" id="nav-parts" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all nav-inactive">
-                    <div class="p-2 bg-slate-100 rounded-lg">
-                        <i data-lucide="wrench" class="w-4 h-4 text-slate-600"></i>
-                    </div>
-                    <span class="font-medium">Parts Collection</span>
-                </button>
-
-                <button onclick="switchView('reviews')" id="nav-reviews" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all nav-inactive">
-                    <div class="p-2 bg-slate-100 rounded-lg">
-                        <i data-lucide="star" class="w-4 h-4 text-slate-600"></i>
-                    </div>
-                    <span class="font-medium">Customer Reviews</span>
-                </button>
-
-                <button onclick="switchView('templates')" id="nav-templates" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all nav-inactive">
-                    <div class="p-2 bg-slate-100 rounded-lg">
-                        <i data-lucide="message-square-dashed" class="w-4 h-4 text-slate-600"></i>
-                    </div>
-                    <span class="font-medium">SMS Templates</span>
-                </button>
-
-                <?php if ($current_user_role === 'admin'): ?>
-                <div class="border-t border-slate-200/50 pt-2 mt-2">
-                    <button onclick="switchView('sms-parsing')" id="nav-sms-parsing" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all nav-inactive">
-                        <div class="p-2 bg-slate-100 rounded-lg">
-                            <i data-lucide="settings" class="w-4 h-4 text-slate-600"></i>
-                        </div>
-                        <span class="font-medium">SMS Parsing</span>
-                    </button>
-
-                    <button onclick="switchView('users')" id="nav-users" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all nav-inactive">
-                        <div class="p-2 bg-slate-100 rounded-lg">
-                            <i data-lucide="users" class="w-4 h-4 text-slate-600"></i>
-                        </div>
-                        <span class="font-medium">User Management</span>
-                    </button>
-
-                    <button onclick="switchView('translations')" id="nav-translations" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all nav-inactive">
-                        <div class="p-2 bg-slate-100 rounded-lg">
-                            <i data-lucide="languages" class="w-4 h-4 text-slate-600"></i>
-                        </div>
-                        <span class="font-medium">Translations</span>
-                    </button>
-                </div>
-                <?php endif; ?>
-            </nav>
-
-            <!-- User Info Footer -->
-            <div class="p-4 border-t border-slate-200/50">
-                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                    <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-                        <i data-lucide="user" class="w-4 h-4 text-white"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-slate-800 truncate"><?php echo htmlspecialchars($current_user_name); ?></p>
-                        <p class="text-xs text-slate-500 capitalize"><?php echo htmlspecialchars($current_user_role); ?></p>
-                    </div>
-                    <a href="logout.php" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
-                    </a>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content Area -->
-        <div class="flex-1 min-w-0">
-            <!-- Mobile Header -->
-            <div class="md:hidden bg-white/95 backdrop-blur-xl border-b border-slate-200/80 p-4 flex items-center justify-between">
-                <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
-                    <i data-lucide="menu" class="w-5 h-5"></i>
-                </button>
-                <h1 class="text-lg font-bold text-slate-800">OTOMOTORS</h1>
-                <div class="w-9"></div> <!-- Spacer -->
-            </div>
-
-            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
             <!-- DASHBOARD VIEW -->
             <div id="view-dashboard" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -611,146 +504,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 </div>
             </div>
 
-            <!-- VIEW: PARTS COLLECTION -->
-            <div id="view-parts" class="hidden space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-slate-900">Parts Collection</h2>
-                    <button onclick="openCreatePartsModal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        New Collection
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div class="p-6">
-                        <div id="parts-collections-list" class="space-y-4">
-                            <!-- Parts collections will be loaded here -->
-                        </div>
-                        <div id="parts-empty" class="py-12 flex flex-col items-center justify-center text-slate-400">
-                            <i data-lucide="wrench" class="w-16 h-16 mb-4 opacity-30"></i>
-                            <p class="text-sm font-medium">No parts collections found</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- VIEW: REVIEWS -->
-            <div id="view-reviews" class="hidden space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-slate-900">Customer Reviews</h2>
-                    <div class="text-sm text-slate-500" id="reviews-count">0 reviews</div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="reviews-grid">
-                    <!-- Reviews will be loaded here -->
-                </div>
-
-                <div id="reviews-empty" class="hidden py-12 flex flex-col items-center justify-center text-slate-400">
-                    <i data-lucide="star" class="w-16 h-16 mb-4 opacity-30"></i>
-                    <p class="text-sm font-medium">No reviews found</p>
-                </div>
-            </div>
-
-            <!-- VIEW: SMS TEMPLATES -->
-            <div id="view-templates" class="hidden space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-slate-900">SMS Templates</h2>
-                    <button onclick="saveTemplates()" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2">
-                        <i data-lucide="save" class="w-4 h-4"></i>
-                        Save Changes
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div class="p-6">
-                        <div id="templates-editor" class="space-y-4">
-                            <!-- Templates will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: SMS PARSING -->
-            <div id="view-sms-parsing" class="hidden space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-slate-900">SMS Parsing Templates</h2>
-                    <button onclick="openCreateTemplateModal()" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        New Template
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div class="p-6">
-                        <div id="parsing-templates-list" class="space-y-4">
-                            <!-- Parsing templates will be loaded here -->
-                        </div>
-                        <div id="parsing-empty" class="py-12 flex flex-col items-center justify-center text-slate-400">
-                            <i data-lucide="settings" class="w-16 h-16 mb-4 opacity-30"></i>
-                            <p class="text-sm font-medium">No parsing templates found</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: USERS -->
-            <div id="view-users" class="hidden space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-slate-900">User Management</h2>
-                    <button onclick="openCreateUserModal()" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2">
-                        <i data-lucide="user-plus" class="w-4 h-4"></i>
-                        Add User
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Username</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Role</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body" class="divide-y divide-slate-200">
-                                <!-- Users will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: TRANSLATIONS -->
-            <div id="view-translations" class="hidden space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-slate-900">Translations</h2>
-                    <div class="flex gap-2">
-                        <select id="translation-lang" class="px-3 py-2 border border-slate-200 rounded-xl text-sm">
-                            <option value="en">English</option>
-                            <option value="ka">ქართული</option>
-                            <option value="ru">Русский</option>
-                        </select>
-                        <button onclick="exportTranslations()" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2">
-                            <i data-lucide="download" class="w-4 h-4"></i>
-                            Export
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div class="p-6">
-                        <div id="translations-editor" class="space-y-4">
-                            <!-- Translations will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- VIEW: TEMPLATES (Moved to templates.php) -->
+            <!-- VIEW: USERS (Moved to users.php) -->
 
         </main>
-        </div>
     </div>
 
     <!-- Notification Prompt (Banner) -->
@@ -1415,15 +1173,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 
                 // Check if response is NOT OK (e.g. 500 Error)
                 if (!res.ok) {
-                    // Try to parse the JSON error message from api.php
+                    // Try to parse the JSON error message from api.php using a clone
                     let errorText = res.statusText;
                     try {
-                        const errorJson = await res.json();
-                        if (errorJson.error) errorText = errorJson.error;
+                        const clone = res.clone();
+                        const errorJson = await clone.json().catch(() => null);
+                        if (errorJson && errorJson.error) errorText = errorJson.error;
+                        else {
+                            const text = await res.text();
+                            if (text) errorText = text.substring(0, 200);
+                        }
                     } catch (parseErr) {
-                        // If parsing fails, use the text body or generic status
-                        const text = await res.text();
-                        if(text) errorText = text.substring(0, 100); // Limit length
+                        // Fallback to statusText
                     }
                     throw new Error(`Server Error (${res.status}): ${errorText}`);
                 }
@@ -1497,136 +1258,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             setTimeout(() => {
                 if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
                 if (appContentEl) appContentEl.classList.remove('hidden');
-                // Initialize with dashboard view
-                switchView('dashboard');
             }, 500);
-        }
-
-        // View Switching Function
-        function switchView(viewName) {
-            // Hide all views
-            const views = ['dashboard', 'vehicles', 'parts', 'reviews', 'templates', 'sms-parsing', 'users', 'translations'];
-            views.forEach(view => {
-                const el = document.getElementById('view-' + view);
-                if (el) el.classList.add('hidden');
-            });
-
-            // Remove active class from all nav items
-            const navItems = document.querySelectorAll('#sidebar .nav-item');
-            navItems.forEach(item => {
-                item.classList.remove('nav-active');
-                item.classList.add('nav-inactive');
-            });
-
-            // Show selected view
-            const targetView = document.getElementById('view-' + viewName);
-            if (targetView) {
-                targetView.classList.remove('hidden');
-            }
-
-            // Set active nav item
-            const targetNav = document.getElementById('nav-' + viewName);
-            if (targetNav) {
-                targetNav.classList.remove('nav-inactive');
-                targetNav.classList.add('nav-active');
-            }
-
-            // Close sidebar on mobile after selection
-            if (window.innerWidth < 768) {
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar) sidebar.classList.remove('open');
-            }
-
-            // Load data for specific views if needed
-            if (viewName === 'vehicles') {
-                loadVehiclesData();
-            } else if (viewName === 'reviews') {
-                loadReviewsData();
-            } else if (viewName === 'templates') {
-                loadTemplatesData();
-            } else if (viewName === 'parts') {
-                loadPartsData();
-            } else if (viewName === 'sms-parsing') {
-                loadSmsParsingData();
-            } else if (viewName === 'users') {
-                loadUsersData();
-            } else if (viewName === 'translations') {
-                loadTranslationsData();
-            }
-        }
-
-        // Mobile sidebar toggle
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            if (sidebar) {
-                sidebar.classList.toggle('open');
-            }
-        }
-
-        // Data loading functions for each view
-        async function loadVehiclesData() {
-            try {
-                const response = await fetchAPI('get_vehicles');
-                vehicles = response || [];
-                renderVehiclesTable();
-            } catch (e) {
-                console.error('Failed to load vehicles:', e);
-            }
-        }
-
-        async function loadPartsData() {
-            try {
-                const response = await fetchAPI('get_parts_collections');
-                renderPartsCollections(response.collections || []);
-            } catch (e) {
-                console.error('Failed to load parts collections:', e);
-            }
-        }
-
-        async function loadReviewsData() {
-            try {
-                const response = await fetchAPI('get_reviews');
-                renderReviews(response.reviews || [], response.total || 0, response.average_rating || 0);
-            } catch (e) {
-                console.error('Failed to load reviews:', e);
-            }
-        }
-
-        async function loadTemplatesData() {
-            try {
-                const response = await fetchAPI('get_sms_templates');
-                renderTemplatesEditor(response || {});
-            } catch (e) {
-                console.error('Failed to load templates:', e);
-            }
-        }
-
-        async function loadSmsParsingData() {
-            try {
-                const response = await fetchAPI('get_parsing_templates');
-                renderParsingTemplates(response || []);
-            } catch (e) {
-                console.error('Failed to load parsing templates:', e);
-            }
-        }
-
-        async function loadUsersData() {
-            try {
-                const response = await fetchAPI('get_users');
-                renderUsersTable(response.users || []);
-            } catch (e) {
-                console.error('Failed to load users:', e);
-            }
-        }
-
-        async function loadTranslationsData() {
-            try {
-                const lang = document.getElementById('translation-lang').value;
-                const response = await fetchAPI('export_translations', 'GET', { lang });
-                renderTranslationsEditor(response.translations || {});
-            } catch (e) {
-                console.error('Failed to load translations:', e);
-            }
         }
 
         // Poll for updates every 10 seconds
@@ -2479,246 +2111,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
             if (emptyStateEl) emptyStateEl.classList.toggle('hidden', activeCount > 0);
             lucide.createIcons();
-        }
-
-        // Render functions for other views
-        function renderVehiclesTable() {
-            const container = document.getElementById('vehicles-table-body');
-            const emptyEl = document.getElementById('vehicles-empty');
-            const countEl = document.getElementById('vehicles-count');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            if (vehicles.length === 0) {
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                if (countEl) countEl.innerText = '0 vehicles';
-                return;
-            }
-            
-            if (emptyEl) emptyEl.classList.add('hidden');
-            if (countEl) countEl.innerText = `${vehicles.length} vehicles`;
-            
-            vehicles.forEach(vehicle => {
-                container.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${escapeHtml(vehicle.plate)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${escapeHtml(vehicle.phone || '-')}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${new Date(vehicle.created_at).toLocaleDateString()}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${escapeHtml(vehicle.source || 'Manual')}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        function renderPartsCollections(collections) {
-            const container = document.getElementById('parts-collections-list');
-            const emptyEl = document.getElementById('parts-empty');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            if (!collections || collections.length === 0) {
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                return;
-            }
-            
-            if (emptyEl) emptyEl.classList.add('hidden');
-            
-            collections.forEach(collection => {
-                const statusColors = {
-                    'pending': 'bg-yellow-100 text-yellow-800',
-                    'collected': 'bg-green-100 text-green-800',
-                    'cancelled': 'bg-red-100 text-red-800'
-                };
-                
-                container.innerHTML += `
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <h3 class="font-semibold text-slate-800">${escapeHtml(collection.transfer_plate)} - ${escapeHtml(collection.transfer_name)}</h3>
-                                <p class="text-sm text-slate-500">ID: ${collection.id}</p>
-                            </div>
-                            <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColors[collection.status] || 'bg-slate-100 text-slate-800'}">
-                                ${escapeHtml(collection.status)}
-                            </span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-slate-600">Total: ${escapeHtml(collection.total_cost)}₾</span>
-                            <button onclick="editPartsCollection(${collection.id})" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                Edit
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            lucide.createIcons();
-        }
-
-        function renderReviews(reviews, total, averageRating) {
-            const container = document.getElementById('reviews-grid');
-            const emptyEl = document.getElementById('reviews-empty');
-            const countEl = document.getElementById('reviews-count');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            if (!reviews || reviews.length === 0) {
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                if (countEl) countEl.innerText = '0 reviews';
-                return;
-            }
-            
-            if (emptyEl) emptyEl.classList.add('hidden');
-            if (countEl) countEl.innerText = `${total} reviews (avg: ${averageRating}★)`;
-            
-            reviews.forEach(review => {
-                const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
-                container.innerHTML += `
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex items-center gap-2">
-                                <div class="text-yellow-400 text-lg">${stars}</div>
-                                <span class="text-sm font-medium text-slate-600">${review.rating}/5</span>
-                            </div>
-                            <span class="text-xs text-slate-500">${new Date(review.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <p class="text-slate-700 mb-3">${escapeHtml(review.comment)}</p>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-slate-500">${escapeHtml(review.customer_name)}</span>
-                            <div class="flex gap-2">
-                                ${review.status === 'pending' ? 
-                                    `<button onclick="updateReviewStatus(${review.id}, 'approved')" class="text-green-600 hover:text-green-800 text-sm">Approve</button>
-                                     <button onclick="updateReviewStatus(${review.id}, 'rejected')" class="text-red-600 hover:text-red-800 text-sm">Reject</button>` :
-                                    `<span class="text-xs px-2 py-1 rounded-full ${review.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${review.status}</span>`
-                                }
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderTemplatesEditor(templates) {
-            const container = document.getElementById('templates-editor');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            const templateKeys = Object.keys(templates);
-            if (templateKeys.length === 0) {
-                container.innerHTML = '<p class="text-slate-500">No templates found</p>';
-                return;
-            }
-            
-            templateKeys.forEach(key => {
-                container.innerHTML += `
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-slate-700">${escapeHtml(key)}</label>
-                        <textarea id="template-${key}" class="w-full h-24 p-3 border border-slate-200 rounded-xl text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" placeholder="Template content...">${escapeHtml(templates[key])}</textarea>
-                    </div>
-                `;
-            });
-        }
-
-        function renderParsingTemplates(templates) {
-            const container = document.getElementById('parsing-templates-list');
-            const emptyEl = document.getElementById('parsing-empty');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            if (!templates || templates.length === 0) {
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                return;
-            }
-            
-            if (emptyEl) emptyEl.classList.add('hidden');
-            
-            templates.forEach(template => {
-                container.innerHTML += `
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <h3 class="font-semibold text-slate-800">${escapeHtml(template.name)}</h3>
-                                <p class="text-sm text-slate-500">${escapeHtml(template.insurance_company)}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium ${template.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                    ${template.is_active ? 'Active' : 'Inactive'}
-                                </span>
-                                <button onclick="editParsingTemplate(${template.id})" class="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                            </div>
-                        </div>
-                        <p class="text-sm text-slate-600">${escapeHtml(template.template_pattern)}</p>
-                    </div>
-                `;
-            });
-        }
-
-        function renderUsersTable(users) {
-            const container = document.getElementById('users-table-body');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            if (!users || users.length === 0) {
-                container.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-slate-500">No users found</td></tr>';
-                return;
-            }
-            
-            users.forEach(user => {
-                container.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${escapeHtml(user.username)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${escapeHtml(user.full_name)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : user.role === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">
-                                ${escapeHtml(user.role)}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                ${escapeHtml(user.status)}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                            <button onclick="editUser(${user.id})" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button>
-                            <button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-800">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function renderTranslationsEditor(translations) {
-            const container = document.getElementById('translations-editor');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            const keys = Object.keys(translations);
-            if (keys.length === 0) {
-                container.innerHTML = '<p class="text-slate-500">No translations found</p>';
-                return;
-            }
-            
-            keys.forEach(key => {
-                container.innerHTML += `
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-slate-700">${escapeHtml(key)}</label>
-                        <input type="text" id="translation-${key}" value="${escapeHtml(translations[key])}" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none" />
-                    </div>
-                `;
-            });
         }
 
         window.openEditModal = (id) => {
@@ -3603,47 +2995,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         }
         
         if(window.lucide) lucide.createIcons();
-
-        // Placeholder functions for combined design
-        function openCreatePartsModal() {
-            showToast('Info', 'Parts collection creation coming soon', 'info');
-        }
-
-        function editPartsCollection(id) {
-            showToast('Info', 'Parts collection editing coming soon', 'info');
-        }
-
-        function updateReviewStatus(id, status) {
-            showToast('Info', 'Review status update coming soon', 'info');
-        }
-
-        function saveTemplates() {
-            showToast('Info', 'Template saving coming soon', 'info');
-        }
-
-        function openCreateTemplateModal() {
-            showToast('Info', 'Template creation coming soon', 'info');
-        }
-
-        function editParsingTemplate(id) {
-            showToast('Info', 'Template editing coming soon', 'info');
-        }
-
-        function openCreateUserModal() {
-            showToast('Info', 'User creation coming soon', 'info');
-        }
-
-        function editUser(id) {
-            showToast('Info', 'User editing coming soon', 'info');
-        }
-
-        function deleteUser(id) {
-            showToast('Info', 'User deletion coming soon', 'info');
-        }
-
-        function exportTranslations() {
-            showToast('Info', 'Translation export coming soon', 'info');
-        }
 
     </script>
 </body>
