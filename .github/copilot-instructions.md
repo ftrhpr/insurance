@@ -55,8 +55,15 @@ Extracts: plate number, customer name, amount, and optional franchise fees.
 - Separate moderation system with `status` (pending/approved/rejected)
 - References order by `order_id` (VARCHAR, not FK)
 
-### Repair Tool
-Run `fix_db_all.php` to create/repair all tables and add missing columns.
+### User Management System
+- `users` table with roles: `viewer`, `manager`, `admin`
+- Session-based authentication with role-based permissions
+- Admin-only access to user management via `users.php`
+
+### SMS Parsing Templates
+- `sms_parsing_templates` table for configurable parsing patterns
+- Supports multiple insurance companies with custom regex and field mappings
+- Managed via `sms_parsing.php` (admin only)
 
 ## Development Patterns
 
@@ -65,6 +72,11 @@ All SMS messages use template placeholders:
 - `{name}`, `{plate}`, `{amount}`, `{link}`, `{date}`
 - Stored in `sms_templates` table with slug keys (registered, schedule, parts_arrived, completed, etc.)
 - Function: `getFormattedMessage(type, data)` (line ~980 in `index.php`)
+
+### Translation System
+- Multilanguage support via `language.php` with `__()` function
+- Session-stored language preference (`en`, `ka`, `ru`)
+- Fallback to English defaults
 
 ### Offline-First Design
 The app checks `connection-status` div text before API calls:
