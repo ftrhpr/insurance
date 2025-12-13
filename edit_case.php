@@ -120,24 +120,127 @@ try {
     <?php include 'header.php'; ?>
 
     <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-2 py-6">
-        <!-- Back Button -->
-        <div class="mb-6">
-            <a href="index.php" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                <span class="font-medium">Back to Dashboard</span>
-            </a>
-        </div>
-
-        <!-- Case Header -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 mb-4 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between">
-            <div class="flex items-center gap-4 flex-1 min-w-0">
-                <div class="bg-gray-100 p-2 rounded">
-                    <i data-lucide="car" class="w-6 h-6 text-blue-600"></i>
+    <div class="w-full flex flex-col items-center justify-center px-0 py-0">
+        <!-- Dashboard Card: All-in-one, tabbed, compact -->
+        <div class="bg-white border border-gray-200 rounded shadow-sm w-full max-w-3xl mx-auto mt-2 mb-4">
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-gray-100 text-xs font-bold text-gray-600">
+                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('details', event)">Details</button>
+                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('communication', event)">Communication</button>
+                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('activity', event)">Activity</button>
+                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('notes', event)">Notes</button>
+                <button class="tab-btn flex-1 py-2 px-1 hover:bg-gray-50 focus:bg-gray-100" onclick="showTab('review', event)">Review</button>
+            </div>
+            <!-- Tab Contents -->
+            <div class="p-2">
+                <!-- Details Tab -->
+                <div id="tab-details" class="tab-content">
+                    <div class="flex flex-col sm:flex-row gap-2 mb-2">
+                        <div class="flex-1">
+                            <div class="text-xs text-gray-500 uppercase font-bold mb-1">Order #<?php echo $case_id; ?></div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <i data-lucide="car" class="w-5 h-5 text-blue-600"></i>
+                                <span class="font-mono text-base text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
+                                <span class="text-gray-400">/</span>
+                                <span class="text-lg font-bold text-gray-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="window.printCase()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition" title="Print Case">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                            </button>
+                            <a href="index.php" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Workflow Progress -->
+                    <div class="mb-2">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Case Progress</h4>
+                            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">Stage <span id="workflow-stage-number">1</span> of 8</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="workflow-progress-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap justify-between mt-1 text-[11px] text-gray-400 font-medium gap-1">
+                            <span>New</span><span>Processing</span><span>Contacted</span><span>Parts Ordered</span><span>Parts Arrived</span><span>Scheduled</span><span>Completed</span><span>Issue</span>
+                        </div>
+                    </div>
+                    <!-- Order Details, Status, Appointment, Franchise, etc. -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-500 font-bold mb-1">Customer Name</label>
+                            <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
+                            <label class="block text-xs text-gray-500 font-bold mb-1">Vehicle Plate</label>
+                            <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
+                            <label class="block text-xs text-gray-500 font-bold mb-1">Amount</label>
+                            <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
+                            <label class="block text-xs text-gray-500 font-bold mb-1">Franchise</label>
+                            <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 font-bold mb-1">Status</label>
+                            <select id="input-status" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
+                                <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>New Case</option>
+                                <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
+                                <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>Contacted</option>
+                                <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>Parts Ordered</option>
+                                <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>Parts Arrived</option>
+                                <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>Scheduled</option>
+                                <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>Completed</option>
+                                <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>Issue</option>
+                            </select>
+                            <label class="block text-xs text-gray-500 font-bold mb-1">Service Date</label>
+                            <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
+                            <label class="block text-xs text-gray-500 font-bold mb-1">Phone</label>
+                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="w-full p-2 border border-gray-200 rounded text-sm mb-2">
+                            <label class="block text-xs text-gray-500 font-bold mb-1">Created At</label>
+                            <div class="text-xs text-gray-700 mb-2"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="saveChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-2 rounded font-bold text-xs shadow transition flex items-center justify-center gap-1">
+                            <i data-lucide="save" class="w-4 h-4"></i>Save
+                        </button>
+                        <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-2 px-2 rounded font-bold text-xs shadow transition flex items-center justify-center gap-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>Delete
+                        </button>
+                    </div>
                 </div>
-                <div class="min-w-0">
-                    <div class="text-xs text-gray-500 uppercase font-bold tracking-widest">Order #<?php echo $case_id; ?></div>
-                    <div class="flex items-center gap-2 mt-1">
+                <!-- Communication Tab -->
+                <div id="tab-communication" class="tab-content hidden">
+                    ...existing code for communication cards...
+                </div>
+                <!-- Activity Tab -->
+                <div id="tab-activity" class="tab-content hidden">
+                    ...existing code for activity log...
+                </div>
+                <!-- Notes Tab -->
+                <div id="tab-notes" class="tab-content hidden">
+                    ...existing code for internal notes...
+                </div>
+                <!-- Review Tab -->
+                <div id="tab-review" class="tab-content hidden">
+                    ...existing code for review section...
+                </div>
+            </div>
+        </div>
+                            <script>
+                            // Tab switching logic
+                            function showTab(tab, event) {
+                                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                                document.getElementById('tab-' + tab).classList.remove('hidden');
+                                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('bg-gray-100'));
+                                if(event) event.target.classList.add('bg-gray-100');
+                            }
+                            // Show first tab by default
+                            document.addEventListener('DOMContentLoaded', function() {
+                                showTab('details');
+                            });
+                            </script>
                         <span class="text-lg font-bold text-gray-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
                         <span class="text-gray-400">/</span>
                         <span class="font-mono text-base text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
