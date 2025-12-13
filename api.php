@@ -989,7 +989,7 @@ try {
                 // Choose template based on status
                 if ($new_status === 'collected') {
                     $template_slug = 'parts_arrived';
-                } elseif ($new_new_status === 'collected_waiting') {
+                } elseif ($new_status === 'collected_waiting') {
                     $template_slug = 'parts_arrived_no_schedule';
                 } else {
                     $template_slug = null; // No SMS for other status changes from here
