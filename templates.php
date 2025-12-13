@@ -133,19 +133,56 @@ try {
                 </div>
 
                 <!-- Template Cards -->
-                <div class="space-y-4">
-                    <!-- Welcome SMS -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div class="space-y-4" id="templates-container">
+                    <?php
+                    // Define template metadata for icons and colors
+                    $templateMeta = [
+                        'registered' => ['icon' => 'user-check', 'color' => 'emerald', 'label' => 'Welcome SMS'],
+                        'called' => ['icon' => 'phone-call', 'color' => 'blue', 'label' => 'Customer Contacted'],
+                        'contacted' => ['icon' => 'phone', 'color' => 'cyan', 'label' => 'Contacted Notification'],
+                        'schedule' => ['icon' => 'calendar-check', 'color' => 'indigo', 'label' => 'Service Scheduled'],
+                        'parts_ordered' => ['icon' => 'package', 'color' => 'amber', 'label' => 'Parts Ordered'],
+                        'parts_arrived' => ['icon' => 'box', 'color' => 'purple', 'label' => 'Parts Arrived'],
+                        'rescheduled' => ['icon' => 'clock', 'color' => 'orange', 'label' => 'Reschedule Request'],
+                        'reschedule_accepted' => ['icon' => 'calendar-check', 'color' => 'cyan', 'label' => 'Reschedule Accepted'],
+                        'completed' => ['icon' => 'check-circle', 'color' => 'green', 'label' => 'Service Completed'],
+                        'issue' => ['icon' => 'alert-circle', 'color' => 'red', 'label' => 'Issue Reported'],
+                        'system' => ['icon' => 'bell', 'color' => 'gray', 'label' => 'System Alert']
+                    ];
+
+                    // Sort templates by a predefined order
+                    $templateOrder = ['registered', 'called', 'contacted', 'schedule', 'parts_ordered', 'parts_arrived', 'rescheduled', 'reschedule_accepted', 'completed', 'issue', 'system'];
+                    $sortedTemplates = [];
+                    foreach ($templateOrder as $slug) {
+                        if (isset($templatesData[$slug])) {
+                            $sortedTemplates[$slug] = $templatesData[$slug];
+                        }
+                    }
+                    // Add any additional templates not in the predefined order
+                    foreach ($templatesData as $slug => $data) {
+                        if (!isset($sortedTemplates[$slug])) {
+                            $sortedTemplates[$slug] = $data;
+                        }
+                    }
+
+                    foreach ($sortedTemplates as $slug => $template):
+                        $meta = $templateMeta[$slug] ?? ['icon' => 'message-square', 'color' => 'slate', 'label' => ucfirst(str_replace('_', ' ', $slug))];
+                        $isEditable = ($current_user_role === 'admin' || $current_user_role === 'manager' || $current_user_role === 'viewer');
+                    ?>
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow template-card" data-slug="<?php echo $slug; ?>">
                         <div class="flex items-center justify-between mb-3">
                             <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                                    <i data-lucide="user-check" class="w-4 h-4 text-emerald-600"></i>
+                                <div class="w-8 h-8 rounded-lg bg-<?php echo $meta['color']; ?>-100 flex items-center justify-center">
+                                    <i data-lucide="<?php echo $meta['icon']; ?>" class="w-4 h-4 text-<?php echo $meta['color']; ?>-600"></i>
                                 </div>
-                                <h3 class="font-bold text-slate-800">Welcome SMS</h3>
+                                <h3 class="font-bold text-slate-800"><?php echo $meta['label']; ?></h3>
+                                <?php if (isset($templateMeta[$slug])): ?>
+                                <span class="text-xs px-2 py-1 bg-<?php echo $meta['color']; ?>-100 text-<?php echo $meta['color']; ?>-700 rounded-full"><?php echo ucfirst(str_replace('_', ' ', $slug)); ?></span>
+                                <?php endif; ?>
                             </div>
                             <div class="flex items-center gap-2">
                                 <label class="flex items-center gap-1 text-xs">
-                                    <input type="checkbox" id="active-registered" <?php echo ($templatesData['registered']['is_active'] ?? true) ? 'checked' : ''; ?> class="w-3 h-3">
+                                    <input type="checkbox" id="active-<?php echo $slug; ?>" <?php echo ($template['is_active'] ?? true) ? 'checked' : ''; ?> class="w-3 h-3 template-active">
                                     Active
                                 </label>
                             </div>
@@ -155,138 +192,19 @@ try {
                             <div class="flex flex-wrap gap-1">
                                 <?php foreach ($workflowStages as $stage): ?>
                                 <label class="flex items-center gap-1 text-xs bg-slate-100 px-2 py-1 rounded">
-                                    <input type="checkbox" 
-                                           name="stages-registered[]" 
-                                           value="<?php echo $stage['stage_name']; ?>" 
-                                           <?php echo in_array($stage['stage_name'], $templatesData['registered']['workflow_stages'] ?? []) ? 'checked' : ''; ?>
-                                           class="w-3 h-3">
+                                    <input type="checkbox"
+                                           name="stages-<?php echo $slug; ?>[]"
+                                           value="<?php echo $stage['stage_name']; ?>"
+                                           <?php echo in_array($stage['stage_name'], $template['workflow_stages'] ?? []) ? 'checked' : ''; ?>
+                                           class="w-3 h-3 stage-checkbox">
                                     <?php echo $stage['stage_name']; ?>
                                 </label>
                                 <?php endforeach; ?>
                             </div>
                         </div>
-                        <textarea id="tpl-registered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['registered']['content'] ?? ''); ?></textarea>
+                        <textarea id="tpl-<?php echo $slug; ?>" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none template-content" <?php echo !$isEditable ? 'readonly' : ''; ?>><?php echo htmlspecialchars($template['content'] ?? ''); ?></textarea>
                     </div>
-
-                    <!-- Customer Contacted -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                                <i data-lucide="phone-call" class="w-4 h-4 text-blue-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Customer Contacted</h3>
-                            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full ml-auto">Called</span>
-                        </div>
-                        <textarea id="tpl-called" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['called'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Customer Contacted (Alternative) -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
-                                <i data-lucide="phone" class="w-4 h-4 text-cyan-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Contacted Notification</h3>
-                            <span class="text-xs px-2 py-1 bg-cyan-100 text-cyan-700 rounded-full ml-auto">Contacted</span>
-                        </div>
-                        <textarea id="tpl-contacted" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['contacted'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Service Scheduled -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                                <i data-lucide="calendar-check" class="w-4 h-4 text-indigo-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Service Scheduled</h3>
-                            <span class="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full ml-auto">Scheduled</span>
-                        </div>
-                        <textarea id="tpl-schedule" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['schedule'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Parts Ordered -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                                <i data-lucide="package" class="w-4 h-4 text-amber-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Parts Ordered</h3>
-                            <span class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full ml-auto">Parts Ordered</span>
-                        </div>
-                        <textarea id="tpl-parts_ordered" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_ordered'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Parts Arrived -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                                <i data-lucide="box" class="w-4 h-4 text-purple-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Parts Arrived</h3>
-                            <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full ml-auto">Parts Arrived</span>
-                        </div>
-                        <textarea id="tpl-parts_arrived" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['parts_arrived'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Reschedule Request -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-                                <i data-lucide="clock" class="w-4 h-4 text-orange-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Reschedule Request (Customer)</h3>
-                            <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">Customer Action</span>
-                        </div>
-                        <textarea id="tpl-rescheduled" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['rescheduled'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Reschedule Accepted -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
-                                <i data-lucide="calendar-check" class="w-4 h-4 text-cyan-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Reschedule Accepted (Manager)</h3>
-                            <span class="text-xs px-2 py-1 bg-cyan-100 text-cyan-700 rounded-full ml-auto">Manager Action</span>
-                        </div>
-                        <textarea id="tpl-reschedule_accepted" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['reschedule_accepted'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Service Completed -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                                <i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Service Completed</h3>
-                            <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full ml-auto">Completed</span>
-                        </div>
-                        <textarea id="tpl-completed" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['completed'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- Issue Reported -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                                <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">Issue Reported</h3>
-                            <span class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full ml-auto">Issue</span>
-                        </div>
-                        <textarea id="tpl-issue" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['issue'] ?? ''); ?></textarea>
-                    </div>
-
-                    <!-- System Alert -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                                <i data-lucide="bell" class="w-4 h-4 text-gray-600"></i>
-                            </div>
-                            <h3 class="font-bold text-slate-800">System Alert (Manager)</h3>
-                            <span class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full ml-auto">System</span>
-                        </div>
-                        <textarea id="tpl-system" rows="3" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" <?php echo ($current_user_role !== 'admin' && $current_user_role !== 'manager' && $current_user_role !== 'viewer') ? 'readonly' : ''; ?>><?php echo htmlspecialchars($templatesData['system'] ?? ''); ?></textarea>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
@@ -344,6 +262,7 @@ try {
         const CAN_EDIT = USER_ROLE === 'admin' || USER_ROLE === 'manager' || USER_ROLE === 'viewer';
         
         let smsTemplates = <?php echo json_encode($templatesData); ?>;
+        let workflowStages = <?php echo json_encode($workflowStages); ?>;
 
         // Default templates if database is empty
         const defaultTemplates = {
@@ -443,10 +362,11 @@ try {
             try {
                 const smsTemplates = {};
 
-                // Collect data for each template
-                const templateSlugs = ['registered', 'called', 'contacted', 'schedule', 'parts_ordered', 'parts_arrived', 'rescheduled', 'reschedule_accepted', 'completed', 'issue', 'system'];
+                // Collect data from all template cards dynamically
+                const templateCards = document.querySelectorAll('.template-card');
                 
-                for (const slug of templateSlugs) {
+                templateCards.forEach(card => {
+                    const slug = card.dataset.slug;
                     const content = getVal(`tpl-${slug}`);
                     const isActive = document.getElementById(`active-${slug}`)?.checked ?? true;
                     
@@ -459,7 +379,7 @@ try {
                         workflow_stages: workflowStages,
                         is_active: isActive
                     };
-                }
+                });
 
                 await fetchAPI('save_templates', 'POST', smsTemplates);
                 showToast('Success', 'All templates saved successfully', 'success');
@@ -470,13 +390,14 @@ try {
         };
 
         function getFormattedMessage(type, data) {
-            let template = smsTemplates[type] || defaultTemplates[type] || '';
+            let template = smsTemplates[type]?.content || defaultTemplates[type] || '';
             
             template = template.replace(/{name}/g, data.name || '');
             template = template.replace(/{plate}/g, data.plate || '');
             template = template.replace(/{amount}/g, data.amount || '');
             template = template.replace(/{date}/g, data.date || '');
             template = template.replace(/{link}/g, data.link || '');
+            template = template.replace(/{count}/g, data.count || '');
             
             return template;
         }
