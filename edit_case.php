@@ -174,7 +174,7 @@ try {
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Left Column: Order Details & Status -->
+            <!-- Left Column: Core Information -->
             <div class="space-y-6">
                 <!-- Order Information Card -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
@@ -219,71 +219,6 @@ try {
                     </div>
                 </div>
 
-                <!-- Status Selection -->
-                <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                    <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                <i data-lucide="activity" class="w-5 h-5 text-white"></i>
-                            </div>
-                            <h3 class="text-lg font-bold text-white uppercase tracking-wider">Workflow Stage</h3>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <div class="relative">
-                            <select id="input-status" class="w-full appearance-none bg-slate-50 border-2 border-purple-200 text-slate-800 py-4 px-4 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-lg font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
-                                <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
-                                <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>🟡 Processing</option>
-                                <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>🟣 Contacted</option>
-                                <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>📦 Parts Ordered</option>
-                                <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>🏁 Parts Arrived</option>
-                                <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>🟠 Scheduled</option>
-                                <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>🟢 Completed</option>
-                                <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>🔴 Issue</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-purple-400">
-                                <i data-lucide="chevron-down" class="w-6 h-6"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Activity Timeline -->
-                <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                    <div class="bg-gradient-to-r from-slate-700 to-slate-600 px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="history" class="w-5 h-5 text-white"></i>
-                            <h3 class="text-lg font-bold text-white uppercase tracking-wider">Activity Timeline</h3>
-                        </div>
-                    </div>
-                    <div id="activity-log-container" class="p-6 max-h-80 overflow-y-auto custom-scrollbar space-y-4">
-                        <?php
-                        if (!empty($case['systemLogs'])) {
-                            foreach (array_reverse($case['systemLogs']) as $log) {
-                                $date = date('M j, g:i A', strtotime($log['timestamp']));
-                                echo "<div class='flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors'>";
-                                echo "<div class='bg-slate-200 rounded-full p-2 mt-0.5'>";
-                                echo "<i data-lucide='activity' class='w-4 h-4 text-slate-600'></i>";
-                                echo "</div>";
-                                echo "<div class='flex-1 min-w-0'>";
-                                echo "<div class='text-xs text-slate-500 mb-1 font-medium'>{$date}</div>";
-                                echo "<div class='text-sm text-slate-700 leading-relaxed'>" . htmlspecialchars($log['message']) . "</div>";
-                                echo "</div>";
-                                echo "</div>";
-                            }
-                        } else {
-                            echo "<div class='text-center py-8'>";
-                            echo "<i data-lucide='inbox' class='w-12 h-12 text-slate-300 mx-auto mb-3'></i>";
-                            echo "<p class='text-sm text-slate-500 font-medium'>No activity recorded</p>";
-                            echo "</div>";
-                        }
-                        ?>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Middle Column: Communication & Actions -->
-            <div class="space-y-6">
                 <!-- Contact Information -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
                     <div class="bg-gradient-to-r from-teal-600 to-teal-700 px-6 py-4">
@@ -306,7 +241,10 @@ try {
                         </div>
                     </div>
                 </div>
+            </div>
 
+            <!-- Middle Column: Actions & Communication -->
+            <div class="space-y-6">
                 <!-- Service Appointment -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
                     <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4">
@@ -402,8 +340,40 @@ try {
                 </div>
             </div>
 
-            <!-- Right Column: Customer Feedback & Notes -->
+            <!-- Right Column: History & Feedback -->
             <div class="space-y-6">
+                <!-- Activity Timeline -->
+                <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
+                    <div class="bg-gradient-to-r from-slate-700 to-slate-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="history" class="w-5 h-5 text-white"></i>
+                            <h3 class="text-lg font-bold text-white uppercase tracking-wider">Activity Timeline</h3>
+                        </div>
+                    </div>
+                    <div id="activity-log-container" class="p-6 max-h-80 overflow-y-auto custom-scrollbar space-y-4">
+                        <?php
+                        if (!empty($case['systemLogs'])) {
+                            foreach (array_reverse($case['systemLogs']) as $log) {
+                                $date = date('M j, g:i A', strtotime($log['timestamp']));
+                                echo "<div class='flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors'>";
+                                echo "<div class='bg-slate-200 rounded-full p-2 mt-0.5'>";
+                                echo "<i data-lucide='activity' class='w-4 h-4 text-slate-600'></i>";
+                                echo "</div>";
+                                echo "<div class='flex-1 min-w-0'>";
+                                echo "<div class='text-xs text-slate-500 mb-1 font-medium'>{$date}</div>";
+                                echo "<div class='text-sm text-slate-700 leading-relaxed'>" . htmlspecialchars($log['message']) . "</div>";
+                                echo "</div>";
+                                echo "</div>";
+                            }
+                        } else {
+                            echo "<div class='text-center py-8'>";
+                            echo "<i data-lucide='inbox' class='w-12 h-12 text-slate-300 mx-auto mb-3'></i>";
+                            echo "<p class='text-sm text-slate-500 font-medium'>No activity recorded</p>";
+                            echo "</div>";
+                        }
+                        ?>
+                    </div>
+                </div>
                 <!-- Customer Review Section -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
                     <div class="bg-gradient-to-r from-amber-500 to-yellow-500 px-6 py-4 flex items-center justify-between">
