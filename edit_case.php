@@ -174,7 +174,7 @@ try {
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Left Column: Order Details & Status -->
+            <!-- Left Column: Core Case Data -->
             <div class="space-y-6">
                 <!-- Order Information Card -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
@@ -282,7 +282,7 @@ try {
                 </div>
             </div>
 
-            <!-- Middle Column: Communication & Actions -->
+            <!-- Middle Column: Communication & Scheduling -->
             <div class="space-y-6">
                 <!-- Contact Information -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
@@ -325,6 +325,46 @@ try {
                     </div>
                 </div>
 
+                <!-- Reschedule Request Preview -->
+                <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
+                <div class="bg-white border border-purple-200 rounded shadow-sm text-sm">
+                    <div class="px-4 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="bg-white/20 p-2 rounded-lg">
+                                <i data-lucide="calendar-clock" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <label class="text-sm font-bold text-white uppercase tracking-wider">Reschedule Request</label>
+                        </div>
+                        <span class="text-xs bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold border border-white/30">Pending</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="bg-white/80 p-3 rounded-lg border-2 border-purple-200">
+                            <span class="text-xs text-purple-700 font-bold block mb-2 uppercase tracking-wider">Requested Date</span>
+                            <div class="flex items-center gap-2">
+                                <div class="bg-purple-100 p-2 rounded-lg">
+                                    <i data-lucide="calendar" class="w-5 h-5 text-purple-600"></i>
+                                </div>
+                                <span class="text-lg font-bold text-slate-800"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span>
+                            </div>
+                        </div>
+                        <?php if (!empty($case['rescheduleComment'])): ?>
+                        <div class="bg-white/80 p-4 rounded-xl border-2 border-purple-200">
+                            <span class="text-xs text-purple-700 font-bold block mb-2 uppercase tracking-wider">Customer Comment</span>
+                            <p class="text-sm text-slate-700 leading-relaxed"><?php echo htmlspecialchars($case['rescheduleComment']); ?></p>
+                        </div>
+                        <?php endif; ?>
+                        <div class="flex gap-3 pt-2">
+                            <button onclick="acceptReschedule()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-bold text-sm transition-all active:scale-95 shadow-lg">
+                                <i data-lucide="check" class="w-4 h-4 inline mr-2"></i>Accept Request
+                            </button>
+                            <button onclick="declineReschedule()" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-bold text-sm transition-all active:scale-95 shadow-lg">
+                                <i data-lucide="x" class="w-4 h-4 inline mr-2"></i>Decline Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- Quick SMS Actions -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
                     <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
@@ -365,7 +405,10 @@ try {
                         </button>
                     </div>
                 </div>
+            </div>
 
+            <!-- Right Column: Advanced Actions & Notes -->
+            <div class="space-y-6">
                 <!-- Advanced SMS Template Selector -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
                     <div class="bg-gradient-to-r from-violet-600 to-violet-700 px-6 py-4">
@@ -400,10 +443,7 @@ try {
                         </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Column: Customer Feedback & Notes -->
-            <div class="space-y-6">
                 <!-- Customer Review Section -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
                     <div class="bg-gradient-to-r from-amber-500 to-yellow-500 px-6 py-4 flex items-center justify-between">
@@ -506,7 +546,6 @@ try {
                         </div>
                     </div>
                 </div>
-                <?php endif; ?>
 
                 <!-- Internal Notes -->
                 <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
