@@ -82,37 +82,205 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Case #<?php echo $case_id; ?> - OTOMOTORS Manager Portal</title>
 
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Lucide Icons -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Custom Styles -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                        }
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% center' },
+                            '100%': { backgroundPosition: '200% center' },
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'glass': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
+        /* Premium Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { 
+            width: 8px; 
+            height: 8px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 3px;
+        .custom-scrollbar::-webkit-scrollbar-track { 
+            background: rgba(148, 163, 184, 0.1); 
+            border-radius: 10px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+            background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+            background-clip: padding-box;
         }
-        .bg-grid-white\/\[0\.05\] {
-            background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+        
+        /* Enhanced Navigation */
+        .nav-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
-        .bg-\[size\:20px_20px\] {
-            background-size: 20px 20px;
+        .nav-active { 
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3), 0 2px 4px rgba(14, 165, 233, 0.2);
+        }
+        .nav-inactive { 
+            color: #64748b;
+            background: transparent;
+        }
+        .nav-inactive:hover { 
+            color: #0f172a;
+            background: rgba(14, 165, 233, 0.08);
+            transform: translateY(-1px);
+        }
+
+        /* Glass Morphism Effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #c026d3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Enhanced Card Hover */
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(14, 165, 233, 0.1);
+        }
+
+        /* Animated Border for Urgent Toasts */
+        @keyframes border-pulse {
+            0% { 
+                border-color: rgba(14, 165, 233, 0.3); 
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5), 0 4px 12px rgba(14, 165, 233, 0.2);
+                transform: scale(1); 
+            }
+            50% { 
+                border-color: rgba(14, 165, 233, 1); 
+                box-shadow: 0 0 30px 0 rgba(14, 165, 233, 0.5), 0 8px 20px rgba(14, 165, 233, 0.3);
+                transform: scale(1.02); 
+            }
+            100% { 
+                border-color: rgba(14, 165, 233, 0.3); 
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5), 0 4px 12px rgba(14, 165, 233, 0.2);
+                transform: scale(1); 
+            }
+        }
+        .toast-urgent {
+            animation: border-pulse 2s infinite;
+            border-width: 2px;
+        }
+
+        /* Shimmer Effect for Loading States */
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        /* Premium Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4), 0 4px 8px rgba(14, 165, 233, 0.2);
+            transform: translateY(-2px);
+        }
+        .btn-primary:active {
+            transform: translateY(0px) scale(0.98);
+        }
+
+        /* Floating Animation for Icons */
+        .float-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Modern Badge Styles */
+        .badge-modern {
+            position: relative;
+            overflow: hidden;
+        }
+        .badge-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        .badge-modern:hover::before {
+            left: 100%;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+<body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen selection:bg-primary-200 selection:text-primary-900">
+
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3 pointer-events-none"></div>
 
@@ -120,171 +288,199 @@ try {
     <?php include 'header.php'; ?>
 
     <!-- Main Content -->
-    <div class="w-full min-h-screen px-4 py-8">
-        <!-- Back Button and Case Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 max-w-7xl mx-auto">
-            <a href="index.php" class="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 text-sm">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                Back to Dashboard
-            </a>
-            <div class="flex items-center gap-3 text-slate-700 text-base font-semibold">
-                <span class="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded">
-                    <i data-lucide="car" class="w-4 h-4 text-blue-500"></i>
-                    <?php echo htmlspecialchars($case['plate']); ?>
-                </span>
-                <span class="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded">
-                    <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
-                    <?php echo htmlspecialchars($case['name']); ?>
-                </span>
-                <span class="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded font-mono">
-                    #<?php echo $case_id; ?>
-                </span>
-            </div>
-        </div>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex gap-8">
+            <!-- Sidebar Navigation -->
+            <aside class="w-64 flex-shrink-0">
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-4 sticky top-8">
+                    <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i data-lucide="menu" class="w-4 h-4 text-primary-500"></i>
+                        Sections
+                    </h3>
+                    <nav class="space-y-1">
+                        <a href="#case-info" class="nav-item nav-inactive block px-3 py-2 rounded-lg text-sm font-medium">
+                            <i data-lucide="file-text" class="w-4 h-4 inline mr-2"></i>
+                            Case Information
+                        </a>
+                        <a href="#communication" class="nav-item nav-inactive block px-3 py-2 rounded-lg text-sm font-medium">
+                            <i data-lucide="phone" class="w-4 h-4 inline mr-2"></i>
+                            Communication
+                        </a>
+                        <a href="#feedback" class="nav-item nav-inactive block px-3 py-2 rounded-lg text-sm font-medium">
+                            <i data-lucide="star" class="w-4 h-4 inline mr-2"></i>
+                            Customer Feedback
+                        </a>
+                        <a href="#internal" class="nav-item nav-inactive block px-3 py-2 rounded-lg text-sm font-medium">
+                            <i data-lucide="sticky-note" class="w-4 h-4 inline mr-2"></i>
+                            Internal Notes
+                        </a>
+                        <a href="#actions" class="nav-item nav-inactive block px-3 py-2 rounded-lg text-sm font-medium">
+                            <i data-lucide="settings" class="w-4 h-4 inline mr-2"></i>
+                            Actions
+                        </a>
+                    </nav>
+                </div>
+            </aside>
 
-        <!-- Workflow Progress Bar -->
-        <div class="mb-6">
-            <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Progress</span>
-                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Stage <span id="workflow-stage-number">1</span> of 8</span>
-            </div>
-            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div id="workflow-progress-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
-            </div>
-            <div class="flex justify-between mt-1 text-[11px] text-slate-400 font-medium">
-                <span>New</span>
-                <span>Processing</span>
-                <span>Contacted</span>
-                <span>Parts Ordered</span>
-                <span>Parts Arrived</span>
-                <span>Scheduled</span>
-                <span>Completed</span>
-                <span>Issue</span>
-            </div>
-        </div>
+            <!-- Main Content Area -->
+            <div class="flex-1 space-y-8">
+                <!-- Back Button and Case Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <a href="index.php" class="inline-flex items-center gap-2 text-slate-500 hover:text-primary-600 text-sm">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        Back to Dashboard
+                    </a>
+                    <div class="flex items-center gap-3 text-slate-700 text-base font-semibold">
+                        <span class="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded">
+                            <i data-lucide="car" class="w-4 h-4 text-primary-500"></i>
+                            <?php echo htmlspecialchars($case['plate']); ?>
+                        </span>
+                        <span class="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded">
+                            <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                            <?php echo htmlspecialchars($case['name']); ?>
+                        </span>
+                        <span class="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded font-mono">
+                            #<?php echo $case_id; ?>
+                        </span>
+                    </div>
+                </div>
 
-        <!-- Main Content: Structured Sections -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-            <!-- Left: Case Info, Workflow, Communication -->
-            <div class="flex flex-col gap-8">
-                <!-- Case Info Section -->
-                <section class="flex flex-col gap-6">
-                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                        <div class="mb-4 flex items-center gap-2">
-                            <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
-                            <h3 class="text-base font-semibold text-slate-700">Order Details</h3>
-                        </div>
-                        <div class="space-y-4">
-                            <!-- ...existing code for order details fields... -->
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 mb-1">Customer Name</label>
-                                <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 mb-1">Vehicle Plate</label>
-                                <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 mb-1">Amount</label>
-                                <div class="flex items-center gap-2">
-                                    <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-lg font-bold text-emerald-600">
-                                    <span class="text-lg font-bold text-emerald-600">₾</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 mb-1">Franchise</label>
-                                <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 mb-1">Created At</label>
-                                <div class="flex items-center gap-2 text-sm text-slate-700">
-                                    <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
-                                    <span id="case-created-date" class="font-medium"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></span>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Workflow Progress Bar -->
+                <section class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Progress</span>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Stage <span id="workflow-stage-number">1</span> of 8</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div id="workflow-progress-bar" class="h-full bg-primary-500 rounded-full transition-all duration-500" style="width: 12.5%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-[11px] text-slate-400 font-medium">
+                        <span>New</span>
+                        <span>Processing</span>
+                        <span>Contacted</span>
+                        <span>Parts Ordered</span>
+                        <span>Parts Arrived</span>
+                        <span>Scheduled</span>
+                        <span>Completed</span>
+                        <span>Issue</span>
                     </div>
                 </section>
 
-                <!-- Workflow & Status Section -->
-                <section class="flex flex-col gap-6">
-                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                        <div class="mb-4 flex items-center gap-2">
-                            <i data-lucide="activity" class="w-4 h-4 text-purple-500"></i>
-                            <h3 class="text-base font-semibold text-slate-700">Workflow Stage</h3>
+                <!-- Case Information Section -->
+                <section id="case-info" class="space-y-6">
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div class="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg shadow-primary-500/30">
+                            <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
                         </div>
-                        <select id="input-status" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-base font-bold">
-                            <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>New Case</option>
-                            <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
-                            <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>Contacted</option>
-                            <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>Parts Ordered</option>
-                            <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>Parts Arrived</option>
-                            <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>Scheduled</option>
-                            <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>Completed</option>
-                            <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>Issue</option>
-                        </select>
-                    </div>
-                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                        <div class="mb-2 flex items-center gap-2">
-                            <i data-lucide="history" class="w-4 h-4 text-slate-500"></i>
-                            <h3 class="text-base font-semibold text-slate-700">Activity Timeline</h3>
+                        Case Information
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Order Details Card -->
+                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
+                            <div class="mb-4 flex items-center gap-2">
+                                <i data-lucide="file-text" class="w-4 h-4 text-primary-500"></i>
+                                <h3 class="text-base font-semibold text-slate-700">Order Details</h3>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Customer Name</label>
+                                    <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Vehicle Plate</label>
+                                    <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Amount</label>
+                                    <div class="flex items-center gap-2">
+                                        <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-lg font-bold text-emerald-600">
+                                        <span class="text-lg font-bold text-emerald-600">₾</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Franchise</label>
+                                    <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Created At</label>
+                                    <div class="flex items-center gap-2 text-sm text-slate-700">
+                                        <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+                                        <span id="case-created-date" class="font-medium"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div id="activity-log-container" class="p-2 h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
-                            <?php
-                            if (!empty($case['systemLogs'])) {
-                                foreach (array_reverse($case['systemLogs']) as $log) {
-                                    $date = date('M j, g:i A', strtotime($log['timestamp']));
-                                    echo "<div class='flex items-start gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200'>";
-                                    echo "<div class='bg-slate-200 rounded-full p-1 mt-0.5'>";
-                                    echo "<i data-lucide='activity' class='w-3 h-3 text-slate-600'></i>";
-                                    echo "</div>";
-                                    echo "<div class='flex-1'>";
-                                    echo "<div class='text-xs text-slate-500 mb-1'>{$date}</div>";
-                                    echo "<div class='text-sm text-slate-700'>" . htmlspecialchars($log['message']) . "</div>";
-                                    echo "</div>";
-                                    echo "</div>";
-                                }
-                            } else {
-                                echo "<div class='text-sm text-slate-500 italic'>No activity recorded</div>";
-                            }
-                            ?>
+
+                        <!-- Status Selection Card -->
+                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
+                            <div class="mb-4 flex items-center gap-2">
+                                <i data-lucide="activity" class="w-4 h-4 text-purple-500"></i>
+                                <h3 class="text-base font-semibold text-slate-700">Workflow Stage</h3>
+                            </div>
+                            <select id="input-status" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-base font-bold">
+                                <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>New Case</option>
+                                <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
+                                <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>Contacted</option>
+                                <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>Parts Ordered</option>
+                                <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>Parts Arrived</option>
+                                <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>Scheduled</option>
+                                <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>Completed</option>
+                                <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>Issue</option>
+                            </select>
                         </div>
                     </div>
                 </section>
 
                 <!-- Communication Section -->
-                <section class="flex flex-col gap-6">
-                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                        <div class="mb-4 flex items-center gap-2">
-                            <i data-lucide="phone" class="w-4 h-4 text-teal-500"></i>
-                            <h3 class="text-base font-semibold text-slate-700">Contact</h3>
+                <section id="communication" class="space-y-6">
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div class="p-2 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-lg shadow-teal-500/30">
+                            <i data-lucide="phone" class="w-5 h-5 text-white"></i>
                         </div>
-                        <div class="flex gap-2">
-                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                            <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="bg-slate-100 text-teal-600 border border-slate-200 p-2 rounded hover:bg-teal-50 transition">
-                                <i data-lucide="phone-call" class="w-5 h-5"></i>
-                            </a>
+                        Communication
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Contact Information -->
+                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
+                            <div class="mb-4 flex items-center gap-2">
+                                <i data-lucide="phone" class="w-4 h-4 text-teal-500"></i>
+                                <h3 class="text-base font-semibold text-slate-700">Contact</h3>
+                            </div>
+                            <div class="flex gap-2">
+                                <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-base">
+                                <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="bg-slate-100 text-teal-600 border border-slate-200 p-2 rounded hover:bg-teal-50 transition">
+                                    <i data-lucide="phone-call" class="w-5 h-5"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Service Appointment -->
+                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
+                            <div class="mb-4 flex items-center gap-2">
+                                <i data-lucide="calendar-check" class="w-4 h-4 text-orange-500"></i>
+                                <h3 class="text-base font-semibold text-slate-700">Service Appointment</h3>
+                            </div>
+                            <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
                         </div>
                     </div>
-                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                        <div class="mb-4 flex items-center gap-2">
-                            <i data-lucide="calendar-check" class="w-4 h-4 text-orange-500"></i>
-                            <h3 class="text-base font-semibold text-slate-700">Service Appointment</h3>
-                        </div>
-                        <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                    </div>
-                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+
+                    <!-- Quick SMS Actions -->
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
                         <div class="mb-4 flex items-center gap-2">
                             <i data-lucide="message-circle" class="w-4 h-4 text-blue-500"></i>
                             <h3 class="text-base font-semibold text-slate-700">Quick SMS</h3>
                         </div>
                         <div class="flex flex-col gap-2">
-                            <button id="btn-sms-register" class="w-full bg-slate-100 hover:bg-blue-100 text-slate-700 font-semibold py-2 px-4 rounded transition">Send Welcome SMS</button>
+                            <button id="btn-sms-register" class="w-full bg-slate-100 hover:bg-primary-100 text-slate-700 font-semibold py-2 px-4 rounded transition">Send Welcome SMS</button>
                             <button id="btn-sms-arrived" class="w-full bg-slate-100 hover:bg-teal-100 text-slate-700 font-semibold py-2 px-4 rounded transition">Parts Arrived SMS</button>
                             <button id="btn-sms-schedule" class="w-full bg-slate-100 hover:bg-orange-100 text-slate-700 font-semibold py-2 px-4 rounded transition">Send Schedule SMS</button>
                         </div>
                     </div>
-                    <details class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm" style="margin-top: -8px;">
+
+                    <!-- Advanced SMS (Collapsible) -->
+                    <details class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover" style="margin-top: -8px;">
                         <summary class="flex items-center gap-2 cursor-pointer select-none text-base font-semibold text-slate-700 mb-2">
                             <i data-lucide="message-square" class="w-4 h-4 text-violet-500"></i>
                             Advanced SMS
@@ -314,19 +510,24 @@ try {
                         </div>
                     </details>
                 </section>
-            </div>
 
-            <!-- Right: Customer Feedback, Reschedule, Notes, Actions -->
-            <div class="flex flex-col gap-8">
                 <!-- Customer Feedback Section -->
-                <section class="flex flex-col gap-6">
-                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <section id="feedback" class="space-y-6">
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div class="p-2 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-xl shadow-lg shadow-amber-500/30">
+                            <i data-lucide="star" class="w-5 h-5 text-white"></i>
+                        </div>
+                        Customer Feedback
+                    </h2>
+
+                    <!-- Customer Review Card -->
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
                         <div class="mb-4 flex items-center gap-2 justify-between">
                             <span class="flex items-center gap-2">
                                 <i data-lucide="star" class="w-4 h-4 text-amber-400"></i>
                                 <h3 class="text-base font-semibold text-slate-700">Customer Review</h3>
                             </span>
-                            <button id="btn-edit-review" class="text-xs text-slate-500 hover:text-blue-600 px-2 py-1 rounded transition flex items-center gap-1">
+                            <button id="btn-edit-review" class="text-xs text-slate-500 hover:text-primary-600 px-2 py-1 rounded transition flex items-center gap-1">
                                 <i data-lucide="edit" class="w-4 h-4"></i> Edit
                             </button>
                         </div>
@@ -374,12 +575,10 @@ try {
                             </div>
                         </div>
                     </div>
-                </section>
 
-                <!-- Reschedule Section -->
-                <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
-                <section>
-                    <div class="bg-white rounded-xl p-5 border border-purple-200 shadow-sm">
+                    <!-- Reschedule Request Card -->
+                    <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
                         <div class="mb-4 flex items-center gap-2">
                             <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-500"></i>
                             <h3 class="text-base font-semibold text-slate-700">Reschedule Request</h3>
@@ -405,18 +604,26 @@ try {
                             </div>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </section>
-                <?php endif; ?>
 
-                <!-- Internal Notes & Actions Section -->
-                <section class="flex flex-col gap-6">
-                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <!-- Internal Notes Section -->
+                <section id="internal" class="space-y-6">
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div class="p-2 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl shadow-lg shadow-slate-500/30">
+                            <i data-lucide="sticky-note" class="w-5 h-5 text-white"></i>
+                        </div>
+                        Internal Notes
+                    </h2>
+
+                    <!-- Internal Notes Card -->
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
                         <div class="mb-4 flex items-center gap-2">
                             <i data-lucide="sticky-note" class="w-4 h-4 text-yellow-500"></i>
                             <h3 class="text-base font-semibold text-slate-700">Internal Notes</h3>
                         </div>
                         <div>
-                            <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                            <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto custom-scrollbar">
                                 <?php
                                 if (!empty($case['internalNotes'])) {
                                     foreach ($case['internalNotes'] as $note) {
@@ -441,303 +648,62 @@ try {
                             </div>
                         </div>
                     </div>
-                    <div class="flex gap-2 mt-2">
-                        <button onclick="saveChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-bold text-base transition flex items-center justify-center gap-2">
-                            <i data-lucide="save" class="w-5 h-5"></i>
-                            Save Changes
-                        </button>
-                        <button onclick="deleteCase()" class="bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded font-bold text-base transition flex items-center justify-center gap-2">
-                            <i data-lucide="trash-2" class="w-5 h-5"></i>
-                            Delete
-                        </button>
-                    </div>
-                </section>
-            </div>
-        </div>
 
-            <!-- Order Details Card -->
-            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <div class="mb-4 flex items-center gap-2">
-                    <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
-                    <h3 class="text-base font-semibold text-slate-700">Order Details</h3>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Customer Name</label>
-                        <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Vehicle Plate</label>
-                        <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Amount</label>
-                        <div class="flex items-center gap-2">
-                            <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-lg font-bold text-emerald-600">
-                            <span class="text-lg font-bold text-emerald-600">₾</span>
+                    <!-- System Activity Log -->
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
+                        <div class="mb-4 flex items-center gap-2">
+                            <i data-lucide="history" class="w-4 h-4 text-slate-500"></i>
+                            <h3 class="text-base font-semibold text-slate-700">Activity Timeline</h3>
                         </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Franchise</label>
-                        <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Created At</label>
-                        <div class="flex items-center gap-2 text-sm text-slate-700">
-                            <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
-                            <span id="case-created-date" class="font-medium"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></span>
-                        </div>
-                    </div>
-                    </div>
-
-            <!-- Status Selection Card -->
-            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <div class="mb-4 flex items-center gap-2">
-                    <i data-lucide="activity" class="w-4 h-4 text-purple-500"></i>
-                    <h3 class="text-base font-semibold text-slate-700">Workflow Stage</h3>
-                </div>
-                <select id="input-status" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-base font-bold">
-                    <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>New Case</option>
-                    <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
-                    <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>Contacted</option>
-                    <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>Parts Ordered</option>
-                    <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>Parts Arrived</option>
-                    <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>Scheduled</option>
-                    <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>Completed</option>
-                    <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>Issue</option>
-                </select>
-            </div>
-
-                <!-- System Activity Log -->
-                <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                    <div class="px-4 py-3 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-2">
-                        <i data-lucide="history" class="w-4 h-4 text-white"></i>
-                        <label class="text-sm font-bold text-white uppercase tracking-wider">Activity Timeline</label>
-                    </div>
-                    <div id="activity-log-container" class="p-4 h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
-                        <?php
-                        if (!empty($case['systemLogs'])) {
-                            foreach (array_reverse($case['systemLogs']) as $log) {
-                                $date = date('M j, g:i A', strtotime($log['timestamp']));
-                                echo "<div class='flex items-start gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200'>";
-                                echo "<div class='bg-slate-200 rounded-full p-1 mt-0.5'>";
-                                echo "<i data-lucide='activity' class='w-3 h-3 text-slate-600'></i>";
-                                echo "</div>";
-                                echo "<div class='flex-1'>";
-                                echo "<div class='text-xs text-slate-500 mb-1'>{$date}</div>";
-                                echo "<div class='text-sm text-slate-700'>" . htmlspecialchars($log['message']) . "</div>";
-                                echo "</div>";
-                                echo "</div>";
-                            }
-                        } else {
-                            echo "<div class='text-sm text-slate-500 italic'>No activity recorded</div>";
-                        }
-                        ?>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contact Card -->
-            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <div class="mb-4 flex items-center gap-2">
-                    <i data-lucide="phone" class="w-4 h-4 text-teal-500"></i>
-                    <h3 class="text-base font-semibold text-slate-700">Contact</h3>
-                </div>
-                <div class="flex gap-2">
-                    <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded text-base">
-                    <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="bg-slate-100 text-teal-600 border border-slate-200 p-2 rounded hover:bg-teal-50 transition">
-                        <i data-lucide="phone-call" class="w-5 h-5"></i>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Appointment Card -->
-            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <div class="mb-4 flex items-center gap-2">
-                    <i data-lucide="calendar-check" class="w-4 h-4 text-orange-500"></i>
-                    <h3 class="text-base font-semibold text-slate-700">Service Appointment</h3>
-                </div>
-                <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full p-2 bg-slate-50 border border-slate-200 rounded text-base">
-            </div>
-
-            <!-- Quick SMS Actions Card -->
-            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <div class="mb-4 flex items-center gap-2">
-                    <i data-lucide="message-circle" class="w-4 h-4 text-blue-500"></i>
-                    <h3 class="text-base font-semibold text-slate-700">Quick SMS</h3>
-                </div>
-                <div class="flex flex-col gap-2">
-                    <button id="btn-sms-register" class="w-full bg-slate-100 hover:bg-blue-100 text-slate-700 font-semibold py-2 px-4 rounded transition">Send Welcome SMS</button>
-                    <button id="btn-sms-arrived" class="w-full bg-slate-100 hover:bg-teal-100 text-slate-700 font-semibold py-2 px-4 rounded transition">Parts Arrived SMS</button>
-                    <button id="btn-sms-schedule" class="w-full bg-slate-100 hover:bg-orange-100 text-slate-700 font-semibold py-2 px-4 rounded transition">Send Schedule SMS</button>
-                </div>
-            </div>
-
-            <!-- Advanced SMS (Collapsible) -->
-            <details class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm" style="margin-top: -8px;">
-                <summary class="flex items-center gap-2 cursor-pointer select-none text-base font-semibold text-slate-700 mb-2">
-                    <i data-lucide="message-square" class="w-4 h-4 text-violet-500"></i>
-                    Advanced SMS
-                </summary>
-                <div class="space-y-3 mt-2">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Select Template</label>
-                        <select id="sms-template-selector" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-base">
-                            <option value="">Choose a template...</option>
-                            <?php foreach ($smsTemplates as $slug => $template): ?>
-                            <option value="<?php echo htmlspecialchars($slug); ?>" data-content="<?php echo htmlspecialchars($template['content']); ?>">
-                                <?php echo htmlspecialchars($template['name'] ?? ucfirst(str_replace('_', ' ', $slug))); ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Message Preview</label>
-                        <div id="sms-preview" class="bg-slate-50 border border-slate-200 rounded p-3 min-h-[60px] text-sm text-slate-700 whitespace-pre-wrap">
-                            <span class="text-slate-400 italic">Select a template to see preview...</span>
-                        </div>
-                    </div>
-                    <button id="btn-send-custom-sms" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded transition disabled:opacity-50" disabled>
-                        <i data-lucide="send" class="w-4 h-4 inline mr-2"></i>
-                        Send Custom SMS
-                    </button>
-                </div>
-            </details>
-            </div>
-
-            <!-- Customer Review Card -->
-            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <div class="mb-4 flex items-center gap-2 justify-between">
-                    <span class="flex items-center gap-2">
-                        <i data-lucide="star" class="w-4 h-4 text-amber-400"></i>
-                        <h3 class="text-base font-semibold text-slate-700">Customer Review</h3>
-                    </span>
-                    <button id="btn-edit-review" class="text-xs text-slate-500 hover:text-blue-600 px-2 py-1 rounded transition flex items-center gap-1">
-                        <i data-lucide="edit" class="w-4 h-4"></i> Edit
-                    </button>
-                </div>
-                <div id="review-display" class="space-y-3">
-                        <?php if (!empty($case['reviewStars'])): ?>
-                        <div class="flex items-center gap-2">
-                            <div class="flex gap-1">
-                                <?php for ($i = 1; $i <= 5; $i++): ?>
-                                    <i data-lucide="star" class="w-5 h-5 <?php echo $i <= $case['reviewStars'] ? 'text-amber-400 fill-current' : 'text-slate-300'; ?>"></i>
-                                <?php endfor; ?>
-                            </div>
-                            <span class="text-2xl font-bold text-amber-600"><?php echo $case['reviewStars']; ?>/5</span>
-                        </div>
-                        <?php if (!empty($case['reviewComment'])): ?>
-                        <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                            <p class="text-sm text-slate-700 italic leading-relaxed"><?php echo htmlspecialchars($case['reviewComment']); ?></p>
-                        </div>
-                        <?php endif; ?>
-                        <?php else: ?>
-                        <div class="text-center py-4">
-                            <i data-lucide="star" class="w-8 h-8 text-amber-200 mx-auto mb-2"></i>
-                            <p class="text-sm text-slate-400">No review yet</p>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                <div id="review-edit" class="space-y-3 hidden">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Rating</label>
-                        <select id="input-review-stars" class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-base">
-                            <option value="">No rating</option>
-                            <option value="1" <?php echo $case['reviewStars'] == 1 ? 'selected' : ''; ?>>⭐ 1 Star</option>
-                            <option value="2" <?php echo $case['reviewStars'] == 2 ? 'selected' : ''; ?>>⭐⭐ 2 Stars</option>
-                            <option value="3" <?php echo $case['reviewStars'] == 3 ? 'selected' : ''; ?>>⭐⭐⭐ 3 Stars</option>
-                            <option value="4" <?php echo $case['reviewStars'] == 4 ? 'selected' : ''; ?>>⭐⭐⭐⭐ 4 Stars</option>
-                            <option value="5" <?php echo $case['reviewStars'] == 5 ? 'selected' : ''; ?>>⭐⭐⭐⭐⭐ 5 Stars</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Comment</label>
-                        <textarea id="input-review-comment" rows="3" placeholder="Customer feedback..." class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm resize-none"><?php echo htmlspecialchars($case['reviewComment'] ?? ''); ?></textarea>
-                    </div>
-                    <div class="flex gap-2">
-                        <button id="btn-save-review" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded transition">Save Review</button>
-                        <button id="btn-cancel-review" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded transition">Cancel</button>
-                    </div>
-                </div>
-                </div>
-
-            <!-- Reschedule Request Card -->
-            <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
-            <div class="bg-white rounded-xl p-5 border border-purple-200 shadow-sm">
-                <div class="mb-4 flex items-center gap-2">
-                    <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-500"></i>
-                    <h3 class="text-base font-semibold text-slate-700">Reschedule Request</h3>
-                    <span class="ml-auto text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded">Pending</span>
-                </div>
-                <div class="space-y-2">
-                    <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                        <span class="block text-xs font-semibold text-purple-700 mb-1">Requested Date</span>
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="calendar" class="w-4 h-4 text-purple-500"></i>
-                            <span class="text-base font-bold text-slate-800"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span>
-                        </div>
-                    </div>
-                    <?php if (!empty($case['rescheduleComment'])): ?>
-                    <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                        <span class="block text-xs font-semibold text-purple-700 mb-1">Customer Comment</span>
-                        <p class="text-sm text-slate-700 leading-relaxed"><?php echo htmlspecialchars($case['rescheduleComment']); ?></p>
-                    </div>
-                    <?php endif; ?>
-                    <div class="flex gap-2 pt-2">
-                        <button onclick="acceptReschedule()" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded font-bold text-sm transition">Accept</button>
-                        <button onclick="declineReschedule()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded font-bold text-sm transition">Decline</button>
-                    </div>
-                </div>
-            </div>
-            <?php endif; ?>
-
-            <!-- Internal Notes Card -->
-            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <div class="mb-4 flex items-center gap-2">
-                    <i data-lucide="sticky-note" class="w-4 h-4 text-yellow-500"></i>
-                    <h3 class="text-base font-semibold text-slate-700">Internal Notes</h3>
-                </div>
-                <div>
-                    <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                        <div id="activity-log-container" class="h-32 overflow-y-auto custom-scrollbar text-sm space-y-2 bg-white/50">
                             <?php
-                            if (!empty($case['internalNotes'])) {
-                                foreach ($case['internalNotes'] as $note) {
-                                    $date = date('M j, g:i A', strtotime($note['timestamp']));
-                                    echo "<div class='bg-white p-3 rounded-lg border border-yellow-100 shadow-sm'>";
-                                    echo "<p class='text-sm text-slate-700'>" . htmlspecialchars($note['text']) . "</p>";
-                                    echo "<div class='flex justify-end mt-2'>";
-                                    echo "<span class='text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full'>" . htmlspecialchars($note['authorName'] ?? 'Manager') . " - {$date}</span>";
+                            if (!empty($case['systemLogs'])) {
+                                foreach (array_reverse($case['systemLogs']) as $log) {
+                                    $date = date('M j, g:i A', strtotime($log['timestamp']));
+                                    echo "<div class='flex items-start gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200'>";
+                                    echo "<div class='bg-slate-200 rounded-full p-1 mt-0.5'>";
+                                    echo "<i data-lucide='activity' class='w-3 h-3 text-slate-600'></i>";
+                                    echo "</div>";
+                                    echo "<div class='flex-1'>";
+                                    echo "<div class='text-xs text-slate-500 mb-1'>{$date}</div>";
+                                    echo "<div class='text-sm text-slate-700'>" . htmlspecialchars($log['message']) . "</div>";
                                     echo "</div>";
                                     echo "</div>";
                                 }
                             } else {
-                                echo "<div class='text-sm text-slate-500 italic text-center py-4'>No internal notes yet</div>";
+                                echo "<div class='text-sm text-slate-500 italic'>No activity recorded</div>";
                             }
                             ?>
                         </div>
-                    <div class="flex gap-2">
-                        <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 px-2 py-2 bg-slate-50 border border-slate-200 rounded text-sm">
-                        <button onclick="addNote()" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded font-bold text-sm transition">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                        </button>
                     </div>
-                    </div>
-                </div>
+                </section>
 
-            <!-- Action Buttons Card -->
-            <div class="flex gap-2 mt-2">
-                <button onclick="saveChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-bold text-base transition flex items-center justify-center gap-2">
-                    <i data-lucide="save" class="w-5 h-5"></i>
-                    Save Changes
-                </button>
-                <button onclick="deleteCase()" class="bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded font-bold text-base transition flex items-center justify-center gap-2">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
-                    Delete
-                </button>
-            </div>
+                <!-- Actions Section -->
+                <section id="actions" class="space-y-6">
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div class="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg shadow-red-500/30">
+                            <i data-lucide="settings" class="w-5 h-5 text-white"></i>
+                        </div>
+                        Actions
+                    </h2>
+
+                    <!-- Action Buttons -->
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-200/80 p-6 card-hover">
+                        <div class="flex gap-3">
+                            <button onclick="saveChanges()" class="flex-1 btn-primary text-white py-4 px-6 rounded-xl font-bold text-base shadow-xl flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                Save Changes
+                            </button>
+                            <button onclick="deleteCase()" class="bg-red-600 hover:bg-red-700 text-white py-4 px-6 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- JavaScript -->
     <script>
@@ -1382,10 +1348,54 @@ try {
                 }
             });
 
-            // Initialize
-            updateWorkflowProgress();
-            initializeIcons();
-        });
+            // Initialize sidebar navigation
+        function initSidebarNav() {
+            const navLinks = document.querySelectorAll('aside nav a');
+            const sections = document.querySelectorAll('section[id]');
+
+            // Smooth scroll to section
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+            // Update active nav on scroll
+            function updateActiveNav() {
+                const scrollY = window.scrollY + 100; // Offset for header
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    const sectionId = section.getAttribute('id');
+
+                    if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('nav-active');
+                            link.classList.add('nav-inactive');
+                        });
+                        const activeLink = document.querySelector(`aside nav a[href="#${sectionId}"]`);
+                        if (activeLink) {
+                            activeLink.classList.remove('nav-inactive');
+                            activeLink.classList.add('nav-active');
+                        }
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav(); // Initial call
+        }
+
+        // Initialize
+        updateWorkflowProgress();
+        initializeIcons();
+        initSidebarNav();
     </script>
 </body>
 </html>
