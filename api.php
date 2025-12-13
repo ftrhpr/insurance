@@ -276,18 +276,28 @@ try {
         }
 
         try {
-            $allowed_fields = ['status', 'phone', 'serviceDate', 'franchise', 'internalNotes', 'systemLogs', 'user_response'];
+            $field_map = [
+                'status' => 'status',
+                'phone' => 'phone',
+                'serviceDate' => 'service_date',
+                'franchise' => 'franchise',
+                'internalNotes' => 'internal_notes',
+                'systemLogs' => 'system_logs',
+                'user_response' => 'user_response'
+            ];
+
             $update_fields = [];
             $params = [];
 
             foreach ($data as $key => $value) {
-                if (in_array($key, $allowed_fields)) {
-                    $update_fields[] = "`$key` = ?"; // Use backticks for safety
-                    // Handle JSON encoding for array fields
+                if (array_key_exists($key, $field_map)) {
+                    $db_field = $field_map[$key];
+                    $update_fields[] = "`$db_field` = ?";
+                    
                     if (is_array($value)) {
                         $params[] = json_encode($value);
                     } else {
-                        $params[] = ($value === '') ? null : $value; // Allow setting fields to null
+                        $params[] = ($value === '') ? null : $value;
                     }
                 }
             }
