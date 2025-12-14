@@ -175,7 +175,7 @@ try {
         </div>
 
         <!-- Case Header -->
-        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 mb-6 p-6">
+        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 mb-6 p-4">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div class="flex items-center gap-4 flex-1 min-w-0">
                     <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg shadow-blue-500/30">
@@ -206,19 +206,19 @@ try {
             <!-- Tab Navigation -->
             <div class="bg-gradient-to-r from-slate-100 to-slate-200 border-b border-slate-300">
                 <div class="flex">
-                    <button id="tab-overview" class="tab-button active flex-1 px-6 py-4 text-center font-bold text-slate-700 hover:bg-slate-300 transition-all border-b-2 border-blue-500">
+                    <button id="tab-overview" class="tab-button active flex-1 px-4 py-3 text-center font-bold text-slate-700 hover:bg-slate-300 transition-all border-b-2 border-blue-500">
                         <i data-lucide="eye" class="w-5 h-5 inline mr-2"></i>
                         Overview
                     </button>
-                    <button id="tab-communication" class="tab-button flex-1 px-6 py-4 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
+                    <button id="tab-communication" class="tab-button flex-1 px-4 py-3 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
                         <i data-lucide="message-circle" class="w-5 h-5 inline mr-2"></i>
                         Communication
                     </button>
-                    <button id="tab-history" class="tab-button flex-1 px-6 py-4 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
+                    <button id="tab-history" class="tab-button flex-1 px-4 py-3 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
                         <i data-lucide="history" class="w-5 h-5 inline mr-2"></i>
                         History & Notes
                     </button>
-                    <button id="tab-actions" class="tab-button flex-1 px-6 py-4 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
+                    <button id="tab-actions" class="tab-button flex-1 px-4 py-3 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
                         <i data-lucide="settings" class="w-5 h-5 inline mr-2"></i>
                         Actions
                     </button>
@@ -226,16 +226,16 @@ try {
             </div>
 
             <!-- Tab Content -->
-            <div class="p-6">
+            <div class="p-4">
 
                 <!-- Overview Tab -->
                 <div id="tab-content-overview" class="tab-content">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <!-- Left Column: Core Information -->
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             <!-- Order Information Card -->
                             <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
                                     <div class="flex items-center gap-3">
                                         <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                             <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
@@ -243,7 +243,7 @@ try {
                                         <h3 class="text-lg font-bold text-white uppercase tracking-wider">Order Details</h3>
                                     </div>
                                 </div>
-                                <div class="p-6 space-y-6">
+                                <div class="p-4 space-y-4">
                                     <div class="space-y-2">
                                         <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Customer Name</label>
                                         <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-semibold text-slate-800 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all">
@@ -278,7 +278,7 @@ try {
 
                             <!-- Status Selection -->
                             <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+                                <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-3">
                                     <div class="flex items-center gap-3">
                                         <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                             <i data-lucide="activity" class="w-5 h-5 text-white"></i>
@@ -286,7 +286,7 @@ try {
                                         <h3 class="text-lg font-bold text-white uppercase tracking-wider">Workflow Stage</h3>
                                     </div>
                                 </div>
-                                <div class="p-6">
+                                <div class="p-4">
                                     <div class="relative">
                                         <select id="input-status" class="w-full appearance-none bg-slate-50 border-2 border-purple-200 text-slate-800 py-4 px-4 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-lg font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
                                             <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
@@ -307,10 +307,10 @@ try {
                         </div>
 
                         <!-- Middle Column: Contact & Appointment -->
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             <!-- Contact Information -->
                             <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-teal-600 to-teal-700 px-6 py-4">
+                                <div class="bg-gradient-to-r from-teal-600 to-teal-700 px-4 py-3">
                                     <div class="flex items-center gap-3">
                                         <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                             <i data-lucide="phone" class="w-5 h-5 text-white"></i>
@@ -318,7 +318,7 @@ try {
                                         <h3 class="text-lg font-bold text-white uppercase tracking-wider">Contact Information</h3>
                                     </div>
                                 </div>
-                                <div class="p-6">
+                                <div class="p-4">
                                     <div class="flex gap-3">
                                         <div class="relative flex-1">
                                             <i data-lucide="smartphone" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-teal-500"></i>
@@ -333,7 +333,7 @@ try {
 
                             <!-- Service Appointment -->
                             <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4">
+                                <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-4 py-3">
                                     <div class="flex items-center gap-3">
                                         <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                             <i data-lucide="calendar-check" class="w-5 h-5 text-white"></i>
@@ -341,7 +341,7 @@ try {
                                         <h3 class="text-lg font-bold text-white uppercase tracking-wider">Service Appointment</h3>
                                     </div>
                                 </div>
-                                <div class="p-6">
+                                <div class="p-4">
                                     <div class="relative">
                                         <i data-lucide="calendar" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-orange-500"></i>
                                         <input id="input-service-date" type="datetime-local" value="<?php echo $case['serviceDate'] ? date('Y-m-d\TH:i', strtotime($case['serviceDate'])) : ''; ?>" class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-orange-200 rounded-xl text-lg font-semibold focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-400/20 outline-none shadow-sm transition-all">
@@ -351,10 +351,10 @@ try {
                         </div>
 
                         <!-- Right Column: Vehicle Info -->
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             <!-- Vehicle Information -->
                             <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-4">
+                                <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-3">
                                     <div class="flex items-center gap-3">
                                         <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                             <i data-lucide="car" class="w-5 h-5 text-white"></i>
@@ -362,7 +362,7 @@ try {
                                         <h3 class="text-lg font-bold text-white uppercase tracking-wider">Vehicle Information</h3>
                                     </div>
                                 </div>
-                                <div class="p-6 space-y-4">
+                                <div class="p-4 space-y-4">
                                     <div class="space-y-2">
                                         <label class="block text-xs text-slate-600 font-bold uppercase tracking-wider">Owner Name</label>
                                         <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
@@ -392,10 +392,10 @@ try {
 
                 <!-- Communication Tab -->
                 <div id="tab-content-communication" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <!-- Quick SMS Actions -->
                         <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+                            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                         <i data-lucide="message-circle" class="w-5 h-5 text-white"></i>
@@ -403,7 +403,7 @@ try {
                                     <h3 class="text-lg font-bold text-white uppercase tracking-wider">Quick SMS Actions</h3>
                                 </div>
                             </div>
-                            <div class="p-6 space-y-4">
+                            <div class="p-4 space-y-4">
                                 <button id="btn-sms-register" class="group w-full flex justify-between items-center px-6 py-5 bg-slate-50 border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:bg-indigo-50">
                                     <div>
                                         <div class="text-lg font-bold text-slate-800 group-hover:text-indigo-700">Send Welcome SMS</div>
@@ -454,7 +454,7 @@ try {
 
                         <!-- Advanced SMS Template Selector -->
                         <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-violet-600 to-violet-700 px-6 py-4">
+                            <div class="bg-gradient-to-r from-violet-600 to-violet-700 px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                         <i data-lucide="message-square" class="w-5 h-5 text-white"></i>
@@ -462,7 +462,7 @@ try {
                                     <h3 class="text-lg font-bold text-white uppercase tracking-wider">Advanced SMS</h3>
                                 </div>
                             </div>
-                            <div class="p-6 space-y-6">
+                            <div class="p-4 space-y-4">
                                 <div class="space-y-2">
                                     <label class="block text-sm text-violet-600 font-bold uppercase tracking-wider">Select Template</label>
                                     <select id="sms-template-selector" class="w-full bg-slate-50 border-2 border-violet-200 rounded-xl p-4 text-lg font-medium focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20 outline-none shadow-sm transition-all">
@@ -491,16 +491,16 @@ try {
 
                 <!-- History & Notes Tab -->
                 <div id="tab-content-history" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <!-- Activity Timeline -->
                         <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-slate-700 to-slate-600 px-6 py-4">
+                            <div class="bg-gradient-to-r from-slate-700 to-slate-600 px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="history" class="w-5 h-5 text-white"></i>
                                     <h3 class="text-lg font-bold text-white uppercase tracking-wider">Activity Timeline</h3>
                                 </div>
                             </div>
-                            <div id="activity-log-container" class="p-6 max-h-80 overflow-y-auto custom-scrollbar space-y-4">
+                            <div id="activity-log-container" class="p-4 max-h-80 overflow-y-auto custom-scrollbar space-y-4">
                                 <?php
                                 if (!empty($case['systemLogs'])) {
                                     foreach (array_reverse($case['systemLogs']) as $log) {
@@ -527,7 +527,7 @@ try {
 
                         <!-- Customer Review Section -->
                         <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-amber-500 to-yellow-500 px-6 py-4 flex items-center justify-between">
+                            <div class="bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-3 flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                         <i data-lucide="star" class="w-5 h-5 text-white"></i>
@@ -539,7 +539,7 @@ try {
                                     Edit
                                 </button>
                             </div>
-                            <div id="review-display" class="p-6 space-y-4">
+                            <div id="review-display" class="p-4 space-y-4">
                                 <?php if (!empty($case['reviewStars'])): ?>
                                 <div class="flex items-center gap-4">
                                     <div class="flex gap-1">
@@ -561,7 +561,7 @@ try {
                                 </div>
                                 <?php endif; ?>
                             </div>
-                            <div id="review-edit" class="p-6 space-y-4 hidden">
+                            <div id="review-edit" class="p-4 space-y-4 hidden">
                                 <div class="space-y-2">
                                     <label class="block text-sm text-amber-700 font-bold uppercase tracking-wider">Rating</label>
                                     <select id="input-review-stars" class="w-full bg-slate-50 border-2 border-amber-200 rounded-xl p-4 text-lg font-bold focus:bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20 outline-none">
@@ -631,7 +631,7 @@ try {
 
                         <!-- Internal Notes -->
                         <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden lg:col-span-2">
-                            <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-4">
+                            <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                         <i data-lucide="sticky-note" class="w-5 h-5 text-white"></i>
@@ -639,7 +639,7 @@ try {
                                     <h3 class="text-lg font-bold text-white uppercase tracking-wider">Internal Notes</h3>
                                 </div>
                             </div>
-                            <div class="p-6">
+                            <div class="p-4">
                                 <div id="notes-container" class="space-y-4 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
                                     <?php
                                     if (!empty($case['internalNotes'])) {
@@ -673,10 +673,10 @@ try {
 
                 <!-- Actions Tab -->
                 <div id="tab-content-actions" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <!-- Case Actions -->
                         <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                         <i data-lucide="settings" class="w-5 h-5 text-white"></i>
@@ -684,7 +684,7 @@ try {
                                     <h3 class="text-lg font-bold text-white uppercase tracking-wider">Case Actions</h3>
                                 </div>
                             </div>
-                            <div class="p-6 space-y-4">
+                            <div class="p-4 space-y-4">
                                 <button onclick="saveChanges()" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
                                     <i data-lucide="save" class="w-6 h-6"></i>
                                     <span>Save All Changes</span>
@@ -698,7 +698,7 @@ try {
 
                         <!-- Danger Zone -->
                         <div class="bg-white rounded-xl shadow-lg shadow-red-200/60 border border-red-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+                            <div class="bg-gradient-to-r from-red-600 to-red-700 px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                         <i data-lucide="alert-triangle" class="w-5 h-5 text-white"></i>
@@ -706,7 +706,7 @@ try {
                                     <h3 class="text-lg font-bold text-white uppercase tracking-wider">Danger Zone</h3>
                                 </div>
                             </div>
-                            <div class="p-6 space-y-4">
+                            <div class="p-4 space-y-4">
                                 <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                                     <h4 class="text-sm font-bold text-red-800 mb-2">⚠️ Irreversible Actions</h4>
                                     <p class="text-sm text-red-700 mb-4">These actions cannot be undone. Please proceed with caution.</p>
