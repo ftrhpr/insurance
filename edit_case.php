@@ -1332,6 +1332,31 @@ try {
             window.print();
         }
 
+        // Update header status badge
+        function updateHeaderStatus(status) {
+            const badge = document.getElementById('header-status-badge');
+            if (!badge) return;
+
+            const statusColors = {
+                'New': 'bg-blue-100 text-blue-800 border-blue-200',
+                'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                'Called': 'bg-purple-100 text-purple-800 border-purple-200',
+                'Parts Ordered': 'bg-orange-100 text-orange-800 border-orange-200',
+                'Parts Arrived': 'bg-green-100 text-green-800 border-green-200',
+                'Scheduled': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                'Issue': 'bg-red-100 text-red-800 border-red-200'
+            };
+
+            // Remove all existing color classes
+            badge.className = badge.className.replace(/bg-\w+-\d+.*?\s/g, '').replace(/text-\w+-\d+.*?\s/g, '').replace(/border-\w+-\d+.*?\s/g, '');
+
+            // Add new color classes
+            const colors = statusColors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+            badge.className += ' ' + colors;
+            badge.textContent = status;
+        }
+
         // Save changes
         async function saveChanges() {
             if (!CAN_EDIT) {
