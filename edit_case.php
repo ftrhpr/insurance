@@ -57,16 +57,6 @@ $case['systemLogs'] = json_decode($case['systemLogs'] ?? '[]', true);
 $smsTemplates = [];
 $smsWorkflowBindings = [];
 
-// Fallback templates with links
-$fallbackTemplates = [
-    'registered' => ['content' => 'Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service. Access your case: {link}'],
-    'called' => ['content' => 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'],
-    'schedule' => ['content' => 'Hello {name}, your service is scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link} - OTOMOTORS'],
-    'parts_arrived' => ['content' => 'Hello {name}, parts arrived for {plate}. Confirm service: {link} - OTOMOTORS'],
-    'completed' => ['content' => 'Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}'],
-    'rescheduled' => ['content' => 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}']
-];
-
 try {
     $stmt = $pdo->query("SELECT * FROM sms_templates WHERE is_active = 1 ORDER BY slug");
     while ($template = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -79,18 +69,9 @@ try {
             $smsWorkflowBindings[$stage][] = $template;
         }
     }
-    
-    // Apply fallbacks for templates that don't have {link}
-    foreach ($fallbackTemplates as $slug => $fallback) {
-        if (isset($smsTemplates[$slug]) && !str_contains($smsTemplates[$slug]['content'], '{link}')) {
-            $smsTemplates[$slug]['content'] = $fallback['content'];
-        } elseif (!isset($smsTemplates[$slug])) {
-            $smsTemplates[$slug] = $fallback;
-        }
-    }
 } catch (Exception $e) {
-    // SMS templates table might not exist yet
-    $smsTemplates = $fallbackTemplates;
+    // SMS templates table might not exist yet - templates will be empty
+    $smsTemplates = [];
     $smsWorkflowBindings = [];
 }
 ?>

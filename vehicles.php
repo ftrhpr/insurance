@@ -339,37 +339,22 @@ try {
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
-        // SMS Templates
-        const defaultTemplates = {
-            registered: "გამარჯობა {name}, თქვენი მანქანა {plate} დარეგისტრირდა სერვისზე. თანხა: {amount} ლარი. მალე დაგიკავშირდებით",
-            called: "გამარჯობა {name}, გვესმის თქვენი მანქანის {plate} შეკეთების საჭიროება. მალე დაგიკავშირდებით დეტალებისთვის",
-            contacted: "გამარჯობა {name}, ჩვენ დაგიკავშირდით თქვენი მანქანის {plate} სერვისის შესახებ. გთხოვთ შეამოწმოთ თქვენი შეტყობინებები",
-            schedule: "გამარჯობა {name}, თქვენი მანქანის {plate} სერვისი დაინიშნა: {date}. გთხოვთ იყოთ დროულად",
-            parts_ordered: "გამარჯობა {name}, თქვენი მანქანის {plate} ნაწილები შეკვეთილია. მალე მოგვა",
-            parts_arrived: "გამარჯობა {name}, თქვენი მანქანის {plate} ნაწილები მივიდა. გთხოვთ დაადასტუროთ: {link}",
-            rescheduled: "გამარჯობა {name}, თქვენი მანქანის {plate} სერვისი გადატანილია: {date}. მადლობა",
-            reschedule_accepted: "გამარჯობა {name}, თქვენი გადატანის მოთხოვნა დადასტურდა. ახალი თარიღი: {date}. გნახავთ",
-            completed: "გამარჯობა {name}, თქვენი მანქანის {plate} სერვისი დასრულდა. თანხა: {amount} ლარი. გთხოვთ შეაფასოთ: {link}",
-            issue: "გამარჯობა {name}, თქვენი მანქანის {plate} სერვისთან დაკავშირებით პრობლემაა. გთხოვთ დაგვიკავშირდით",
-            system: "სისტემური შეტყობინება: {count} ახალი განაცხადი დაემატა OTOMOTORS პორტალში."
-        };
-
-        let smsTemplates = defaultTemplates;
+        let smsTemplates = {};
 
         // Load SMS templates from API
         async function loadSMSTemplates() {
             try {
                 const serverTemplates = await fetchAPI('get_sms_templates');
-                smsTemplates = { ...defaultTemplates, ...serverTemplates };
+                smsTemplates = serverTemplates;
             } catch(e) {
                 console.warn('Could not load SMS templates:', e);
-                smsTemplates = defaultTemplates;
+                smsTemplates = {};
             }
         }
 
         // Format SMS message with template placeholders
         function getFormattedMessage(type, data) {
-            let template = smsTemplates[type] || defaultTemplates[type] || "";
+            let template = smsTemplates[type] || "";
             return template
                 .replace(/{name}/g, data.name || '')
                 .replace(/{plate}/g, data.plate || '')

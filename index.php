@@ -1565,21 +1565,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         });
 
         // --- SMS TEMPLATE LOGIC (Template editing moved to templates.php) ---
-        const defaultTemplates = {
-            'registered': "<?php echo __('sms.registered'); ?>",
-            'called': "<?php echo __('sms.called', 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'); ?>",
-            'contacted': "<?php echo __('sms.contacted', 'Hello {name}, we have contacted you about your {plate} service. Please check your messages.'); ?>",
-            'schedule': "<?php echo __('sms.schedule'); ?>",
-            'parts_ordered': "<?php echo __('sms.parts_ordered', 'Parts ordered for {plate}. We will notify you when ready.'); ?>",
-            'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
-            'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
-            'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
-            'completed': "Service for {plate} is completed. Rate your experience: {link}",
-            'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly.",
-            'system': "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
-        };
-        
-        let smsTemplates = defaultTemplates;
+        let smsTemplates = {};
 
         // Load templates from API
         async function loadSMSTemplates() {
@@ -1590,7 +1576,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 serverTemplates.forEach(template => {
                     templateObj[template.slug] = template.content;
                 });
-                smsTemplates = { ...defaultTemplates, ...templateObj };
+                smsTemplates = templateObj;
                 // Store workflow stage bindings for automatic SMS sending
                 window.smsWorkflowBindings = {};
                 serverTemplates.forEach(template => {
@@ -1608,8 +1594,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 });
             } catch (e) {
                 console.error("Template load error:", e);
-                // Fallback to defaults
-                smsTemplates = defaultTemplates;
+                smsTemplates = {};
                 window.smsWorkflowBindings = {};
             }
         }
@@ -1630,7 +1615,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         // Format SMS message with template placeholders
         function getFormattedMessage(type, data) {
-            let template = smsTemplates[type] || defaultTemplates[type] || "";
+            let template = smsTemplates[type] || "";
             const baseUrl = window.location.href.replace(/index\.php.*/, '').replace(/\/$/, '');
             const link = `${baseUrl}/public_view.php?id=${data.id}`;
 

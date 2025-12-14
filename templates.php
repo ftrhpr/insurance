@@ -52,19 +52,8 @@ try {
         $workflowBindings[$tpl['slug']] = $templatesData[$tpl['slug']]['workflow_stages'];
     }
     
-    // Merge with defaults (use database values if exist, otherwise use defaults)
-    foreach ($defaultTemplatesData as $slug => $content) {
-        if (!isset($templatesData[$slug])) {
-            $templatesData[$slug] = [
-                'content' => $content,
-                'workflow_stages' => [],
-                'is_active' => true
-            ];
-        }
-    }
-    
 } catch (PDOException $e) {
-    $templatesData = $defaultTemplatesData;
+    $templatesData = [];
     $workflowStages = [];
     $workflowBindings = [];
     error_log("Database error in templates.php: " . $e->getMessage());
@@ -264,21 +253,6 @@ try {
         let smsTemplates = <?php echo json_encode($templatesData); ?>;
         let workflowStages = <?php echo json_encode($workflowStages); ?>;
 
-        // Default templates if database is empty
-        const defaultTemplates = {
-            registered: 'გამარჯობა {name}, თქვენი სერვისის რეგისტრაცია მოხდა. ავტომობილი: {plate}. თანხა: {amount}₾',
-            called: 'გამარჯობა {name}, დაგიკავშირდით ჩვენი მენეჯერი. ავტომობილი: {plate}',
-            contacted: 'გამარჯობა {name}, თქვენ დაგიკავშირდით. ავტომობილი: {plate}. მალე მოგაწვდით დეტალურ ინფორმაციას.',
-            schedule: 'გამარჯობა {name}, თქვენი სერვისის თარიღი: {date}. ავტომობილი: {plate}. დაადასტურეთ ან გადაავადეთ: {link}',
-            parts_ordered: 'გამარჯობა {name}, თქვენი ნაწილები შეკვეთილია. ავტომობილი: {plate}',
-            parts_arrived: 'გამარჯობა {name}, თქვენი ნაწილები მივიდა. დაადასტურეთ თქვენი ვიზიტი: {link}',
-            rescheduled: 'გამარჯობა, კლიენტმა {name} მოითხოვა თარიღის შეცვლა. ავტომობილი: {plate}',
-            reschedule_accepted: 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}',
-            completed: 'გამარჯობა {name}, თქვენი სერვისი დასრულდა. გთხოვთ შეაფასოთ ჩვენი მომსახურება',
-            issue: 'გამარჯობა {name}, დაფიქსირდა პრობლემა. ავტომობილი: {plate}. ჩვენ დაგიკავშირდებით.',
-            system: 'სისტემური შეტყობინება: {count} ახალი განაცხადი დაემატა OTOMOTORS პორტალში.'
-        };
-
         // Utility Functions
         function getVal(id) {
             const el = document.getElementById(id);
@@ -396,7 +370,7 @@ try {
         };
 
         function getFormattedMessage(type, data) {
-            let template = smsTemplates[type]?.content || defaultTemplates[type] || '';
+            let template = smsTemplates[type]?.content || '';
             
             template = template.replace(/{name}/g, data.name || '');
             template = template.replace(/{plate}/g, data.plate || '');

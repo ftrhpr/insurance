@@ -382,25 +382,25 @@ try {
                 ];
                 
                 // Get SMS template
-                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'reschedule_accepted'");
+                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'reschedule_accepted' AND is_active = 1");
                 $stmt->execute();
                 $template = $stmt->fetchColumn();
                 
                 if (!$template) {
-                    // Fallback to default template
-                    $template = 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}';
+                    // No template found in database - skip SMS
+                    error_log("No active reschedule_accepted template found in database, skipping SMS");
+                } else {
+                    // Replace placeholders
+                    $smsText = str_replace(
+                        ['{name}', '{plate}', '{amount}', '{date}'],
+                        [$templateData['name'], $templateData['plate'], $templateData['amount'], $templateData['date']],
+                        $template
+                    );
+                    
+                    $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+                    $to = $tr['phone'];
+                    @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText));
                 }
-                
-                // Replace placeholders
-                $smsText = str_replace(
-                    ['{name}', '{plate}', '{amount}', '{date}'],
-                    [$templateData['name'], $templateData['plate'], $templateData['amount'], $templateData['date']],
-                    $template
-                );
-                
-                $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
-                $to = $tr['phone'];
-                @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText));
             }
 
             jsonResponse(['status' => 'success', 'message' => 'Reschedule accepted and SMS sent']);
