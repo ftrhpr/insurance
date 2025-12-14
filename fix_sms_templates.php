@@ -40,7 +40,7 @@ try {
     echo "<h3>Checking for missing default templates...</h3>";
     $defaultTemplates = [
         'registered' => "Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service.",
-        'schedule' => "Hello {name}, service scheduled for {date}. Ref: {plate}.",
+        'schedule' => "Hello {name}, service scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link}",
         'parts_ordered' => "Parts ordered for {plate}. We will notify you when ready.",
         'parts_arrived' => "Hello {name}, your parts have arrived! Please confirm your visit here: {link}",
         'parts_arrived_no_schedule' => "Hello {name}, your parts have arrived! We will contact you shortly to schedule your service. Ref: {plate}",

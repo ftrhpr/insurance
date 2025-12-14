@@ -23,7 +23,7 @@ try {
     // English SMS templates from last version (language.php)
     $englishTemplates = [
         'registered' => "Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service.",
-        'schedule' => "Hello {name}, your service is scheduled for {date}. Ref: {plate}. - OTOMOTORS",
+        'schedule' => "Hello {name}, your service is scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link} - OTOMOTORS",
         'parts_arrived' => "Hello {name}, parts arrived for {plate}. Confirm service: {link} - OTOMOTORS",
         'completed' => "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
         'reschedule_accepted' => "Hello {name}, your reschedule request has been approved! New appointment: {date}. Ref: {plate}. - OTOMOTORS",

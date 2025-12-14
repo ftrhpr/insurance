@@ -2014,8 +2014,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
                             <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
                         </div>`;
-                    } else if (t.service_date) {
-                        const svcDate = new Date(t.service_date.replace(' ', 'T'));
+                    } else if (t.serviceDate) {
+                        const svcDate = new Date(t.serviceDate.replace(' ', 'T'));
                         const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                         serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
                             <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
@@ -2793,8 +2793,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     hour: '2-digit',
                     minute: '2-digit'
                 })}`;
-            } else if (t.service_date) {
-                const svcDate = new Date(t.service_date.replace(' ', 'T'));
+            } else if (t.serviceDate) {
+                const svcDate = new Date(t.serviceDate.replace(' ', 'T'));
                 serviceDateText = svcDate.toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
