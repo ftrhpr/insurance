@@ -80,531 +80,210 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Case #<?php echo $case_id; ?> - OTOMOTORS Manager Portal</title>
-
-    <!-- Tailwind CSS -->
-    <!-- DEVELOPMENT NOTE: Using CDN for rapid prototyping and development.
-         For production deployment, consider:
-         1. Install Tailwind: npm install -D tailwindcss
-         2. Initialize: npx tailwindcss init
-         3. Configure content paths in tailwind.config.js
-         4. Build: npx tailwindcss -i input.css -o output.css --watch
-         5. Replace CDN with: <link href="/path/to/output.css" rel="stylesheet">
-         This warning is expected in development and can be safely ignored.
-    -->
-    <script>
-        // Suppress Tailwind CDN warning in development
-        const originalWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && args[0].includes && args[0].includes('cdn.tailwindcss.com should not be used in production')) {
-                // Silently ignore this expected development warning
-                return;
-            }
-            originalWarn.apply(console, args);
-        };
-    </script>
+    <title>PRO v2 Edit Case #<?php echo $case_id; ?> - OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Lucide Icons -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.js"></script>
-
-    <!-- Custom Styles -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        .bg-grid-white\/\[0\.05\] {
-            background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
-        }
-        .bg-\[size\:20px_20px\] {
-            background-size: 20px 20px;
-        }
-
-        /* Tab Styles */
-        .tab-button {
-            position: relative;
-            transition: all 0.3s ease;
-        }
-        .tab-button:hover {
-            background-color: rgba(148, 163, 184, 0.1);
-        }
-        .tab-button.active {
-            background-color: rgba(59, 130, 246, 0.1);
-            color: #1e293b;
-            font-weight: 700;
-        }
-        .tab-button.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            height: 2px;
-            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-            border-radius: 1px;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        [x-cloak] { display: none !important; }
+        .step-complete .step-line { background-color: #2563eb; }
+        .step-complete .step-icon { background-color: #2563eb; color: white; }
+        .step-current .step-icon { background-color: #2563eb; color: white; border-color: #2563eb; }
+        .step-incomplete .step-icon { background-color: white; color: #6b7280; border-color: #d1d5db; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3 pointer-events-none"></div>
 
-    <!-- Header -->
+<body class="bg-slate-100" x-data="caseEditor()">
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] space-y-3"></div>
     <?php include 'header.php'; ?>
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Back Button -->
-        <div class="mb-6">
-            <a href="index.php" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                <span class="font-medium">Back to Dashboard</span>
+    <main class="max-w-5xl mx-auto py-10 px-4">
+        <!-- Page Header -->
+        <header class="mb-8">
+            <a href="index.php" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 mb-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Back to Dashboard</span>
             </a>
-        </div>
-
-        <!-- Case Header -->
-        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 mb-6 p-3">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div class="flex items-center gap-4 flex-1 min-w-0">
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg shadow-blue-500/30">
-                        <i data-lucide="car" class="w-6 h-6 text-white"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="text-xs text-slate-500 uppercase font-bold tracking-widest">Order #<?php echo $case_id; ?></div>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-xl font-bold text-slate-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
-                            <span class="text-slate-400">/</span>
-                            <span class="font-mono text-lg text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
-                        </div>
-                    </div>
+            <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <div class="flex items-center gap-4">
+                    <h1 class="text-3xl font-bold text-slate-800">
+                        Case #<?php echo $case_id; ?>: <?php echo htmlspecialchars($case['name']); ?>
+                    </h1>
+                    <span class="font-mono text-sm bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-medium" x-text="currentCase.status"></span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button onclick="window.printCase()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl transition-all hover:shadow-md" title="Print Case">
-                        <i data-lucide="printer" class="w-5 h-5"></i>
-                    </button>
-                    <a href="index.php" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl transition-all hover:shadow-md">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-            <!-- Tab Navigation -->
-            <div class="bg-gradient-to-r from-slate-100 to-slate-200 border-b border-slate-300">
-                <div class="flex">
-                    <button id="tab-overview" class="tab-button active flex-1 px-3 py-2 text-center font-bold text-slate-700 hover:bg-slate-300 transition-all border-b-2 border-blue-500">
-                        <i data-lucide="eye" class="w-5 h-5 inline mr-2"></i>
-                        Overview
-                    </button>
-                    <button id="tab-communication" class="tab-button flex-1 px-3 py-2 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
-                        <i data-lucide="message-circle" class="w-5 h-5 inline mr-2"></i>
-                        Communication
-                    </button>
-                    <button id="tab-history" class="tab-button flex-1 px-3 py-2 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
-                        <i data-lucide="history" class="w-5 h-5 inline mr-2"></i>
-                        History & Notes
-                    </button>
-                    <button id="tab-actions" class="tab-button flex-1 px-3 py-2 text-center font-bold text-slate-600 hover:bg-slate-300 transition-all">
-                        <i data-lucide="settings" class="w-5 h-5 inline mr-2"></i>
-                        Actions
+                    <button @click="printCase()" class="text-slate-600 h-10 px-4 inline-flex items-center justify-center rounded-lg border bg-white hover:bg-slate-50 font-semibold text-sm">Print</button>
+                    <button @click="saveChanges()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-6 rounded-lg flex items-center gap-2 text-sm shadow-sm">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Save Changes</span>
                     </button>
                 </div>
             </div>
+        </header>
 
-            <!-- Tab Content -->
-            <div class="p-3">
-
-                <!-- Overview Tab -->
-                <div id="tab-content-overview" class="tab-content">
-                    <!-- Internal Notes - High Priority -->
-                    <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden mb-6">
-                        <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-3 py-2">
-                            <div class="flex items-center gap-3">
-                                <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                    <i data-lucide="sticky-note" class="w-5 h-5 text-white"></i>
-                                </div>
-                                <h3 class="text-lg font-bold text-white uppercase tracking-wider">Internal Notes</h3>
+        <!-- Workflow Stepper -->
+        <section class="mb-8">
+             <div class="flex items-start justify-between -mx-2 sm:-mx-4">
+                <template x-for="(status, index) in statuses" :key="status.id">
+                    <div class="flex-1 px-2 sm:px-4" :class="{ 'step-complete': currentStatusIndex >= index, 'step-current': currentStatusIndex === index, 'step-incomplete': currentStatusIndex < index }">
+                        <div @click="setStatus(status.id)" class="flex flex-col sm:flex-row items-center gap-3 cursor-pointer group">
+                            <div class="step-icon flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full border-2 font-bold transition-all duration-300">
+                                <i :data-lucide="status.icon" class="w-5 h-5"></i>
                             </div>
-                        </div>
-                        <div class="p-3">
-                            <div id="notes-container" class="space-y-4 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
-                                <?php
-                                if (!empty($case['internalNotes'])) {
-                                    foreach ($case['internalNotes'] as $note) {
-                                        $date = date('M j, g:i A', strtotime($note['timestamp']));
-                                        echo "<div class='bg-slate-50 p-4 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors'>";
-                                        echo "<p class='text-sm text-slate-700 mb-2'>" . htmlspecialchars($note['text']) . "</p>";
-                                        echo "<div class='flex justify-end'>";
-                                        echo "<span class='text-xs text-slate-400 bg-white px-3 py-1 rounded-full font-medium border border-slate-200'>" . htmlspecialchars($note['authorName'] ?? 'Manager') . " - {$date}</span>";
-                                        echo "</div>";
-                                        echo "</div>";
-                                    }
-                                } else {
-                                    echo "<div class='text-center py-8'>";
-                                    echo "<i data-lucide='inbox' class='w-12 h-12 text-slate-300 mx-auto mb-3'></i>";
-                                    echo "<p class='text-sm text-slate-500 font-medium'>No internal notes yet</p>";
-                                    echo "</div>";
-                                }
-                                ?>
-                            </div>
-                            <div class="flex gap-3">
-                                <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 outline-none">
-                                <button onclick="addNote()" class="bg-slate-700 hover:bg-slate-800 text-white px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-lg hover:shadow-xl active:scale-95">
-                                    <i data-lucide="plus" class="w-5 h-5"></i>
-                                </button>
-                            </div>
+                            <div class="hidden sm:block text-sm font-semibold text-slate-600 group-hover:text-slate-900 transition" x-text="status.name"></div>
+                            <div class="step-line flex-1 w-full h-1 mt-2 sm:mt-0 bg-slate-200 transition-all duration-300"></div>
                         </div>
                     </div>
+                </template>
+            </div>
+             <input type="hidden" id="input-status" :value="currentCase.status">
+        </section>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                        <!-- Left Column: Core Information -->
-                        <div class="space-y-3">
-                            <!-- Order Information Card -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Order Details</h3>
-                                    </div>
-                                </div>
-                                <div class="p-3 space-y-4">
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Customer Name</label>
-                                        <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-semibold text-slate-800 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Vehicle Plate</label>
-                                        <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-semibold text-slate-800 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Amount</label>
-                                        <div class="flex items-center gap-3">
-                                            <div class="bg-emerald-100 p-3 rounded-lg">
-                                                <i data-lucide="coins" class="w-6 h-6 text-emerald-600"></i>
-                                            </div>
-                                            <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-2xl font-bold text-emerald-600 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none transition-all">
-                                            <span class="text-2xl font-bold text-emerald-600">₾</span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Franchise</label>
-                                        <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-semibold text-orange-600 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none transition-all">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Created At</label>
-                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                            <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
-                                            <span id="case-created-date" class="font-medium text-slate-700"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></span>
-                                        </div>
-                                    </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Collapsible Section: Case Details -->
+                <div x-data="{ open: isSectionOpen('details') }" class="bg-white rounded-2xl border border-slate-200/80">
+                    <button @click="toggleSection('details')" class="w-full flex items-center justify-between p-5">
+                        <h2 class="text-xl font-bold text-slate-800">Case Details</h2>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
+                    </button>
+                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 border-t border-slate-200 pt-6">
+                            <!-- Form Fields -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Customer Name</label>
+                                <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Vehicle Plate</label>
+                                <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Phone Number</label>
+                                <div class="flex items-center gap-2">
+                                    <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                                    <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg border bg-white hover:bg-slate-50"><i data-lucide="phone" class="w-4 h-4 text-slate-600"></i></a>
                                 </div>
                             </div>
-
-                            <!-- Status Selection -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="activity" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Workflow Stage</h3>
-                                    </div>
-                                </div>
-                                <div class="p-3">
-                                    <div class="relative">
-                                        <select id="input-status" class="w-full appearance-none bg-slate-50 border-2 border-purple-200 text-slate-800 py-4 px-4 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-lg font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
-                                            <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
-                                            <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>🟡 Processing</option>
-                                            <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>🟣 Contacted</option>
-                                            <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>📦 Parts Ordered</option>
-                                            <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>🏁 Parts Arrived</option>
-                                            <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>🟠 Scheduled</option>
-                                            <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>🟢 Completed</option>
-                                            <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>🔴 Issue</option>
-                                        </select>
-                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-purple-400">
-                                            <i data-lucide="chevron-down" class="w-6 h-6"></i>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Service Date</label>
+                                <input id="input-service-date" type="datetime-local" value="<?php echo $case['serviceDate'] ? date('Y-m-d\TH:i', strtotime($case['serviceDate'])) : ''; ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
-                        </div>
-
-                        <!-- Middle Column: Contact & Appointment -->
-                        <div class="space-y-3">
-                            <!-- Contact Information -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-teal-600 to-teal-700 px-3 py-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="phone" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Contact Information</h3>
-                                    </div>
-                                </div>
-                                <div class="p-3">
-                                    <div class="flex gap-3">
-                                        <div class="relative flex-1">
-                                            <i data-lucide="smartphone" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-teal-500"></i>
-                                            <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-teal-200 rounded-xl text-lg font-semibold text-slate-800 focus:bg-white focus:ring-4 focus:ring-teal-500/20 focus:border-teal-400 outline-none shadow-sm transition-all">
-                                        </div>
-                                        <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-xl hover:scale-105 transition-all shadow-lg active:scale-95">
-                                            <i data-lucide="phone-call" class="w-6 h-6"></i>
-                                        </a>
-                                    </div>
-                                </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Amount (₾)</label>
+                                <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
-
-                            <!-- Service Appointment -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-3 py-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="calendar-check" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Service Appointment</h3>
-                                    </div>
-                                </div>
-                                <div class="p-3">
-                                    <div class="relative">
-                                        <i data-lucide="calendar" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-orange-500"></i>
-                                        <input id="input-service-date" type="datetime-local" value="<?php echo $case['serviceDate'] ? date('Y-m-d\TH:i', strtotime($case['serviceDate'])) : ''; ?>" class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-orange-200 rounded-xl text-lg font-semibold focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-400/20 outline-none shadow-sm transition-all">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right Column: Vehicle Info -->
-                        <div class="space-y-3">
-                            <!-- Vehicle Information -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                                <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-3 py-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="car" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Vehicle Information</h3>
-                                    </div>
-                                </div>
-                                <div class="p-3 space-y-4">
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-slate-600 font-bold uppercase tracking-wider">Owner Name</label>
-                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                            <i data-lucide="user" class="w-5 h-5 text-slate-400"></i>
-                                            <span class="font-medium text-slate-700"><?php echo htmlspecialchars($case['vehicle_owner'] ?? 'Not specified'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-slate-600 font-bold uppercase tracking-wider">Model</label>
-                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                            <i data-lucide="car" class="w-5 h-5 text-slate-400"></i>
-                                            <span class="font-medium text-slate-700"><?php echo htmlspecialchars($case['vehicle_model'] ?? 'Not specified'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-slate-600 font-bold uppercase tracking-wider">License Plate</label>
-                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                            <i data-lucide="hash" class="w-5 h-5 text-slate-400"></i>
-                                            <span class="font-mono font-bold text-slate-800 text-lg"><?php echo htmlspecialchars($case['plate']); ?></span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Franchise (₾)</label>
+                                <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Communication Tab -->
-                <div id="tab-content-communication" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        <!-- Quick SMS Actions -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-3 py-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="message-circle" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Quick SMS Actions</h3>
-                                </div>
-                            </div>
-                            <div class="p-3 space-y-4">
-                                <button id="btn-sms-register" class="group w-full flex justify-between items-center px-6 py-5 bg-slate-50 border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:bg-indigo-50">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-indigo-700">Send Welcome SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Registration confirmation</div>
-                                    </div>
-                                    <div class="bg-indigo-100 group-hover:bg-indigo-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="message-square" class="w-6 h-6 text-indigo-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                                <button id="btn-sms-arrived" class="group w-full flex justify-between items-center px-6 py-5 bg-slate-50 border-2 border-teal-200 rounded-xl hover:border-teal-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:bg-teal-50">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-teal-700">Parts Arrived SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Includes customer link</div>
-                                    </div>
-                                    <div class="bg-teal-100 group-hover:bg-teal-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="package-check" class="w-6 h-6 text-teal-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                                <button id="btn-sms-schedule" class="group w-full flex justify-between items-center px-6 py-5 bg-slate-50 border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:bg-orange-50">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-orange-700">Send Schedule SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Appointment reminder</div>
-                                    </div>
-                                    <div class="bg-orange-100 group-hover:bg-orange-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="calendar-check" class="w-6 h-6 text-orange-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                                <button id="btn-sms-called" class="group w-full flex justify-between items-center px-6 py-5 bg-slate-50 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:bg-purple-50">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-purple-700">Send Called SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Contact confirmation</div>
-                                    </div>
-                                    <div class="bg-purple-100 group-hover:bg-purple-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="phone-call" class="w-6 h-6 text-purple-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                                <button id="btn-sms-completed" class="group w-full flex justify-between items-center px-6 py-5 bg-slate-50 border-2 border-green-200 rounded-xl hover:border-green-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:bg-green-50">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-green-700">Send Completed SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Service completion & review</div>
-                                    </div>
-                                    <div class="bg-green-100 group-hover:bg-green-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="check-circle" class="w-6 h-6 text-green-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
+                
+                <!-- Reschedule Request -->
+                <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
+                <div class="bg-yellow-50/80 border-2 border-yellow-200 rounded-2xl p-5">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="calendar-clock" class="w-8 h-8 text-yellow-600 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <h3 class="text-lg font-bold text-yellow-900">Reschedule Request Pending</h3>
+                            <p class="font-bold text-slate-700 mt-2">Requested: <span class="font-normal"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span></p>
+                            <?php if (!empty($case['rescheduleComment'])): ?>
+                            <p class="text-sm text-slate-600 mt-1 italic">"<?php echo htmlspecialchars($case['rescheduleComment']); ?>"</p>
+                            <?php endif; ?>
+                            <div class="flex gap-2 mt-4">
+                                <button onclick="acceptReschedule()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-4 rounded-md text-sm">Accept</button>
+                                <button onclick="declineReschedule()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-4 rounded-md text-sm">Decline</button>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
-                        <!-- Advanced SMS Template Selector -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-violet-600 to-violet-700 px-3 py-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="message-square" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Advanced SMS</h3>
+                <!-- Collapsible Section: Communication -->
+                 <div x-data="{ open: isSectionOpen('communication') }" class="bg-white rounded-2xl border border-slate-200/80">
+                    <button @click="toggleSection('communication')" class="w-full flex items-center justify-between p-5">
+                        <h2 class="text-xl font-bold text-slate-800">Communication</h2>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
+                    </button>
+                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                        <div class="border-t border-slate-200 pt-6 space-y-5" x-data="{ activeTab: 'quick' }">
+                            <div class="flex items-center justify-center">
+                                 <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                                    <button @click="activeTab = 'quick'" :class="{'bg-white text-blue-600 shadow-sm': activeTab === 'quick'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Quick SMS</button>
+                                    <button @click="activeTab = 'advanced'" :class="{'bg-white text-blue-600 shadow-sm': activeTab === 'advanced'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Advanced SMS</button>
                                 </div>
                             </div>
-                            <div class="p-3 space-y-4">
-                                <div class="space-y-2">
-                                    <label class="block text-sm text-violet-600 font-bold uppercase tracking-wider">Select Template</label>
-                                    <select id="sms-template-selector" class="w-full bg-slate-50 border-2 border-violet-200 rounded-xl p-4 text-lg font-medium focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20 outline-none shadow-sm transition-all">
-                                        <option value="">Choose a template...</option>
-                                        <?php foreach ($smsTemplates as $slug => $template): ?>
-                                        <option value="<?php echo htmlspecialchars($slug); ?>" data-content="<?php echo htmlspecialchars($template['content']); ?>">
-                                            <?php echo htmlspecialchars($template['name'] ?? ucfirst(str_replace('_', ' ', $slug))); ?>
-                                        </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="block text-sm text-violet-600 font-bold uppercase tracking-wider">Message Preview</label>
-                                    <div id="sms-preview" class="bg-slate-50 border-2 border-violet-200 rounded-xl p-4 min-h-[100px] text-sm text-slate-700 whitespace-pre-wrap shadow-sm">
-                                        <span class="text-slate-400 italic">Select a template to see preview...</span>
-                                    </div>
-                                </div>
-                                <button id="btn-send-custom-sms" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                    <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
-                                    Send Custom SMS
+                            <!-- Quick SMS -->
+                            <div x-show="activeTab === 'quick'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                                <button id="btn-sms-register" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="party-popper" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Welcome</span></button>
+                                <button id="btn-sms-called" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="phone-outgoing" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Called</span></button>
+                                <button id="btn-sms-arrived" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="package-check" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Parts Arrived</span></button>
+                                <button id="btn-sms-schedule" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="calendar-check" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Scheduled</span></button>
+                                <button id="btn-sms-completed" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="check-circle" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Completed</span></button>
+                            </div>
+                            <!-- Advanced SMS -->
+                            <div x-show="activeTab === 'advanced'" x-cloak class="space-y-3">
+                                 <select id="sms-template-selector" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm">
+                                    <option value="">Choose a template...</option>
+                                    <?php foreach ($smsTemplates as $slug => $template): ?>
+                                    <option value="<?php echo htmlspecialchars($slug); ?>"><?php echo htmlspecialchars($template['name'] ?? ucfirst(str_replace('_', ' ', $slug))); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <div id="sms-preview" class="bg-slate-100 border border-slate-200 rounded-lg p-3 min-h-[120px] text-sm text-slate-700 whitespace-pre-wrap"><span class="text-slate-400 italic">Select a template...</span></div>
+                                <button id="btn-send-custom-sms" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-sm">
+                                    <i data-lucide="send" class="w-4 h-4"></i> Send Custom SMS
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- History & Notes Tab -->
-                <div id="tab-content-history" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        <!-- Activity Timeline -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-slate-700 to-slate-600 px-3 py-2">
-                                <div class="flex items-center gap-3">
-                                    <i data-lucide="history" class="w-5 h-5 text-white"></i>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Activity Timeline</h3>
-                                </div>
-                            </div>
-                            <div id="activity-log-container" class="p-3 max-h-80 overflow-y-auto custom-scrollbar space-y-4">
-                                <?php
-                                if (!empty($case['systemLogs'])) {
-                                    foreach (array_reverse($case['systemLogs']) as $log) {
-                                        $date = date('M j, g:i A', strtotime($log['timestamp']));
-                                        echo "<div class='flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors'>";
-                                        echo "<div class='bg-slate-200 rounded-full p-2 mt-0.5'>";
-                                        echo "<i data-lucide='activity' class='w-4 h-4 text-slate-600'></i>";
-                                        echo "</div>";
-                                        echo "<div class='flex-1 min-w-0'>";
-                                        echo "<div class='text-xs text-slate-500 mb-1 font-medium'>{$date}</div>";
-                                        echo "<div class='text-sm text-slate-700 leading-relaxed'>" . htmlspecialchars($log['message']) . "</div>";
-                                        echo "</div>";
-                                        echo "</div>";
-                                    }
-                                } else {
-                                    echo "<div class='text-center py-8'>";
-                                    echo "<i data-lucide='inbox' class='w-12 h-12 text-slate-300 mx-auto mb-3'></i>";
-                                    echo "<p class='text-sm text-slate-500 font-medium'>No activity recorded</p>";
-                                    echo "</div>";
-                                }
-                                ?>
-                            </div>
-                        </div>
-
-                        <!-- Customer Review Section -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-amber-500 to-yellow-500 px-3 py-2 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="star" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Customer Review</h3>
-                                </div>
-                                <button id="btn-edit-review" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all text-sm font-bold">
-                                    <i data-lucide="edit" class="w-4 h-4 inline mr-1"></i>
-                                    Edit
+                 <!-- Collapsible Section: Customer Feedback -->
+                <div x-data="{ open: isSectionOpen('feedback'), editingReview: false }" class="bg-white rounded-2xl border border-slate-200/80">
+                    <button @click="toggleSection('feedback')" class="w-full flex items-center justify-between p-5">
+                        <h2 class="text-xl font-bold text-slate-800">Customer Feedback</h2>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
+                    </button>
+                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                        <div class="border-t border-slate-200 pt-6">
+                             <div class="flex justify-end mb-4 -mt-2">
+                                <button @click="editingReview = !editingReview" id="btn-edit-review" class="text-sm font-semibold text-blue-600 hover:underline">
+                                    <span x-show="!editingReview">Edit</span>
+                                    <span x-show="editingReview">Cancel</span>
                                 </button>
                             </div>
-                            <div id="review-display" class="p-3 space-y-4">
-                                <?php if (!empty($case['reviewStars'])): ?>
-                                <div class="flex items-center gap-4">
-                                    <div class="flex gap-1">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i data-lucide="star" class="w-6 h-6 <?php echo $i <= $case['reviewStars'] ? 'text-amber-400 fill-current' : 'text-slate-300'; ?>"></i>
-                                        <?php endfor; ?>
-                                    </div>
-                                    <span class="text-4xl font-black text-amber-600"><?php echo $case['reviewStars']; ?>/5</span>
-                                </div>
-                                <?php if (!empty($case['reviewComment'])): ?>
-                                <div class="bg-amber-50 p-4 rounded-lg border-2 border-amber-200">
-                                    <p class="text-sm text-slate-700 italic leading-relaxed"><?php echo htmlspecialchars($case['reviewComment']); ?></p>
-                                </div>
-                                <?php endif; ?>
+                            <!-- Display View -->
+                            <div id="review-display" x-show="!editingReview">
+                                <?php if (empty($case['reviewStars'])): ?>
+                                    <div class="text-center py-6 text-slate-500 text-sm">No review submitted yet.</div>
                                 <?php else: ?>
-                                <div class="text-center py-8">
-                                    <i data-lucide="star" class="w-16 h-16 text-amber-300 mx-auto mb-3"></i>
-                                    <p class="text-lg text-slate-500 font-medium">No review yet</p>
-                                </div>
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex gap-1">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <i data-lucide="star" class="w-6 h-6 <?php echo $i <= $case['reviewStars'] ? 'text-amber-400 fill-amber-400' : 'text-slate-300'; ?>"></i>
+                                            <?php endfor; ?>
+                                        </div>
+                                        <span class="text-xl font-bold text-slate-700"><?php echo $case['reviewStars']; ?> out of 5</span>
+                                    </div>
+                                    <?php if (!empty($case['reviewComment'])): ?>
+                                    <blockquote class="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4 text-sm text-slate-700 italic">"<?php echo htmlspecialchars($case['reviewComment']); ?>"</blockquote>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
-                            <div id="review-edit" class="p-3 space-y-4 hidden">
-                                <div class="space-y-2">
-                                    <label class="block text-sm text-amber-700 font-bold uppercase tracking-wider">Rating</label>
-                                    <select id="input-review-stars" class="w-full bg-slate-50 border-2 border-amber-200 rounded-xl p-4 text-lg font-bold focus:bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20 outline-none">
+                            <!-- Edit View -->
+                             <div id="review-edit" x-show="editingReview" x-cloak class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Rating</label>
+                                    <select id="input-review-stars" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5">
                                         <option value="">No rating</option>
                                         <option value="1" <?php echo $case['reviewStars'] == 1 ? 'selected' : ''; ?>>⭐ 1 Star</option>
                                         <option value="2" <?php echo $case['reviewStars'] == 2 ? 'selected' : ''; ?>>⭐⭐ 2 Stars</option>
@@ -613,840 +292,392 @@ try {
                                         <option value="5" <?php echo $case['reviewStars'] == 5 ? 'selected' : ''; ?>>⭐⭐⭐⭐⭐ 5 Stars</option>
                                     </select>
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="block text-sm text-amber-700 font-bold uppercase tracking-wider">Comment</label>
-                                    <textarea id="input-review-comment" rows="4" placeholder="Customer feedback..." class="w-full bg-slate-50 border-2 border-amber-200 rounded-xl p-4 text-sm focus:bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20 outline-none resize-none"><?php echo htmlspecialchars($case['reviewComment'] ?? ''); ?></textarea>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Comment</label>
+                                    <textarea id="input-review-comment" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5"><?php echo htmlspecialchars($case['reviewComment'] ?? ''); ?></textarea>
                                 </div>
-                                <div class="flex gap-3">
-                                    <button id="btn-save-review" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95">
-                                        <i data-lucide="save" class="w-5 h-5 inline mr-2"></i>
-                                        Save Review
-                                    </button>
-                                    <button id="btn-cancel-review" class="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Reschedule Request Preview -->
-                        <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
-                        <div class="bg-white border border-purple-200 rounded shadow-sm text-sm lg:col-span-2">
-                            <div class="px-3 py-2 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <div class="bg-white/20 p-2 rounded-lg">
-                                        <i data-lucide="calendar-clock" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <label class="text-sm font-bold text-white uppercase tracking-wider">Reschedule Request</label>
-                                </div>
-                                <span class="text-xs bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold border border-white/30">Pending</span>
-                            </div>
-                            <div class="p-4 space-y-3">
-                                <div class="bg-white/80 p-3 rounded-lg border-2 border-purple-200">
-                                    <span class="text-xs text-purple-700 font-bold block mb-2 uppercase tracking-wider">Requested Date</span>
-                                    <div class="flex items-center gap-2">
-                                        <div class="bg-purple-100 p-2 rounded-lg">
-                                            <i data-lucide="calendar" class="w-5 h-5 text-purple-600"></i>
-                                        </div>
-                                        <span class="text-lg font-bold text-slate-800"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span>
-                                    </div>
-                                </div>
-                                <?php if (!empty($case['rescheduleComment'])): ?>
-                                <div class="bg-white/80 p-4 rounded-xl border-2 border-purple-200">
-                                    <span class="text-xs text-purple-700 font-bold block mb-2 uppercase tracking-wider">Customer Comment</span>
-                                    <p class="text-sm text-slate-700 leading-relaxed"><?php echo htmlspecialchars($case['rescheduleComment']); ?></p>
-                                </div>
-                                <?php endif; ?>
-                                <div class="flex gap-3 pt-2">
-                                    <button onclick="acceptReschedule()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-bold text-sm transition-all active:scale-95 shadow-lg">
-                                        <i data-lucide="check" class="w-4 h-4 inline mr-2"></i>Accept Request
-                                    </button>
-                                    <button onclick="declineReschedule()" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-bold text-sm transition-all active:scale-95 shadow-lg">
-                                        <i data-lucide="x" class="w-4 h-4 inline mr-2"></i>Decline Request
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-
-                    </div>
-                </div>
-
-                <!-- Actions Tab -->
-                <div id="tab-content-actions" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        <!-- Case Actions -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="settings" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Case Actions</h3>
-                                </div>
-                            </div>
-                            <div class="p-3 space-y-4">
-                                <button onclick="saveChanges()" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                                    <i data-lucide="save" class="w-6 h-6"></i>
-                                    <span>Save All Changes</span>
-                                </button>
-                                <button onclick="printCase()" class="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                                    <i data-lucide="printer" class="w-6 h-6"></i>
-                                    <span>Print Case Details</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Danger Zone -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-red-200/60 border border-red-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-red-600 to-red-700 px-3 py-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="alert-triangle" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Danger Zone</h3>
-                                </div>
-                            </div>
-                            <div class="p-3 space-y-4">
-                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                                    <h4 class="text-sm font-bold text-red-800 mb-2">⚠️ Irreversible Actions</h4>
-                                    <p class="text-sm text-red-700 mb-4">These actions cannot be undone. Please proceed with caution.</p>
-                                </div>
-                                <button onclick="deleteCase()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                                    <i data-lucide="trash-2" class="w-6 h-6"></i>
-                                    <span>Delete This Case</span>
-                                </button>
+                                <button id="btn-save-review" @click="editingReview = false" class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm">Save Review</button>
                             </div>
                         </div>
                     </div>
-                </div>
+                 </div>
 
             </div>
+
+            <!-- Sidebar -->
+            <aside class="lg:col-span-1 space-y-6 lg:sticky lg:top-8 self-start">
+                 <!-- Internal Notes -->
+                <div class="bg-white rounded-2xl border border-slate-200/80">
+                    <h2 class="text-xl font-bold text-slate-800 p-5">Internal Notes</h2>
+                    <div class="px-5 pb-5 border-t border-slate-200">
+                        <div class="flex gap-2 my-5">
+                            <input id="new-note-input" type="text" placeholder="Add a new note..." class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 outline-none">
+                            <button onclick="addNote()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 rounded-lg font-semibold text-sm">Add</button>
+                        </div>
+                        <div id="notes-container" class="space-y-3 max-h-72 overflow-y-auto custom-scrollbar -mr-3 pr-3">
+                             <?php if (empty($case['internalNotes'])): ?>
+                                <div class="text-center py-4 text-slate-500 text-sm">No internal notes yet.</div>
+                            <?php else: ?>
+                                <?php foreach (array_reverse($case['internalNotes']) as $note): ?>
+                                <div class='bg-slate-100 p-3 rounded-lg border border-slate-200/80'>
+                                    <p class='text-sm text-slate-800'><?php echo htmlspecialchars($note['text']); ?></p>
+                                    <div class='text-xs text-slate-500 text-right mt-2'><?php echo htmlspecialchars($note['authorName'] ?? 'Manager'); ?> &middot; <?php echo date('M j, g:i A', strtotime($note['timestamp'])); ?></div>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Tabs -->
+                <div x-data="{ tab: 'activity' }" class="bg-white rounded-2xl border border-slate-200/80">
+                    <div class="p-3 border-b border-slate-200">
+                        <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                            <button @click="tab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'activity'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Activity</button>
+                            <button @click="tab = 'vehicle'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'vehicle'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Vehicle</button>
+                            <button @click="tab = 'danger'" :class="{'bg-white text-red-600 shadow-sm': tab === 'danger'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Danger</button>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <!-- Activity Log -->
+                        <div x-show="tab === 'activity'" id="activity-log-container" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar -mr-3 pr-3">
+                             <?php if (empty($case['systemLogs'])): ?>
+                                <div class="text-center py-4 text-slate-500 text-sm">No activity recorded.</div>
+                            <?php else: ?>
+                                 <?php foreach (array_reverse($case['systemLogs']) as $log): ?>
+                                    <div class='flex items-start gap-3'>
+                                        <div class='bg-slate-100 rounded-full p-2 mt-0.5'><i data-lucide='history' class='w-4 h-4 text-slate-500'></i></div>
+                                        <div>
+                                            <p class='text-sm text-slate-700 font-medium'><?php echo htmlspecialchars($log['message']); ?></p>
+                                            <time class='text-xs text-slate-400'><?php echo date('M j, Y, g:i A', strtotime($log['timestamp'])); ?></time>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                        <!-- Vehicle Info -->
+                         <div x-show="tab === 'vehicle'" x-cloak class="space-y-3">
+                            <div class="flex justify-between text-sm"><span class="font-medium text-slate-600">Owner:</span> <span class="text-slate-500"><?php echo htmlspecialchars($case['vehicle_owner'] ?? 'N/A'); ?></span></div>
+                            <div class="flex justify-between text-sm"><span class="font-medium text-slate-600">Model:</span> <span class="text-slate-500"><?php echo htmlspecialchars($case['vehicle_model'] ?? 'N/A'); ?></span></div>
+                        </div>
+                        <!-- Danger Zone -->
+                        <div x-show="tab === 'danger'" x-cloak>
+                            <h3 class="font-bold text-red-700">Danger Zone</h3>
+                            <p class="text-sm text-red-600 mt-1">This action is permanent and cannot be undone.</p>
+                            <button onclick="deleteCase()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg mt-4 text-sm">Delete This Case</button>
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
         </div>
-    </div>
+    </main>
 
-    <!-- Floating Action Buttons -->
-    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
-        <button onclick="saveChanges()" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 group">
-            <i data-lucide="save" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
-            <span class="hidden lg:inline ml-2">Save Changes</span>
-        </button>
-        <button onclick="deleteCase()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white p-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 group">
-            <i data-lucide="trash-2" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
-            <span class="hidden lg:inline ml-2">Delete</span>
-        </button>
-    </div>
-
-    <!-- JavaScript -->
     <script>
         const API_URL = 'api.php';
         const CASE_ID = <?php echo $case_id; ?>;
         const CAN_EDIT = <?php echo $CAN_EDIT ? 'true' : 'false'; ?>;
-        const MANAGER_PHONE = "<?php echo MANAGER_PHONE; ?>";
+        
+        let initialCaseData = {};
+        try {
+            initialCaseData = <?php echo json_encode($case, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
+        } catch (e) { console.error('Error parsing case data:', e); initialCaseData = {}; }
 
-        // SMS Templates and workflow bindings
-        let smsTemplates, smsWorkflowBindings;
+        let smsTemplates = {};
         try {
             smsTemplates = <?php echo json_encode($smsTemplates, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
-            smsWorkflowBindings = <?php echo json_encode($smsWorkflowBindings, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
-        } catch (e) {
-            console.error('Error parsing SMS templates:', e);
-            smsTemplates = {};
-            smsWorkflowBindings = {};
-        }
-
-        // Current case data
-        let currentCase;
+        } catch(e) { console.error('Error parsing sms templates'); }
+        
+        let smsWorkflowBindings = {};
         try {
-            currentCase = <?php echo json_encode($case, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: 'null'; ?>;
-            if (!currentCase) {
-                currentCase = {};
+            smsWorkflowBindings = <?php echo json_encode($smsWorkflowBindings, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
+        } catch(e) { console.error('Error parsing sms workflow bindings'); }
+
+        function caseEditor() {
+            return {
+                currentCase: { ...initialCaseData },
+                openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback'],
+                statuses: [
+                    { id: 'New', name: 'New', icon: 'file-plus-2' },
+                    { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
+                    { id: 'Called', name: 'Contacted', icon: 'phone' },
+                    { id: 'Parts Ordered', name: 'Parts Ordered', icon: 'box-select' },
+                    { id: 'Parts Arrived', name: 'Parts Arrived', icon: 'package-check' },
+                    { id: 'Scheduled', name: 'Scheduled', icon: 'calendar-days' },
+                    { id: 'Completed', name: 'Completed', icon: 'check-circle-2' },
+                    { id: 'Issue', name: 'Issue', icon: 'alert-triangle' },
+                ],
+                get currentStatusIndex() {
+                    const index = this.statuses.findIndex(s => s.id === this.currentCase.status);
+                    return index > -1 ? index : 0;
+                },
+                init() {
+                    this.$nextTick(() => initializeIcons());
+                    document.getElementById('sms-template-selector')?.addEventListener('change', this.updateSmsPreview.bind(this));
+                },
+                isSectionOpen(section) {
+                    return this.openSections.includes(section);
+                },
+                toggleSection(section) {
+                    const index = this.openSections.indexOf(section);
+                    if (index === -1) {
+                        this.openSections.push(section);
+                    } else {
+                        this.openSections.splice(index, 1);
+                    }
+                    localStorage.setItem('openSections', JSON.stringify(this.openSections));
+                },
+                setStatus(statusId) {
+                    this.currentCase.status = statusId;
+                },
+                updateSmsPreview() {
+                    const selector = document.getElementById('sms-template-selector');
+                    const preview = document.getElementById('sms-preview');
+                    const templateSlug = selector.value;
+                    if (!templateSlug) {
+                        preview.innerHTML = '<span class="text-slate-400 italic">Select a template...</span>';
+                        return;
+                    }
+                    const msg = getFormattedMessage(templateSlug, this.getTemplateData());
+                    preview.textContent = msg;
+                },
+                getTemplateData() {
+                    const publicUrl = `${window.location.origin}${window.location.pathname.replace('edit_case.php', 'public_view.php')}`;
+                    return {
+                        id: CASE_ID,
+                        name: document.getElementById('input-name')?.value || this.currentCase.name,
+                        plate: document.getElementById('input-plate')?.value || this.currentCase.plate,
+                        amount: document.getElementById('input-amount')?.value || this.currentCase.amount,
+                        date: document.getElementById('input-service-date')?.value || this.currentCase.serviceDate,
+                        link: `${publicUrl}?id=${CASE_ID}`
+                    };
+                },
+                printCase() { window.print(); },
+                async saveChanges() {
+                    if (!CAN_EDIT) return showToast('Permission Denied', 'You do not have permission to edit.', 'error');
+                    
+                    const status = this.currentCase.status;
+                    const serviceDate = document.getElementById('input-service-date').value;
+
+                    if ((status === 'Parts Arrived' || status === 'Scheduled') && !serviceDate) {
+                        return showToast("Scheduling Required", `Please select a service date for the '${status}' status.`, "error");
+                    }
+
+                    const updates = {
+                        name: document.getElementById('input-name').value.trim(),
+                        plate: document.getElementById('input-plate').value.trim(),
+                        amount: document.getElementById('input-amount').value.trim(),
+                        status: status,
+                        phone: document.getElementById('input-phone').value.trim(),
+                        serviceDate: serviceDate || null,
+                        franchise: document.getElementById('input-franchise').value || 0,
+                    };
+
+                    const systemLogs = [...(this.currentCase.systemLogs || [])];
+                    if (status !== initialCaseData.status) {
+                        systemLogs.push({ message: `Status: ${initialCaseData.status} -> ${status}`, timestamp: new Date().toISOString(), type: 'status' });
+
+                        if (updates.phone && smsWorkflowBindings && smsWorkflowBindings[status]) {
+                            const templateData = this.getTemplateData();
+                            smsWorkflowBindings[status].forEach(template => {
+                                const msg = getFormattedMessage(template.slug, templateData);
+                                sendSmsAndUpdateLog(updates.phone, msg, `${template.slug}_sms`);
+                            });
+                        }
+                    }
+
+                    try {
+                        await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { ...updates, systemLogs });
+                        Object.assign(this.currentCase, updates, { systemLogs });
+                        initialCaseData = { ...this.currentCase };
+                        showToast("Changes Saved", "Case updated successfully.", "success");
+                        updateActivityLog(this.currentCase.systemLogs);
+                    } catch (error) {
+                        showToast("Error", "Failed to save changes.", "error");
+                    }
+                }
             }
-        } catch (e) {
-            console.error('Error parsing case data:', e);
-            currentCase = {};
         }
-
-        // Utility functions
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function getFormattedMessage(type, data) {
-            let template = smsTemplates[type]?.content || '';
-            template = template.replace(/{name}/g, data.name || '');
-            template = template.replace(/{plate}/g, data.plate || '');
-            template = template.replace(/{amount}/g, data.amount || '');
-            template = template.replace(/{date}/g, data.date || '');
-            template = template.replace(/{link}/g, data.link || '');
-            return template;
-        }
-
+        
         function showToast(title, message = '', type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
-
-            // Handle legacy calls
-            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
-            if (!message && !type) { type = 'success'; }
-            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
-
-            // Create toast
             const toast = document.createElement('div');
-
             const colors = {
-                success: {
-                    bg: 'bg-white/95 backdrop-blur-xl',
-                    border: 'border-emerald-200/60',
-                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50',
-                    iconColor: 'text-emerald-600',
-                    icon: 'check-circle',
-                    shadow: 'shadow-emerald-500/20'
-                },
-                error: {
-                    bg: 'bg-white/95 backdrop-blur-xl',
-                    border: 'border-red-200/60',
-                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50',
-                    iconColor: 'text-red-600',
-                    icon: 'alert-circle',
-                    shadow: 'shadow-red-500/20'
-                },
-                info: {
-                    bg: 'bg-white/95 backdrop-blur-xl',
-                    border: 'border-blue-200/60',
-                    iconBg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
-                    iconColor: 'text-blue-600',
-                    icon: 'info',
-                    shadow: 'shadow-blue-500/20'
-                },
-                urgent: {
-                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent',
-                    border: 'border-purple-300',
-                    iconBg: 'bg-gradient-to-br from-purple-100 to-pink-100',
-                    iconColor: 'text-purple-700',
-                    icon: 'bell',
-                    shadow: 'shadow-purple-500/30'
-                }
+                success: { border: 'border-emerald-200', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', icon: 'check-circle-2' },
+                error: { border: 'border-red-200', iconBg: 'bg-red-100', iconColor: 'text-red-600', icon: 'alert-circle' },
+                info: { border: 'border-blue-200', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', icon: 'info' }
             };
-
             const style = colors[type] || colors.info;
-
-            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
-
+            toast.className = `pointer-events-auto w-96 bg-white border ${style.border} shadow-lg rounded-xl p-4 flex items-start gap-4 transform transition-all duration-300 translate-x-full`;
             toast.innerHTML = `
-                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
-                    <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            `;
-
+                <div class="${style.iconBg} p-2 rounded-full"><i data-lucide="${style.icon}" class="w-6 h-6 ${style.iconColor}"></i></div>
+                <div class="flex-1"><h4 class="text-md font-bold text-slate-800">${title}</h4>${message ? `<p class="text-sm text-slate-600 mt-1">${message}</p>` : ''}</div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1 -mt-1 -mr-1"><i data-lucide="x" class="w-5 h-5"></i></button>`;
             container.appendChild(toast);
-            initializeIcons();
-
-            // Animate In
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-10', 'opacity-0');
-            });
-
-            // Auto Dismiss (unless persistent/urgent)
-            if (duration > 0 && type !== 'urgent') {
-                setTimeout(() => {
-                    toast.classList.add('translate-y-4', 'opacity-0');
-                    setTimeout(() => toast.remove(), 500);
-                }, duration);
-            }
+            lucide.createIcons();
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
         }
 
-        // Initialize Lucide icons with retry
-        function initializeIcons() {
-            if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                try {
-                    window.lucide.createIcons();
-                } catch (e) {
-                    console.warn('Lucide icon initialization failed:', e);
-                    // Retry after a short delay
-                    setTimeout(initializeIcons, 500);
-                }
-            } else {
-                // Retry after a short delay if Lucide hasn't loaded yet
-                setTimeout(initializeIcons, 100);
-            }
-        }
-
-        // API call helper
+        function initializeIcons() { if (window.lucide) { lucide.createIcons(); } }
         async function fetchAPI(endpoint, method = 'GET', data = null) {
-            const config = {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            };
-
-            if (data) {
-                config.body = JSON.stringify(data);
-            }
-
+            const config = { method, headers: { 'Content-Type': 'application/json' } };
+            if (data) config.body = JSON.stringify(data);
             const response = await fetch(`${API_URL}?action=${endpoint}`, config);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         }
 
-        // Send SMS
-        async function sendSMS(phone, text, type) {
-            if (!phone) return showToast("No phone number", "error");
-            const clean = phone.replace(/\D/g, '');
+        async function sendSmsAndUpdateLog(phone, text, type) {
+             if (!phone) return showToast("No phone number", "", "error");
             try {
-                const result = await fetchAPI('send_sms', 'POST', { to: clean, text: text });
+                await fetchAPI('send_sms', 'POST', { to: phone.replace(/\D/g, ''), text: text });
+                const newLog = { message: `SMS Sent (${type})`, timestamp: new Date().toISOString(), type: 'sms' };
+                const logs = [...(initialCaseData.systemLogs || []), newLog];
+                
+                // This is a fire-and-forget update just for the log
+                fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { systemLogs: logs });
 
-                // Log SMS in activity
-                const newLog = {
-                    message: `SMS Sent (${type})`,
-                    timestamp: new Date().toISOString(),
-                    type: 'sms'
-                };
-                const logs = [...(currentCase.systemLogs || []), newLog];
-                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { systemLogs: logs });
-                currentCase.systemLogs = logs;
-
-                updateActivityLog();
-                showToast("SMS Sent", "success");
-
+                initialCaseData.systemLogs = logs;
+                updateActivityLog(logs);
+                showToast("SMS Sent", `Type: ${type}`, "success");
             } catch (e) {
-                console.error(e);
-                showToast("SMS Failed", "error");
+                showToast("SMS Failed", "", "error");
             }
         }
-
-        // Accept reschedule
+        
         async function acceptReschedule() {
-            if (!confirm('Accept reschedule request and update appointment?')) return;
-
+            if (!confirm('Accept reschedule and update appointment?')) return;
             try {
-                const rescheduleDateTime = currentCase.rescheduleDate.replace(' ', 'T');
-                await fetchAPI(`accept_reschedule&id=${CASE_ID}`, 'POST', {
-                    service_date: rescheduleDateTime
-                });
-
-                currentCase.serviceDate = rescheduleDateTime;
-                currentCase.userResponse = 'Confirmed';
-                currentCase.rescheduleDate = null;
-                currentCase.rescheduleComment = null;
-
-                const serviceDateInput = document.getElementById('input-service-date');
-                if (serviceDateInput) serviceDateInput.value = rescheduleDateTime;
-                showToast("Reschedule Accepted", "Appointment updated and SMS sent to customer", "success");
-
-                // Reload page to hide reschedule section
+                const rescheduleDateTime = initialCaseData.rescheduleDate.replace(' ', 'T');
+                await fetchAPI(`accept_reschedule&id=${CASE_ID}`, 'POST', { service_date: rescheduleDateTime });
+                showToast("Reschedule Accepted", "Appointment updated.", "success");
                 setTimeout(() => window.location.reload(), 1000);
-
-            } catch (e) {
-                console.error('Accept reschedule error:', e);
-                showToast("Error", "Failed to accept reschedule request", "error");
-            }
+            } catch (e) { showToast("Error", "Failed to accept reschedule.", "error"); }
         }
 
-        // Decline reschedule
         async function declineReschedule() {
-            if (!confirm('Decline this reschedule request? The customer will need to be contacted manually.')) return;
-
+            if (!confirm('Decline this reschedule request?')) return;
             try {
                 await fetchAPI(`decline_reschedule&id=${CASE_ID}`, 'POST', {});
-
-                currentCase.rescheduleDate = null;
-                currentCase.rescheduleComment = null;
-                currentCase.userResponse = 'Pending';
-
-                showToast("Request Declined", "Reschedule request removed", "info");
-
-                // Reload page to hide reschedule section
+                showToast("Request Declined", "Reschedule request removed.", "info");
                 setTimeout(() => window.location.reload(), 1000);
-
-            } catch (e) {
-                console.error('Decline reschedule error:', e);
-                showToast("Error", "Failed to decline request", "error");
-            }
+            } catch (e) { showToast("Error", "Failed to decline request.", "error"); }
         }
 
-        // Add note
         async function addNote() {
-            const newNoteInputEl = document.getElementById('new-note-input');
-            const text = newNoteInputEl ? newNoteInputEl.value.trim() : '';
+            const input = document.getElementById('new-note-input');
+            const text = input.value.trim();
             if (!text) return;
-
-            const newNote = {
-                text,
-                authorName: '<?php echo addslashes($current_user_name); ?>',
-                timestamp: new Date().toISOString()
-            };
-
+            const newNote = { text, authorName: '<?php echo addslashes($current_user_name); ?>', timestamp: new Date().toISOString() };
             try {
-                const notes = [...(currentCase.internalNotes || []), newNote];
+                const notes = [...(initialCaseData.internalNotes || []), newNote];
                 await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { internalNotes: notes });
-                currentCase.internalNotes = notes;
-
-                // Update notes display
-                updateNotesDisplay();
-
-                if (newNoteInputEl) newNoteInputEl.value = '';
-                showToast("Note Added", "Internal note has been added", "success");
-
-            } catch (error) {
-                console.error('Add note error:', error);
-                showToast("Error", "Failed to add note", "error");
-            }
+                initialCaseData.internalNotes = notes;
+                updateNotesDisplay(notes);
+                input.value = '';
+                showToast("Note Added", "", "success");
+            } catch (error) { showToast("Error", "Failed to add note.", "error"); }
         }
-
-        // Delete case
+        
         async function deleteCase() {
-            if (!confirm("Delete this case permanently?")) return;
-
+            if (!confirm("Permanently delete this case? This cannot be undone.")) return;
             try {
                 const result = await fetchAPI(`delete_transfer&id=${CASE_ID}`, 'POST');
                 if (result.status === 'deleted') {
-                    showToast("Case Deleted", "The case has been permanently removed", "success");
+                    showToast("Case Deleted", "Permanently removed.", "success");
                     setTimeout(() => window.location.href = 'index.php', 1000);
                 } else {
-                    showToast(result.message || "Failed to delete case", "error");
+                    showToast(result.message || "Failed to delete.", "error");
                 }
-            } catch (error) {
-                console.error('Delete error:', error);
-                showToast("Failed to delete case", "error");
-            }
+            } catch (error) { showToast("Error", "Failed to delete case.", "error"); }
         }
 
-        // Update activity log display
-        function updateActivityLog() {
-            const activityLog = document.getElementById('activity-log-container');
-            if (!currentCase.systemLogs || currentCase.systemLogs.length === 0) {
-                activityLog.innerHTML = '<div class="text-sm text-slate-500 italic">No activity recorded</div>';
+        function updateActivityLog(logs) {
+            const container = document.getElementById('activity-log-container');
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-slate-500 text-sm">No activity recorded.</div>';
                 return;
             }
-
-            const logHTML = currentCase.systemLogs.slice().reverse().map(log => {
-                const date = new Date(log.timestamp).toLocaleDateString('en-US');
-                const time = new Date(log.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                return `
-                    <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <div class="bg-slate-200 rounded-full p-1 mt-0.5">
-                            <i data-lucide="activity" class="w-3 h-3 text-slate-600"></i>
-                        </div>
-                        <div class="flex-1">
-                            <div class="text-xs text-slate-500 mb-1">${date} at ${time}</div>
-                            <div class="text-sm text-slate-700">${escapeHtml(log.message)}</div>
-                        </div>
+            container.innerHTML = logs.slice().reverse().map(log => `
+                <div class='flex items-start gap-3'>
+                    <div class='bg-slate-100 rounded-full p-2 mt-0.5'><i data-lucide='history' class='w-4 h-4 text-slate-500'></i></div>
+                    <div>
+                        <p class='text-sm text-slate-700 font-medium'>${escapeHtml(log.message)}</p>
+                        <time class='text-xs text-slate-400'>${new Date(log.timestamp).toLocaleString()}</time>
                     </div>
-                `;
-            }).join('');
-            activityLog.innerHTML = logHTML;
-            initializeIcons();
+                </div>`).join('');
+            lucide.createIcons();
         }
 
-        // Update notes display
-        function updateNotesDisplay() {
-            const notesContainer = document.getElementById('notes-container');
-            if (!currentCase.internalNotes || currentCase.internalNotes.length === 0) {
-                notesContainer.innerHTML = '<div class="text-sm text-slate-500 italic text-center py-4">No internal notes yet</div>';
+        function updateNotesDisplay(notes) {
+            const container = document.getElementById('notes-container');
+            if (!notes || notes.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-slate-500 text-sm">No internal notes yet.</div>';
                 return;
             }
-
-            const notesHTML = currentCase.internalNotes.map(note => {
-                const date = new Date(note.timestamp).toLocaleDateString('en-US');
-                const time = new Date(note.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                return `
-                    <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm">
-                        <p class="text-sm text-slate-700">${escapeHtml(note.text)}</p>
-                        <div class="flex justify-end mt-2">
-                            <span class="text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(note.authorName || 'Manager')} - ${date} ${time}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            notesContainer.innerHTML = notesHTML;
-            initializeIcons();
+            container.innerHTML = notes.slice().reverse().map(note => `
+                <div class='bg-slate-100 p-3 rounded-lg border border-slate-200/80'>
+                    <p class='text-sm text-slate-800'>${escapeHtml(note.text)}</p>
+                    <div class='text-xs text-slate-500 text-right mt-2'>${escapeHtml(note.authorName || 'Manager')} &middot; ${new Date(note.timestamp).toLocaleString()}</div>
+                </div>`).join('');
         }
 
-        // Print case
-        function printCase() {
-            window.print();
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
-
-        // Save changes
-        async function saveChanges() {
-            if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You do not have permission to edit cases', 'error');
-                return;
-            }
-
-            const nameEl = document.getElementById('input-name');
-            const plateEl = document.getElementById('input-plate');
-            const amountEl = document.getElementById('input-amount');
-            const statusEl = document.getElementById('input-status');
-            const phoneEl = document.getElementById('input-phone');
-            const serviceDateEl = document.getElementById('input-service-date');
-            const franchiseEl = document.getElementById('input-franchise');
-
-            const name = nameEl ? nameEl.value.trim() : currentCase.name;
-            const plate = plateEl ? plateEl.value.trim() : currentCase.plate;
-            const amount = amountEl ? amountEl.value.trim() : currentCase.amount;
-            const status = statusEl ? statusEl.value : currentCase.status;
-            const phone = phoneEl ? phoneEl.value : currentCase.phone;
-            const serviceDate = serviceDateEl ? serviceDateEl.value : currentCase.serviceDate;
-            const franchise = franchiseEl ? franchiseEl.value : currentCase.franchise;
-
-            // Validation: Parts Arrived and Scheduled require a date
-            if ((status === 'Parts Arrived' || status === 'Scheduled') && !serviceDate) {
-                showToast("Scheduling Required", `Please select a service date to save '${status}' status.`, "error");
-                return;
-            }
-
-            const updates = {
-                name,
-                plate,
-                amount,
-                status,
-                phone,
-                serviceDate: serviceDate || null,
-                franchise: franchise || 0,
-                internalNotes: currentCase.internalNotes || [],
-                systemLogs: currentCase.systemLogs || []
-            };
-
-            // AUTO-RESCHEDULE LOGIC
-            const currentDateStr = currentCase.serviceDate ? currentCase.serviceDate.replace(' ', 'T').slice(0, 16) : '';
-            if (currentCase.user_response === 'Reschedule Requested' && serviceDate && serviceDate !== currentDateStr) {
-                updates.user_response = 'Pending';
-                updates.systemLogs.push({
-                    message: `Rescheduled to ${serviceDate.replace('T', ' ')}`,
-                    timestamp: new Date().toISOString(),
-                    type: 'info'
-                });
-                const templateData = {
-                    id: currentCase.id,
-                    name: currentCase.name,
-                    plate: currentCase.plate,
-                    amount: currentCase.amount,
-                    serviceDate: serviceDate
-                };
-                const msg = getFormattedMessage('rescheduled', templateData);
-                sendSMS(phone, msg, 'rescheduled');
-            }
-
-            // Status change SMS logic
-            if (status !== currentCase.status) {
-                updates.systemLogs.push({
-                    message: `Status: ${currentCase.status} -> ${status}`,
-                    timestamp: new Date().toISOString(),
-                    type: 'status'
-                });
-
-                if (phone && smsWorkflowBindings && smsWorkflowBindings[status]) {
-                    const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
-                    const templateData = {
-                        id: currentCase.id,
-                        name: currentCase.name,
-                        plate: currentCase.plate,
-                        amount: currentCase.amount,
-                        serviceDate: serviceDate || currentCase.serviceDate,
-                        link: `${publicUrl}?id=${CASE_ID}`
-                    };
-
-                    smsWorkflowBindings[status].forEach(template => {
-                        const msg = getFormattedMessage(template.slug, templateData);
-                        sendSMS(phone, msg, `${template.slug}_sms`);
-                    });
-                }
-
-                // Special handling for Processing status - auto-assign schedule
-                if (status === 'Processing') {
-                    let assignedDate = serviceDate || currentCase.serviceDate;
-                    if (!assignedDate) {
-                        const today = new Date();
-                        const nextDay = new Date(today);
-                        nextDay.setDate(today.getDate() + 1);
-                        // Skip weekends
-                        if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1);
-                        if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2);
-                        nextDay.setHours(10, 0, 0, 0);
-                        assignedDate = nextDay.toISOString().slice(0, 16);
-                        updates.serviceDate = assignedDate;
-                        updates.systemLogs.push({
-                            message: `Auto-assigned service date: ${assignedDate.replace('T', ' ')}`,
-                            timestamp: new Date().toISOString(),
-                            type: 'info'
-                        });
-                    }
-                }
-            }
-
-            try {
-                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', updates);
-
-                // Update local case data
-                Object.assign(currentCase, updates);
-
-                showToast("Changes Saved", "Case has been updated successfully", "success");
-
-                // Refresh activity log
-                updateActivityLog();
-
-            } catch (error) {
-                console.error('Save error:', error);
-                showToast("Error", "Failed to save changes", "error");
-            }
+        
+        function getFormattedMessage(type, data) {
+            let template = smsTemplates[type]?.content || '';
+            return template.replace(/{name}/g, data.name || '')
+                           .replace(/{plate}/g, data.plate || '')
+                           .replace(/{amount}/g, data.amount || '')
+                           .replace(/{date}/g, data.date ? new Date(data.date).toLocaleString('ka-GE', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')
+                           .replace(/{link}/g, data.link || '');
         }
-
-        // Event listeners
+        
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize icons when DOM is ready
-            initializeIcons();
-
-            // Also try to initialize when window loads (backup)
-            window.addEventListener('load', function() {
-                setTimeout(initializeIcons, 100);
+            const getTemplateData = () => ({
+                id: CASE_ID,
+                name: document.getElementById('input-name')?.value,
+                plate: document.getElementById('input-plate')?.value,
+                amount: document.getElementById('input-amount')?.value,
+                date: document.getElementById('input-service-date')?.value,
+                link: `${window.location.origin}${window.location.pathname.replace('edit_case.php', 'public_view.php')}?id=${CASE_ID}`
             });
 
-            // Enter key for notes
-            const noteInputEl = document.getElementById('new-note-input');
-            if (noteInputEl) noteInputEl.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') addNote();
-            });
-
-            // SMS button handlers
-            const smsRegisterBtn = document.getElementById('btn-sms-register');
-            if (smsRegisterBtn) smsRegisterBtn.addEventListener('click', () => {
-                const phone = document.getElementById('input-phone')?.value;
-                const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
-                const templateData = {
-                    name: currentCase.name,
-                    plate: currentCase.plate,
-                    amount: currentCase.amount,
-                    link: `${publicUrl}?id=${CASE_ID}`
-                };
-                const msg = getFormattedMessage('registered', templateData);
-                sendSMS(phone, msg, 'welcome');
-            });
-
-            const smsArrivedBtn = document.getElementById('btn-sms-arrived');
-            if (smsArrivedBtn) smsArrivedBtn.addEventListener('click', () => {
-                const phone = document.getElementById('input-phone')?.value;
-                const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
-                const templateData = {
-                    name: currentCase.name,
-                    plate: currentCase.plate,
-                    amount: currentCase.amount,
-                    link: `${publicUrl}?id=${CASE_ID}`
-                };
-                const msg = getFormattedMessage('parts_arrived', templateData);
-                sendSMS(phone, msg, 'parts_arrived');
-            });
-
-            const smsScheduleBtn = document.getElementById('btn-sms-schedule');
-            if (smsScheduleBtn) smsScheduleBtn.addEventListener('click', () => {
-                const phone = document.getElementById('input-phone')?.value;
-                const serviceDate = document.getElementById('input-service-date')?.value;
-                if (!serviceDate) {
-                    showToast('No Service Date', 'Please set a service date first', 'error');
-                    return;
-                }
-                const date = new Date(serviceDate).toLocaleString('ka-GE', {
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+            const quickSmsActions = { 'btn-sms-register': 'registered', 'btn-sms-arrived': 'parts_arrived', 'btn-sms-schedule': 'schedule', 'btn-sms-called': 'called', 'btn-sms-completed': 'completed' };
+            for (const [btnId, slug] of Object.entries(quickSmsActions)) {
+                document.getElementById(btnId)?.addEventListener('click', () => {
+                    const phone = document.getElementById('input-phone')?.value;
+                    if (slug === 'schedule' && !document.getElementById('input-service_date')?.value) {
+                        return showToast('No Service Date', 'Please set a service date first.', 'error');
+                    }
+                    sendSmsAndUpdateLog(phone, getFormattedMessage(slug, getTemplateData()), slug);
                 });
-                const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
-                const templateData = {
-                    name: currentCase.name,
-                    plate: currentCase.plate,
-                    amount: currentCase.amount,
-                    date: date,
-                    link: `${publicUrl}?id=${CASE_ID}`
-                };
-                const msg = getFormattedMessage('schedule', templateData);
-                sendSMS(phone, msg, 'schedule');
-            });
+            }
 
-            const smsCalledBtn = document.getElementById('btn-sms-called');
-            if (smsCalledBtn) smsCalledBtn.addEventListener('click', () => {
+            document.getElementById('btn-send-custom-sms')?.addEventListener('click', () => {
+                const slug = document.getElementById('sms-template-selector')?.value;
                 const phone = document.getElementById('input-phone')?.value;
-                const templateData = {
-                    name: currentCase.name,
-                    plate: currentCase.plate,
-                    amount: currentCase.amount
-                };
-                const msg = getFormattedMessage('called', templateData);
-                sendSMS(phone, msg, 'called');
+                if (!slug) return showToast('No Template', 'Please select an SMS template.', 'error');
+                sendSmsAndUpdateLog(phone, getFormattedMessage(slug, getTemplateData()), `custom_${slug}`);
             });
 
-            const smsCompletedBtn = document.getElementById('btn-sms-completed');
-            if (smsCompletedBtn) smsCompletedBtn.addEventListener('click', () => {
-                const phone = document.getElementById('input-phone')?.value;
-                const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
-                const templateData = {
-                    name: currentCase.name,
-                    plate: currentCase.plate,
-                    amount: currentCase.amount,
-                    link: `${publicUrl}?id=${CASE_ID}`
-                };
-                const msg = getFormattedMessage('completed', templateData);
-                sendSMS(phone, msg, 'completed');
-            });
-
-            // SMS template selector
-            const smsSelector = document.getElementById('sms-template-selector');
-            if (smsSelector) smsSelector.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const templateSlug = this.value;
-                const sendButton = document.getElementById('btn-send-custom-sms');
-                const previewDiv = document.getElementById('sms-preview');
-
-                if (!templateSlug) {
-                    previewDiv.innerHTML = '<span class="text-slate-400 italic">Select a template to see preview...</span>';
-                    sendButton.disabled = true;
-                    return;
-                }
-
-                // Get template data and format message
-                const template = smsTemplates[templateSlug];
-                if (template) {
-                    const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
-                    const templateData = {
-                        id: CASE_ID,
-                        name: (document.getElementById('input-name')?.value || currentCase.name),
-                        plate: (document.getElementById('input-plate')?.value || currentCase.plate),
-                        amount: (document.getElementById('input-amount')?.value || currentCase.amount),
-                        serviceDate: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
-                        date: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
-                        link: `${publicUrl}?id=${CASE_ID}`
-                    };
-
-                    const formattedMessage = getFormattedMessage(templateSlug, templateData);
-                    previewDiv.textContent = formattedMessage;
-                    sendButton.disabled = false;
-                }
-            });
-
-            // Send Custom SMS Button
-            const sendSmsBtn = document.getElementById('btn-send-custom-sms');
-            if (sendSmsBtn) sendSmsBtn.addEventListener('click', () => {
-                const templateSelector = document.getElementById('sms-template-selector');
-                const templateSlug = templateSelector?.value;
-                const phone = document.getElementById('input-phone')?.value;
-
-                if (!templateSlug) {
-                    showToast('No Template Selected', 'Please select an SMS template first', 'error');
-                    return;
-                }
-
-                const templateData = {
-                    id: CASE_ID,
-                    name: (document.getElementById('input-name')?.value || currentCase.name),
-                    plate: (document.getElementById('input-plate')?.value || currentCase.plate),
-                    amount: (document.getElementById('input-amount')?.value || currentCase.amount),
-                    serviceDate: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
-                    date: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
-                    link: `${window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php')}?id=${CASE_ID}`
-                };
-
-                const msg = getFormattedMessage(templateSlug, templateData);
-                sendSMS(phone, msg, `custom_${templateSlug}`);
-            });
-
-            // Review Editing
-            const editReviewBtn = document.getElementById('btn-edit-review');
-            if (editReviewBtn) editReviewBtn.addEventListener('click', () => {
-                const reviewDisplay = document.getElementById('review-display');
-                const reviewEdit = document.getElementById('review-edit');
-                if (reviewDisplay) reviewDisplay.classList.add('hidden');
-                if (reviewEdit) reviewEdit.classList.remove('hidden');
-            });
-
-            const cancelReviewBtn = document.getElementById('btn-cancel-review');
-            if (cancelReviewBtn) cancelReviewBtn.addEventListener('click', () => {
-                const reviewEdit = document.getElementById('review-edit');
-                const reviewDisplay = document.getElementById('review-display');
-                if (reviewEdit) reviewEdit.classList.add('hidden');
-                if (reviewDisplay) reviewDisplay.classList.remove('hidden');
-            });
-
-            const saveReviewBtn = document.getElementById('btn-save-review');
-            if (saveReviewBtn) saveReviewBtn.addEventListener('click', async () => {
+            document.getElementById('btn-save-review')?.addEventListener('click', async () => {
                 const stars = document.getElementById('input-review-stars')?.value;
                 const comment = document.getElementById('input-review-comment')?.value?.trim();
-
                 try {
-                    await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', {
-                        reviewStars: stars || null,
-                        reviewComment: comment || null
-                    });
-
-                    // Update local case data
-                    currentCase.reviewStars = stars || null;
-                    currentCase.reviewComment = comment || null;
-
-                    showToast("Review Updated", "Customer review has been saved successfully", "success");
-
-                    // Refresh the page to show updated review
+                    await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { reviewStars: stars || null, reviewComment: comment || null });
+                    showToast("Review Updated", "Customer review saved.", "success");
                     setTimeout(() => window.location.reload(), 1000);
-
-                } catch (error) {
-                    console.error('Save review error:', error);
-                    showToast("Error", "Failed to save review", "error");
-                }
-            });
-
-            // Initialize
-            initializeIcons();
-
-            // Tab switching functionality
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Remove active class from all tabs
-                    tabButtons.forEach(btn => {
-                        btn.classList.remove('active');
-                        btn.classList.remove('border-b-2', 'border-blue-500');
-                        btn.classList.add('text-slate-600');
-                    });
-
-                    // Hide all tab contents
-                    tabContents.forEach(content => {
-                        content.classList.add('hidden');
-                    });
-
-                    // Add active class to clicked tab
-                    button.classList.add('active');
-                    button.classList.add('border-b-2', 'border-blue-500');
-                    button.classList.remove('text-slate-600');
-                    button.classList.add('text-slate-700');
-
-                    // Show corresponding tab content
-                    const tabId = button.id.replace('tab-', 'tab-content-');
-                    const tabContent = document.getElementById(tabId);
-                    if (tabContent) {
-                        tabContent.classList.remove('hidden');
-                    }
-                });
+                } catch (error) { showToast("Error", "Failed to save review.", "error"); }
             });
         });
     </script>
