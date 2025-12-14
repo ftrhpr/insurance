@@ -147,57 +147,113 @@ try {
         .tab-button.active::after {
             content: '';
             position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            height: 2px;
-            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-            border-radius: 1px;
+    <style>
+        /* Modern Design Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Enhanced animations and effects */
-        .tab-content {
-            animation: fadeIn 0.3s ease-in-out;
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.3), transparent);
         }
 
-        /* Enhanced focus states */
-        .focus-enhanced:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        .modern-input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .modern-input:focus {
+            background: white;
             border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        /* Status badge animations */
         .status-badge {
-            transition: all 0.2s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        /* Button hover effects */
-        .btn-hover-lift:hover {
-            transform: translateY(-1px);
+        .action-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
-        /* Card hover effects */
-        .card-hover:hover {
+        .action-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
 
-        /* Print styles */
+        .section-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .section-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0.5rem;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: #3b82f6;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.5);
+        }
+
         @media print {
             .no-print { display: none !important; }
-            .tab-navigation { display: none !important; }
-            .floating-actions { display: none !important; }
+            body { background: white !important; }
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3 pointer-events-none"></div>
 
@@ -205,563 +261,512 @@ try {
     <?php include 'header.php'; ?>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Back Button -->
-        <div class="mb-6">
-            <a href="index.php" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                <span class="font-medium">Back to Dashboard</span>
+        <div class="mb-8 no-print">
+            <a href="index.php" class="inline-flex items-center gap-3 text-slate-600 hover:text-slate-800 transition-all duration-200 group">
+                <div class="p-2 rounded-full bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </div>
+                <span class="font-semibold text-lg">Back to Dashboard</span>
             </a>
         </div>
 
-        <!-- Case Header -->
-        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 mb-6 p-4">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div class="flex items-center gap-4 flex-1 min-w-0">
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg shadow-blue-500/30">
-                        <i data-lucide="car" class="w-6 h-6 text-white"></i>
+        <!-- Case Header Card -->
+        <div class="section-card p-8 mb-8 no-print">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div class="flex items-center gap-6 flex-1 min-w-0">
+                    <div class="gradient-bg p-4 rounded-2xl shadow-lg">
+                        <i data-lucide="car" class="w-8 h-8 text-white"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="text-xs text-slate-500 uppercase font-bold tracking-widest">Order #<?php echo $case_id; ?></div>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-xl font-bold text-slate-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
-                            <span class="text-slate-400">/</span>
-                            <span class="font-mono text-lg text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
+                        <div class="text-sm text-slate-500 uppercase font-bold tracking-wider mb-1">Order #<?php echo $case_id; ?></div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl font-bold text-slate-800 truncate"><?php echo htmlspecialchars($case['name']); ?></span>
+                            <span class="text-slate-400">•</span>
+                            <span class="font-mono text-xl text-blue-700 tracking-wider"><?php echo htmlspecialchars($case['plate']); ?></span>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm text-slate-600">
+                            <span>Created <?php echo date('M j, Y', strtotime($case['created_at'])); ?></span>
+                            <span class="status-badge bg-blue-100 text-blue-800">
+                                <?php echo htmlspecialchars($case['status']); ?>
+                            </span>
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <!-- Status Badge -->
-                    <div class="hidden lg:flex items-center gap-2">
-                        <span class="text-sm text-slate-500 font-medium">Status:</span>
-                        <span id="header-status-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                            <?php
-                            $statusColors = [
-                                'New' => 'bg-blue-100 text-blue-800 border border-blue-200',
-                                'Processing' => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
-                                'Called' => 'bg-purple-100 text-purple-800 border border-purple-200',
-                                'Parts Ordered' => 'bg-orange-100 text-orange-800 border border-orange-200',
-                                'Parts Arrived' => 'bg-green-100 text-green-800 border border-green-200',
-                                'Scheduled' => 'bg-indigo-100 text-indigo-800 border border-indigo-200',
-                                'Completed' => 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-                                'Issue' => 'bg-red-100 text-red-800 border border-red-200'
-                            ];
-                            echo $statusColors[$case['status']] ?? 'bg-gray-100 text-gray-800 border border-gray-200';
-                            ?>">
-                            <?php echo htmlspecialchars($case['status']); ?>
-                        </span>
-                    </div>
-                    <button onclick="window.printCase()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl transition-all hover:shadow-md" title="Print Case">
+                <div class="flex items-center gap-4">
+                    <button onclick="window.printCase()" class="action-button flex items-center gap-2">
                         <i data-lucide="printer" class="w-5 h-5"></i>
+                        Print Case
                     </button>
-                    <a href="index.php" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl transition-all hover:shadow-md">
-                        <i data-lucide="x" class="w-5 h-5"></i>
+                    <a href="index.php" class="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all hover:shadow-md">
+                        <i data-lucide="x" class="w-6 h-6"></i>
                     </a>
                 </div>
             </div>
         </div>
 
         <!-- Main Content Grid -->
-        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-            <!-- Tab Navigation -->
-            <div class="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200/80">
-                <div class="flex px-2">
-                    <button id="tab-overview" class="tab-button active flex-1 py-4 px-4 text-center font-bold text-slate-700 hover:bg-slate-200/50 transition-all duration-200 border-b-3 border-blue-500 rounded-t-lg relative group">
-                        <div class="flex flex-col items-center gap-2">
-                            <div class="bg-blue-100 group-hover:bg-blue-200 p-2 rounded-lg transition-colors">
-                                <i data-lucide="eye" class="w-5 h-5 text-blue-600"></i>
-                            </div>
-                            <span class="text-sm font-semibold">Overview</span>
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+
+            <!-- Left Column: Case Details -->
+            <div class="xl:col-span-2 space-y-8">
+
+                <!-- Case Information Section -->
+                <div class="section-card p-8">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="gradient-bg p-3 rounded-xl">
+                            <i data-lucide="file-text" class="w-6 h-6 text-white"></i>
                         </div>
-                        <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover:w-full"></div>
-                    </button>
-                    <button id="tab-communication" class="tab-button flex-1 py-4 px-4 text-center font-bold text-slate-600 hover:bg-slate-200/50 transition-all duration-200 rounded-t-lg relative group">
-                        <div class="flex flex-col items-center gap-2">
-                            <div class="bg-slate-100 group-hover:bg-slate-200 p-2 rounded-lg transition-colors">
-                                <i data-lucide="message-circle" class="w-5 h-5 text-slate-500"></i>
+                        <h2 class="text-2xl font-bold text-slate-800">Case Information</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Customer Details -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-4">Customer Details</h3>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-2">Customer Name</label>
+                                <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name"
+                                       class="modern-input w-full px-4 py-3 rounded-xl text-lg font-medium">
                             </div>
-                            <span class="text-sm font-semibold">Communication</span>
-                        </div>
-                    </button>
-                    <button id="tab-history" class="tab-button flex-1 py-4 px-4 text-center font-bold text-slate-600 hover:bg-slate-200/50 transition-all duration-200 rounded-t-lg relative group">
-                        <div class="flex flex-col items-center gap-2">
-                            <div class="bg-slate-100 group-hover:bg-slate-200 p-2 rounded-lg transition-colors">
-                                <i data-lucide="history" class="w-5 h-5 text-slate-500"></i>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-2">License Plate</label>
+                                <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate"
+                                       class="modern-input w-full px-4 py-3 rounded-xl text-lg font-medium font-mono">
                             </div>
-                            <span class="text-sm font-semibold">History & Notes</span>
-                        </div>
-                    </button>
-                    <button id="tab-actions" class="tab-button flex-1 py-4 px-4 text-center font-bold text-slate-600 hover:bg-slate-200/50 transition-all duration-200 rounded-t-lg relative group">
-                        <div class="flex flex-col items-center gap-2">
-                            <div class="bg-slate-100 group-hover:bg-slate-200 p-2 rounded-lg transition-colors">
-                                <i data-lucide="settings" class="w-5 h-5 text-slate-500"></i>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-2">Phone Number</label>
+                                <div class="relative">
+                                    <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+                                    <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number"
+                                           class="modern-input w-full pl-12 pr-4 py-3 rounded-xl text-lg font-medium">
+                                    <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>"
+                                       class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition-colors">
+                                        <i data-lucide="phone-call" class="w-4 h-4"></i>
+                                    </a>
+                                </div>
                             </div>
-                            <span class="text-sm font-semibold">Actions</span>
                         </div>
-                    </button>
+
+                        <!-- Service Details -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-4">Service Details</h3>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-2">Service Amount</label>
+                                <div class="relative">
+                                    <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00"
+                                           class="modern-input w-full pr-12 pl-4 py-3 rounded-xl text-2xl font-bold text-emerald-600">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-emerald-600">₾</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-2">Franchise Amount</label>
+                                <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00"
+                                       class="modern-input w-full px-4 py-3 rounded-xl text-lg font-medium text-orange-600">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-2">Service Date & Time</label>
+                                <input id="input-service-date" type="datetime-local"
+                                       value="<?php echo $case['serviceDate'] ? date('Y-m-d\TH:i', strtotime($case['serviceDate'])) : ''; ?>"
+                                       class="modern-input w-full px-4 py-3 rounded-xl text-lg font-medium">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Selection -->
+                    <div class="mt-8">
+                        <label class="block text-sm font-medium text-slate-600 mb-3">Workflow Status</label>
+                        <select id="input-status" class="modern-input w-full px-4 py-4 rounded-xl text-xl font-bold appearance-none cursor-pointer">
+                            <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
+                            <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>🟡 Processing</option>
+                            <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>🟣 Contacted</option>
+                            <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>📦 Parts Ordered</option>
+                            <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>🏁 Parts Arrived</option>
+                            <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>🟠 Scheduled</option>
+                            <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>🟢 Completed</option>
+                            <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>🔴 Issue</option>
+                        </select>
+                    </div>
                 </div>
+
+                <!-- Communication Section -->
+                <div class="section-card p-8">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="gradient-bg p-3 rounded-xl">
+                            <i data-lucide="message-circle" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800">Communication</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Quick SMS Actions -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-4">Quick SMS Actions</h3>
+
+                            <button id="btn-sms-register" class="w-full group flex justify-between items-center px-6 py-4 bg-gradient-to-r from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:shadow-lg transition-all text-left">
+                                <div>
+                                    <div class="text-lg font-bold text-slate-800 group-hover:text-indigo-700">Send Welcome SMS</div>
+                                    <div class="text-sm text-slate-500 mt-1">Registration confirmation</div>
+                                </div>
+                                <div class="bg-indigo-100 group-hover:bg-indigo-600 p-3 rounded-lg transition-colors">
+                                    <i data-lucide="message-square" class="w-6 h-6 text-indigo-600 group-hover:text-white"></i>
+                                </div>
+                            </button>
+
+                            <button id="btn-sms-arrived" class="w-full group flex justify-between items-center px-6 py-4 bg-gradient-to-r from-teal-50 to-cyan-50 border-2 border-teal-200 rounded-xl hover:border-teal-400 hover:shadow-lg transition-all text-left">
+                                <div>
+                                    <div class="text-lg font-bold text-slate-800 group-hover:text-teal-700">Parts Arrived SMS</div>
+                                    <div class="text-sm text-slate-500 mt-1">Includes customer link</div>
+                                </div>
+                                <div class="bg-teal-100 group-hover:bg-teal-600 p-3 rounded-lg transition-colors">
+                                    <i data-lucide="package-check" class="w-6 h-6 text-teal-600 group-hover:text-white"></i>
+                                </div>
+                            </button>
+
+                            <button id="btn-sms-schedule" class="w-full group flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:shadow-lg transition-all text-left">
+                                <div>
+                                    <div class="text-lg font-bold text-slate-800 group-hover:text-orange-700">Send Schedule SMS</div>
+                                    <div class="text-sm text-slate-500 mt-1">Appointment reminder</div>
+                                </div>
+                                <div class="bg-orange-100 group-hover:bg-orange-600 p-3 rounded-lg transition-colors">
+                                    <i data-lucide="calendar-check" class="w-6 h-6 text-orange-600 group-hover:text-white"></i>
+                                </div>
+                            </button>
+
+                            <button id="btn-sms-called" class="w-full group flex justify-between items-center px-6 py-4 bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:shadow-lg transition-all text-left">
+                                <div>
+                                    <div class="text-lg font-bold text-slate-800 group-hover:text-purple-700">Send Called SMS</div>
+                                    <div class="text-sm text-slate-500 mt-1">Contact confirmation</div>
+                                </div>
+                                <div class="bg-purple-100 group-hover:bg-purple-600 p-3 rounded-lg transition-colors">
+                                    <i data-lucide="phone-call" class="w-6 h-6 text-purple-600 group-hover:text-white"></i>
+                                </div>
+                            </button>
+
+                            <button id="btn-sms-completed" class="w-full group flex justify-between items-center px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl hover:border-green-400 hover:shadow-lg transition-all text-left">
+                                <div>
+                                    <div class="text-lg font-bold text-slate-800 group-hover:text-green-700">Send Completed SMS</div>
+                                    <div class="text-sm text-slate-500 mt-1">Service completion & review</div>
+                                </div>
+                                <div class="bg-green-100 group-hover:bg-green-600 p-3 rounded-lg transition-colors">
+                                    <i data-lucide="check-circle" class="w-6 h-6 text-green-600 group-hover:text-white"></i>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- Advanced SMS -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-4">Advanced SMS</h3>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-2">Select Template</label>
+                                <select id="sms-template-selector" class="modern-input w-full px-4 py-3 rounded-xl text-lg font-medium">
+                                    <option value="">Choose a template...</option>
+                                    <?php foreach ($smsTemplates as $slug => $template): ?>
+                                    <option value="<?php echo htmlspecialchars($slug); ?>" data-content="<?php echo htmlspecialchars($template['content']); ?>">
+                                        <?php echo htmlspecialchars($template['name'] ?? ucfirst(str_replace('_', ' ', $slug))); ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-2">Message Preview</label>
+                                <div id="sms-preview" class="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 min-h-[120px] text-sm text-slate-700 whitespace-pre-wrap">
+                                    <span class="text-slate-400 italic">Select a template to see preview...</span>
+                                </div>
+                            </div>
+
+                            <button id="btn-send-custom-sms" class="action-button w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                                Send Custom SMS
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Internal Notes Section -->
+                <div class="section-card p-8">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="gradient-bg p-3 rounded-xl">
+                            <i data-lucide="sticky-note" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800">Internal Notes</h2>
+                    </div>
+
+                    <div id="notes-container" class="space-y-4 mb-6 max-h-80 overflow-y-auto custom-scrollbar">
+                        <?php
+                        if (!empty($case['internalNotes'])) {
+                            foreach ($case['internalNotes'] as $note) {
+                                $date = date('M j, g:i A', strtotime($note['timestamp']));
+                                echo "<div class='bg-gradient-to-r from-slate-50 to-blue-50 p-4 rounded-xl border border-slate-200 hover:shadow-md transition-shadow'>";
+                                echo "<p class='text-sm text-slate-700 mb-2 leading-relaxed'>" . htmlspecialchars($note['text']) . "</p>";
+                                echo "<div class='flex justify-end'>";
+                                echo "<span class='text-xs text-slate-400 bg-white px-3 py-1 rounded-full font-medium border border-slate-200'>" . htmlspecialchars($note['authorName'] ?? 'Manager') . " - {$date}</span>";
+                                echo "</div>";
+                                echo "</div>";
+                            }
+                        } else {
+                            echo "<div class='text-center py-12'>";
+                            echo "<i data-lucide='inbox' class='w-16 h-16 text-slate-300 mx-auto mb-4'></i>";
+                            echo "<p class='text-lg text-slate-500 font-medium'>No internal notes yet</p>";
+                            echo "<p class='text-sm text-slate-400 mt-1'>Add notes to track important information</p>";
+                            echo "</div>";
+                        }
+                        ?>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <input id="new-note-input" type="text" placeholder="Add a note..." class="modern-input flex-1 px-4 py-3 rounded-xl text-sm">
+                        <button onclick="addNote()" class="action-button px-6 py-3 flex items-center gap-2">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                            Add Note
+                        </button>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Tab Content -->
-            <div class="p-4">
+            <!-- Right Column: Activity & Actions -->
+            <div class="space-y-8">
 
-                <!-- Overview Tab -->
-                <div id="tab-content-overview" class="tab-content">
-                    <!-- Priority Alert Section -->
-                    <div class="mb-6">
-                        <?php if ($case['user_response'] === 'Reschedule Requested'): ?>
-                        <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 text-white shadow-lg border border-purple-200">
-                            <div class="flex items-center gap-3 mb-3">
-                                <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                    <i data-lucide="calendar-clock" class="w-6 h-6"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold">Reschedule Request Pending</h3>
-                                    <p class="text-purple-100 text-sm">Customer requested to change appointment</p>
-                                </div>
-                            </div>
-                            <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <i data-lucide="clock" class="w-5 h-5 text-purple-200"></i>
-                                        <span class="font-semibold"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button onclick="acceptReschedule()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all active:scale-95 shadow-lg">
-                                            <i data-lucide="check" class="w-4 h-4 inline mr-1"></i>Accept
-                                        </button>
-                                        <button onclick="declineReschedule()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all active:scale-95 shadow-lg">
-                                            <i data-lucide="x" class="w-4 h-4 inline mr-1"></i>Decline
-                                        </button>
-                                    </div>
-                                </div>
-                                <?php if (!empty($case['rescheduleComment'])): ?>
-                                <div class="mt-3 pt-3 border-t border-white/20">
-                                    <p class="text-sm text-purple-100 italic"><?php echo htmlspecialchars($case['rescheduleComment']); ?></p>
-                                </div>
-                                <?php endif; ?>
-                            </div>
+                <!-- Activity Timeline -->
+                <div class="section-card p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="gradient-bg p-3 rounded-xl">
+                            <i data-lucide="history" class="w-6 h-6 text-white"></i>
                         </div>
-                        <?php elseif ($case['status'] === 'Issue'): ?>
-                        <div class="bg-gradient-to-r from-red-500 to-orange-500 rounded-xl p-4 text-white shadow-lg border border-red-200">
-                            <div class="flex items-center gap-3">
-                                <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold">Issue Status - Action Required</h3>
-                                    <p class="text-red-100 text-sm">This case needs immediate attention</p>
-                                </div>
+                        <h3 class="text-xl font-bold text-slate-800">Activity Timeline</h3>
+                    </div>
+
+                    <div id="activity-log-container" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
+                        <?php
+                        if (!empty($case['systemLogs'])) {
+                            foreach (array_reverse($case['systemLogs']) as $log) {
+                                $date = date('M j, g:i A', strtotime($log['timestamp']));
+                                echo "<div class='timeline-item'>";
+                                echo "<div class='bg-white p-4 rounded-xl border border-slate-200 hover:shadow-md transition-shadow'>";
+                                echo "<div class='text-xs text-slate-500 mb-1 font-medium'>{$date}</div>";
+                                echo "<div class='text-sm text-slate-700 leading-relaxed'>" . htmlspecialchars($log['message']) . "</div>";
+                                echo "</div>";
+                                echo "</div>";
+                            }
+                        } else {
+                            echo "<div class='text-center py-8'>";
+                            echo "<i data-lucide='inbox' class='w-12 h-12 text-slate-300 mx-auto mb-3'></i>";
+                            echo "<p class='text-sm text-slate-500 font-medium'>No activity recorded</p>";
+                            echo "</div>";
+                        }
+                        ?>
+                    </div>
+                </div>
+
+                <!-- Customer Review -->
+                <div class="section-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="gradient-bg p-3 rounded-xl">
+                                <i data-lucide="star" class="w-6 h-6 text-white"></i>
                             </div>
+                            <h3 class="text-xl font-bold text-slate-800">Customer Review</h3>
+                        </div>
+                        <button id="btn-edit-review" class="text-slate-400 hover:text-slate-600 transition-colors">
+                            <i data-lucide="edit" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div id="review-display">
+                        <?php if (!empty($case['reviewStars'])): ?>
+                        <div class="text-center mb-4">
+                            <div class="flex justify-center gap-1 mb-2">
+                                <?php for ($i = 1; $i <= 5; $i++): ?>
+                                    <i data-lucide="star" class="w-8 h-8 <?php echo $i <= $case['reviewStars'] ? 'text-amber-400 fill-current' : 'text-slate-300'; ?>"></i>
+                                <?php endfor; ?>
+                            </div>
+                            <span class="text-3xl font-black text-amber-600"><?php echo $case['reviewStars']; ?>/5</span>
+                        </div>
+                        <?php if (!empty($case['reviewComment'])): ?>
+                        <div class="bg-amber-50 p-4 rounded-xl border-2 border-amber-200">
+                            <p class="text-sm text-slate-700 italic leading-relaxed"><?php echo htmlspecialchars($case['reviewComment']); ?></p>
+                        </div>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <div class="text-center py-8">
+                            <i data-lucide="star" class="w-16 h-16 text-amber-300 mx-auto mb-4"></i>
+                            <p class="text-lg text-slate-500 font-medium">No review yet</p>
+                            <p class="text-sm text-slate-400 mt-1">Customer feedback will appear here</p>
                         </div>
                         <?php endif; ?>
                     </div>
 
-                    <!-- Internal Notes - High Priority -->
-                    <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden mb-6 card-hover">
-                        <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="sticky-note" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Internal Notes</h3>
-                                </div>
-                                <div class="text-xs text-slate-300 bg-white/10 px-2 py-1 rounded-full">
-                                    <?php echo count($case['internalNotes'] ?? []); ?> notes
-                                </div>
-                            </div>
+                    <div id="review-edit" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-2">Rating</label>
+                            <select id="input-review-stars" class="modern-input w-full px-4 py-3 rounded-xl text-lg font-bold">
+                                <option value="">No rating</option>
+                                <option value="1" <?php echo $case['reviewStars'] == 1 ? 'selected' : ''; ?>>⭐ 1 Star</option>
+                                <option value="2" <?php echo $case['reviewStars'] == 2 ? 'selected' : ''; ?>>⭐⭐ 2 Stars</option>
+                                <option value="3" <?php echo $case['reviewStars'] == 3 ? 'selected' : ''; ?>>⭐⭐⭐ 3 Stars</option>
+                                <option value="4" <?php echo $case['reviewStars'] == 4 ? 'selected' : ''; ?>>⭐⭐⭐⭐ 4 Stars</option>
+                                <option value="5" <?php echo $case['reviewStars'] == 5 ? 'selected' : ''; ?>>⭐⭐⭐⭐⭐ 5 Stars</option>
+                            </select>
                         </div>
-                        <div class="p-4">
-                            <div id="notes-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto custom-scrollbar">
-                                <?php
-                                if (!empty($case['internalNotes'])) {
-                                    foreach ($case['internalNotes'] as $note) {
-                                        $date = date('M j, g:i A', strtotime($note['timestamp']));
-                                        echo "<div class='bg-slate-50 p-4 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors group'>";
-                                        echo "<p class='text-sm text-slate-700 mb-2 leading-relaxed'>" . htmlspecialchars($note['text']) . "</p>";
-                                        echo "<div class='flex justify-between items-center'>";
-                                        echo "<span class='text-xs text-slate-400 bg-white px-3 py-1 rounded-full font-medium border border-slate-200'>" . htmlspecialchars($note['authorName'] ?? 'Manager') . "</span>";
-                                        echo "<span class='text-xs text-slate-500 font-medium'>{$date}</span>";
-                                        echo "</div>";
-                                        echo "</div>";
-                                    }
-                                } else {
-                                    echo "<div class='text-center py-8'>";
-                                    echo "<i data-lucide='inbox' class='w-12 h-12 text-slate-300 mx-auto mb-3'></i>";
-                                    echo "<p class='text-sm text-slate-500 font-medium'>No internal notes yet</p>";
-                                    echo "<p class='text-xs text-slate-400 mt-1'>Add notes to track important information</p>";
-                                    echo "</div>";
-                                }
-                                ?>
-                            </div>
-                            <div class="flex gap-3">
-                                <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 outline-none transition-all">
-                                <button onclick="addNote()" class="bg-slate-700 hover:bg-slate-800 text-white px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-lg hover:shadow-xl active:scale-95">
-                                    <i data-lucide="plus" class="w-5 h-5"></i>
-                                </button>
-                            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-2">Comment</label>
+                            <textarea id="input-review-comment" rows="4" placeholder="Customer feedback..." class="modern-input w-full px-4 py-3 rounded-xl text-sm resize-none"><?php echo htmlspecialchars($case['reviewComment'] ?? ''); ?></textarea>
+                        </div>
+                        <div class="flex gap-3">
+                            <button id="btn-save-review" class="action-button flex-1 flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                Save Review
+                            </button>
+                            <button id="btn-cancel-review" class="px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all">
+                                Cancel
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <!-- Left Column: Core Information -->
-                        <div class="space-y-4">
-                            <!-- Order Information Card -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Order Details</h3>
-                                    </div>
-                                </div>
-                                <div class="p-4 space-y-4">
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Customer Name</label>
-                                        <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" placeholder="Customer Name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-semibold text-slate-800 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Vehicle Plate</label>
-                                        <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" placeholder="Vehicle Plate" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-semibold text-slate-800 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Amount</label>
-                                        <div class="flex items-center gap-3">
-                                            <div class="bg-emerald-100 p-3 rounded-lg">
-                                                <i data-lucide="coins" class="w-6 h-6 text-emerald-600"></i>
-                                            </div>
-                                            <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" placeholder="0.00" class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-2xl font-bold text-emerald-600 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none transition-all">
-                                            <span class="text-2xl font-bold text-emerald-600">₾</span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Franchise</label>
-                                        <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" placeholder="0.00" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-semibold text-orange-600 focus:bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none transition-all">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-blue-600 font-bold uppercase tracking-wider">Created At</label>
-                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                            <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
-                                            <span id="case-created-date" class="font-medium text-slate-700"><?php echo date('M j, Y g:i A', strtotime($case['created_at'])); ?></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Vehicle Information -->
+                <div class="section-card p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="gradient-bg p-3 rounded-xl">
+                            <i data-lucide="car" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">Vehicle Info</h3>
+                    </div>
 
-                            <!-- Status Selection -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                                <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="activity" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Workflow Stage</h3>
-                                    </div>
-                                </div>
-                                <div class="p-4">
-                                    <div class="relative">
-                                        <select id="input-status" class="w-full appearance-none bg-slate-50 border-2 border-purple-200 text-slate-800 py-4 px-4 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-lg font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
-                                            <option value="New" <?php echo $case['status'] === 'New' ? 'selected' : ''; ?>>🔵 New Case</option>
-                                            <option value="Processing" <?php echo $case['status'] === 'Processing' ? 'selected' : ''; ?>>🟡 Processing</option>
-                                            <option value="Called" <?php echo $case['status'] === 'Called' ? 'selected' : ''; ?>>🟣 Contacted</option>
-                                            <option value="Parts Ordered" <?php echo $case['status'] === 'Parts Ordered' ? 'selected' : ''; ?>>📦 Parts Ordered</option>
-                                            <option value="Parts Arrived" <?php echo $case['status'] === 'Parts Arrived' ? 'selected' : ''; ?>>🏁 Parts Arrived</option>
-                                            <option value="Scheduled" <?php echo $case['status'] === 'Scheduled' ? 'selected' : ''; ?>>🟠 Scheduled</option>
-                                            <option value="Completed" <?php echo $case['status'] === 'Completed' ? 'selected' : ''; ?>>🟢 Completed</option>
-                                            <option value="Issue" <?php echo $case['status'] === 'Issue' ? 'selected' : ''; ?>>🔴 Issue</option>
-                                        </select>
-                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-purple-400">
-                                            <i data-lucide="chevron-down" class="w-6 h-6"></i>
-                                        </div>
-                                    </div>
-                                    <div class="mt-3 text-center">
-                                        <button onclick="saveChanges()" class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
-                                            <i data-lucide="save" class="w-5 h-5"></i>
-                                            <span>Update Status</span>
-                                        </button>
-                                    </div>
-                                </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                            <i data-lucide="user" class="w-5 h-5 text-slate-400"></i>
+                            <div>
+                                <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Owner</div>
+                                <div class="font-medium text-slate-700"><?php echo htmlspecialchars($case['vehicle_owner'] ?? 'Not specified'); ?></div>
                             </div>
                         </div>
 
-                        <!-- Middle Column: Contact & Appointment -->
-                        <div class="space-y-4">
-                            <!-- Contact Information -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                                <div class="bg-gradient-to-r from-teal-600 to-teal-700 px-4 py-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="phone" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Contact Information</h3>
-                                    </div>
-                                </div>
-                                <div class="p-4">
-                                    <div class="space-y-3">
-                                        <div class="flex gap-3">
-                                            <div class="relative flex-1">
-                                                <i data-lucide="smartphone" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-teal-500"></i>
-                                                <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" placeholder="Phone Number" class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-teal-200 rounded-xl text-lg font-semibold text-slate-800 focus:bg-white focus:ring-4 focus:ring-teal-500/20 focus:border-teal-400 outline-none shadow-sm transition-all">
-                                            </div>
-                                            <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-xl hover:scale-105 transition-all shadow-lg active:scale-95">
-                                                <i data-lucide="phone-call" class="w-6 h-6"></i>
-                                            </a>
-                                        </div>
-                                        <div class="grid grid-cols-2 gap-3">
-                                            <button onclick="sendQuickSMS('welcome')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl transition-all hover:shadow-md active:scale-95 flex flex-col items-center gap-1">
-                                                <i data-lucide="message-square" class="w-5 h-5"></i>
-                                                <span class="text-xs font-medium">Welcome</span>
-                                            </button>
-                                            <button onclick="sendQuickSMS('schedule')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl transition-all hover:shadow-md active:scale-95 flex flex-col items-center gap-1">
-                                                <i data-lucide="calendar-check" class="w-5 h-5"></i>
-                                                <span class="text-xs font-medium">Schedule</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Service Appointment -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                                <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-4 py-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="calendar-check" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Service Appointment</h3>
-                                    </div>
-                                </div>
-                                <div class="p-4">
-                                    <div class="space-y-3">
-                                        <div class="relative">
-                                            <i data-lucide="calendar" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-orange-500"></i>
-                                            <input id="input-service-date" type="datetime-local" value="<?php echo $case['serviceDate'] ? date('Y-m-d\TH:i', strtotime($case['serviceDate'])) : ''; ?>" class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-orange-200 rounded-xl text-lg font-semibold focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-400/20 outline-none shadow-sm transition-all">
-                                        </div>
-                                        <?php if ($case['serviceDate']): ?>
-                                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                            <div class="flex items-center gap-2 text-orange-700">
-                                                <i data-lucide="clock" class="w-4 h-4"></i>
-                                                <span class="text-sm font-medium">Scheduled for: <?php echo date('M j, Y g:i A', strtotime($case['serviceDate'])); ?></span>
-                                            </div>
-                                        </div>
-                                        <?php endif; ?>
-                                        <button onclick="sendQuickSMS('parts_arrived')" class="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
-                                            <i data-lucide="package-check" class="w-5 h-5"></i>
-                                            <span>Send Parts Arrived SMS</span>
-                                        </button>
-                                    </div>
-                                </div>
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                            <i data-lucide="car" class="w-5 h-5 text-slate-400"></i>
+                            <div>
+                                <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Model</div>
+                                <div class="font-medium text-slate-700"><?php echo htmlspecialchars($case['vehicle_model'] ?? 'Not specified'); ?></div>
                             </div>
                         </div>
 
-                        <!-- Right Column: Vehicle Info -->
-                        <div class="space-y-3">
-                            <!-- Vehicle Information -->
-                            <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                                <div class="bg-gradient-to-r from-slate-600 to-slate-700 px-3 py-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                            <i data-lucide="car" class="w-5 h-5 text-white"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Vehicle Information</h3>
-                                    </div>
-                                </div>
-                                <div class="p-3 space-y-4">
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-slate-600 font-bold uppercase tracking-wider">Owner Name</label>
-                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                            <i data-lucide="user" class="w-5 h-5 text-slate-400"></i>
-                                            <span class="font-medium text-slate-700"><?php echo htmlspecialchars($case['vehicle_owner'] ?? 'Not specified'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-slate-600 font-bold uppercase tracking-wider">Model</label>
-                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                            <i data-lucide="car" class="w-5 h-5 text-slate-400"></i>
-                                            <span class="font-medium text-slate-700"><?php echo htmlspecialchars($case['vehicle_model'] ?? 'Not specified'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-xs text-slate-600 font-bold uppercase tracking-wider">License Plate</label>
-                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                            <i data-lucide="hash" class="w-5 h-5 text-slate-400"></i>
-                                            <span class="font-mono font-bold text-slate-800 text-lg"><?php echo htmlspecialchars($case['plate']); ?></span>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                            <i data-lucide="hash" class="w-5 h-5 text-slate-400"></i>
+                            <div>
+                                <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Plate</div>
+                                <div class="font-mono font-bold text-slate-800 text-lg"><?php echo htmlspecialchars($case['plate']); ?></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Communication Tab -->
-                <div id="tab-content-communication" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <!-- Quick SMS Actions -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="message-circle" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Quick SMS Actions</h3>
-                                </div>
-                            </div>
-                            <div class="p-4 space-y-3">
-                                <button id="btn-sms-register" class="group w-full flex justify-between items-center px-6 py-5 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:from-indigo-50 hover:to-indigo-100">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-indigo-700">Send Welcome SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Registration confirmation</div>
-                                    </div>
-                                    <div class="bg-indigo-100 group-hover:bg-indigo-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="message-square" class="w-6 h-6 text-indigo-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                                <button id="btn-sms-arrived" class="group w-full flex justify-between items-center px-6 py-5 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-teal-200 rounded-xl hover:border-teal-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:from-teal-50 hover:to-teal-100">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-teal-700">Parts Arrived SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Includes customer link</div>
-                                    </div>
-                                    <div class="bg-teal-100 group-hover:bg-teal-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="package-check" class="w-6 h-6 text-teal-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                                <button id="btn-sms-schedule" class="group w-full flex justify-between items-center px-6 py-5 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:from-orange-50 hover:to-orange-100">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-orange-700">Send Schedule SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Appointment reminder</div>
-                                    </div>
-                                    <div class="bg-orange-100 group-hover:bg-orange-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="calendar-check" class="w-6 h-6 text-orange-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                                <button id="btn-sms-called" class="group w-full flex justify-between items-center px-6 py-5 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:from-purple-50 hover:to-purple-100">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-purple-700">Send Called SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Contact confirmation</div>
-                                    </div>
-                                    <div class="bg-purple-100 group-hover:bg-purple-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="phone-call" class="w-6 h-6 text-purple-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                                <button id="btn-sms-completed" class="group w-full flex justify-between items-center px-6 py-5 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-green-200 rounded-xl hover:border-green-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:from-green-50 hover:to-green-100">
-                                    <div>
-                                        <div class="text-lg font-bold text-slate-800 group-hover:text-green-700">Send Completed SMS</div>
-                                        <div class="text-sm text-slate-500 mt-1">Service completion & review</div>
-                                    </div>
-                                    <div class="bg-green-100 group-hover:bg-green-600 p-3 rounded-lg transition-colors">
-                                        <i data-lucide="check-circle" class="w-6 h-6 text-green-600 group-hover:text-white"></i>
-                                    </div>
-                                </button>
-                            </div>
+                <!-- Actions Panel -->
+                <div class="section-card p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="gradient-bg p-3 rounded-xl">
+                            <i data-lucide="settings" class="w-6 h-6 text-white"></i>
                         </div>
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-violet-600 to-violet-700 px-3 py-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="message-square" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Advanced SMS</h3>
-                                </div>
-                            </div>
-                            <div class="p-3 space-y-4">
-                                <div class="space-y-2">
-                                    <label class="block text-sm text-violet-600 font-bold uppercase tracking-wider">Select Template</label>
-                                    <select id="sms-template-selector" class="w-full bg-slate-50 border-2 border-violet-200 rounded-xl p-4 text-lg font-medium focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-400/20 outline-none shadow-sm transition-all">
-                                        <option value="">Choose a template...</option>
-                                        <?php foreach ($smsTemplates as $slug => $template): ?>
-                                        <option value="<?php echo htmlspecialchars($slug); ?>" data-content="<?php echo htmlspecialchars($template['content']); ?>">
-                                            <?php echo htmlspecialchars($template['name'] ?? ucfirst(str_replace('_', ' ', $slug))); ?>
-                                        </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="block text-sm text-violet-600 font-bold uppercase tracking-wider">Message Preview</label>
-                                    <div id="sms-preview" class="bg-slate-50 border-2 border-violet-200 rounded-xl p-4 min-h-[100px] text-sm text-slate-700 whitespace-pre-wrap shadow-sm">
-                                        <span class="text-slate-400 italic">Select a template to see preview...</span>
-                                    </div>
-                                </div>
-                                <button id="btn-send-custom-sms" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                    <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
-                                    Send Custom SMS
-                                </button>
-                            </div>
+                        <h3 class="text-xl font-bold text-slate-800">Actions</h3>
+                    </div>
+
+                    <div class="space-y-4">
+                        <button onclick="saveChanges()" class="action-button w-full flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-5 h-5"></i>
+                            <span>Save All Changes</span>
+                        </button>
+
+                        <button onclick="printCase()" class="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                            <i data-lucide="printer" class="w-5 h-5"></i>
+                            <span>Print Case Details</span>
+                        </button>
+
+                        <div class="section-divider my-6"></div>
+
+                        <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                            <h4 class="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                Danger Zone
+                            </h4>
+                            <p class="text-sm text-red-700 mb-4">This action cannot be undone.</p>
+                            <button onclick="deleteCase()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                <span>Delete This Case</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- History & Notes Tab -->
-                <div id="tab-content-history" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        <!-- Activity Timeline -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-slate-700 to-slate-600 px-3 py-2">
-                                <div class="flex items-center gap-3">
-                                    <i data-lucide="history" class="w-5 h-5 text-white"></i>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Activity Timeline</h3>
-                                </div>
-                            </div>
-                            <div id="activity-log-container" class="p-3 max-h-80 overflow-y-auto custom-scrollbar space-y-4">
-                                <?php
-                                if (!empty($case['systemLogs'])) {
-                                    foreach (array_reverse($case['systemLogs']) as $log) {
-                                        $date = date('M j, g:i A', strtotime($log['timestamp']));
-                                        echo "<div class='flex items-start gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors'>";
-                                        echo "<div class='bg-slate-200 rounded-full p-2 mt-0.5'>";
-                                        echo "<i data-lucide='activity' class='w-4 h-4 text-slate-600'></i>";
-                                        echo "</div>";
-                                        echo "<div class='flex-1 min-w-0'>";
-                                        echo "<div class='text-xs text-slate-500 mb-1 font-medium'>{$date}</div>";
-                                        echo "<div class='text-sm text-slate-700 leading-relaxed'>" . htmlspecialchars($log['message']) . "</div>";
-                                        echo "</div>";
-                                        echo "</div>";
-                                    }
-                                } else {
-                                    echo "<div class='text-center py-8'>";
-                                    echo "<i data-lucide='inbox' class='w-12 h-12 text-slate-300 mx-auto mb-3'></i>";
-                                    echo "<p class='text-sm text-slate-500 font-medium'>No activity recorded</p>";
-                                    echo "</div>";
-                                }
-                                ?>
-                            </div>
-                        </div>
+            </div>
+        </div>
 
-                        <!-- Customer Review Section -->
-                        <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-amber-500 to-yellow-500 px-3 py-2 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                                        <i data-lucide="star" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Customer Review</h3>
-                                </div>
-                                <button id="btn-edit-review" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all text-sm font-bold">
-                                    <i data-lucide="edit" class="w-4 h-4 inline mr-1"></i>
-                                    Edit
-                                </button>
-                            </div>
-                            <div id="review-display" class="p-3 space-y-4">
-                                <?php if (!empty($case['reviewStars'])): ?>
-                                <div class="flex items-center gap-4">
-                                    <div class="flex gap-1">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i data-lucide="star" class="w-6 h-6 <?php echo $i <= $case['reviewStars'] ? 'text-amber-400 fill-current' : 'text-slate-300'; ?>"></i>
-                                        <?php endfor; ?>
-                                    </div>
-                                    <span class="text-4xl font-black text-amber-600"><?php echo $case['reviewStars']; ?>/5</span>
-                                </div>
-                                <?php if (!empty($case['reviewComment'])): ?>
-                                <div class="bg-amber-50 p-4 rounded-lg border-2 border-amber-200">
-                                    <p class="text-sm text-slate-700 italic leading-relaxed"><?php echo htmlspecialchars($case['reviewComment']); ?></p>
-                                </div>
-                                <?php endif; ?>
-                                <?php else: ?>
-                                <div class="text-center py-8">
-                                    <i data-lucide="star" class="w-16 h-16 text-amber-300 mx-auto mb-3"></i>
-                                    <p class="text-lg text-slate-500 font-medium">No review yet</p>
+        <!-- Reschedule Request Section (if applicable) -->
+        <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
+        <div class="section-card p-8 mt-8 border-2 border-purple-200">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-r from-purple-600 to-fuchsia-600 p-3 rounded-xl">
+                        <i data-lucide="calendar-clock" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">Reschedule Request</h3>
+                        <span class="status-badge bg-purple-100 text-purple-800 mt-1">Pending</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white/80 p-4 rounded-xl border-2 border-purple-200">
+                    <span class="text-sm text-purple-700 font-bold block mb-2 uppercase tracking-wider">Requested Date</span>
+                    <div class="flex items-center gap-3">
+                        <div class="bg-purple-100 p-2 rounded-lg">
+                            <i data-lucide="calendar" class="w-5 h-5 text-purple-600"></i>
+                        </div>
+                        <span class="text-lg font-bold text-slate-800"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span>
+                    </div>
+                </div>
+
+                <?php if (!empty($case['rescheduleComment'])): ?>
+                <div class="bg-white/80 p-4 rounded-xl border-2 border-purple-200">
+                    <span class="text-sm text-purple-700 font-bold block mb-2 uppercase tracking-wider">Customer Comment</span>
+                    <p class="text-sm text-slate-700 leading-relaxed"><?php echo htmlspecialchars($case['rescheduleComment']); ?></p>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="acceptReschedule()" class="action-button flex-1 flex items-center justify-center gap-2">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                    Accept Request
+                </button>
+                <button onclick="declineReschedule()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                    Decline Request
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-50 no-print">
+        <button onclick="saveChanges()" class="action-button p-4 rounded-full flex items-center justify-center gap-2 shadow-2xl">
+            <i data-lucide="save" class="w-6 h-6"></i>
+        </button>
+        <button onclick="deleteCase()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white p-4 rounded-full font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center gap-2">
+            <i data-lucide="trash-2" class="w-6 h-6"></i>
+        </button>
+    </div>
                                 </div>
                                 <?php endif; ?>
                             </div>
@@ -838,10 +843,10 @@ try {
 
                 <!-- Actions Tab -->
                 <div id="tab-content-actions" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                         <!-- Case Actions -->
                         <div class="bg-white rounded-xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
+                            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-2">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                         <i data-lucide="settings" class="w-5 h-5 text-white"></i>
@@ -849,25 +854,21 @@ try {
                                     <h3 class="text-lg font-bold text-white uppercase tracking-wider">Case Actions</h3>
                                 </div>
                             </div>
-                            <div class="p-4 space-y-4">
+                            <div class="p-3 space-y-4">
                                 <button onclick="saveChanges()" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
                                     <i data-lucide="save" class="w-6 h-6"></i>
                                     <span>Save All Changes</span>
                                 </button>
-                                <button onclick="printCase()" class="w-full bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                                <button onclick="printCase()" class="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
                                     <i data-lucide="printer" class="w-6 h-6"></i>
                                     <span>Print Case Details</span>
-                                </button>
-                                <button onclick="exportCase()" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                                    <i data-lucide="download" class="w-6 h-6"></i>
-                                    <span>Export Case Data</span>
                                 </button>
                             </div>
                         </div>
 
                         <!-- Danger Zone -->
                         <div class="bg-white rounded-xl shadow-lg shadow-red-200/60 border border-red-200/80 overflow-hidden">
-                            <div class="bg-gradient-to-r from-red-600 to-red-700 px-4 py-3">
+                            <div class="bg-gradient-to-r from-red-600 to-red-700 px-3 py-2">
                                 <div class="flex items-center gap-3">
                                     <div class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
                                         <i data-lucide="alert-triangle" class="w-5 h-5 text-white"></i>
@@ -875,19 +876,12 @@ try {
                                     <h3 class="text-lg font-bold text-white uppercase tracking-wider">Danger Zone</h3>
                                 </div>
                             </div>
-                            <div class="p-4 space-y-4">
+                            <div class="p-3 space-y-4">
                                 <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                                    <h4 class="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
-                                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
-                                        Irreversible Actions
-                                    </h4>
+                                    <h4 class="text-sm font-bold text-red-800 mb-2">⚠️ Irreversible Actions</h4>
                                     <p class="text-sm text-red-700 mb-4">These actions cannot be undone. Please proceed with caution.</p>
                                 </div>
-                                <button onclick="archiveCase()" class="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                                    <i data-lucide="archive" class="w-6 h-6"></i>
-                                    <span>Archive Case</span>
-                                </button>
-                                <button onclick="deleteCase()" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                                <button onclick="deleteCase()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
                                     <i data-lucide="trash-2" class="w-6 h-6"></i>
                                     <span>Delete This Case</span>
                                 </button>
@@ -901,14 +895,10 @@ try {
     </div>
 
     <!-- Floating Action Buttons -->
-    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-50 no-print">
+    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
         <button onclick="saveChanges()" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 group">
             <i data-lucide="save" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
             <span class="hidden lg:inline ml-2">Save Changes</span>
-        </button>
-        <button onclick="sendQuickSMS('welcome')" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white p-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 group">
-            <i data-lucide="message-square" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
-            <span class="hidden lg:inline ml-2">Send SMS</span>
         </button>
         <button onclick="deleteCase()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white p-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 group">
             <i data-lucide="trash-2" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
@@ -1108,71 +1098,6 @@ try {
             }
         }
 
-        // Send quick SMS
-        function sendQuickSMS(type) {
-            const phone = document.getElementById('input-phone')?.value;
-            if (!phone) {
-                showToast('No Phone Number', 'Please enter a phone number first', 'error');
-                return;
-            }
-
-            const templateData = {
-                name: currentCase.name,
-                plate: currentCase.plate,
-                amount: currentCase.amount,
-                serviceDate: document.getElementById('input-service-date')?.value || currentCase.serviceDate,
-                date: document.getElementById('input-service-date')?.value || currentCase.serviceDate,
-                link: `${window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php')}?id=${CASE_ID}`
-            };
-
-            const msg = getFormattedMessage(type, templateData);
-            sendSMS(phone, msg, type);
-        }
-
-        // Export case data
-        function exportCase() {
-            const data = {
-                case: currentCase,
-                exported_at: new Date().toISOString(),
-                exported_by: '<?php echo addslashes($current_user_name); ?>'
-            };
-
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `case_${CASE_ID}_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            showToast('Case Exported', 'Case data has been downloaded', 'success');
-        }
-
-        // Archive case
-        async function archiveCase() {
-            if (!confirm('Archive this case? It will be moved to archived status and hidden from active cases.')) return;
-
-            try {
-                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', {
-                    status: 'Archived',
-                    systemLogs: [...(currentCase.systemLogs || []), {
-                        message: 'Case archived',
-                        timestamp: new Date().toISOString(),
-                        type: 'info'
-                    }]
-                });
-
-                showToast('Case Archived', 'The case has been moved to archive', 'success');
-                setTimeout(() => window.location.href = 'index.php', 1000);
-
-            } catch (error) {
-                console.error('Archive error:', error);
-                showToast('Archive Failed', 'Failed to archive case', 'error');
-            }
-        }
-
         // Accept reschedule
         async function acceptReschedule() {
             if (!confirm('Accept reschedule request and update appointment?')) return;
@@ -1332,31 +1257,6 @@ try {
             window.print();
         }
 
-        // Update header status badge
-        function updateHeaderStatus(status) {
-            const badge = document.getElementById('header-status-badge');
-            if (!badge) return;
-
-            const statusColors = {
-                'New': 'bg-blue-100 text-blue-800 border-blue-200',
-                'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                'Called': 'bg-purple-100 text-purple-800 border-purple-200',
-                'Parts Ordered': 'bg-orange-100 text-orange-800 border-orange-200',
-                'Parts Arrived': 'bg-green-100 text-green-800 border-green-200',
-                'Scheduled': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                'Issue': 'bg-red-100 text-red-800 border-red-200'
-            };
-
-            // Remove all existing color classes
-            badge.className = badge.className.replace(/bg-\w+-\d+.*?\s/g, '').replace(/text-\w+-\d+.*?\s/g, '').replace(/border-\w+-\d+.*?\s/g, '');
-
-            // Add new color classes
-            const colors = statusColors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
-            badge.className += ' ' + colors;
-            badge.textContent = status;
-        }
-
         // Save changes
         async function saveChanges() {
             if (!CAN_EDIT) {
@@ -1472,9 +1372,6 @@ try {
                 Object.assign(currentCase, updates);
 
                 showToast("Changes Saved", "Case has been updated successfully", "success");
-
-                // Update header status badge
-                updateHeaderStatus(status);
 
                 // Refresh activity log
                 updateActivityLog();
@@ -1688,52 +1585,12 @@ try {
             // Initialize
             initializeIcons();
 
-            // Tab switching functionality
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
+            // Tab switching functionality - REMOVED (no longer using tabs)
 
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Remove active class from all tabs
-                    tabButtons.forEach(btn => {
-                        btn.classList.remove('active');
-                        btn.classList.remove('border-b-3', 'border-blue-500');
-                        btn.classList.add('text-slate-600');
-                        // Reset icon backgrounds
-                        const iconBg = btn.querySelector('.bg-blue-100');
-                        if (iconBg) {
-                            iconBg.classList.remove('bg-blue-100');
-                            iconBg.classList.add('bg-slate-100');
-                        }
-                    });
-
-                    // Hide all tab contents
-                    tabContents.forEach(content => {
-                        content.classList.add('hidden');
-                    });
-
-                    // Add active class to clicked tab
-                    button.classList.add('active');
-                    button.classList.add('border-b-3', 'border-blue-500');
-                    button.classList.remove('text-slate-600');
-                    button.classList.add('text-slate-700');
-
-                    // Update icon background for active tab
-                    const iconBg = button.querySelector('.bg-slate-100');
-                    if (iconBg) {
-                        iconBg.classList.remove('bg-slate-100');
-                        iconBg.classList.add('bg-blue-100');
-                    }
-
-                    // Show corresponding tab content
-                    const tabId = button.id.replace('tab-', 'tab-content-');
-                    const tabContent = document.getElementById(tabId);
-                    if (tabContent) {
-                        tabContent.classList.remove('hidden');
-                        // Smooth scroll to top of tab content
-                        tabContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                });
+            // Enter key for notes
+            const noteInputEl = document.getElementById('new-note-input');
+            if (noteInputEl) noteInputEl.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addNote();
             });
         });
     </script>
