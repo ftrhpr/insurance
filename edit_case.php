@@ -985,9 +985,9 @@ try {
             const serviceDate = serviceDateEl ? serviceDateEl.value : currentCase.serviceDate;
             const franchise = franchiseEl ? franchiseEl.value : currentCase.franchise;
 
-            // Validation: Parts Arrived requires a date
-            if (status === 'Parts Arrived' && !serviceDate) {
-                showToast("Scheduling Required", "Please select a service date to save 'Parts Arrived' status.", "error");
+            // Validation: Parts Arrived and Scheduled require a date
+            if ((status === 'Parts Arrived' || status === 'Scheduled') && !serviceDate) {
+                showToast("Scheduling Required", `Please select a service date to save '${status}' status.`, "error");
                 return;
             }
 

@@ -2014,13 +2014,36 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
                             <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
                         </div>`;
+                    } else if (t.status === 'Scheduled' && !t.serviceDate) {
+                        serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
                     } else if (t.serviceDate) {
-                        const svcDate = new Date(t.serviceDate.replace(' ', 'T'));
-                        const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                        serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
-                            <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
-                            <span class="font-semibold">${svcDateStr}</span>
-                        </div>`;
+                        try {
+                            // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
+                            let dateStr = t.serviceDate;
+                            if (dateStr.includes(' ')) {
+                                // MySQL DATETIME format: replace space with T
+                                dateStr = dateStr.replace(' ', 'T');
+                            }
+                            // Ensure it has seconds
+                            if (dateStr.length === 16) {
+                                dateStr += ':00';
+                            } else if (dateStr.length === 19 && dateStr.includes('T')) {
+                                // Already in full ISO format
+                            }
+                            
+                            const svcDate = new Date(dateStr);
+                            if (!isNaN(svcDate.getTime())) {
+                                const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
+                                    <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span class="font-semibold">${svcDateStr}</span>
+                                </div>`;
+                            } else {
+                                serviceDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
+                            }
+                        } catch (e) {
+                            serviceDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
+                        }
                     }
                     
                     // Review stars display
@@ -2794,13 +2817,34 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     minute: '2-digit'
                 })}`;
             } else if (t.serviceDate) {
-                const svcDate = new Date(t.serviceDate.replace(' ', 'T'));
-                serviceDateText = svcDate.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+                try {
+                    // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
+                    let dateStr = t.serviceDate;
+                    if (dateStr.includes(' ')) {
+                        // MySQL DATETIME format: replace space with T
+                        dateStr = dateStr.replace(' ', 'T');
+                    }
+                    // Ensure it has seconds
+                    if (dateStr.length === 16) {
+                        dateStr += ':00';
+                    } else if (dateStr.length === 19 && dateStr.includes('T')) {
+                        // Already in full ISO format
+                    }
+                    
+                    const svcDate = new Date(dateStr);
+                    if (!isNaN(svcDate.getTime())) {
+                        serviceDateText = svcDate.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } else {
+                        serviceDateText = 'Invalid date format';
+                    }
+                } catch (e) {
+                    serviceDateText = 'Date parsing error';
+                }
             }
             document.getElementById('invoice-service-date').textContent = serviceDateText;
 
