@@ -649,12 +649,6 @@ try {
             template = template.replace(/{amount}/g, data.amount || '');
             template = template.replace(/{date}/g, data.date || '');
             template = template.replace(/{link}/g, data.link || '');
-
-            // Fallback: if template doesn't contain {link} but data.link is provided, append it
-            if (data.link && !template.includes(data.link) && template.indexOf('{link}') === -1) {
-                template += ' ' + data.link;
-            }
-
             return template;
         }
 

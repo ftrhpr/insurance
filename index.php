@@ -1574,7 +1574,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             'parts_arrived': "<?php echo __('sms.parts_arrived'); ?>",
             'rescheduled': "<?php echo __('sms.rescheduled', 'Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}'); ?>",
             'reschedule_accepted': "<?php echo __('sms.reschedule_accepted'); ?>",
-            'completed': "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
+            'completed': "Service for {plate} is completed. Rate your experience: {link}",
             'issue': "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly.",
             'system': "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
         };
