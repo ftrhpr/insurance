@@ -989,12 +989,14 @@ try {
                 });
 
                 if (phone && smsWorkflowBindings && smsWorkflowBindings[status]) {
+                    const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
                     const templateData = {
                         id: currentCase.id,
                         name: currentCase.name,
                         plate: currentCase.plate,
                         amount: currentCase.amount,
-                        serviceDate: serviceDate || currentCase.serviceDate
+                        serviceDate: serviceDate || currentCase.serviceDate,
+                        link: `${publicUrl}?id=${CASE_ID}`
                     };
 
                     smsWorkflowBindings[status].forEach(template => {
@@ -1126,13 +1128,15 @@ try {
                 // Get template data and format message
                 const template = smsTemplates[templateSlug];
                 if (template) {
+                    const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
                     const templateData = {
                         id: CASE_ID,
                         name: (document.getElementById('input-name')?.value || currentCase.name),
                         plate: (document.getElementById('input-plate')?.value || currentCase.plate),
                         amount: (document.getElementById('input-amount')?.value || currentCase.amount),
                         serviceDate: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
-                        date: (document.getElementById('input-service-date')?.value || currentCase.serviceDate)
+                        date: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
+                        link: `${publicUrl}?id=${CASE_ID}`
                     };
 
                     const formattedMessage = getFormattedMessage(templateSlug, templateData);
@@ -1159,7 +1163,8 @@ try {
                     plate: (document.getElementById('input-plate')?.value || currentCase.plate),
                     amount: (document.getElementById('input-amount')?.value || currentCase.amount),
                     serviceDate: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
-                    date: (document.getElementById('input-service-date')?.value || currentCase.serviceDate)
+                    date: (document.getElementById('input-service-date')?.value || currentCase.serviceDate),
+                    link: `${window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php')}?id=${CASE_ID}`
                 };
 
                 const msg = getFormattedMessage(templateSlug, templateData);
