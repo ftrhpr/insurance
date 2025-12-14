@@ -43,90 +43,544 @@ if ($current_user_role === 'admin') {
     $nav_items['translations'] = ['icon' => 'languages', 'label' => 'Translations', 'url' => 'translations.php'];
 }
 ?>
-<header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-200/80">
-    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-            <!-- Header Left Side: Logo and Navigation -->
-            <div class="flex items-center gap-8">
-                <!-- Logo -->
-                <a href="index.php" class="flex items-center gap-2">
-                    <img src="https://otomotors.ge/wp-content/uploads/2023/10/logo.svg" alt="OTOMOTORS Logo" class="h-8 w-auto">
-                    <span class="font-bold text-lg text-slate-800 tracking-tight">Manager Portal</span>
-                </a>
+<style>
+/* Modern Header Styles - CSP Compatible */
+.modern-header {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(226,232,240,0.8);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
 
-                <!-- Desktop Navigation -->
-                <nav class="hidden md:flex items-center gap-6">
-                    <?php foreach ($nav_items as $page => $item): ?>
-                        <a href="<?php echo $item['url']; ?>" 
-                           class="flex items-center gap-2 text-sm font-semibold transition-colors
-                                  <?php echo ($current_page === $page) 
-                                      ? 'text-blue-600' 
-                                      : 'text-slate-600 hover:text-blue-600'; ?>">
-                            <i data-lucide="<?php echo $item['icon']; ?>" class="w-4 h-4"></i>
-                            <span><?php echo $item['label']; ?></span>
-                        </a>
-                    <?php endforeach; ?>
-                </nav>
+.header-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 4rem;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.logo-icon {
+    position: relative;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 12px rgba(14,165,233,0.3);
+}
+
+.logo-text {
+    font-size: 1.125rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #c026d3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+
+.logo-subtitle {
+    font-size: 0.625rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.nav-section {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .nav-section {
+        display: flex;
+        background: rgba(241,245,249,0.8);
+        padding: 0.375rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(226,232,240,0.6);
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.nav-link-active {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(14,165,233,0.3);
+}
+
+.nav-link-inactive {
+    color: #64748b;
+}
+
+.nav-link-inactive:hover {
+    color: #0f172a;
+    background: rgba(14,165,233,0.08);
+    transform: translateY(-1px);
+}
+
+.user-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-avatar {
+    position: relative;
+    width: 2rem;
+    height: 2rem;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 0.875rem;
+    box-shadow: 0 2px 8px rgba(14,165,233,0.3);
+}
+
+.user-info {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .user-info {
+        display: block;
+        text-align: left;
+    }
+}
+
+.user-name {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    text-transform: capitalize;
+    margin: 0;
+}
+
+.logout-link {
+    color: #dc2626;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.logout-link:hover {
+    background: rgba(220,38,38,0.1);
+    color: #b91c1c;
+}
+
+/* Connection Status */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    background: rgba(241,245,249,0.8);
+    border: 1px solid rgba(226,232,240,0.6);
+}
+
+/* Mobile menu button */
+.mobile-menu-btn {
+    display: block;
+    padding: 0.5rem;
+    background: rgba(241,245,249,0.8);
+    border: 1px solid rgba(226,232,240,0.6);
+    border-radius: 0.5rem;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mobile-menu-btn:hover {
+    background: rgba(14,165,233,0.1);
+    color: #0ea5e9;
+}
+
+@media (min-width: 1024px) {
+    .mobile-menu-btn {
+        display: none;
+    }
+}
+
+/* Language Selector */
+.language-selector {
+    position: relative;
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .language-selector {
+        display: block;
+    }
+}
+
+.language-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 0.375rem;
+}
+
+.language-btn:hover {
+    background: rgba(14,165,233,0.1);
+    color: #0ea5e9;
+}
+
+.refresh-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 0.375rem;
+}
+
+.refresh-btn:hover {
+    background: rgba(14,165,233,0.1);
+    color: #0ea5e9;
+    transform: rotate(180deg);
+}
+
+@media (max-width: 640px) {
+    .refresh-btn {
+        display: none; /* Hide on mobile to save space */
+    }
+}
+
+.language-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    min-width: 120px;
+    display: none;
+    z-index: 50;
+}
+
+.language-option {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    background: none;
+    border: none;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.language-option:hover {
+    background: rgba(14,165,233,0.05);
+    color: #0ea5e9;
+}
+
+.language-option.active {
+    background: rgba(14,165,233,0.1);
+    color: #0ea5e9;
+    font-weight: 600;
+}
+
+.language-option:first-child {
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.language-option:last-child {
+    border-radius: 0 0 0.375rem 0.375rem;
+}
+
+.language-option:only-child {
+    border-radius: 0.375rem;
+}
+</style>
+
+<nav class="modern-header">
+    <div class="header-container">
+        <div class="header-flex">
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <a href="index.php" class="logo-link">
+                    <div class="logo-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H9.6c-.7 0-1.3.3-1.8.7C7 8.6 5.7 10 5.7 10S4.3 10.6 3.5 11.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/>
+                            <circle cx="7" cy="17" r="2"/>
+                            <path d="M9 17h6"/>
+                            <circle cx="17" cy="17" r="2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="logo-text">OTOMOTORS</h1>
+                        <p class="logo-subtitle">Service Manager</p>
+                    </div>
+                </a>
             </div>
 
-            <!-- Header Right Side: User Menu & Actions -->
-            <div class="flex items-center gap-4">
-                 <!-- Language Switcher -->
+            <!-- Navigation Section -->
+            <div class="nav-section">
+                <?php foreach ($nav_items as $page => $item): ?>
+                    <?php $is_active = ($current_page === $page); ?>
+                    <a href="<?php echo $item['url']; ?>" class="nav-link <?php echo $is_active ? 'nav-link-active' : 'nav-link-inactive'; ?>">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <?php
+                            $icons = [
+                                'layout-dashboard' => '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+                                'database' => '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+                                'star' => '<polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>',
+                                'message-square-dashed' => '<path d="M10 11V8"/><path d="M7 11v-1"/><path d="M14 11v-1"/><path d="M17 11V8"/><path d="M3 7.8c0-1.7 1.3-3 3-3h12c1.7 0 3 1.3 3 3v6.4c0 1.7-1.3 3-3 3h-2l-3 3-3-3H6c-1.7 0-3-1.3-3-3z"/>',
+                                'users' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+                                'languages' => '<path d="M5 8l6 6"/><path d="M4 14l6-6"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h4"/>',
+                                'settings' => '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+                            ];
+                            echo $icons[$item['icon']] ?? '<circle cx="12" cy="12" r="10"/>';
+                            ?>
+                        </svg>
+                        <span><?php echo $item['label']; ?></span>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- User Section -->
+            <div class="user-section">
                 <?php if ($language_available): ?>
-                <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open" class="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
-                        <i data-lucide="globe" class="w-4 h-4"></i>
-                        <span><?php echo $LANGUAGES[$current_lang]; ?></span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" :class="{'rotate-180': open}"></i>
-                    </button>
-                    <div x-show="open" @click.away="open = false" x-cloak class="absolute top-full right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-slate-200 py-1">
-                        <?php foreach ($LANGUAGES as $code => $name): ?>
-                        <a href="?lang=<?php echo $code; ?>" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"><?php echo $name; ?></a>
-                        <?php endforeach; ?>
+                <div class="language-selector">
+                    <div style="position: relative;">
+                        <button onclick="toggleLanguageMenu()" class="language-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                <path d="M2 12h20"/>
+                            </svg>
+                        </button>
+                        <div id="language-dropdown" class="language-dropdown">
+                            <?php foreach ($LANGUAGES as $code => $name): ?>
+                                <button onclick="changeLanguage('<?php echo $code; ?>')" class="language-option <?php echo $code === $current_lang ? 'active' : ''; ?>">
+                                    <?php echo $name; ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
                 <?php endif; ?>
-
-                <!-- User Profile Dropdown -->
-                <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open" class="flex items-center gap-2">
-                        <img class="h-8 w-8 rounded-full object-cover" src="https://ui-avatars.com/api/?name=<?php echo urlencode($current_user_name); ?>&background=0D8ABC&color=fff" alt="User avatar">
-                        <div>
-                            <span class="text-sm font-semibold text-slate-800"><?php echo htmlspecialchars($current_user_name); ?></span>
-                            <span class="block text-xs text-slate-500 text-left"><?php echo ucfirst($current_user_role); ?></span>
-                        </div>
-                    </button>
-                    <div x-show="open" @click.away="open = false" x-cloak class="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1">
-                        <a href="logout.php" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                            Logout
-                        </a>
-                    </div>
+                <!-- Refresh Button -->
+                <button onclick="refreshProcessingQueue()" class="refresh-btn" title="Refresh Processing Queue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M8 16H3v5"/>
+                    </svg>
+                </button>
+                <div class="user-avatar">
+                    <?php echo strtoupper(substr($current_user_name, 0, 1)); ?>
                 </div>
-                
-                <!-- Mobile Menu Button -->
-                <button class="md:hidden" @click="mobileMenuOpen = !mobileMenuOpen">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
+                <div class="user-info">
+                    <p class="user-name"><?php echo htmlspecialchars($current_user_name); ?></p>
+                    <p class="user-role"><?php echo htmlspecialchars($current_user_role); ?></p>
+                </div>
+                <div id="connection-status" class="connection-status">
+                    <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span> Connecting...
+                </div>
+                <a href="logout.php" class="logout-link">Logout</a>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Mobile Menu -->
-    <div x-show="mobileMenuOpen" x-cloak class="md:hidden border-t border-slate-200" x-transition>
-        <nav class="flex flex-col gap-4 p-4">
-             <?php foreach ($nav_items as $page => $item): ?>
-                <a href="<?php echo $item['url']; ?>" class="flex items-center gap-3 px-3 py-2 rounded-lg <?php echo ($current_page === $page) ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-100'; ?>">
-                    <i data-lucide="<?php echo $item['icon']; ?>" class="w-5 h-5"></i>
-                    <span class="font-medium"><?php echo $item['label']; ?></span>
+    <div id="mobile-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e2e8f0; border-radius: 0 0 0.75rem 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        <div style="padding: 1rem;">
+            <?php if ($language_available): ?>
+            <!-- Mobile Language Selector -->
+            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Language</label>
+                <select class="language-select" onchange="changeLanguage(this.value)" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; color: #374151;">
+                    <?php foreach ($LANGUAGES as $code => $name): ?>
+                        <option value="<?php echo $code; ?>" <?php echo $code === $current_lang ? 'selected' : ''; ?>>
+                            <?php echo $name; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+            <?php foreach ($nav_items as $page => $item): ?>
+                <?php $is_active = ($current_page === $page); ?>
+                <a href="<?php echo $item['url']; ?>" style="display: block; padding: 0.75rem; text-decoration: none; color: <?php echo $is_active ? '#0ea5e9' : '#475569'; ?>; font-weight: <?php echo $is_active ? '600' : '500'; ?>; border-radius: 0.375rem; margin-bottom: 0.25rem; <?php echo $is_active ? 'background: rgba(14,165,233,0.1);' : ''; ?>">
+                    <?php echo $item['label']; ?>
                 </a>
             <?php endforeach; ?>
-        </nav>
+        </div>
     </div>
-</header>
+</nav>
+
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('header', () => ({
-            mobileMenuOpen: false,
-        }))
-    })
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleLanguageMenu() {
+    const dropdown = document.getElementById('language-dropdown');
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function changeLanguage(lang) {
+    console.log('Changing language to:', lang);
+
+    // Hide dropdown if it exists
+    const dropdown = document.getElementById('language-dropdown');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+
+    // Send JSON data as expected by the API
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'api.php?action=set_language', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function() {
+        console.log('Response status:', xhr.status);
+        console.log('Response text:', xhr.responseText);
+
+        if (xhr.status === 200) {
+            try {
+                const result = JSON.parse(xhr.responseText);
+                console.log('Parsed result:', result);
+
+                if (result.success) {
+                    console.log('Language changed successfully, reloading...');
+                    window.location.reload();
+                } else {
+                    console.error('Failed to change language:', result.message);
+                    alert('Failed to change language: ' + (result.message || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Invalid JSON response:', xhr.responseText);
+                alert('Invalid response from server');
+            }
+        } else {
+            console.error('Request failed with status:', xhr.status);
+            alert('Request failed with status: ' + xhr.status);
+        }
+    };
+    xhr.onerror = function() {
+        console.error('Network error');
+        alert('Network error occurred');
+    };
+
+    // Send JSON data
+    xhr.send(JSON.stringify({ language: lang }));
+}
+
+function refreshProcessingQueue() {
+    // Check if loadData function exists (available on pages with processing queue)
+    if (typeof loadData === 'function') {
+        loadData();
+        // Show a brief loading indicator
+        const btn = event.target.closest('.refresh-btn');
+        if (btn) {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<svg class="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>';
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+            }, 1000);
+        }
+    } else {
+        // Fallback: reload the page
+        window.location.reload();
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('mobile-menu');
+    const mobileButton = e.target.closest('.mobile-menu-btn');
+    if (!mobileButton && !menu.contains(e.target)) {
+        menu.style.display = 'none';
+    }
+
+    const langDropdown = document.getElementById('language-dropdown');
+    const langButton = e.target.closest('.language-btn');
+    if (langDropdown && langButton && !langButton.contains(e.target) && !langDropdown.contains(e.target)) {
+        langDropdown.style.display = 'none';
+    }
+});
 </script>
