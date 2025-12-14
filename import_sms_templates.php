@@ -23,16 +23,17 @@ try {
     // English SMS templates from last version (language.php)
     $englishTemplates = [
         'registered' => "Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service.",
-        'schedule' => "Hello {name}, your service is scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link} - OTOMOTORS",
-        'parts_arrived' => "Hello {name}, parts arrived for {plate}. Confirm service: {link} - OTOMOTORS",
-        'completed' => "Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}",
-        'reschedule_accepted' => "Hello {name}, your reschedule request has been approved! New appointment: {date}. Ref: {plate}. - OTOMOTORS",
+        'schedule' => "Hello {name}, your service is scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link}",
+        'parts_arrived' => "Hello {name}, parts arrived for {plate}. Confirm service: {link}",
+        'completed' => "Service for {plate} is completed. Rate your experience: {link}",
+        'reschedule_accepted' => "Hello {name}, your reschedule request has been approved! New appointment: {date}. Ref: {plate}.",
         'called' => "Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.",
         'contacted' => "Hello {name}, we have contacted you about your {plate} service. Please check your messages.",
         'parts_ordered' => "Parts ordered for {plate}. We will notify you when ready.",
         'rescheduled' => "Hello {name}, your service has been rescheduled to {date}. Please confirm: {link}",
         'issue' => "Hello {name}, we detected an issue with {plate}. Our team will contact you shortly.",
         'system' => "System Alert: {count} new transfer(s) added to OTOMOTORS portal."
+    ];
     ];
 
     // Check current templates
