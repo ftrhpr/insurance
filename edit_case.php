@@ -59,6 +59,8 @@ $smsWorkflowBindings = [];
 
 // Fallback templates with links
 $fallbackTemplates = [
+    'registered' => ['content' => 'Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service. Access your case: {link}'],
+    'called' => ['content' => 'Hello {name}, we contacted you regarding {plate}. Service details will follow shortly.'],
     'schedule' => ['content' => 'Hello {name}, your service is scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link} - OTOMOTORS'],
     'parts_arrived' => ['content' => 'Hello {name}, parts arrived for {plate}. Confirm service: {link} - OTOMOTORS'],
     'completed' => ['content' => 'Service for {plate} is completed. Thank you for choosing OTOMOTORS! Rate your experience: {link}'],
@@ -350,6 +352,24 @@ try {
                             </div>
                             <div class="bg-orange-100 group-hover:bg-orange-600 p-3 rounded-lg transition-colors">
                                 <i data-lucide="calendar-check" class="w-6 h-6 text-orange-600 group-hover:text-white"></i>
+                            </div>
+                        </button>
+                        <button id="btn-sms-called" class="group w-full flex justify-between items-center px-6 py-5 bg-slate-50 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:bg-purple-50">
+                            <div>
+                                <div class="text-lg font-bold text-slate-800 group-hover:text-purple-700">Send Called SMS</div>
+                                <div class="text-sm text-slate-500 mt-1">Contact confirmation</div>
+                            </div>
+                            <div class="bg-purple-100 group-hover:bg-purple-600 p-3 rounded-lg transition-colors">
+                                <i data-lucide="phone-call" class="w-6 h-6 text-purple-600 group-hover:text-white"></i>
+                            </div>
+                        </button>
+                        <button id="btn-sms-completed" class="group w-full flex justify-between items-center px-6 py-5 bg-slate-50 border-2 border-green-200 rounded-xl hover:border-green-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95 hover:bg-green-50">
+                            <div>
+                                <div class="text-lg font-bold text-slate-800 group-hover:text-green-700">Send Completed SMS</div>
+                                <div class="text-sm text-slate-500 mt-1">Service completion & review</div>
+                            </div>
+                            <div class="bg-green-100 group-hover:bg-green-600 p-3 rounded-lg transition-colors">
+                                <i data-lucide="check-circle" class="w-6 h-6 text-green-600 group-hover:text-white"></i>
                             </div>
                         </button>
                     </div>
@@ -1087,10 +1107,12 @@ try {
             const smsRegisterBtn = document.getElementById('btn-sms-register');
             if (smsRegisterBtn) smsRegisterBtn.addEventListener('click', () => {
                 const phone = document.getElementById('input-phone')?.value;
+                const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
                 const templateData = {
                     name: currentCase.name,
                     plate: currentCase.plate,
-                    amount: currentCase.amount
+                    amount: currentCase.amount,
+                    link: `${publicUrl}?id=${CASE_ID}`
                 };
                 const msg = getFormattedMessage('registered', templateData);
                 sendSMS(phone, msg, 'welcome');
@@ -1124,14 +1146,42 @@ try {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
+                const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
                 const templateData = {
                     name: currentCase.name,
                     plate: currentCase.plate,
                     amount: currentCase.amount,
-                    date: date
+                    date: date,
+                    link: `${publicUrl}?id=${CASE_ID}`
                 };
                 const msg = getFormattedMessage('schedule', templateData);
                 sendSMS(phone, msg, 'schedule');
+            });
+
+            const smsCalledBtn = document.getElementById('btn-sms-called');
+            if (smsCalledBtn) smsCalledBtn.addEventListener('click', () => {
+                const phone = document.getElementById('input-phone')?.value;
+                const templateData = {
+                    name: currentCase.name,
+                    plate: currentCase.plate,
+                    amount: currentCase.amount
+                };
+                const msg = getFormattedMessage('called', templateData);
+                sendSMS(phone, msg, 'called');
+            });
+
+            const smsCompletedBtn = document.getElementById('btn-sms-completed');
+            if (smsCompletedBtn) smsCompletedBtn.addEventListener('click', () => {
+                const phone = document.getElementById('input-phone')?.value;
+                const publicUrl = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_view.php');
+                const templateData = {
+                    name: currentCase.name,
+                    plate: currentCase.plate,
+                    amount: currentCase.amount,
+                    link: `${publicUrl}?id=${CASE_ID}`
+                };
+                const msg = getFormattedMessage('completed', templateData);
+                sendSMS(phone, msg, 'completed');
             });
 
             // SMS template selector
