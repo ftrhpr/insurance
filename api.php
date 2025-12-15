@@ -1267,49 +1267,54 @@ try {
             function parseLaborSection($textBlock) {
                 global $logContent;
                 $logContent .= "LABOR SECTION TEXT:\n'$textBlock'\n--- END LABOR SECTION ---\n\n";
-                
+
                 $lines = preg_split('/\r?\n/', $textBlock);
                 $items = [];
-                $currentItem = null;
+                $multiLineBuffer = [];
 
                 foreach ($lines as $line) {
                     $line = trim($line);
                     $logContent .= "PROCESSING LABOR LINE: '$line'\n";
-                    if (empty($line)) continue;
-
-                    // Skip header lines
-                    if ($line === 'ფასი(ლარი)') {
+                    if ($line === '' || stripos($line, 'ფასი(ლარი)') !== false) {
                         $logContent .= "SKIPPING HEADER\n";
                         continue;
                     }
-
-                    // Check if this line contains a tab (single line item: name\tprice)
+                    // Single-line: name\tprice
                     if (strpos($line, "\t") !== false) {
-                        $parts = explode("\t", $line, 2);
-                        if (count($parts) == 2) {
-                            $name = trim($parts[0]);
-                            $price = (float)str_replace(',', '', trim($parts[1]));
-                            $items[] = ['name' => $name, 'quantity' => 1, 'price' => $price, 'type' => 'labor'];
+                        list($name, $price) = array_map('trim', explode("\t", $line, 2));
+                        if ($name !== '' && is_numeric($price)) {
+                            $items[] = [
+                                'name' => $name,
+                                'price' => $price,
+                                'type' => 'labor',
+                                'quantity' => 1
+                            ];
                             $logContent .= "CREATED SINGLE-LINE LABOR ITEM: '$name' = $price\n";
                         }
-                    } elseif (is_numeric(str_replace(',', '', $line))) {
-                        // This is a price line - complete the current multi-line item
-                        $logContent .= "FOUND PRICE LINE: '$line'\n";
-                        if ($currentItem !== null) {
-                            $currentItem['price'] = (float)str_replace(',', '', $line);
-                            $items[] = $currentItem;
-                            $logContent .= "COMPLETED MULTI-LINE ITEM: '" . $currentItem['name'] . "' = " . $currentItem['price'] . "\n";
-                            $currentItem = null;
+                        $multiLineBuffer = [];
+                        continue;
+                    }
+                    // Multi-line: accumulate name lines, then price
+                    if (is_numeric($line)) {
+                        if (!empty($multiLineBuffer)) {
+                            $fullName = implode(' ', $multiLineBuffer);
+                            $items[] = [
+                                'name' => $fullName,
+                                'price' => $line,
+                                'type' => 'labor',
+                                'quantity' => 1
+                            ];
+                            $logContent .= "COMPLETED MULTI-LINE LABOR ITEM: '$fullName' = $line\n";
+                            $multiLineBuffer = [];
                         }
+                        continue;
+                    }
+                    // Start or extend multi-line item
+                    $multiLineBuffer[] = $line;
+                    if (count($multiLineBuffer) === 1) {
+                        $logContent .= "STARTED NEW MULTI-LINE ITEM: '$line'\n";
                     } else {
-                        // This is part of a multi-line item name
-                        if ($currentItem === null) {
-                            $currentItem = ['name' => $line, 'type' => 'labor'];
-                            $logContent .= "STARTED NEW MULTI-LINE ITEM: '$line'\n";
-                        } else {
-                            $currentItem['name'] .= ' ' . $line;
-                            $logContent .= "EXTENDED MULTI-LINE ITEM: '" . $currentItem['name'] . "'\n";
-                        }
+                        $logContent .= "EXTENDED MULTI-LINE ITEM: '" . implode(' ', $multiLineBuffer) . "'\n";
                     }
                 }
 
