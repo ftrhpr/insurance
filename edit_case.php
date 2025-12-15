@@ -460,10 +460,15 @@ try {
                     if (!CAN_EDIT) return showToast('Permission Denied', 'You do not have permission to edit.', 'error');
                     
                     const status = this.currentCase.status;
-                    const serviceDate = document.getElementById('input-service-date').value;
+                    let serviceDate = document.getElementById('input-service-date').value;
 
                     if ((status === 'Parts Arrived' || status === 'Scheduled') && !serviceDate) {
                         return showToast("Scheduling Required", `Please select a service date for the '${status}' status.`, "error");
+                    }
+
+                    // Format service date for MySQL (add seconds if missing)
+                    if (serviceDate) {
+                        serviceDate = serviceDate.replace('T', ' ') + ':00';
                     }
 
                     const updates = {
@@ -472,7 +477,7 @@ try {
                         amount: document.getElementById('input-amount').value.trim(),
                         status: status,
                         phone: document.getElementById('input-phone').value.trim(),
-                        serviceDate: serviceDate || null,
+                        service_date: serviceDate || null,
                         franchise: document.getElementById('input-franchise').value || 0,
                     };
 
