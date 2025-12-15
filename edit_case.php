@@ -480,6 +480,8 @@ try {
                         phone: document.getElementById('input-phone').value.trim(),
                         service_date: serviceDate || null,
                         franchise: document.getElementById('input-franchise').value || 0,
+                        user_response: this.currentCase.user_response || null,
+                        internalNotes: this.currentCase.internalNotes || [],
                     };
 
                     const systemLogs = [...(this.currentCase.systemLogs || [])];
