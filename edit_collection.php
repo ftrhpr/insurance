@@ -82,6 +82,28 @@ if (!$collection_id) {
             <form id="editForm" class="space-y-6">
                 <input type="hidden" id="editId" value="<?php echo htmlspecialchars($collection_id); ?>">
                 
+                <!-- PDF Invoice Upload -->
+                <div class="glass-card shadow-xl rounded-3xl p-8 border border-white/20">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <i data-lucide="file-scan" class="w-5 h-5 mr-2 text-teal-600"></i>
+                        Auto-Parse PDF Invoice
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="md:col-span-2">
+                             <label for="pdf-upload" class="block text-sm font-medium text-gray-700 mb-1">Upload an invoice to automatically add parts and labor.</label>
+                            <input type="file" id="pdfInvoiceInput" accept="application/pdf" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                        </div>
+                        <div>
+                            <button type="button" id="parsePdfBtn" class="w-full btn-gradient px-4 py-2 text-white rounded-lg shadow-md mt-4" disabled>
+                                <i data-lucide="wand-2" class="w-4 h-4 mr-1 inline"></i>
+                                Parse PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div id="pdfParseStatus" class="text-xs text-gray-500 mt-2"></div>
+                    <div id="parsedPartsPreview" class="mt-4"></div>
+                </div>
+                
                 <!-- General Info -->
                 <div class="glass-card shadow-xl rounded-3xl p-8 border border-white/20">
                     <h2 class="text-lg font-bold text-gray-900 mb-4">General Information</h2>
@@ -170,6 +192,7 @@ if (!$collection_id) {
         document.addEventListener('DOMContentLoaded', function() {
             loadManagers();
             loadCollectionData();
+            initPdfParsing();
             lucide.createIcons();
             document.getElementById('editForm').addEventListener('submit', saveEdit);
         });
@@ -223,6 +246,107 @@ if (!$collection_id) {
                 console.error('Error loading collection data:', error);
                 showToast('Error loading collection data.', 'error');
             }
+        }
+
+        /**
+         * Initializes the PDF parsing functionality.
+         */
+        function initPdfParsing() {
+            const pdfInput = document.getElementById('pdfInvoiceInput');
+            const parseBtn = document.getElementById('parsePdfBtn');
+            const statusDiv = document.getElementById('pdfParseStatus');
+            const previewDiv = document.getElementById('parsedPartsPreview');
+
+            if (!pdfInput || !parseBtn) return;
+
+            pdfInput.addEventListener('change', () => {
+                parseBtn.disabled = !pdfInput.files.length;
+                statusDiv.textContent = '';
+                previewDiv.innerHTML = '';
+            });
+
+            parseBtn.addEventListener('click', async () => {
+                if (!pdfInput.files.length) return;
+
+                statusDiv.textContent = 'Parsing PDF, please wait...';
+                parseBtn.disabled = true;
+                const formData = new FormData();
+                formData.append('pdf', pdfInput.files[0]);
+
+                try {
+                    const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', body: formData });
+                    const data = await response.json();
+
+                    if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+                        statusDiv.textContent = `Successfully parsed ${data.items.length} items. Select which items to add.`;
+                        
+                        let checklistHtml = '';
+                        data.items.forEach((item, index) => {
+                            const itemData = JSON.stringify(item);
+                            checklistHtml += `
+                                <div class="flex items-center p-1 rounded-md hover:bg-teal-100">
+                                    <input id="item-${index}" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 parsed-item-checkbox" data-item='${itemData}' checked>
+                                    <label for="item-${index}" class="ml-3 text-sm text-gray-700">
+                                        <span class="font-medium text-indigo-700">[${item.type}]</span> ${item.name} 
+                                        <span class="text-gray-500">(Qty: ${item.quantity}, Price: ₾${item.price})</span>
+                                    </label>
+                                </div>`;
+                        });
+
+                        previewDiv.innerHTML = `
+                            <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+                                <h4 class="font-bold mb-2 text-gray-800">Parsed Items</h4>
+                                <div class="flex items-center border-b pb-2 mb-2">
+                                    <input id="selectAllParsed" type="checkbox" class="h-4 w-4 rounded border-gray-300" checked>
+                                    <label for="selectAllParsed" class="ml-3 text-sm font-medium text-gray-800">Select All</label>
+                                </div>
+                                <div id="parsedItemsChecklist" class="space-y-1 max-h-40 overflow-y-auto">
+                                    ${checklistHtml}
+                                </div>
+                                <button type="button" id="addParsedItemsBtn" class="mt-3 btn-gradient text-white px-3 py-1 rounded-md text-sm">Add Selected Items</button>
+                            </div>
+                        `;
+
+                        // Add event listener for 'Select All'
+                        document.getElementById('selectAllParsed').addEventListener('change', (e) => {
+                            document.querySelectorAll('.parsed-item-checkbox').forEach(checkbox => {
+                                checkbox.checked = e.target.checked;
+                            });
+                        });
+                        
+                        // Add event listener for 'Add Selected Items'
+                        document.getElementById('addParsedItemsBtn').onclick = () => {
+                            const selectedItems = [];
+                            document.querySelectorAll('.parsed-item-checkbox:checked').forEach(checkbox => {
+                                selectedItems.push(JSON.parse(checkbox.dataset.item));
+                            });
+
+                            if (selectedItems.length === 0) {
+                                showToast('No items selected.', 'info');
+                                return;
+                            }
+
+                            selectedItems.forEach(item => {
+                                if (item.type === 'labor') {
+                                    addLabor(item.name, item.quantity, item.price);
+                                } else {
+                                    addPart(item.name, item.quantity, item.price);
+                                }
+                            });
+                            previewDiv.innerHTML = '';
+                            statusDiv.textContent = `${selectedItems.length} items have been added to the lists below.`;
+                        };
+
+                    } else {
+                        statusDiv.textContent = data.error || 'Could not parse any items from the PDF.';
+                    }
+                } catch (error) {
+                    console.error('PDF parsing error:', error);
+                    statusDiv.textContent = 'An error occurred while parsing the PDF.';
+                } finally {
+                    parseBtn.disabled = false;
+                }
+            });
         }
 
         function addPart(name = '', quantity = 1, price = 0) {
