@@ -1699,43 +1699,36 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                     // Service date formatting
                     let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
-
+                    
+                    // Show reschedule date if pending reschedule request
                     if (t.rescheduleDate && t.user_response === 'Reschedule Requested') {
                         const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                        const rescheduleDateStr = rescheduleDate.toLocaleString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric',
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                        });
+                        const rescheduleDateStr = rescheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                         serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 w-fit">
                             <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
                             <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
                         </div>`;
-                    } else if (t.status === 'Scheduled') {
-                        if (t.serviceDate) {
-                            try {
-                                let dateStr = t.serviceDate;
-                                if (dateStr.includes(' ')) {
-                                    dateStr = dateStr.replace(' ', 'T');
-                                }
-                                const serviceDate = new Date(dateStr);
-                                if (isNaN(serviceDate.getTime())) {
-                                    throw new Error('Invalid date');
-                                }
-                                const formattedDate = serviceDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                                const formattedTime = serviceDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-                                serviceDateDisplay = `<div class="font-semibold text-slate-800 text-xs">${formattedDate}</div><div class="text-slate-500 text-xs">${formattedTime}</div>`;
-                            } catch (e) {
-                                serviceDateDisplay = '<span class="text-red-500 text-xs font-semibold">Invalid date format</span>';
+                    } else if (t.status === 'Scheduled' && t.serviceDate) {
+                        try {
+                            // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
+                            let dateStr = t.serviceDate;
+                            if (dateStr.includes(' ')) {
+                                // MySQL DATETIME format: replace space with T
+                                dateStr = dateStr.replace(' ', 'T');
                             }
-                        } else {
-                            serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
+                            const serviceDate = new Date(dateStr);
+                            if (isNaN(serviceDate.getTime())) {
+                                throw new Error('Invalid date');
+                            }
+                            const formattedDate = serviceDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                            const formattedTime = serviceDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                            
+                            serviceDateDisplay = `<div class="font-semibold text-slate-800 text-xs">${formattedDate}</div><div class="text-slate-500 text-xs">${formattedTime}</div>`;
+                        } catch(e) {
+                            serviceDateDisplay = '<span class="text-red-500 text-xs font-semibold">Invalid date format</span>';
                         }
-                    } else if (t.serviceDate) {
-                        // For other statuses with a date, you might want to display it, but differently
-                        // For now, we'll stick to the original logic of "Not scheduled" for non-scheduled items.
+                    } else if (t.status === 'Scheduled' && !t.serviceDate) {
+                        serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
                     }
 
 
