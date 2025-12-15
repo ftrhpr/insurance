@@ -374,7 +374,11 @@ if (empty($_SESSION['user_id'])) {
                 const totalParts = partItems.reduce((sum, item) => sum + parseInt(item.quantity, 10), 0);
                 const progressPercent = totalParts > 0 ? Math.round((collectedCount / totalParts) * 100) : 0;
 
-                const shareUrl = window.location.origin + '/share_collection.php?id=' + collection.id;
+                    const type = (collection.collection_type || 'local');
+                    const typeIcon = (type === 'order') ? 'truck' : 'shopping-cart';
+                    const typeColor = (type === 'order') ? 'text-amber-600' : 'text-teal-500';
+
+                    const shareUrl = window.location.origin + '/share_collection.php?id=' + collection.id;
                 html += `
                     <div class="glass-card rounded-2xl shadow-lg card-hover border border-white/30 overflow-hidden">
                         <div class="p-5">
@@ -397,8 +401,8 @@ if (empty($_SESSION['user_id'])) {
                                     Manager: <span class="font-semibold ml-1">${managerName}</span>
                                 </div>
                                 <div class="flex items-center text-gray-700">
-                                    <i data-lucide="shuffle-2" class="w-4 h-4 mr-2 text-teal-500"></i>
-                                    Type: <span class="font-semibold ml-1">${(collection.collection_type || 'local').charAt(0).toUpperCase() + (collection.collection_type || 'local').slice(1)}</span>
+                                    <i data-lucide="${typeIcon}" class="w-4 h-4 mr-2 ${typeColor}"></i>
+                                    Type: <span class="font-semibold ml-1">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
                                 </div>
                                 ${collection.description ? `<div class="flex items-start text-gray-700">
                                     <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-500 mt-0.5"></i>
