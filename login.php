@@ -22,325 +22,109 @@ function __($key, $default = '') {
 
 $error = '';
 
+<?php
+require_once 'session_config.php';
+
+if (isset($_SESSION['user_id'])) {
+    header('Location: index.php');
+    exit();
+}
+
+function __($key, $default = '') {
+    $fallbacks = [
+        'login.title' => 'OTOMOTORS Login',
+        'login.welcome' => 'Welcome Back',
+        'login.username' => 'Username',
+        'login.password' => 'Password',
+        'login.sign_in' => 'Sign In',
+        'login.error' => 'Invalid credentials'
+    ];
+    return $fallbacks[$key] ?? $default ?: $key;
+}
+
+$error = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once 'config.php';
-    
-    // Rate limiting - prevent brute force attacks
     $max_attempts = 5;
-    $lockout_time = 900; // 15 minutes in seconds
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    
-    if (!isset($_SESSION['login_attempts'])) {
-        $_SESSION['login_attempts'] = [];
-    }
-    
-    // Clean old attempts
-    $_SESSION['login_attempts'] = array_filter(
-        $_SESSION['login_attempts'],
-        fn($time) => (time() - $time) < $lockout_time
-    );
-    
-    // Check if locked out
+    $lockout_time = 900;
+
+    if (!isset($_SESSION['login_attempts'])) $_SESSION['login_attempts'] = [];
+    $_SESSION['login_attempts'] = array_filter($_SESSION['login_attempts'], fn($t) => (time() - $t) < $lockout_time);
+
     if (count($_SESSION['login_attempts']) >= $max_attempts) {
-        $wait_time = ceil(($lockout_time - (time() - min($_SESSION['login_attempts']))) / 60);
-        $error = "Too many failed attempts. Please try again in {$wait_time} minutes.";
+        $error = 'Too many failed attempts. Please try again later.';
     } else {
         $username = $_POST['username'] ?? '';
         $password = $_POST['password'] ?? '';
-    
-    if ($username && $password) {
-        try {
-            $pdo = getDBConnection();
-            
-            $stmt = $pdo->prepare("SELECT id, username, password, full_name, role, status FROM users WHERE username = ? AND status = 'active'");
-            $stmt->execute([$username]);
-            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($userData && password_verify($password, $userData['password'])) {
-                // Regenerate session ID to prevent session fixation attacks
-                session_regenerate_id(true);
-                
-                // Clear failed login attempts on success
-                $_SESSION['login_attempts'] = [];
-                
-                // Update last login
-                $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-                $updateStmt->execute([$userData['id']]);
-                
-                // Set session
-                $_SESSION['user_id'] = $userData['id'];
-                $_SESSION['username'] = $userData['username'];
-                $_SESSION['full_name'] = $userData['full_name'];
-                $_SESSION['role'] = $userData['role'];
-                
-                header('Location: index.php');
-                exit();
-            } else {
-                // Track failed attempt
-                $_SESSION['login_attempts'][] = time();
-                $remaining = $max_attempts - count($_SESSION['login_attempts']);
-                $error = "Invalid username or password. {$remaining} attempts remaining.";
+        if ($username && $password) {
+            try {
+                $pdo = getDBConnection();
+                $stmt = $pdo->prepare("SELECT id, username, password, full_name, role, status FROM users WHERE username = ? AND status = 'active'");
+                $stmt->execute([$username]);
+                $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($userData && password_verify($password, $userData['password'])) {
+                    session_regenerate_id(true);
+                    $_SESSION['login_attempts'] = [];
+                    $update = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+                    $update->execute([$userData['id']]);
+                    $_SESSION['user_id'] = $userData['id'];
+                    $_SESSION['username'] = $userData['username'];
+                    $_SESSION['full_name'] = $userData['full_name'];
+                    $_SESSION['role'] = $userData['role'];
+                    header('Location: index.php'); exit();
+                } else {
+                    $_SESSION['login_attempts'][] = time();
+                    $remaining = $max_attempts - count($_SESSION['login_attempts']);
+                    $error = "Invalid username or password. {$remaining} attempts remaining.";
+                }
+            } catch (Exception $e) {
+                $error = 'Database error. Please try again.';
             }
-        } catch (PDOException $e) {
-            $error = 'Database error. Please try again.';
+        } else {
+            $error = 'Please enter both username and password';
         }
-    } else {
-        $error = 'Please enter both username and password';
-    }
     }
 }
 ?>
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title><?php echo __('login.title', 'Login'); ?> | Hope UI</title>
-    
-    <!-- Bootstrap 5.3 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
-    
-    <style>
-        :root {
-            --bs-primary: #573BFF;
-            --bs-success: #17904b;
-            --bs-danger: #FF6171;
-        }
-        
-        body {
-            font-family: 'BPG Arial Caps', 'BPG Arial', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .login-card {
-            max-width: 450px;
-            width: 100%;
-            background: #fff;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            animation: slideUp 0.5s ease-out;
-        }
-        
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .login-header {
-            background: linear-gradient(135deg, var(--bs-primary) 0%, #8662FF 100%);
-            padding: 3rem 2rem;
-            text-align: center;
-            color: #fff;
-        }
-        
-        .login-icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            backdrop-filter: blur(10px);
-        }
-        
-        .login-icon i {
-            font-size: 2.5rem;
-        }
-        
-        .login-title {
-            font-size: 2rem;
-            font-weight: 800;
-            margin: 0 0 0.5rem;
-        }
-        
-        .login-subtitle {
-            color: rgba(255,255,255,0.9);
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-        
-        .login-body {
-            padding: 2.5rem;
-        }
-        
-        .form-label {
-            font-weight: 600;
-            color: #1E2139;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .form-control {
-            border-radius: 12px;
-            border: 2px solid #e0e0e0;
-            padding: 0.9rem 1rem;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: var(--bs-primary);
-            box-shadow: 0 0 0 0.2rem rgba(87, 59, 255, 0.15);
-        }
-        
-        .input-group-text {
-            background: transparent;
-            border: 2px solid #e0e0e0;
-            border-right: none;
-            border-radius: 12px 0 0 12px;
-            color: #7C8DB0;
-        }
-        
-        .input-group .form-control {
-            border-left: none;
-            border-radius: 0 12px 12px 0;
-        }
-        
-        .input-group .form-control:focus {
-            border-left: none;
-        }
-        
-        .input-group:focus-within .input-group-text {
-            border-color: var(--bs-primary);
-        }
-        
-        .btn-login {
-            background: linear-gradient(135deg, var(--bs-primary) 0%, #8662FF 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 0.9rem 2rem;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #fff;
-            width: 100%;
-            transition: all 0.3s ease;
-            margin-top: 1.5rem;
-        }
-        
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(87, 59, 255, 0.4);
-        }
-        
-        .btn-login:active {
-            transform: translateY(0);
-        }
-        
-        .alert {
-            border-radius: 12px;
-            border: none;
-            padding: 1rem 1.25rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .alert-danger {
-            background: rgba(255, 97, 113, 0.1);
-            color: var(--bs-danger);
-        }
-        
-        .login-footer {
-            text-align: center;
-            padding: 1.5rem 2.5rem 2.5rem;
-            color: #7C8DB0;
-            font-size: 0.85rem;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?php echo __('login.title', 'Login'); ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
+    <style>body{font-family:'BPG Arial Caps','BPG Arial',Arial,sans-serif}input::placeholder{color:rgba(107,114,128,0.6);opacity:1}</style>
 </head>
-<body>
-    
-    <div class="login-card">
-        <div class="login-header">
-            <div class="login-icon">
-                <i class="fas fa-shield-halved"></i>
-            </div>
-            <h1 class="login-title">OTOMOTORS</h1>
-            <p class="login-subtitle">Manager Portal Access</p>
+<body class="min-h-screen bg-gradient-to-br from-sky-600 to-violet-700 flex items-center justify-center p-6">
+    <div class="w-full max-w-md glass-card rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-8 text-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+            <div class="flex items-center justify-center mb-4"><i data-lucide="shield-check" class="w-12 h-12"></i></div>
+            <h1 class="text-2xl font-extrabold">OTOMOTORS Manager Portal</h1>
+            <p class="mt-1 text-sm opacity-90">Secure manager access</p>
         </div>
-        
-        <div class="login-body">
-            <?php if ($error): ?>
-            <div class="alert alert-danger mb-4" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-            <?php endif; ?>
-            
-            <form method="POST" action="">
-                <div class="mb-4">
-                    <label for="username" class="form-label"><?php echo __('login.username', 'Username'); ?></label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-user"></i>
-                        </span>
-                        <input 
-                            type="text" 
-                            class="form-control" 
-                            id="username" 
-                            name="username" 
-                            placeholder="Enter your username"
-                            required 
-                            autofocus
-                            autocomplete="username"
-                        >
-                    </div>
+        <div class="p-6">
+            <?php if ($error): ?><div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
+            <form method="POST" action="" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-semibold text-slate-700 mb-1">Username</label>
+                    <input id="username" name="username" type="text" required autofocus autocomplete="username" placeholder="manager" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400">
                 </div>
-                
-                <div class="mb-4">
-                    <label for="password" class="form-label"><?php echo __('login.password', 'Password'); ?></label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-lock"></i>
-                        </span>
-                        <input 
-                            type="password" 
-                            class="form-control" 
-                            id="password" 
-                            name="password" 
-                            placeholder="Enter your password"
-                            required
-                            autocomplete="current-password"
-                        >
-                    </div>
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+                    <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400">
                 </div>
-                
-                <button type="submit" class="btn btn-login">
-                    <i class="fas fa-sign-in-alt me-2"></i>
-                    <?php echo __('login.login_button', 'Login'); ?>
-                </button>
+                <div class="flex items-center justify-between">
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="remember" class="rounded text-indigo-600"> <span>Remember me</span></label>
+                    <a href="#" class="text-sm text-indigo-600 hover:underline">Forgot?</a>
+                </div>
+                <button type="submit" class="w-full btn-gradient inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-semibold"><i data-lucide="log-in" class="w-4 h-4"></i> Sign in</button>
             </form>
         </div>
-        
-        <div class="login-footer">
-            <p class="mb-0">
-                <i class="fas fa-copyright me-1"></i>
-                <?php echo date('Y'); ?> OTOMOTORS. Secure Access Portal.
-            </p>
-        </div>
+        <div class="px-6 py-4 text-center text-xs text-slate-500">© <?php echo date('Y'); ?> OTOMOTORS</div>
     </div>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>lucide.createIcons();</script>
 </body>
 </html>

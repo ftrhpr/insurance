@@ -20,6 +20,14 @@ if (!$collection_id) {
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
+        /* Ensure placeholders are visible on small screens */
+        input::placeholder, textarea::placeholder {
+            color: rgba(107, 114, 128, 0.6);
+            opacity: 1;
+        }
+
+        /* Prevent input text from being clipped on very small devices */
+        .part-name, .labor-name { word-break: break-word; }
         .glass-card {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
