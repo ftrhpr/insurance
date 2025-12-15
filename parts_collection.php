@@ -299,7 +299,7 @@ if (empty($_SESSION['user_id'])) {
                 const totalParts = partItems.reduce((sum, item) => sum + parseInt(item.quantity, 10), 0);
                 const progressPercent = totalParts > 0 ? Math.round((collectedCount / totalParts) * 100) : 0;
 
-                const shareUrl = window.location.origin + '/edit_collection.php?id=' + collection.id;
+                const shareUrl = window.location.origin + '/share_collection.php?id=' + collection.id;
                 html += `
                     <div class="glass-card rounded-2xl shadow-lg card-hover border border-white/30 overflow-hidden">
                         <div class="p-5">

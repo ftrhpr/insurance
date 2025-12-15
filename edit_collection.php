@@ -57,13 +57,13 @@ if (!$collection_id) {
     <div class="min-h-screen pb-24">
         <!-- Header -->
         <header class="glass-card shadow-lg border-b border-white/20 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center py-4">
-                    <div class="flex items-center space-x-4">
+            <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+                <div class="flex flex-wrap justify-between items-center py-4 gap-2">
+                    <div class="flex items-center space-x-2 sm:space-x-4">
                         <a href="parts_collection.php" class="text-gray-600 hover:text-gray-700 transition-colors duration-200 p-2 rounded-lg hover:bg-white/50">
                             <i data-lucide="arrow-left" class="w-5 h-5"></i>
                         </a>
-                        <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-2 sm:space-x-3">
                             <div class="w-10 h-10 gradient-accent rounded-xl flex items-center justify-center shadow-lg">
                                 <i data-lucide="edit-3" class="w-6 h-6 text-white"></i>
                             </div>
@@ -78,12 +78,12 @@ if (!$collection_id) {
         </header>
 
         <!-- Main Content -->
-        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main class="max-w-7xl mx-auto py-4 px-2 sm:px-6 lg:px-8">
             <form id="editForm" class="space-y-6">
                 <input type="hidden" id="editId" value="<?php echo htmlspecialchars($collection_id); ?>">
                 
                 <!-- PDF Invoice Upload -->
-                <div class="glass-card shadow-xl rounded-3xl p-8 border border-white/20">
+                <div class="glass-card shadow-xl rounded-3xl p-4 sm:p-8 border border-white/20">
                     <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
                         <i data-lucide="file-scan" class="w-5 h-5 mr-2 text-teal-600"></i>
                         Auto-Parse PDF Invoice
@@ -105,7 +105,7 @@ if (!$collection_id) {
                 </div>
                 
                 <!-- General Info -->
-                <div class="glass-card shadow-xl rounded-3xl p-8 border border-white/20">
+                <div class="glass-card shadow-xl rounded-3xl p-4 sm:p-8 border border-white/20">
                     <h2 class="text-lg font-bold text-gray-900 mb-4">General Information</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-white/50 rounded-xl p-4 border border-white/30">
@@ -139,7 +139,7 @@ if (!$collection_id) {
                 </div>
 
                 <!-- Parts Section -->
-                <div class="glass-card shadow-xl rounded-3xl p-8 border border-white/20">
+                <div class="glass-card shadow-xl rounded-3xl p-4 sm:p-8 border border-white/20">
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-lg font-bold text-gray-900 flex items-center">
                             <i data-lucide="package" class="w-5 h-5 mr-2 text-purple-600"></i>
@@ -153,7 +153,7 @@ if (!$collection_id) {
                 </div>
 
                 <!-- Labor Section -->
-                <div class="glass-card shadow-xl rounded-3xl p-8 border border-white/20">
+                <div class="glass-card shadow-xl rounded-3xl p-4 sm:p-8 border border-white/20">
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-lg font-bold text-gray-900 flex items-center">
                             <i data-lucide="wrench" class="w-5 h-5 mr-2 text-sky-600"></i>
@@ -171,15 +171,15 @@ if (!$collection_id) {
 
     <!-- Floating Action Bar -->
     <div class="fixed bottom-0 left-0 right-0 z-50">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="glass-card shadow-2xl rounded-t-3xl p-4 border-t border-x border-white/20 flex justify-between items-center">
-                <div id="editTotals" class="flex items-center space-x-6">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+            <div class="glass-card shadow-2xl rounded-t-3xl p-3 sm:p-4 border-t border-x border-white/20 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div id="editTotals" class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 w-full sm:w-auto">
                     <div class="text-sm font-semibold text-gray-700">Total Items: <span id="editTotalItems" class="text-gray-900">0</span></div>
                     <div class="text-lg font-bold text-gray-800">Total Price: <span class="gradient-text" id="editTotalPrice">₾0.00</span></div>
                 </div>
-                <div class="flex space-x-3">
-                    <a href="parts_collection.php" class="px-4 py-2 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200">Cancel</a>
-                    <button type="submit" form="editForm" class="btn-gradient px-4 py-2 text-white rounded-lg shadow-md">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                    <a href="parts_collection.php" class="px-4 py-2 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 text-center">Cancel</a>
+                    <button type="submit" form="editForm" class="btn-gradient px-4 py-2 text-white rounded-lg shadow-md w-full sm:w-auto">
                         <i data-lucide="save" class="w-4 h-4 mr-1 inline"></i>
                         Update Collection
                     </button>
