@@ -680,7 +680,7 @@ try {
             for (const [btnId, slug] of Object.entries(quickSmsActions)) {
                 document.getElementById(btnId)?.addEventListener('click', () => {
                     const phone = document.getElementById('input-phone')?.value;
-                    if (slug === 'schedule' && !document.getElementById('input-service_date')?.value) {
+                    if (slug === 'schedule' && !document.getElementById('input-service-date')?.value) {
                         return showToast('No Service Date', 'Please set a service date first.', 'error');
                     }
                     sendSmsAndUpdateLog(phone, getFormattedMessage(slug, getTemplateData()), slug);
