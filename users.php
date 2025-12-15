@@ -126,10 +126,10 @@ if (!isset($users) || !is_array($users)) {
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    <div class="flex">
+        <?php include 'sidebar.php'; ?>
+        <main class="flex-1 ml-64 p-8">
 
-<?php include 'header.php'; ?>
-
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Main Content -->
     <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/60 p-8">
         <div class="flex justify-between items-center mb-6">

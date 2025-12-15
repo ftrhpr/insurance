@@ -234,10 +234,10 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    <div class="flex">
+        <?php include 'sidebar.php'; ?>
+        <main class="flex-1 ml-64 p-8">
 
-<?php include 'header.php'; ?>
-
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-slate-800 mb-2">SMS Parsing Templates</h1>
