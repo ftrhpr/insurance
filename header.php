@@ -44,6 +44,42 @@ if ($current_user_role === 'admin') {
 }
 ?>
 <style>
+/* Georgian font setup: prefer system-installed BPG Arial fonts when available */
+@font-face {
+    font-family: 'BPG Arial';
+    src: local('BPG Arial'), local('BPGArial');
+    font-display: swap;
+}
+@font-face {
+    font-family: 'BPG Arial Caps';
+    src: local('BPG Arial Caps'), local('BPGArialCaps');
+    font-weight: 700;
+    font-display: swap;
+}
+
+/* Apply Georgian fonts when document language is Georgian (ka) */
+:lang(ka) body,
+:lang(ka) input,
+:lang(ka) textarea,
+:lang(ka) button,
+:lang(ka) select {
+    font-family: 'BPG Arial', Arial, sans-serif;
+}
+
+/* Headers and navigation use the Caps variant for emphasis */
+:lang(ka) h1,
+:lang(ka) h2,
+:lang(ka) h3,
+:lang(ka) h4,
+:lang(ka) .logo-text,
+:lang(ka) .logo-subtitle,
+:lang(ka) .nav-link,
+:lang(ka) .user-name,
+:lang(ka) .logo-subtitle {
+    font-family: 'BPG Arial Caps', 'BPG Arial', Arial, sans-serif;
+    letter-spacing: 0.02em;
+}
+
 /* Modern Header Styles - CSP Compatible */
 .modern-header {
     background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
