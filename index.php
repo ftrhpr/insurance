@@ -1999,8 +1999,25 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
                             <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
                         </div>`;
-                    } else if (t.status === 'Scheduled' && !t.serviceDate) {
-                        serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
+                    } else if (t.status === 'Scheduled' && t.serviceDate) {
+                        try {
+                            // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
+                            let dateStr = t.serviceDate;
+                            if (dateStr.includes(' ')) {
+                                // MySQL DATETIME format: replace space with T
+                                dateStr = dateStr.replace(' ', 'T');
+                            }
+                            const serviceDate = new Date(dateStr);
+                            if (isNaN(serviceDate.getTime())) {
+                                throw new Error('Invalid date');
+                            }
+                            const formattedDate = serviceDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                            const formattedTime = serviceDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                            
+                            serviceDateDisplay = `<div class="font-semibold text-slate-800 text-xs">${formattedDate}</div><div class="text-slate-500 text-xs">${formattedTime}</div>`;
+                        } catch(e) {
+                            serviceDateDisplay = '<span class="text-red-500 text-xs font-semibold">Invalid date format</span>';
+                        }
                     } else if (t.serviceDate) {
                         try {
                             // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
