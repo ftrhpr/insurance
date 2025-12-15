@@ -97,235 +97,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title><?php echo __('login.title', 'Login'); ?> | Hope UI</title>
     
-    <!-- Bootstrap 5.3 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
-    
     <style>
-        :root {
-            --bs-primary: #573BFF;
-            --bs-success: #17904b;
-            --bs-danger: #FF6171;
-        }
-        
-        body {
-            font-family: 'BPG Arial Caps', 'BPG Arial', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .login-card {
-            max-width: 450px;
-            width: 100%;
-            background: #fff;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            animation: slideUp 0.5s ease-out;
-        }
-        
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .login-header {
-            background: linear-gradient(135deg, var(--bs-primary) 0%, #8662FF 100%);
-            padding: 3rem 2rem;
-            text-align: center;
-            color: #fff;
-        }
-        
-        .login-icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            backdrop-filter: blur(10px);
-        }
-        
-        .login-icon i {
-            font-size: 2.5rem;
-        }
-        
-        .login-title {
-            font-size: 2rem;
-            font-weight: 800;
-            margin: 0 0 0.5rem;
-        }
-        
-        .login-subtitle {
-            color: rgba(255,255,255,0.9);
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-        
-        .login-body {
-            padding: 2.5rem;
-        }
-        
-        .form-label {
-            font-weight: 600;
-            color: #1E2139;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .form-control {
-            border-radius: 12px;
-            border: 2px solid #e0e0e0;
-            padding: 0.9rem 1rem;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: var(--bs-primary);
-            box-shadow: 0 0 0 0.2rem rgba(87, 59, 255, 0.15);
-        }
-        
-        .input-group-text {
-            background: transparent;
-            border: 2px solid #e0e0e0;
-            border-right: none;
-            border-radius: 12px 0 0 12px;
-            color: #7C8DB0;
-        }
-        
-        .input-group .form-control {
-            border-left: none;
-            border-radius: 0 12px 12px 0;
-        }
-        
-        .input-group .form-control:focus {
-            border-left: none;
-        }
-        
-        .input-group:focus-within .input-group-text {
-            border-color: var(--bs-primary);
-        }
-        
-        .btn-login {
-            background: linear-gradient(135deg, var(--bs-primary) 0%, #8662FF 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 0.9rem 2rem;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #fff;
-            width: 100%;
-            transition: all 0.3s ease;
-            margin-top: 1.5rem;
-        }
-        
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(87, 59, 255, 0.4);
-        }
-        
-        .btn-login:active {
-            transform: translateY(0);
-        }
-        
-        .alert {
-            border-radius: 12px;
-            border: none;
-            padding: 1rem 1.25rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .alert-danger {
-            background: rgba(255, 97, 113, 0.1);
-            color: var(--bs-danger);
-        }
-        
-        .login-footer {
-            text-align: center;
-            padding: 1.5rem 2.5rem 2.5rem;
-            color: #7C8DB0;
-            font-size: 0.85rem;
-        }
-        /* Ensure placeholders are visible and have sufficient contrast */
-        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.65); opacity: 1; }
-        .gradient-left { background: linear-gradient(135deg, #573BFF 0%, #8662FF 100%); }
-        @media (max-width: 576px) {
-            .login-card { border-radius: 12px; }
-            .login-icon { width: 64px; height: 64px; }
-        }
+        body { font-family: 'BPG Arial Caps','BPG Arial', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+        .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border-radius: 14px; }
+        /* Form focus ring for accessibility */
+        .focus-ring:focus { outline: 2px solid rgba(96,165,250,0.6); outline-offset: 2px; }
     </style>
 </head>
 <body>
-    <div class="min-vh-100 d-flex align-items-center justify-content-center p-4" style="background: linear-gradient(180deg,#0f172a 0%, #0b1220 60%);">
-        <div class="login-card w-100" style="max-width:420px; background: rgba(255,255,255,0.04); border-radius:16px; box-shadow: 0 8px 40px rgba(2,6,23,0.6); overflow:hidden; backdrop-filter: blur(8px);">
-            <div class="p-4">
-                <div class="text-center mb-3">
-                    <div class="login-icon mx-auto mb-2" style="width:72px;height:72px;border-radius:12px;background:linear-gradient(135deg,#6d28d9,#06b6d4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;">
-                        <i class="fas fa-car-side"></i>
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+        <div class="w-full max-w-md glass-card shadow-2xl">
+            <div class="p-6 sm:p-8">
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-lg" style="background:linear-gradient(90deg,#8b5cf6,#06b6d4); color: #fff;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7h4l3 8h7l3-8h2"/></svg>
                     </div>
-                    <h3 class="mb-0 text-white fw-bold">OTOMOTORS</h3>
-                    <p class="text-muted small mb-0">Manager Portal</p>
+                    <h1 class="mt-4 text-2xl font-semibold text-white">OTOMOTORS</h1>
+                    <p class="text-sm text-slate-300 mt-1">Manager Portal — secure access</p>
                 </div>
 
                 <?php if ($error): ?>
-                <div class="alert alert-danger mb-3" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    <?php echo htmlspecialchars($error); ?>
+                <div class="mb-4 p-3 rounded-md bg-red-600/10 text-red-600 text-sm flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.68-1.36 3.445 0l5.516 9.814c.75 1.334-.213 2.987-1.723 2.987H4.464c-1.51 0-2.472-1.653-1.723-2.987L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-.993.883L9 7v4a1 1 0 001.993.117L11 11V7a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                    <div><?php echo htmlspecialchars($error); ?></div>
                 </div>
                 <?php endif; ?>
 
-                <form method="POST" action="" class="mt-2">
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control bg-transparent text-white border-0" id="username" name="username" placeholder="Username" required autofocus autocomplete="username" style="border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:1rem;">
-                        <label for="username" class="text-white">Username</label>
+                <form method="POST" action="" class="space-y-4" novalidate>
+                    <div>
+                        <label for="username" class="block text-sm text-slate-300 mb-1">Username</label>
+                        <input id="username" name="username" type="text" required autocomplete="username" class="w-full rounded-lg border border-slate-700 bg-slate-900/40 text-white px-3 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none focus:ring-offset-0 focus:ring-offset-transparent" placeholder="Enter username">
                     </div>
 
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control bg-transparent text-white border-0" id="password" name="password" placeholder="Password" required autocomplete="current-password" style="border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:1rem;">
-                        <label for="password" class="text-white">Password</label>
+                    <div class="relative">
+                        <label for="password" class="block text-sm text-slate-300 mb-1">Password</label>
+                        <input id="password" name="password" type="password" required autocomplete="current-password" class="w-full rounded-lg border border-slate-700 bg-slate-900/40 text-white px-3 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none" placeholder="Enter password">
+                        <button type="button" id="togglePwd" class="absolute right-2 top-2.5 text-slate-300 text-sm">Show</button>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="form-check text-white">
-                            <input class="form-check-input" type="checkbox" value="1" id="rememberMe" name="remember" style="transform:scale(1.05);">
-                            <label class="form-check-label small" for="rememberMe">Remember me</label>
-                        </div>
-                        <a href="#" class="small text-white">Forgot?</a>
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="inline-flex items-center gap-2 text-slate-300"><input type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-600 bg-slate-700/20"> Remember me</label>
+                        <a href="#" class="text-sky-400">Forgot?</a>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100" style="background:linear-gradient(90deg,#6d28d9,#06b6d4); border:none; padding:0.85rem 1rem; border-radius:10px; font-weight:700;">
-                        <i class="fas fa-sign-in-alt me-2"></i> <?php echo __('login.sign_in', 'Sign In'); ?>
-                    </button>
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-500 px-4 py-2 font-semibold text-white shadow-md hover:brightness-105">Sign in</button>
                 </form>
 
-                <div class="text-center mt-4 small text-muted" style="color:rgba(255,255,255,0.6);">
-                    © <?php echo date('Y'); ?> OTOMOTORS
-                </div>
+                <div class="mt-6 text-center text-xs text-slate-400">© <?php echo date('Y'); ?> OTOMOTORS</div>
             </div>
         </div>
     </div>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
++    <script>
++        document.getElementById('togglePwd')?.addEventListener('click', function(){
++            const pwd = document.getElementById('password');
++            if (!pwd) return;
++            if (pwd.type === 'password') { pwd.type = 'text'; this.textContent = 'Hide'; } else { pwd.type = 'password'; this.textContent = 'Show'; }
++        });
++        document.getElementById('username')?.focus();
++    </script>
 </body>
 </html>
