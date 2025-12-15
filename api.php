@@ -942,6 +942,39 @@ try {
         // --- NEW: UPDATE SUGGESTIONS ---
         update_suggestions_from_list($pdo, $parts_list);
 
+        // --- NEW: Send SMS notification to customer depending on collection_type ---
+        try {
+            // Fetch transfer contact
+            $stmt = $pdo->prepare("SELECT name, plate, phone FROM transfers WHERE id = ?");
+            $stmt->execute([$transfer_id]);
+            $tr = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($tr && !empty($tr['phone'])) {
+                // Determine template slug
+                $slug = ($collection_type === 'order') ? 'parts_ordered' : 'parts_request_local';
+
+                // Try to fetch template from DB
+                $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = ? AND is_active = 1");
+                $stmt->execute([$slug]);
+                $template = $stmt->fetchColumn();
+
+                // Fallback messages
+                if (!$template) {
+                    if ($collection_type === 'order') {
+                        $template = "თქვენი ავტომობილისთვის საჭირო დეტალები შეკვეთილია. დამატებითი დეტალებისათვის ახლავე დაგიკავშირდებით.";
+                    } else {
+                        $template = "გამარჯობა, მიმდინარეობს თქვენი ავტომობილის აღსადგენად საჭირო დეტალების შეგროვება. სერვისთან დაკავშირებულ დეტალებს, უახლოეს მომავალში მიიღებთ.";
+                    }
+                }
+
+                $to = preg_replace('/\D+/', '', $tr['phone']);
+                $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+                @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($template));
+            }
+        } catch (Exception $e) {
+            error_log("Failed to send parts collection SMS for collection $new_collection_id: " . $e->getMessage());
+        }
+
         jsonResponse(['success' => true, 'id' => $new_collection_id]);
     }
 
