@@ -235,7 +235,7 @@ if (!$collection_id) {
                         if (item.type === 'labor') {
                             addLabor(item.name, item.quantity, item.price);
                         } else {
-                            addPart(item.name, item.quantity, item.price);
+                            addPart(item.name, item.quantity, item.price, item.collected || false);
                         }
                     });
                     updateTotals();
@@ -349,7 +349,7 @@ if (!$collection_id) {
             });
         }
 
-        function addPart(name = '', quantity = 1, price = 0) {
+        function addPart(name = '', quantity = 1, price = 0, collected = false) {
             const container = document.getElementById('editPartsList');
             const itemDiv = document.createElement('div');
             itemDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
@@ -361,6 +361,10 @@ if (!$collection_id) {
                             <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900" value="${name}" placeholder="Enter part name..." autocomplete="off">
                             <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
                         </div>
+                    </div>
+                    <div class="col-span-1 flex flex-col items-center justify-center">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Collected</label>
+                        <input type="checkbox" class="part-collected h-5 w-5 text-green-600" ${collected ? 'checked' : ''}>
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
@@ -377,6 +381,17 @@ if (!$collection_id) {
                     </div>
                 </div>
             `;
+            // Visual feedback for collected
+            const collectedCheckbox = itemDiv.querySelector('.part-collected');
+            function updateCollectedStyle() {
+                if (collectedCheckbox.checked) {
+                    itemDiv.classList.add('ring-2', 'ring-green-400', 'bg-green-50');
+                } else {
+                    itemDiv.classList.remove('ring-2', 'ring-green-400', 'bg-green-50');
+                }
+            }
+            collectedCheckbox.addEventListener('change', updateCollectedStyle);
+            updateCollectedStyle();
             container.appendChild(itemDiv);
             setupAutocomplete(itemDiv.querySelector('.part-name'), 'part');
             lucide.createIcons();
@@ -509,7 +524,8 @@ if (!$collection_id) {
                     name: item.querySelector('.part-name').value,
                     quantity: parseInt(item.querySelector('.part-quantity').value),
                     price: parseFloat(item.querySelector('.part-price').value),
-                    type: 'part'
+                    type: 'part',
+                    collected: item.querySelector('.part-collected').checked
                 });
             });
             document.querySelectorAll('#editLaborList .labor-item').forEach(item => {
