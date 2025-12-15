@@ -1304,8 +1304,8 @@ try {
 
     // --- SEND SMS ENDPOINT ---
     if ($action === 'send_sms' && $method === 'POST') {
-        $data = getJsonInput();
-        $to = $data['to'] ?? '';
+        $data = $_POST;
+        $to = $data['to'] ?? $data['phone'] ?? '';
         $text = $data['text'] ?? '';
 
         if (empty($to) || empty($text)) {
