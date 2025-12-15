@@ -1207,127 +1207,88 @@ try {
 
             // --- DATA-DRIVEN PARSING FUNCTIONS ---
 
-            // Parses the Parts section, which has multi-line names and quantity/status/price columns
+            // Parses the Parts section - simple line-by-line processing
             function parsePartsSection($textBlock) {
-                $lines = explode("\n", $textBlock);
+                $lines = preg_split('/\r?\n/', $textBlock);
                 $items = [];
-                $nameBuffer = [];
-
-                // Regex to find a line containing quantity and price (status might be optional)
-                $dataLineRegex = '/(\d+)\s+[^\s]*\s*([\d,.]+)$/u';
+                $currentItem = null;
 
                 foreach ($lines as $line) {
                     $line = trim($line);
                     if (empty($line)) continue;
 
                     // Skip header lines
-                    if (strpos($line, 'რაოდენობა') !== false && strpos($line, 'სტატუსი') !== false && strpos($line, 'ფასი') !== false) {
-                        continue; // Skip the column headers
+                    if (strpos($line, 'რაოდენობა') !== false && strpos($line, 'სტატუსი') !== false) {
+                        continue;
                     }
 
-                    $matches = [];
-                    // Check if the current line is a data line (quantity, status, price)
-                    if (preg_match($dataLineRegex, $line, $matches)) {
+                    // Check if this line contains a quantity (ends with number followed by status and price)
+                    if (preg_match('/(\d+)\s+([^\s]+)\s*([\d,.]+)$/', $line, $matches)) {
+                        // This is a data line: quantity, status, price
                         $quantity = (int)$matches[1];
-                        $price = (float)str_replace(',', '', $matches[2]);
-                        
-                        // The name is what we've collected in the buffer
-                        if (!empty($nameBuffer)) {
-                            $name = implode(' ', $nameBuffer);
-                            $items[] = ['name' => $name, 'quantity' => $quantity, 'price' => $price, 'type' => 'part'];
-                            $nameBuffer = []; // Reset buffer after creating an item
+                        $status = $matches[2];
+                        $price = (float)str_replace(',', '', $matches[3]);
+
+                        if ($currentItem !== null) {
+                            // Complete the previous item
+                            $currentItem['quantity'] = $quantity;
+                            $currentItem['price'] = $price;
+                            $items[] = $currentItem;
+                            $currentItem = null;
                         }
                     } else {
-                        // This line is part of an item's name. It might be a single-line item name.
-                        // Check if it's a single line item with name and data together
-                        $singleLineRegex = '/^(.+?)\s+(\d+)\s+[^\s]*\s*([\d,.]+)$/u';
-                        if (preg_match($singleLineRegex, $line, $matches)) {
-                             $name = trim(implode(' ', $nameBuffer) . ' ' . $matches[1]);
-                             $quantity = (int)$matches[2];
-                             $price = (float)str_replace(',', '', $matches[3]);
-                             $items[] = ['name' => $name, 'quantity' => $quantity, 'price' => $price, 'type' => 'part'];
-                             $nameBuffer = [];
+                        // This is part of an item name
+                        if ($currentItem === null) {
+                            $currentItem = ['name' => $line, 'type' => 'part'];
                         } else {
-                            // It's just part of a name, so add it to the buffer.
-                            $nameBuffer[] = $line;
+                            $currentItem['name'] .= ' ' . $line;
                         }
                     }
                 }
+
                 return $items;
             }
 
-            // Parses the Labor section, which has multi-line names and just a price column
+            // Parses the Labor section - simple line-by-line processing
             function parseLaborSection($textBlock) {
-                // Split on newlines, handling both \n and \r\n
                 $lines = preg_split('/\r?\n/', $textBlock);
-                // Filter out empty lines at the end
-                while (!empty($lines) && trim(end($lines)) === '') {
-                    array_pop($lines);
-                }
                 $items = [];
-                $nameBuffer = [];
-
-                // Debug logging
-                // global $logContent;
-                // $logContent .= "LABOR LINES TO PROCESS:\n";
-                // foreach ($lines as $i => $line) {
-                //     $logContent .= "[$i]: '" . trim($line) . "'\n";
-                // }
-                // $logContent .= "--- END LABOR LINES ---\n\n";
+                $currentItem = null;
 
                 foreach ($lines as $line) {
                     $line = trim($line);
                     if (empty($line)) continue;
-                    
+
                     // Skip header lines
                     if ($line === 'ფასი(ლარი)') {
-                        continue; // Skip the column header
+                        continue;
                     }
-                    
-                    // Regex to find a line that is ONLY a price
-                    $priceOnlyRegex = '/^[\d,.]+$/u';
-                    // Regex for a single line item: (Name) tab (Price)
-                    $singleLineRegex = '/^(.+?)\t([\d,.]+)$/u';
 
-                    $matches = [];
-                    // Debug logging
-                    global $logContent;
-                    $logContent .= "PROCESSING LINE: '$line'\n";
-                    // Check if the line is just a price (end of a multi-line item)
-                    if (is_numeric(str_replace(',', '', $line))) {
-                        // Debug logging
-                        global $logContent;
-                        $logContent .= "PRICE LINE DETECTED: '$line' (trimmed: '$trimmedLine'), nameBuffer: " . (!empty($nameBuffer) ? implode(' ', $nameBuffer) : 'EMPTY') . "\n";
-                        if (!empty($nameBuffer)) {
-                            $price = (float)str_replace(',', '', $trimmedLine);
-                            $name = implode(' ', $nameBuffer);
+                    // Check if this line contains a tab (single line item: name\tprice)
+                    if (strpos($line, "\t") !== false) {
+                        $parts = explode("\t", $line, 2);
+                        if (count($parts) == 2) {
+                            $name = trim($parts[0]);
+                            $price = (float)str_replace(',', '', trim($parts[1]));
                             $items[] = ['name' => $name, 'quantity' => 1, 'price' => $price, 'type' => 'labor'];
-                            // Debug logging
-                            $logContent .= "CREATED MULTI-LINE LABOR ITEM: '$name' = $price\n";
-                            $nameBuffer = []; // Reset
                         }
-                    } elseif (preg_match($singleLineRegex, $line, $matches)) {
-                        // It's a single line item with tab separator
-                        $name = trim($matches[1]);
-                        $price = (float)str_replace(',', '', $matches[2]);
-                        $items[] = ['name' => $name, 'quantity' => 1, 'price' => $price, 'type' => 'labor'];
-                        // Debug logging
-                        // $logContent .= "CREATED SINGLE-LINE LABOR ITEM: '$name' = $price\n";
-                        $nameBuffer = [];
+                    } elseif (is_numeric(str_replace(',', '', $line))) {
+                        // This is a price line - complete the current multi-line item
+                        if ($currentItem !== null) {
+                            $currentItem['price'] = (float)str_replace(',', '', $line);
+                            $items[] = $currentItem;
+                            $currentItem = null;
+                        }
                     } else {
-                        // It's part of a name, add to buffer
-                        $nameBuffer[] = $line;
-                        // Debug logging
-                        // $logContent .= "ADDED TO NAME BUFFER: '$line' (buffer now: " . implode(' ', $nameBuffer) . ")\n";
+                        // This is part of a multi-line item name
+                        if ($currentItem === null) {
+                            $currentItem = ['name' => $line, 'type' => 'labor'];
+                        } else {
+                            $currentItem['name'] .= ' ' . $line;
+                        }
                     }
                 }
-                
-                // Handle any remaining content in nameBuffer (shouldn't happen with proper formatting)
-                // if (!empty($nameBuffer)) {
-                //     global $logContent;
-                //     $logContent .= "WARNING: Leftover content in nameBuffer: " . implode(' ', $nameBuffer) . "\n";
-                // }
-                
+
                 return $items;
             }
 
@@ -1348,43 +1309,24 @@ try {
                 $offset = $pos + 1;
             }
 
-            // Extract parts section: from parts header to labor header (or to first end marker if no labor header)
-            if ($partsHeaderPos !== false) {
-                $partsStart = $partsHeaderPos + strlen($partsHeader);
-                $partsEnd = null;
-                
-                if ($laborHeaderPos !== false && $laborHeaderPos > $partsStart) {
-                    // Parts section ends at labor header
-                    $partsEnd = $laborHeaderPos;
-                } else {
-                    // Find the first end marker after parts header
-                    foreach ($endMarkers as $endPos) {
-                        if ($endPos > $partsStart) {
-                            $partsEnd = $endPos;
-                            break;
-                        }
-                    }
-                }
-                
-                if ($partsEnd !== null) {
+            // Extract parts section: from parts header to first "ჯამი (ლარი)" after it
+            $partsStart = strpos($text, $partsHeader);
+            if ($partsStart !== false) {
+                $partsStart += strlen($partsHeader);
+                $partsEnd = strpos($text, $sectionEnd, $partsStart);
+                if ($partsEnd !== false) {
                     $partsTextBlock = trim(substr($text, $partsStart, $partsEnd - $partsStart));
                 }
-                
-                // Debug logging
-                // $logContent .= "PARTS SECTION EXTRACTED:\n" . $partsTextBlock . "\n--- END PARTS ---\n\n";
             }
 
-            // Extract labor section: from labor header to the line before "ჯამი (ლარი)"
-            if ($laborHeaderPos !== false) {
-                $laborStart = $laborHeaderPos + strlen($laborHeader);
-                $laborEnd = strpos($text, 'ჯამი (ლარი)', $laborStart);
-                
+            // Extract labor section: from labor header to first "ჯამი (ლარი)" after it
+            $laborStart = strpos($text, $laborHeader);
+            if ($laborStart !== false) {
+                $laborStart += strlen($laborHeader);
+                $laborEnd = strpos($text, $sectionEnd, $laborStart);
                 if ($laborEnd !== false) {
                     $laborTextBlock = trim(substr($text, $laborStart, $laborEnd - $laborStart));
                 }
-                
-                // Debug logging
-                // $logContent .= "LABOR SECTION EXTRACTED:\n" . $laborTextBlock . "\n--- END LABOR ---\n\n";
             }
 
             $partItems = $partsTextBlock ? parsePartsSection($partsTextBlock) : [];
