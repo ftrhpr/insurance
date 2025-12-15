@@ -376,6 +376,13 @@ try {
                                     <label class="block text-sm font-medium text-slate-600 mb-1">Supplier (Optional)</label>
                                     <input x-model="partsRequest.supplier" type="text" placeholder="Supplier name" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">Collection Type</label>
+                                    <select x-model="partsRequest.collection_type" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        <option value="local">Local Market</option>
+                                        <option value="order">Order</option>
+                                    </select>
+                                </div>
                                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
                                     <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
                                     Create Parts Request
@@ -419,7 +426,7 @@ try {
             return {
                 currentCase: { ...initialCaseData },
                 openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback'],
-                partsRequest: { description: '', supplier: '' },
+                partsRequest: { description: '', supplier: '', collection_type: 'local' },
                 statuses: [
                     { id: 'New', name: 'New', icon: 'file-plus-2' },
                     { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
@@ -549,7 +556,9 @@ try {
                                 transfer_id: CASE_ID,
                                 parts_list: partsList,
                                 assigned_manager_id: null,
-                                description: this.partsRequest.description
+                                description: this.partsRequest.description,
+                                supplier: this.partsRequest.supplier || null,
+                                collection_type: this.partsRequest.collection_type || 'local'
                             })
                         });
                         
@@ -557,7 +566,7 @@ try {
                         const result = await response.json();
                         
                         showToast("Parts Request Created", "Parts collection request has been created.", "success");
-                        this.partsRequest = { description: '', supplier: '' };
+                        this.partsRequest = { description: '', supplier: '', collection_type: 'local' };
                     } catch (error) {
                         showToast("Error", "Failed to create parts request.", "error");
                     }

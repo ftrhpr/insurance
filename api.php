@@ -922,6 +922,7 @@ try {
         $parts_list = $data['parts_list'] ?? [];
         $assigned_manager_id = $data['assigned_manager_id'] ?? null;
         $description = $data['description'] ?? null;
+        $collection_type = in_array(($data['collection_type'] ?? ''), ['local', 'order']) ? $data['collection_type'] : 'local';
 
         if (!$transfer_id || empty($parts_list)) {
             http_response_code(400);
@@ -934,8 +935,8 @@ try {
             $total_cost += ($part['quantity'] ?? 0) * ($part['price'] ?? 0);
         }
 
-        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost, assigned_manager_id, currency, description) VALUES (?, ?, ?, ?, 'GEL', ?)");
-        $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost, $assigned_manager_id, $description]);
+        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost, assigned_manager_id, currency, description, collection_type) VALUES (?, ?, ?, ?, 'GEL', ?, ?)");
+        $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost, $assigned_manager_id, $description, $collection_type]);
         $new_collection_id = $pdo->lastInsertId();
 
         // --- NEW: UPDATE SUGGESTIONS ---

@@ -234,6 +234,7 @@ try {
         'assigned_manager_id' => "INT DEFAULT NULL COMMENT 'ID of assigned manager from users table'",
         'currency' => "VARCHAR(3) DEFAULT 'GEL' COMMENT 'Currency for the collection: GEL'",
         'description' => "TEXT DEFAULT NULL COMMENT 'Description of the parts collection request'",
+        'collection_type' => "VARCHAR(16) DEFAULT 'local' COMMENT 'Collection type: local or order'",
     ];
 
     foreach ($columns as $col => $def) {
