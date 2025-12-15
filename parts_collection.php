@@ -293,6 +293,11 @@ if (empty($_SESSION['user_id'])) {
                 const managerName = collection.manager_full_name || 'Unassigned';
                 const totalItems = collection.parts_list.reduce((sum, item) => sum + parseInt(item.quantity, 10), 0);
                 const totalPrice = collection.parts_list.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity, 10)), 0);
+                // Progress calculation
+                const partItems = collection.parts_list.filter(item => item.type === 'part');
+                const collectedCount = partItems.reduce((sum, item) => sum + (item.collected ? parseInt(item.quantity, 10) : 0), 0);
+                const totalParts = partItems.reduce((sum, item) => sum + parseInt(item.quantity, 10), 0);
+                const progressPercent = totalParts > 0 ? Math.round((collectedCount / totalParts) * 100) : 0;
 
                 html += `
                     <div class="glass-card rounded-2xl shadow-lg card-hover border border-white/30 overflow-hidden">
@@ -329,6 +334,13 @@ if (empty($_SESSION['user_id'])) {
                                 <div class="flex items-center text-gray-700">
                                     <i data-lucide="receipt" class="w-4 h-4 mr-2 text-green-500"></i>
                                     Total: <span class="font-bold ml-1">₾${totalPrice.toFixed(2)}</span>
+                                </div>
+                                <div class="flex items-center mt-2">
+                                    <i data-lucide="progress" class="w-4 h-4 mr-2 text-blue-400"></i>
+                                    <div class="w-full bg-gray-200 rounded-full h-3 mr-2">
+                                        <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: ${progressPercent}%;"></div>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-700">${collectedCount}/${totalParts} collected</span>
                                 </div>
                             </div>
                         </div>
