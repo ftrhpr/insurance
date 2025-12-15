@@ -49,7 +49,27 @@ if ($method === 'POST' && !in_array($action, $publicEndpoints) && !empty($_SESSI
         http_response_code(403);
         die(json_encode(['error' => 'Invalid CSRF token', 'debug' => 'Token validation failed']));
     }
-<?php
+}
+*/
+
+// Check role permissions
+function checkPermission($required_role) {
+    global $pdo;
+    $user_role = $_SESSION['role'] ?? 'viewer';
+    $hierarchy = ['viewer' => 1, 'manager' => 2, 'admin' => 3];
+    return $hierarchy[$user_role] >= $hierarchy[$required_role];
+}
+
+function getCurrentUserId() {
+    return $_SESSION['user_id'] ?? null;
+}
+
+function jsonResponse($data) {
+    echo json_encode($data);
+    exit;
+}
+
+function getJsonInput() {
     $input = json_decode(file_get_contents('php://input'), true);
     return (json_last_error() === JSON_ERROR_NONE) ? $input : [];
 }
