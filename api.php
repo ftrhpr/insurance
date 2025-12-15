@@ -1298,10 +1298,22 @@ try {
             
             $items = array_merge($partItems, $laborItems);
 
+            // Filter out Georgian column headers that might be parsed as item names
+            $headersToFilter = ['რაოდენობა', 'სტატუსი', 'ფასი(ლარი)', 'ფასი', 'ლარი'];
+            $items = array_filter($items, function($item) use ($headersToFilter) {
+                $name = trim($item['name']);
+                foreach ($headersToFilter as $header) {
+                    if (mb_stripos($name, $header) !== false) {
+                        return false; // Exclude this item
+                    }
+                }
+                return !empty($name); // Also exclude empty names
+            });
+
             if (empty($items)) {
                  jsonResponse(['success' => false, 'error' => 'Could not automatically detect any items based on the specified format. Please add them manually.']);
             } else {
-                 jsonResponse(['success' => true, 'items' => $items]);
+                 jsonResponse(['success' => true, 'items' => array_values($items)]); // Re-index array
             }
 
         } catch (Exception $e) {
