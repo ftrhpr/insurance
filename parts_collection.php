@@ -17,6 +17,7 @@ if (empty($_SESSION['user_id'])) {
         console.log('Tailwind CSS loaded from CDN (development mode)');
     </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
         .modal { display: none; }
         .modal.active { display: flex; }
