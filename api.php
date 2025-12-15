@@ -1,3 +1,19 @@
+// PUBLIC: Get single parts collection by id
+if ($action === 'get_parts_collection' && $method === 'GET') {
+    $id = $_GET['id'] ?? null;
+    if (!$id) {
+        http_response_code(400);
+        jsonResponse(['error' => 'Missing collection id']);
+    }
+    $stmt = $pdo->prepare("SELECT pc.*, t.plate AS transfer_plate, t.name AS transfer_name, u.username as assigned_manager_username, u.full_name as manager_full_name FROM parts_collections pc JOIN transfers t ON pc.transfer_id = t.id LEFT JOIN users u ON pc.assigned_manager_id = u.id WHERE pc.id = ?");
+    $stmt->execute([$id]);
+    $collection = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$collection) {
+        http_response_code(404);
+        jsonResponse(['error' => 'Collection not found']);
+    }
+    jsonResponse(['success' => true, 'collection' => $collection]);
+}
 <?php
 require_once 'session_config.php';
 
