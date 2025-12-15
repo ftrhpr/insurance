@@ -985,6 +985,7 @@ try {
         $new_status = $data['status'] ?? null;
         $assigned_manager_id = $data['assigned_manager_id'] ?? null;
         $description = $data['description'] ?? null;
+        $collection_type = isset($data['collection_type']) && in_array($data['collection_type'], ['local', 'order']) ? $data['collection_type'] : null;
 
         if (!$id) {
             http_response_code(400);
@@ -1020,6 +1021,11 @@ try {
         if ($description !== null) {
             $query .= ", description = ?";
             $params[] = $description;
+        }
+
+        if ($collection_type !== null) {
+            $query .= ", collection_type = ?";
+            $params[] = $collection_type;
         }
 
         $query .= " WHERE id = ?";
