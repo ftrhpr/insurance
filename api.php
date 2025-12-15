@@ -1180,10 +1180,31 @@ try {
             $logContent = "--- PDF PARSE ATTEMPT: " . date('Y-m-d H:i:s') . " ---\n" . $text . "\n--- END ---\n\n";
             file_put_contents(__DIR__ . '/error_log', $logContent, FILE_APPEND);
 
-            // Define Georgian keywords and section delimiters
+            // Define Georgian keywords and section delimiters (with flexible matching)
             $partsHeader = 'დეტალების ჩამონათვალი';
             $laborHeader = 'მომსახურების ჩამონათვალი';
             $sectionEnd = 'ჯამი (ლარი)';
+
+            // Try to find headers with more flexible matching
+            $partsHeaderPos = mb_strpos($text, $partsHeader);
+            if ($partsHeaderPos === false) {
+                // Try without exact spacing
+                $partsHeaderPos = mb_strpos($text, 'დეტალების');
+                $logContent .= "FALLBACK: Parts header 'დეტალების' at position: $partsHeaderPos\n";
+            }
+            
+            $laborHeaderPos = mb_strpos($text, $laborHeader);
+            if ($laborHeaderPos === false) {
+                // Try without exact spacing
+                $laborHeaderPos = mb_strpos($text, 'მომსახურების');
+                $logContent .= "FALLBACK: Labor header 'მომსახურების' at position: $laborHeaderPos\n";
+            }
+
+            // Debug logging
+            $logContent .= "LOOKING FOR HEADERS:\n";
+            $logContent .= "Parts header: '$partsHeader' at position: $partsHeaderPos\n";
+            $logContent .= "Labor header: '$laborHeader' at position: $laborHeaderPos\n";
+            $logContent .= "Section end: '$sectionEnd' found " . count($endMarkers) . " times at positions: " . implode(', ', $endMarkers) . "\n\n";
 
             // --- DATA-DRIVEN PARSING FUNCTIONS ---
 
@@ -1193,8 +1214,8 @@ try {
                 $items = [];
                 $nameBuffer = [];
 
-                // Regex to find a line containing quantity, status, and price
-                $dataLineRegex = '/(\d+)\s+[^\s]+\s+([\d,.]+)$/u';
+                // Regex to find a line containing quantity and price (status might be optional)
+                $dataLineRegex = '/(\d+)\s+[^\s]*\s*([\d,.]+)$/u';
 
                 foreach ($lines as $line) {
                     $line = trim($line);
@@ -1215,7 +1236,7 @@ try {
                     } else {
                         // This line is part of an item's name. It might be a single-line item name.
                         // Check if it's a single line item with name and data together
-                        $singleLineRegex = '/^(.+?)\s+(\d+)\s+[^\s]+\s+([\d,.]+)$/u';
+                        $singleLineRegex = '/^(.+?)\s+(\d+)\s+[^\s]*\s*([\d,.]+)$/u';
                         if (preg_match($singleLineRegex, $line, $matches)) {
                              $name = trim(implode(' ', $nameBuffer) . ' ' . $matches[1]);
                              $quantity = (int)$matches[2];
@@ -1236,6 +1257,14 @@ try {
                 $lines = explode("\n", $textBlock);
                 $items = [];
                 $nameBuffer = [];
+
+                // Debug logging
+                global $logContent;
+                $logContent .= "LABOR LINES TO PROCESS:\n";
+                foreach ($lines as $i => $line) {
+                    $logContent .= "[$i]: '" . trim($line) . "'\n";
+                }
+                $logContent .= "--- END LABOR LINES ---\n\n";
 
                 foreach ($lines as $line) {
                     $line = trim($line);
@@ -1276,30 +1305,82 @@ try {
             $laborTextBlock = '';
 
             $partsHeaderPos = mb_strpos($text, $partsHeader);
-            if ($partsHeaderPos !== false) {
-                $partsStart = $partsHeaderPos + mb_strlen($partsHeader);
-                $partsEnd = mb_strpos($text, $sectionEnd, $partsStart);
-                if ($partsEnd !== false) {
-                    $partsTextBlock = trim(mb_substr($text, $partsStart, $partsEnd - $partsStart));
-                }
+            $laborHeaderPos = mb_strpos($text, $laborHeader);
+            
+            // Find all occurrences of section end marker
+            $endMarkers = [];
+            $offset = 0;
+            while (($pos = mb_strpos($text, $sectionEnd, $offset)) !== false) {
+                $endMarkers[] = $pos;
+                $offset = $pos + 1;
             }
 
-            $laborHeaderPos = mb_strpos($text, $laborHeader);
+            // Extract parts section: from parts header to labor header (or to first end marker if no labor header)
+            if ($partsHeaderPos !== false) {
+                $partsStart = $partsHeaderPos + mb_strlen($partsHeader);
+                $partsEnd = null;
+                
+                if ($laborHeaderPos !== false && $laborHeaderPos > $partsStart) {
+                    // Parts section ends at labor header
+                    $partsEnd = $laborHeaderPos;
+                } else {
+                    // Find the first end marker after parts header
+                    foreach ($endMarkers as $endPos) {
+                        if ($endPos > $partsStart) {
+                            $partsEnd = $endPos;
+                            break;
+                        }
+                    }
+                }
+                
+                if ($partsEnd !== null) {
+                    $partsTextBlock = trim(mb_substr($text, $partsStart, $partsEnd - $partsStart));
+                }
+                
+                // Debug logging
+                $logContent .= "PARTS SECTION EXTRACTED:\n" . $partsTextBlock . "\n--- END PARTS ---\n\n";
+            }
+
+            // Extract labor section: from labor header to next end marker
             if ($laborHeaderPos !== false) {
                 $laborStart = $laborHeaderPos + mb_strlen($laborHeader);
-                $laborEnd = mb_strpos($text, $sectionEnd, $laborStart);
-                if ($laborEnd !== false) {
+                $laborEnd = null;
+                
+                // Find the first end marker after labor header
+                foreach ($endMarkers as $endPos) {
+                    if ($endPos > $laborStart) {
+                        $laborEnd = $endPos;
+                        break;
+                    }
+                }
+                
+                if ($laborEnd !== null) {
                     $laborTextBlock = trim(mb_substr($text, $laborStart, $laborEnd - $laborStart));
                 }
+                
+                // Debug logging
+                $logContent .= "LABOR SECTION EXTRACTED:\n" . $laborTextBlock . "\n--- END LABOR ---\n\n";
             }
 
             $partItems = $partsTextBlock ? parsePartsSection($partsTextBlock) : [];
             $laborItems = $laborTextBlock ? parseLaborSection($laborTextBlock) : [];
             
+            // Debug logging
+            $logContent .= "PARSED PART ITEMS: " . count($partItems) . "\n";
+            foreach ($partItems as $item) {
+                $logContent .= "- " . $item['name'] . " (qty: " . $item['quantity'] . ", price: " . $item['price'] . ")\n";
+            }
+            $logContent .= "\nPARSED LABOR ITEMS: " . count($laborItems) . "\n";
+            foreach ($laborItems as $item) {
+                $logContent .= "- " . $item['name'] . " (price: " . $item['price'] . ")\n";
+            }
+            $logContent .= "\n";
+            
             $items = array_merge($partItems, $laborItems);
 
             // Filter out Georgian column headers that might be parsed as item names
             $headersToFilter = ['რაოდენობა', 'სტატუსი', 'ფასი(ლარი)', 'ფასი', 'ლარი'];
+            $originalCount = count($items);
             $items = array_filter($items, function($item) use ($headersToFilter) {
                 $name = trim($item['name']);
                 foreach ($headersToFilter as $header) {
@@ -1309,6 +1390,18 @@ try {
                 }
                 return !empty($name); // Also exclude empty names
             });
+            
+            // Debug logging
+            $logContent .= "FILTERING: Original items: $originalCount, After filtering: " . count($items) . "\n";
+            if ($originalCount > count($items)) {
+                $logContent .= "FILTERED ITEMS:\n";
+                // We can't easily show what was filtered without more complex logic
+            }
+            $logContent .= "\nFINAL ITEMS: " . count($items) . "\n";
+            foreach ($items as $item) {
+                $logContent .= "- " . $item['name'] . " (type: " . $item['type'] . ", qty: " . ($item['quantity'] ?? 1) . ", price: " . $item['price'] . ")\n";
+            }
+            $logContent .= "\n";
 
             if (empty($items)) {
                  jsonResponse(['success' => false, 'error' => 'Could not automatically detect any items based on the specified format. Please add them manually.']);
