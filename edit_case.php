@@ -481,7 +481,7 @@ try {
                         amount: document.getElementById('input-amount').value.trim(),
                         status: status,
                         phone: document.getElementById('input-phone').value.trim(),
-                        service_date: serviceDate || null,
+                        serviceDate: serviceDate || null,
                         franchise: document.getElementById('input-franchise').value || 0,
                         user_response: this.currentCase.user_response || null,
                         internalNotes: this.currentCase.internalNotes || [],
@@ -539,8 +539,18 @@ try {
 
         function initializeIcons() { if (window.lucide) { lucide.createIcons(); } }
         async function fetchAPI(endpoint, method = 'GET', data = null) {
-            const config = { method, headers: { 'Content-Type': 'application/json' } };
-            if (data) config.body = JSON.stringify(data);
+            const config = { method };
+            if (data) {
+                const formData = new FormData();
+                for (const key in data) {
+                    if (typeof data[key] === 'object') {
+                        formData.append(key, JSON.stringify(data[key]));
+                    } else {
+                        formData.append(key, String(data[key]));
+                    }
+                }
+                config.body = formData;
+            }
             const response = await fetch(`${API_URL}?action=${endpoint}`, config);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();

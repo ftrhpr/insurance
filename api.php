@@ -301,8 +301,8 @@ try {
     }
 
     if ($action === 'update_transfer' && $method === 'POST') {
-        $id = $_GET['id'] ?? null;
-        $data = getJsonInput();
+        $data = $_POST;
+        $id = $data['id'] ?? null;
 
         if (!$id || empty($data)) {
             http_response_code(400);
@@ -317,7 +317,7 @@ try {
                 'amount' => 'amount',
                 'status' => 'status',
                 'phone' => 'phone',
-                'serviceDate' => 'serviceDate',
+                'serviceDate' => 'service_date',
                 'franchise' => 'franchise',
                 'internalNotes' => 'internalNotes',
                 'systemLogs' => 'systemLogs',
