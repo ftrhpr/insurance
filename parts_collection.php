@@ -191,10 +191,37 @@ if (empty($_SESSION['user_id'])) {
                                     <p class="text-sm text-gray-600">Manage and track all parts collections</p>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-4">
                                 <div class="status-badge px-3 py-1 rounded-full text-xs font-medium text-white shadow-md">
                                     <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i>
                                     Live Updates
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs text-gray-600">Status</label>
+                                    <select id="filter-status" class="text-sm px-2 py-1 border rounded bg-white">
+                                        <option value="all">All</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="collected">Collected</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs text-gray-600">Type</label>
+                                    <select id="filter-type" class="text-sm px-2 py-1 border rounded bg-white">
+                                        <option value="all">All</option>
+                                        <option value="local">Local</option>
+                                        <option value="order">Order</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs text-gray-600">Manager</label>
+                                    <select id="filter-manager" class="text-sm px-2 py-1 border rounded bg-white">
+                                        <option value="all">All</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input id="filter-search" placeholder="Search plate or #id" class="px-2 py-1 text-sm border rounded" />
+                                    <button id="filter-clear" class="px-2 py-1 text-sm bg-gray-100 rounded">Clear</button>
                                 </div>
                             </div>
                         </div>
@@ -217,6 +244,19 @@ if (empty($_SESSION['user_id'])) {
         document.addEventListener('DOMContentLoaded', function() {
             loadCollections();
             loadManagers();
+            // Wire up filter events
+            document.getElementById('filter-status')?.addEventListener('change', renderCollections);
+            document.getElementById('filter-type')?.addEventListener('change', renderCollections);
+            document.getElementById('filter-manager')?.addEventListener('change', renderCollections);
+            document.getElementById('filter-search')?.addEventListener('input', renderCollections);
+            document.getElementById('filter-clear')?.addEventListener('click', function(e){
+                e.preventDefault();
+                document.getElementById('filter-status').value = 'all';
+                document.getElementById('filter-type').value = 'all';
+                document.getElementById('filter-manager').value = 'all';
+                document.getElementById('filter-search').value = '';
+                renderCollections();
+            });
             lucide.createIcons();
         });
 
@@ -255,34 +295,69 @@ if (empty($_SESSION['user_id'])) {
                 const data = await response.json();
                 if (data.managers) {
                     managers = data.managers;
+                    populateManagerFilter();
                 }
             } catch (error) {
                 console.error('Error loading managers:', error);
             }
         }
 
-        // Render collections in a card-based layout
+        // Populate manager select filter
+        function populateManagerFilter() {
+            const sel = document.getElementById('filter-manager');
+            if (!sel) return;
+            sel.innerHTML = '<option value="all">All</option>';
+            managers.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = String(m.id);
+                opt.textContent = m.full_name || m.username || m.id;
+                sel.appendChild(opt);
+            });
+        }
+
+        function getFilteredCollections() {
+            const status = document.getElementById('filter-status')?.value || 'all';
+            const type = document.getElementById('filter-type')?.value || 'all';
+            const manager = document.getElementById('filter-manager')?.value || 'all';
+            const search = (document.getElementById('filter-search')?.value || '').trim().toLowerCase();
+
+            return collections.filter(c => {
+                if (status !== 'all' && String(c.status) !== String(status)) return false;
+                const ct = (c.collection_type || 'local');
+                if (type !== 'all' && String(ct) !== String(type)) return false;
+                if (manager !== 'all' && String(c.assigned_manager_id || '') !== String(manager)) return false;
+                if (search) {
+                    const plate = (c.transfer_plate || '').toLowerCase();
+                    const idStr = String(c.id || '');
+                    if (!plate.includes(search) && idStr !== search) return false;
+                }
+                return true;
+            });
+        }
+
+        // Render collections in a card-based layout (applies active filters)
         function renderCollections() {
             const container = document.getElementById('collectionsTable');
             if (!container) return;
+            const list = getFilteredCollections();
 
-            if (collections.length === 0) {
+            if (list.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-12">
                         <div class="mx-auto w-24 h-24 gradient-accent rounded-full flex items-center justify-center float-animation">
                             <i data-lucide="package-search" class="w-12 h-12 text-white"></i>
                         </div>
-                        <h3 class="mt-4 text-lg font-semibold text-gray-800">No collections yet</h3>
-                        <p class="mt-1 text-sm text-gray-600">Create a new collection to get started.</p>
+                        <h3 class="mt-4 text-lg font-semibold text-gray-800">No collections match filters</h3>
+                        <p class="mt-1 text-sm text-gray-600">Try clearing filters or create a new collection.</p>
                     </div>
                 `;
                 lucide.createIcons();
                 return;
             }
 
-            let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">';
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>';
 
-            collections.forEach(collection => {
+            list.forEach(collection => {
                 const statusColors = {
                     pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'hourglass' },
                     collected: { bg: 'bg-green-100', text: 'text-green-800', icon: 'check-circle' },
