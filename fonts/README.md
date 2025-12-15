@@ -2,27 +2,17 @@ BPG Arial font placeholder
 
 This project prefers the BPG Arial family (BPG Arial Caps / BPG Arial) for Georgian typography.
 
-How to bundle real fonts:
-1. Obtain the BPG Arial font files (e.g., `BPGArial.woff2`, `BPGArialCaps.woff2`) and place them in this `fonts/` directory.
-2. Add @font-face rules in `header.php` or a shared CSS file pointing to the local files, for example:
+Bundled font filenames (expected):
+- `BPGArial.woff2`         — regular/bold weights (400..700)
+- `BPGArialCaps.woff2`     — uppercase/caps display weight (700)
 
-```css
-@font-face {
-  font-family: 'BPG Arial';
-  src: url('/fonts/BPGArial.woff2') format('woff2');
-  font-weight: 400 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'BPG Arial Caps';
-  src: url('/fonts/BPGArialCaps.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-```
+Steps to enable bundled fonts:
+1. Place the above `.woff2` files into the `fonts/` directory in the project root.
+2. The project already includes `fonts/include_fonts.php` which contains @font-face rules referencing these files.
+   - The include is automatically added to page heads in this repo; no further edits required.
+3. (Optional) Remove or comment out Google Fonts `<link>` tags in page heads if you want to avoid remote font loading.
 
-3. Remove/disable the Google Fonts link if you want to rely solely on local fonts.
+Security & licensing:
+- Ensure you have the legal right to distribute these font files before committing them to the repo.
 
-License note: Ensure you have rights to distribute the font files before committing them.
+If you want, I can add placeholder `.woff2` files (zero-byte stubs) or update the include to point to a CDN instead.
