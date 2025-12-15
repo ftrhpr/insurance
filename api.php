@@ -333,11 +333,19 @@ try {
                 if (array_key_exists($key, $field_map)) {
                     $db_field = $field_map[$key];
                     $update_fields[] = "`$db_field` = ?";
-                    
+
+                    // Normalize incoming values:
+                    // - arrays -> JSON
+                    // - empty string, 'null', 'NULL', 'undefined' -> SQL NULL
+                    // - otherwise use raw value
                     if (is_array($value)) {
                         $params[] = json_encode($value);
                     } else {
-                        $params[] = ($value === '') ? null : $value;
+                        if ($value === '' || $value === null || strtolower((string)$value) === 'null' || strtolower((string)$value) === 'undefined') {
+                            $params[] = null;
+                        } else {
+                            $params[] = $value;
+                        }
                     }
                 }
             }

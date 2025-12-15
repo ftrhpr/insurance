@@ -595,10 +595,14 @@ try {
             if (data) {
                 const formData = new FormData();
                 for (const key in data) {
-                    if (typeof data[key] === 'object') {
-                        formData.append(key, JSON.stringify(data[key]));
+                    const val = data[key];
+                    if (val === null || typeof val === 'undefined') {
+                        // Append empty string for null/undefined so server treats it as NULL
+                        formData.append(key, '');
+                    } else if (typeof val === 'object') {
+                        formData.append(key, JSON.stringify(val));
                     } else {
-                        formData.append(key, String(data[key]));
+                        formData.append(key, String(val));
                     }
                 }
                 config.body = formData;
