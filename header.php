@@ -80,6 +80,19 @@ if ($current_user_role === 'admin') {
     letter-spacing: 0.02em;
 }
 
+/* Ensure Georgian letters use an Arial-family glyph set where available by mapping only Georgian unicode range */
+@font-face {
+    font-family: 'GeorgianArialOverride';
+    src: local('BPG Arial'), local('BPGArial'), local('Arial');
+    unicode-range: U+10A0-10FF, U+2D00-2D2F; /* Georgian and Georgian Supplement */
+    font-display: swap;
+}
+
+/* Prefer the override for Georgian glyphs across the site */
+html, body {
+    font-family: 'Inter', 'GeorgianArialOverride', 'BPG Arial', Arial, sans-serif;
+}
+
 /* Modern Header Styles - CSP Compatible */
 .modern-header {
     background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
