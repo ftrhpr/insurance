@@ -171,7 +171,7 @@ try {
         }
         
         // Fetch status and review data
-        $stmt = $pdo->prepare("SELECT id, name, plate, status, serviceDate as serviceDate, user_response as userResponse, review_stars as reviewStars, review_comment as reviewComment FROM transfers WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT id, name, plate, status, service_date as serviceDate, user_response as userResponse, review_stars as reviewStars, review_comment as reviewComment FROM transfers WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -365,7 +365,7 @@ try {
 
         if ($id > 0 && $serviceDate) {
             // Update service date and clear reschedule request, mark as confirmed
-            $pdo->prepare("UPDATE transfers SET serviceDate = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
+            $pdo->prepare("UPDATE transfers SET service_date = ?, user_response = 'Confirmed', reschedule_date = NULL, reschedule_comment = NULL WHERE id = ?")
                 ->execute([$serviceDate, $id]);
 
             // Get transfer details for SMS
