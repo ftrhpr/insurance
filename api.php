@@ -1258,7 +1258,8 @@ try {
 
             // Parses the Labor section, which has multi-line names and just a price column
             function parseLaborSection($textBlock) {
-                $lines = explode("\n", $textBlock);
+                // Split on newlines, but ensure we get all lines even without trailing newline
+                $lines = preg_split('/\r?\n/', $textBlock);
                 $items = [];
                 $nameBuffer = [];
 
@@ -1274,8 +1275,13 @@ try {
                     $line = trim($line);
                     if (empty($line)) continue;
                     
+                    // Debug logging
+                    global $logContent;
+                    $logContent .= "ABOUT TO PROCESS LINE: '$line'\n";
+                    
                     // Skip header lines
                     if ($line === 'ფასი(ლარი)') {
+                        $logContent .= "SKIPPING HEADER LINE: '$line'\n";
                         continue; // Skip the column header
                     }
                     
