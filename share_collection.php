@@ -79,32 +79,36 @@ try {
 
         <!-- Parts List -->
         <div class="glass-card rounded-2xl shadow-xl p-6 mb-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <i data-lucide="package" class="w-6 h-6 mr-2 text-purple-600"></i>
-                Parts & Services to Collect
+            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i data-lucide="package" class="w-6 h-6 mr-2 text-purple-600"></i>
+                    Parts to Collect
+                </div>
+                <button onclick="toggleLabors()" id="toggleLaborsBtn" class="px-3 py-1 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    <i data-lucide="eye" class="w-4 h-4 mr-1 inline"></i>
+                    Show Services
+                </button>
             </h2>
-            <?php if (empty($parts_list)): ?>
-                <p class="text-gray-600">No parts or services listed for this collection.</p>
+            <?php
+            $parts = array_filter($parts_list, fn($item) => $item['type'] === 'part');
+            $labors = array_filter($parts_list, fn($item) => $item['type'] === 'labor');
+            ?>
+            <?php if (empty($parts)): ?>
+                <p class="text-gray-600">No parts listed for this collection.</p>
             <?php else: ?>
                 <div class="space-y-3">
-                    <?php foreach ($parts_list as $item): ?>
+                    <?php foreach ($parts as $item): ?>
                         <div class="flex items-center justify-between p-4 bg-white/50 rounded-lg border border-gray-200">
                             <div class="flex items-center gap-3">
-                                <?php if ($item['type'] === 'part'): ?>
-                                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                                        <i data-lucide="package" class="w-4 h-4 text-purple-600"></i>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
-                                        <i data-lucide="wrench" class="w-4 h-4 text-sky-600"></i>
-                                    </div>
-                                <?php endif; ?>
+                                <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <i data-lucide="package" class="w-4 h-4 text-purple-600"></i>
+                                </div>
                                 <div>
                                     <p class="font-semibold text-gray-900"><?php echo htmlspecialchars($item['name']); ?></p>
                                     <p class="text-sm text-gray-600">Qty: <?php echo $item['quantity']; ?> | Price: ₾<?php echo number_format($item['price'], 2); ?></p>
                                 </div>
                             </div>
-                            <?php if ($item['type'] === 'part' && isset($item['collected'])): ?>
+                            <?php if (isset($item['collected'])): ?>
                                 <div class="flex items-center gap-2">
                                     <span class="text-sm text-gray-600">Collected:</span>
                                     <input type="checkbox" <?php echo $item['collected'] ? 'checked' : ''; ?> disabled class="w-5 h-5 text-green-600">
@@ -114,6 +118,33 @@ try {
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
+
+            <!-- Labors Section (Hidden by default) -->
+            <div id="laborsSection" class="mt-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <i data-lucide="wrench" class="w-5 h-5 mr-2 text-sky-600"></i>
+                    Services
+                </h3>
+                <?php if (empty($labors)): ?>
+                    <p class="text-gray-600">No services listed for this collection.</p>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <?php foreach ($labors as $item): ?>
+                            <div class="flex items-center justify-between p-4 bg-white/50 rounded-lg border border-gray-200">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="wrench" class="w-4 h-4 text-sky-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900"><?php echo htmlspecialchars($item['name']); ?></p>
+                                        <p class="text-sm text-gray-600">Qty: <?php echo $item['quantity']; ?> | Price: ₾<?php echo number_format($item['price'], 2); ?></p>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
 
         <!-- Share Section -->
@@ -150,6 +181,19 @@ try {
             navigator.clipboard.writeText(text).then(() => {
                 alert('Link copied to clipboard!');
             });
+        }
+
+        function toggleLabors() {
+            const section = document.getElementById('laborsSection');
+            const btn = document.getElementById('toggleLaborsBtn');
+            if (section.classList.contains('hidden')) {
+                section.classList.remove('hidden');
+                btn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4 mr-1 inline"></i>Hide Services';
+            } else {
+                section.classList.add('hidden');
+                btn.innerHTML = '<i data-lucide="eye" class="w-4 h-4 mr-1 inline"></i>Show Services';
+            }
+            lucide.createIcons();
         }
 
         function showQrModal() {
