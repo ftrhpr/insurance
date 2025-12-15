@@ -36,9 +36,10 @@ try {
 
 // Fetch case data
 $stmt = $pdo->prepare("
-    SELECT t.*, v.ownerName as vehicle_owner, v.model as vehicle_model
+    SELECT t.*, v.ownerName as vehicle_owner, v.model as vehicle_model, cr.review_stars, cr.review_comment, cr.status as review_status
     FROM transfers t
     LEFT JOIN vehicles v ON t.plate = v.plate
+    LEFT JOIN customer_reviews cr ON cr.order_id = t.id AND cr.status = 'approved'
     WHERE t.id = ?
 ");
 $stmt->execute([$case_id]);
