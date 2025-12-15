@@ -564,7 +564,7 @@ try {
                 const logs = [...(initialCaseData.systemLogs || []), newLog];
                 
                 // This is a fire-and-forget update just for the log
-                fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { systemLogs: logs });
+                fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { systemLogs: logs, id: CASE_ID });
 
                 initialCaseData.systemLogs = logs;
                 updateActivityLog(logs);
@@ -600,7 +600,7 @@ try {
             const newNote = { text, authorName: '<?php echo addslashes($current_user_name); ?>', timestamp: new Date().toISOString() };
             try {
                 const notes = [...(initialCaseData.internalNotes || []), newNote];
-                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { internalNotes: notes });
+                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { internalNotes: notes, id: CASE_ID });
                 initialCaseData.internalNotes = notes;
                 updateNotesDisplay(notes);
                 input.value = '';
@@ -698,7 +698,7 @@ try {
                 const stars = document.getElementById('input-review-stars')?.value;
                 const comment = document.getElementById('input-review-comment')?.value?.trim();
                 try {
-                    await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { reviewStars: stars || null, reviewComment: comment || null });
+                    await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { reviewStars: stars || null, reviewComment: comment || null, id: CASE_ID });
                     showToast("Review Updated", "Customer review saved.", "success");
                     setTimeout(() => window.location.reload(), 1000);
                 } catch (error) { showToast("Error", "Failed to save review.", "error"); }

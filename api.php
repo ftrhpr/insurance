@@ -321,7 +321,9 @@ try {
                 'franchise' => 'franchise',
                 'internalNotes' => 'internalNotes',
                 'systemLogs' => 'systemLogs',
-                'user_response' => 'user_response'
+                'user_response' => 'user_response',
+                'reviewStars' => 'review_stars',
+                'reviewComment' => 'review_comment'
             ];
 
             $update_fields = [];
