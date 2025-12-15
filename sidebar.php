@@ -34,16 +34,16 @@ if (!isset($_SESSION['user_id'])) {
             <?php
             $current_page = basename($_SERVER['PHP_SELF'], '.php');
             $nav_items = [
-                'index' => ['icon' => 'layout-dashboard', 'label' => __('nav.dashboard','Dashboard'), 'url' => 'index.php'],
-                'vehicles' => ['icon' => 'database', 'label' => __('nav.vehicles','Vehicles'), 'url' => 'vehicles.php'],
-                'parts_collection' => ['icon' => 'wrench', 'label' => __('nav.parts_collection','Parts Collection'), 'url' => 'parts_collection.php'],
-                'reviews' => ['icon' => 'star', 'label' => __('nav.reviews','Reviews'), 'url' => 'reviews.php'],
-                'templates' => ['icon' => 'message-square-dashed', 'label' => __('nav.templates','SMS Templates'), 'url' => 'templates.php']
+                'index' => ['icon' => 'layout-dashboard', 'label' => 'Dashboard', 'url' => 'index.php'],
+                'vehicles' => ['icon' => 'database', 'label' => 'Vehicle DB', 'url' => 'vehicles.php'],
+                'parts_collection' => ['icon' => 'wrench', 'label' => 'Parts Collection', 'url' => 'parts_collection.php'],
+                'reviews' => ['icon' => 'star', 'label' => 'Reviews', 'url' => 'reviews.php'],
+                'templates' => ['icon' => 'message-square-dashed', 'label' => 'SMS Templates', 'url' => 'templates.php']
             ];
             if ($current_user_role === 'admin') {
-                $nav_items['sms_parsing'] = ['icon' => 'settings', 'label' => __('nav.sms_parsing','SMS Parsing'), 'url' => 'sms_parsing.php'];
-                $nav_items['users'] = ['icon' => 'users', 'label' => __('nav.users','Users'), 'url' => 'users.php'];
-                $nav_items['translations'] = ['icon' => 'languages', 'label' => __('nav.translations','Translations'), 'url' => 'translations.php'];
+                $nav_items['sms_parsing'] = ['icon' => 'settings', 'label' => 'SMS Parsing', 'url' => 'sms_parsing.php'];
+                $nav_items['users'] = ['icon' => 'users', 'label' => 'Users', 'url' => 'users.php'];
+                $nav_items['translations'] = ['icon' => 'languages', 'label' => 'Translations', 'url' => 'translations.php'];
             }
             $icons = [
                 'layout-dashboard' => '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
@@ -67,7 +67,7 @@ if (!isset($_SESSION['user_id'])) {
         <!-- Language Selector -->
         <?php if (function_exists('get_current_language') && isset($GLOBALS['LANGUAGES'])): ?>
         <div class="mb-4">
-            <label class="block text-xs font-semibold text-slate-500 mb-1"><?php echo __('label.language','Language'); ?></label>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Language</label>
             <select class="w-full rounded-md border border-slate-200 py-1.5 px-2 text-sm text-slate-700" onchange="changeLanguage(this.value)">
                 <?php foreach ($GLOBALS['LANGUAGES'] as $code => $name): ?>
                     <option value="<?php echo $code; ?>" <?php echo $code === get_current_language() ? 'selected' : ''; ?>><?php echo $name; ?></option>
@@ -78,7 +78,7 @@ if (!isset($_SESSION['user_id'])) {
         <!-- Refresh Button -->
         <button onclick="refreshProcessingQueue()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-700 font-medium text-sm mb-4">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-            <span><?php echo __('action.refresh','Refresh'); ?></span>
+            <span>Refresh</span>
         </button>
     </div>
     <!-- User Info & Logout -->
@@ -93,9 +93,9 @@ if (!isset($_SESSION['user_id'])) {
             </div>
         </div>
         <div id="connection-status" class="flex items-center gap-2 text-xs text-slate-500 mb-2">
-            <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span> <?php echo __('dashboard.connecting', 'CONNECTING...'); ?>
+            <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span> Connecting...
         </div>
-        <a href="logout.php" class="block w-full text-center py-2 rounded-md bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 transition"><?php echo __('nav.logout','Logout'); ?></a>
+        <a href="logout.php" class="block w-full text-center py-2 rounded-md bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 transition">Logout</a>
     </div>
 </aside>
 <script>

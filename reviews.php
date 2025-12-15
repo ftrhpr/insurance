@@ -336,12 +336,12 @@ try {
         // Approve Review
         window.approveReview = async (id) => {
             if (!CAN_EDIT) {
-                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_approve_reviews','You do not have permission to approve reviews')); ?>', 'error');
+                showToast('Permission Denied', 'You do not have permission to approve reviews', 'error');
                 return;
             }
             
             if (!id) {
-                showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('error.invalid_review_id','Invalid review ID')); ?>', 'error');
+                showToast('Error', 'Invalid review ID', 'error');
                 return;
             }
             
@@ -357,12 +357,12 @@ try {
         // Reject Review
         window.rejectReview = async (id) => {
             if (!CAN_EDIT) {
-                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_reject_reviews','You do not have permission to reject reviews')); ?>', 'error');
+                showToast('Permission Denied', 'You do not have permission to reject reviews', 'error');
                 return;
             }
             
             if (!id) {
-                showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('error.invalid_review_id','Invalid review ID')); ?>', 'error');
+                showToast('Error', 'Invalid review ID', 'error');
                 return;
             }
             

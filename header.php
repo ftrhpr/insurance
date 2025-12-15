@@ -29,18 +29,18 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
 
 // Navigation items
 $nav_items = [
-    'index' => ['icon' => 'layout-dashboard', 'label' => __('nav.dashboard', 'Dashboard'), 'url' => 'index.php'],
-    'vehicles' => ['icon' => 'database', 'label' => __('nav.vehicles', 'Vehicles'), 'url' => 'vehicles.php'],
-    'parts_collection' => ['icon' => 'wrench', 'label' => __('nav.parts_collection', 'Parts Collection'), 'url' => 'parts_collection.php'],
-    'reviews' => ['icon' => 'star', 'label' => __('nav.reviews', 'Reviews'), 'url' => 'reviews.php'],
-    'templates' => ['icon' => 'message-square-dashed', 'label' => __('nav.templates', 'SMS Templates'), 'url' => 'templates.php']
+    'index' => ['icon' => 'layout-dashboard', 'label' => 'Dashboard', 'url' => 'index.php'],
+    'vehicles' => ['icon' => 'database', 'label' => 'Vehicle DB', 'url' => 'vehicles.php'],
+    'parts_collection' => ['icon' => 'wrench', 'label' => 'Parts Collection', 'url' => 'parts_collection.php'],
+    'reviews' => ['icon' => 'star', 'label' => 'Reviews', 'url' => 'reviews.php'],
+    'templates' => ['icon' => 'message-square-dashed', 'label' => 'SMS Templates', 'url' => 'templates.php']
 ];
 
 // Add SMS Parsing page for admins
 if ($current_user_role === 'admin') {
-    $nav_items['sms_parsing'] = ['icon' => 'settings', 'label' => __('nav.sms_parsing', 'SMS Parsing'), 'url' => 'sms_parsing.php'];
-    $nav_items['users'] = ['icon' => 'users', 'label' => __('nav.users', 'Users'), 'url' => 'users.php'];
-    $nav_items['translations'] = ['icon' => 'languages', 'label' => __('nav.translations', 'Translations'), 'url' => 'translations.php'];
+    $nav_items['sms_parsing'] = ['icon' => 'settings', 'label' => 'SMS Parsing', 'url' => 'sms_parsing.php'];
+    $nav_items['users'] = ['icon' => 'users', 'label' => 'Users', 'url' => 'users.php'];
+    $nav_items['translations'] = ['icon' => 'languages', 'label' => 'Translations', 'url' => 'translations.php'];
 }
 ?>
 <style>

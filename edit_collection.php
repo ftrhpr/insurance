@@ -15,7 +15,7 @@ if (!$collection_id) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('collection.edit_title', 'Edit Parts Collection - OTOMOTORS Manager'); ?></title>
+    <title>Edit Parts Collection - OTOMOTORS Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
@@ -79,7 +79,7 @@ if (!$collection_id) {
                                 <i data-lucide="edit-3" class="w-6 h-6 text-white"></i>
                             </div>
                             <div>
-                                <h1 class="text-2xl font-bold gradient-text"><?php echo __('collection.edit', 'Edit Collection'); ?></h1>
+                                <h1 class="text-2xl font-bold gradient-text">Edit Collection</h1>
                                 <p id="editTransferInfo" class="text-xs text-gray-600">Loading collection data...</p>
                             </div>
                         </div>
@@ -97,7 +97,7 @@ if (!$collection_id) {
                 <div class="glass-card shadow-xl rounded-3xl p-4 sm:p-8 border border-white/20">
                     <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
                         <i data-lucide="file-scan" class="w-5 h-5 mr-2 text-teal-600"></i>
-                        <?php echo __('collection.parse_pdf', 'Auto-Parse PDF Invoice'); ?>
+                        Auto-Parse PDF Invoice
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                         <div class="md:col-span-2">
@@ -153,9 +153,9 @@ if (!$collection_id) {
                     <div class="mt-4">
                         <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
                             <i data-lucide="file-text" class="w-4 h-4 mr-2 text-green-600"></i>
-                            <?php echo __('action.description','Description'); ?>
+                            Description
                         </label>
-                        <textarea id="editDescription" rows="3" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-green-400 focus:ring-green-400 px-3 py-2 text-sm text-gray-900" placeholder="<?php echo addslashes(__('collection.description_placeholder', 'Describe the parts collection request...')); ?>"></textarea>
+                        <textarea id="editDescription" rows="3" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-green-400 focus:ring-green-400 px-3 py-2 text-sm text-gray-900" placeholder="Describe the parts collection request..."></textarea>
                     </div>
                 </div>
 
@@ -178,7 +178,7 @@ if (!$collection_id) {
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-lg font-bold text-gray-900 flex items-center">
                             <i data-lucide="wrench" class="w-5 h-5 mr-2 text-sky-600"></i>
-                            <?php echo __('collection.labor_section', 'Labor & Services'); ?>
+                            Labor & Services
                         </h2>
                         <button type="button" onclick="addLabor()" class="inline-flex items-center px-3 py-1.5 border-2 border-dashed border-sky-300 rounded-lg text-xs font-medium text-sky-600 bg-sky-50 hover:bg-sky-100 hover:border-sky-400 transition-all duration-200">
                             <i data-lucide="plus" class="w-3 h-3 mr-1"></i> Add Labor
@@ -199,7 +199,7 @@ if (!$collection_id) {
                     <div class="text-lg font-bold text-gray-800">Total Price: <span class="gradient-text" id="editTotalPrice">₾0.00</span></div>
                 </div>
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                    <a href="parts_collection.php" class="px-4 py-2 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 text-center"><?php echo __('action.cancel','Cancel'); ?></a>
+                    <a href="parts_collection.php" class="px-4 py-2 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 text-center">Cancel</a>
                     <button type="submit" form="editForm" class="btn-gradient px-4 py-2 text-white rounded-lg shadow-md w-full sm:w-auto">
                         <i data-lucide="save" class="w-4 h-4 mr-1 inline"></i>
                         Update Collection
@@ -264,7 +264,7 @@ if (!$collection_id) {
                         });
                     updateTotals();
                 } else {
-                    showToast('<?php echo addslashes(__("error.collection_not_found", "Collection not found")); ?>', 'error');
+                    showToast('Collection not found.', 'error');
                 }
             } catch (error) {
                 console.error('Error loading collection data:', error);
@@ -346,7 +346,7 @@ if (!$collection_id) {
                             });
 
                             if (selectedItems.length === 0) {
-                                showToast('<?php echo addslashes(__('info.no_items_selected','No items selected.')); ?>', '', 'info');
+                                showToast('No items selected.', 'info');
                                 return;
                             }
 
@@ -561,13 +561,13 @@ if (!$collection_id) {
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showToast('<?php echo addslashes(__("success.collection_updated", "Collection updated successfully")); ?>', 'success');
+                    showToast('Collection updated successfully', 'success');
                 } else {
                     showToast(result.error || 'Error updating collection', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showToast('<?php echo addslashes(__("error.updating_collection", "Error updating collection")); ?>', 'error');
+                showToast('Error updating collection', 'error');
             }
         }
 

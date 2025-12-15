@@ -342,7 +342,7 @@ try {
         // Template Management Functions
         window.saveAllTemplates = async function() {
             if (!CAN_EDIT) {
-                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_templates','You do not have permission to edit templates')); ?>', 'error');
+                showToast('Permission Denied', 'You do not have permission to edit templates', 'error');
                 return;
             }
 
@@ -369,7 +369,7 @@ try {
                 });
 
                 await fetchAPI('save_templates', 'POST', smsTemplates);
-                showToast('<?php echo addslashes(__('templates.saved_success','All templates saved successfully')); ?>', '', 'success');
+                showToast('Success', 'All templates saved successfully', 'success');
                 
                 // Refresh data if on a page with processing queue
                 if (typeof loadData === 'function') {
@@ -377,7 +377,7 @@ try {
                 }
             } catch (err) {
                 console.error('Error saving templates:', err);
-                showToast('<?php echo addslashes(__('templates.save_failed','Failed to save templates')); ?>', err.message || '', 'error');
+                showToast('Error', err.message || 'Failed to save templates', 'error');
             }
         };
 

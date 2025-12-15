@@ -131,7 +131,7 @@ try {
                         <?php endforeach; ?>
                     </select>
                     <button onclick="exportTranslations()" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium">
-                        <i data-lucide="download" class="w-4 h-4 inline mr-2"></i><?php echo __('action.export','Export'); ?>
+                        <i data-lucide="download" class="w-4 h-4 inline mr-2"></i>Export
                     </button>
                 </div>
             </div>
@@ -269,7 +269,7 @@ try {
             const originalText = saveBtn.textContent;
 
             if (!input || !input.value.trim()) {
-                showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.enter_translation','Please enter a translation')); ?>', 'error');
+                showToast('Please enter a translation', '', 'error');
                 return;
             }
 
@@ -293,7 +293,7 @@ try {
                 const result = await response.json();
 
                 if (result.success) {
-                    showToast('<?php echo addslashes(__('translations.save_success','Translation saved successfully')); ?>', '', 'success');
+                    showToast('Translation saved successfully', '', 'success');
                     saveBtn.textContent = 'Saved';
                     setTimeout(() => {
                         saveBtn.textContent = originalText;
@@ -303,7 +303,7 @@ try {
                 }
             } catch (error) {
                 console.error('Error saving translation:', error);
-                showToast('<?php echo addslashes(__('translations.save_failed','Failed to save translation')); ?>', error.message, 'error');
+                showToast('Failed to save translation', error.message, 'error');
                 saveBtn.textContent = originalText;
             } finally {
                 saveBtn.disabled = false;
@@ -327,13 +327,13 @@ try {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
 
-                    showToast('<?php echo addslashes(__('translations.export_success','Translations exported successfully')); ?>', '', 'success');
+                    showToast('Translations exported successfully', '', 'success');
                 } else {
                     throw new Error(data.message || 'Export failed');
                 }
             } catch (error) {
                 console.error('Error exporting translations:', error);
-                showToast('<?php echo addslashes(__('translations.export_failed','Failed to export translations')); ?>', error.message, 'error');
+                showToast('Failed to export translations', error.message, 'error');
             }
         }
 

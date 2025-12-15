@@ -10,7 +10,7 @@ if (empty($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('parts.title', 'Parts Collection'); ?> - OTOMOTORS Manager</title>
+    <title>Parts Collection - OTOMOTORS Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // Suppress Tailwind CDN warning for development
@@ -150,19 +150,19 @@ if (empty($_SESSION['user_id'])) {
                             <div class="w-10 h-10 gradient-accent rounded-xl flex items-center justify-center shadow-lg">
                                 <i data-lucide="package" class="w-6 h-6 text-white"></i>
                             </div>
-                            <h1 class="text-2xl font-bold gradient-text"><?php echo __('parts.title', 'Parts Collection'); ?></h1>
+                            <h1 class="text-2xl font-bold gradient-text">Parts Collection</h1>
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
-                            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <div class="flex items-center space-x-2 text-sm text-gray-600">
                             <div class="w-8 h-8 gradient-accent rounded-full flex items-center justify-center shadow-md">
                                 <i data-lucide="user" class="w-4 h-4 text-white"></i>
                             </div>
-                            <span><?php echo __('greeting.welcome','Welcome,'); ?> <span class="font-medium"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?></span></span>
+                            <span>Welcome, <span class="font-medium"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?></span></span>
                         </div>
                         <button onclick="window.location.href='logout.php'" class="text-red-500 hover:text-red-600 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-50 transition-all duration-200">
                             <i data-lucide="log-out" class="w-4 h-4 inline mr-1"></i>
-                            <?php echo __('nav.logout', 'Logout'); ?>
+                            Logout
                         </button>
                     </div>
                 </div>
@@ -172,10 +172,10 @@ if (empty($_SESSION['user_id'])) {
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div class="px-4 py-6 sm:px-0">
-                    <div class="flex justify-end mb-4">
+                <div class="flex justify-end mb-4">
                     <a href="create_collection.php" class="btn-gradient inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white">
                         <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
-                        <?php echo __('parts.create_new','Create New Collection'); ?>
+                        Create New Collection
                     </a>
                 </div>
 
@@ -189,33 +189,33 @@ if (empty($_SESSION['user_id'])) {
                                 </div>
                                 <div>
                                     <h3 class="text-lg font-bold text-gray-900">Existing Collections</h3>
-                                            <p class="text-sm text-gray-600"><?php echo __('parts.desc', 'Manage and track all parts collections'); ?></p>
+                                    <p class="text-sm text-gray-600">Manage and track all parts collections</p>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-4">
                                 <div class="status-badge px-3 py-1 rounded-full text-xs font-medium text-white shadow-md">
-                                        <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i>
-                                            <?php echo __('parts.live_updates', 'Live Updates'); ?>
+                                    <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i>
+                                    Live Updates
                                 </div>
                                 <div class="flex items-center gap-2">
-                                        <label class="text-xs text-gray-600"><?php echo __('filter.status', 'Status'); ?></label>
+                                    <label class="text-xs text-gray-600">Status</label>
                                     <select id="filter-status" class="text-sm px-2 py-1 border rounded bg-white">
-                                            <option value="all"><?php echo __('filter.all','All'); ?></option>
-                                            <option value="pending"><?php echo __('dashboard.pending','Pending'); ?></option>
-                                            <option value="collected"><?php echo __('status.collected','Collected'); ?></option>
-                                            <option value="cancelled"><?php echo __('status.cancelled','Cancelled'); ?></option>
+                                        <option value="all">All</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="collected">Collected</option>
+                                        <option value="cancelled">Cancelled</option>
                                     </select>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <label class="text-xs text-gray-600"><?php echo __('filter.type', 'Type'); ?></label>
+                                    <label class="text-xs text-gray-600">Type</label>
                                     <select id="filter-type" class="text-sm px-2 py-1 border rounded bg-white">
-                                        <option value="all"><?php echo __('filter.all','All'); ?></option>
-                                        <option value="local"><?php echo __('filter.local','Local'); ?></option>
-                                        <option value="order"><?php echo __('filter.order','Order'); ?></option>
+                                        <option value="all">All</option>
+                                        <option value="local">Local</option>
+                                        <option value="order">Order</option>
                                     </select>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <label class="text-xs text-gray-600"><?php echo __('filter.manager', 'Manager'); ?></label>
+                                    <label class="text-xs text-gray-600">Manager</label>
                                     <select id="filter-manager" class="text-sm px-2 py-1 border rounded bg-white">
                                         <option value="all">All</option>
                                     </select>
@@ -436,10 +436,10 @@ if (empty($_SESSION['user_id'])) {
                         </div>
                         <div class="bg-gray-50/50 px-5 py-3 flex justify-end space-x-2">
                             <button onclick="window.location.href='edit_collection.php?id=${collection.id}'" class="inline-flex items-center px-3 py-1.5 border-2 border-transparent rounded-lg text-xs font-medium text-indigo-600 bg-indigo-100 hover:bg-indigo-200 transition-all duration-200">
-                                <i data-lucide="edit" class="w-3 h-3 mr-1"></i> <?php echo __('action.edit','Edit'); ?>
+                                <i data-lucide="edit" class="w-3 h-3 mr-1"></i> Edit
                             </button>
                             <button onclick="deleteCollection(${collection.id})" class="inline-flex items-center px-3 py-1.5 border-2 border-transparent rounded-lg text-xs font-medium text-red-600 bg-red-100 hover:bg-red-200 transition-all duration-200">
-                                <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i> <?php echo __('action.delete','Delete'); ?>
+                                <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i> Delete
                             </button>
                         </div>
                     </div>
@@ -509,7 +509,7 @@ if (empty($_SESSION['user_id'])) {
 
         // Delete collection
         async function deleteCollection(id) {
-            if (!confirm('<?php echo addslashes(__("parts.delete_confirm", "Are you sure you want to delete this parts collection?")); ?>')) return;
+            if (!confirm('Are you sure you want to delete this parts collection?')) return;
 
             try {
                 const response = await fetch('api.php?action=delete_parts_collection', {
@@ -520,7 +520,7 @@ if (empty($_SESSION['user_id'])) {
                 
                 const result = await response.json();
                 if (result.success) {
-                    showToast('<?php echo addslashes(__("success.parts_deleted", "Parts collection deleted successfully")); ?>', 'success');
+                    showToast('Parts collection deleted successfully', 'success');
                     loadCollections();
                 } else {
                     showToast(result.error || 'Error deleting collection', 'error');

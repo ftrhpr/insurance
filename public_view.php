@@ -51,7 +51,7 @@
     <!-- Loading State -->
     <div id="loader" class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p class="mt-3 text-gray-500 font-medium"><?php echo __('public.loading','Loading...'); ?></p>
+        <p class="mt-3 text-gray-500 font-medium">Loading...</p>
     </div>
 
     <!-- Main Card -->
@@ -204,7 +204,7 @@
                 </div>
             </div>
             <div class="p-6 border-t border-gray-200 flex gap-3">
-                <button onclick="closeRescheduleModal()" class="flex-1 bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-50"><?php echo __('action.cancel','Cancel'); ?></button>
+                <button onclick="closeRescheduleModal()" class="flex-1 bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-50">Cancel</button>
                 <button onclick="submitReschedule()" class="flex-1 bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-4 rounded-xl font-bold hover:from-sky-600 hover:to-sky-700">Submit Request</button>
             </div>
         </div>
