@@ -299,6 +299,7 @@ if (empty($_SESSION['user_id'])) {
                 const totalParts = partItems.reduce((sum, item) => sum + parseInt(item.quantity, 10), 0);
                 const progressPercent = totalParts > 0 ? Math.round((collectedCount / totalParts) * 100) : 0;
 
+                const shareUrl = window.location.origin + '/public_view.php?id=' + collection.id;
                 html += `
                     <div class="glass-card rounded-2xl shadow-lg card-hover border border-white/30 overflow-hidden">
                         <div class="p-5">
@@ -342,6 +343,11 @@ if (empty($_SESSION['user_id'])) {
                                     </div>
                                     <span class="text-xs font-semibold text-gray-700">${collectedCount}/${totalParts} collected</span>
                                 </div>
+                                <div class="flex items-center gap-3 mt-3">
+                                    <input type="text" readonly value="${shareUrl}" class="text-xs bg-gray-100 rounded px-2 py-1 border border-gray-200 flex-1 cursor-pointer" onclick="this.select()" title="Shareable link">
+                                    <button onclick="copyToClipboard('${shareUrl}');return false;" class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200">Copy Link</button>
+                                    <button onclick="showQrModal(${collection.id}, '${shareUrl}');return false;" class="px-2 py-1 text-xs rounded bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-200">QR Code</button>
+                                </div>
                             </div>
                         </div>
                         <div class="bg-gray-50/50 px-5 py-3 flex justify-end space-x-2">
@@ -354,6 +360,62 @@ if (empty($_SESSION['user_id'])) {
                         </div>
                     </div>
                 `;
+                    // Clipboard copy helper
+                    window.copyToClipboard = function(text) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            showToast('Link copied to clipboard', 'success');
+                        });
+                    };
+
+                    // QR Modal logic
+                    window.showQrModal = function(id, url) {
+                        let modal = document.getElementById('qrModal');
+                        if (!modal) {
+                            modal = document.createElement('div');
+                            modal.id = 'qrModal';
+                            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40';
+                            modal.innerHTML = `
+                                <div class="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center relative min-w-[320px]">
+                                    <button onclick="closeQrModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700"><i data-lucide='x' class='w-5 h-5'></i></button>
+                                    <div id="qrCodeContainer" class="mb-4"></div>
+                                    <div class="mb-2 text-xs text-gray-700 break-all">${url}</div>
+                                    <button onclick="printQrCode()" class="mt-2 px-4 py-2 rounded bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">Print QR Code</button>
+                                </div>
+                            `;
+                            document.body.appendChild(modal);
+                            lucide.createIcons();
+                        } else {
+                            modal.querySelector('.mb-2').textContent = url;
+                        }
+                        modal.style.display = 'flex';
+                        // Generate QR code
+                        setTimeout(() => {
+                            const qrDiv = document.getElementById('qrCodeContainer');
+                            qrDiv.innerHTML = '';
+                            new QRCode(qrDiv, { text: url, width: 180, height: 180 });
+                        }, 100);
+                    };
+                    window.closeQrModal = function() {
+                        const modal = document.getElementById('qrModal');
+                        if (modal) modal.style.display = 'none';
+                    };
+                    window.printQrCode = function() {
+                        const qrDiv = document.getElementById('qrCodeContainer');
+                        const win = window.open('', '', 'width=400,height=500');
+                        win.document.write('<html><head><title>Print QR Code</title></head><body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;"><div>' + qrDiv.innerHTML + '</div></body></html>');
+                        win.document.close();
+                        win.focus();
+                        setTimeout(() => { win.print(); win.close(); }, 500);
+                    };
+                // Add QRCode.js CDN
+                (function() {
+                    if (!window.QRCode) {
+                        var script = document.createElement('script');
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+                        script.onload = function() { console.log('QRCode.js loaded'); };
+                        document.head.appendChild(script);
+                    }
+                })();
             });
 
             html += '</div>';
