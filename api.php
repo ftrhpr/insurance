@@ -1176,8 +1176,8 @@ try {
             $pdf = $parser->parseFile($filePath);
             $text = $pdf->getText();
             
-            // Initialize log content (disabled)
-            // $logContent = "";
+            // Initialize log content
+            $logContent = "--- PDF PARSE ATTEMPT: " . date('Y-m-d H:i:s') . " ---\n" . $text . "\n--- END ---\n\n";
 
             // Define Georgian keywords and section delimiters (with flexible matching)
             $partsHeader = 'დეტალების ჩამონათვალი';
@@ -1263,12 +1263,12 @@ try {
                 $nameBuffer = [];
 
                 // Debug logging
-                // global $logContent;
-                // $logContent .= "LABOR LINES TO PROCESS:\n";
-                // foreach ($lines as $i => $line) {
-                //     $logContent .= "[$i]: '" . trim($line) . "'\n";
-                // }
-                // $logContent .= "--- END LABOR LINES ---\n\n";
+                global $logContent;
+                $logContent .= "LABOR LINES TO PROCESS:\n";
+                foreach ($lines as $i => $line) {
+                    $logContent .= "[$i]: '" . trim($line) . "'\n";
+                }
+                $logContent .= "--- END LABOR LINES ---\n\n";
 
                 foreach ($lines as $line) {
                     $line = trim($line);
@@ -1291,6 +1291,9 @@ try {
                             $price = (float)str_replace(',', '', $matches[1]);
                             $name = implode(' ', $nameBuffer);
                             $items[] = ['name' => $name, 'quantity' => 1, 'price' => $price, 'type' => 'labor'];
+                            // Debug logging
+                            global $logContent;
+                            $logContent .= "CREATED MULTI-LINE LABOR ITEM: '$name' = $price\n";
                             $nameBuffer = []; // Reset
                         }
                     } elseif (preg_match($singleLineRegex, $line, $matches)) {
@@ -1298,10 +1301,16 @@ try {
                         $name = trim($matches[1]);
                         $price = (float)str_replace(',', '', $matches[2]);
                         $items[] = ['name' => $name, 'quantity' => 1, 'price' => $price, 'type' => 'labor'];
+                        // Debug logging
+                        global $logContent;
+                        $logContent .= "CREATED SINGLE-LINE LABOR ITEM: '$name' = $price\n";
                         $nameBuffer = [];
                     } else {
                         // It's part of a name, add to buffer
                         $nameBuffer[] = $line;
+                        // Debug logging
+                        global $logContent;
+                        $logContent .= "ADDED TO NAME BUFFER: '$line' (buffer now: " . implode(' ', $nameBuffer) . ")\n";
                     }
                 }
                 return $items;
@@ -1375,15 +1384,15 @@ try {
             $laborItems = $laborTextBlock ? parseLaborSection($laborTextBlock) : [];
             
             // Debug logging
-            // $logContent .= "PARSED PART ITEMS: " . count($partItems) . "\n";
-            // foreach ($partItems as $item) {
-            //     $logContent .= "- " . $item['name'] . " (qty: " . $item['quantity'] . ", price: " . $item['price'] . ")\n";
-            // }
-            // $logContent .= "\nPARSED LABOR ITEMS: " . count($laborItems) . "\n";
-            // foreach ($laborItems as $item) {
-            //     $logContent .= "- " . $item['name'] . " (price: " . $item['price'] . ")\n";
-            // }
-            // $logContent .= "\n";
+            $logContent .= "PARSED PART ITEMS: " . count($partItems) . "\n";
+            foreach ($partItems as $item) {
+                $logContent .= "- " . $item['name'] . " (qty: " . $item['quantity'] . ", price: " . $item['price'] . ")\n";
+            }
+            $logContent .= "\nPARSED LABOR ITEMS: " . count($laborItems) . "\n";
+            foreach ($laborItems as $item) {
+                $logContent .= "- " . $item['name'] . " (price: " . $item['price'] . ")\n";
+            }
+            $logContent .= "\n";
             
             $items = array_merge($partItems, $laborItems);
 
@@ -1401,19 +1410,19 @@ try {
             });
             
             // Debug logging
-            // $logContent .= "FILTERING: Original items: $originalCount, After filtering: " . count($items) . "\n";
-            // if ($originalCount > count($items)) {
-            //     $logContent .= "FILTERED ITEMS:\n";
-            //     // We can't easily show what was filtered without more complex logic
-            // }
-            // $logContent .= "\nFINAL ITEMS: " . count($items) . "\n";
-            // foreach ($items as $item) {
-            //     $logContent .= "- " . $item['name'] . " (type: " . $item['type'] . ", qty: " . ($item['quantity'] ?? 1) . ", price: " . $item['price'] . ")\n";
-            // }
-            // $logContent .= "\n";
+            $logContent .= "FILTERING: Original items: $originalCount, After filtering: " . count($items) . "\n";
+            if ($originalCount > count($items)) {
+                $logContent .= "FILTERED ITEMS:\n";
+                // We can't easily show what was filtered without more complex logic
+            }
+            $logContent .= "\nFINAL ITEMS: " . count($items) . "\n";
+            foreach ($items as $item) {
+                $logContent .= "- " . $item['name'] . " (type: " . $item['type'] . ", qty: " . ($item['quantity'] ?? 1) . ", price: " . $item['price'] . ")\n";
+            }
+            $logContent .= "\n";
 
             // Write debug log
-            // file_put_contents(__DIR__ . '/error_log', $logContent, FILE_APPEND);
+            file_put_contents(__DIR__ . '/error_log', $logContent, FILE_APPEND);
 
             if (empty($items)) {
                  jsonResponse(['success' => false, 'error' => 'Could not automatically detect any items based on the specified format. Please add them manually.']);
