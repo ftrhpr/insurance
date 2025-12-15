@@ -50,6 +50,14 @@ try {
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+        .btn-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #d946ef 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3), 0 4px 6px -2px rgba(217, 70, 239, 0.2);
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
