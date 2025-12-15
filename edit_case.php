@@ -338,6 +338,7 @@ try {
                         <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
                             <button @click="tab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'activity'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Activity</button>
                             <button @click="tab = 'vehicle'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'vehicle'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Vehicle</button>
+                            <button @click="tab = 'parts'" :class="{'bg-white text-green-600 shadow-sm': tab === 'parts'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Parts</button>
                             <button @click="tab = 'danger'" :class="{'bg-white text-red-600 shadow-sm': tab === 'danger'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Danger</button>
                         </div>
                     </div>
@@ -362,6 +363,24 @@ try {
                          <div x-show="tab === 'vehicle'" x-cloak class="space-y-3">
                             <div class="flex justify-between text-sm"><span class="font-medium text-slate-600">Owner:</span> <span class="text-slate-500"><?php echo htmlspecialchars($case['vehicle_owner'] ?? 'N/A'); ?></span></div>
                             <div class="flex justify-between text-sm"><span class="font-medium text-slate-600">Model:</span> <span class="text-slate-500"><?php echo htmlspecialchars($case['vehicle_model'] ?? 'N/A'); ?></span></div>
+                        </div>
+                        <!-- Parts Request -->
+                        <div x-show="tab === 'parts'" x-cloak class="space-y-4">
+                            <h3 class="font-semibold text-slate-700">Request Parts Collection</h3>
+                            <form @submit.prevent="requestParts" class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">Parts Needed</label>
+                                    <textarea x-model="partsRequest.description" placeholder="Describe the parts needed..." class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3" required></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">Supplier (Optional)</label>
+                                    <input x-model="partsRequest.supplier" type="text" placeholder="Supplier name" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                </div>
+                                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                                    <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+                                    Create Parts Request
+                                </button>
+                            </form>
                         </div>
                         <!-- Danger Zone -->
                         <div x-show="tab === 'danger'" x-cloak>
@@ -400,6 +419,7 @@ try {
             return {
                 currentCase: { ...initialCaseData },
                 openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback'],
+                partsRequest: { description: '', supplier: '' },
                 statuses: [
                     { id: 'New', name: 'New', icon: 'file-plus-2' },
                     { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
@@ -508,6 +528,37 @@ try {
                         updateActivityLog(this.currentCase.systemLogs);
                     } catch (error) {
                         showToast("Error", "Failed to save changes.", "error");
+                    }
+                },
+                async requestParts() {
+                    if (!this.partsRequest.description.trim()) {
+                        return showToast("Error", "Please describe the parts needed.", "error");
+                    }
+
+                    try {
+                        const partsList = [{
+                            name: this.partsRequest.description,
+                            quantity: 1,
+                            price: 0
+                        }];
+                        
+                        const response = await fetch(`${API_URL}?action=create_parts_collection`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                transfer_id: CASE_ID,
+                                parts_list: partsList,
+                                assigned_manager_id: null
+                            })
+                        });
+                        
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        const result = await response.json();
+                        
+                        showToast("Parts Request Created", "Parts collection request has been created.", "success");
+                        this.partsRequest = { description: '', supplier: '' };
+                    } catch (error) {
+                        showToast("Error", "Failed to create parts request.", "error");
                     }
                 }
             }
