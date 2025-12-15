@@ -468,7 +468,10 @@ try {
 
                     // Format service date for MySQL (add seconds if missing)
                     if (serviceDate) {
-                        serviceDate = serviceDate.replace('T', ' ') + ':00';
+                        serviceDate = serviceDate.replace('T', ' ');
+                        if (serviceDate.split(':').length === 2) {
+                            serviceDate += ':00';
+                        }
                     }
 
                     const updates = {
