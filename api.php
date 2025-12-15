@@ -1359,25 +1359,17 @@ try {
                 // $logContent .= "PARTS SECTION EXTRACTED:\n" . $partsTextBlock . "\n--- END PARTS ---\n\n";
             }
 
-            // Extract labor section: from labor header to next end marker
+            // Extract labor section: from labor header to the line before "ჯამი (ლარი)"
             if ($laborHeaderPos !== false) {
                 $laborStart = $laborHeaderPos + strlen($laborHeader);
-                $laborEnd = null;
+                $laborEnd = strpos($text, 'ჯამი (ლარი)', $laborStart);
                 
-                // Find the first end marker after labor header
-                foreach ($endMarkers as $endPos) {
-                    if ($endPos > $laborStart) {
-                        $laborEnd = $endPos;
-                        break;
-                    }
-                }
-                
-                if ($laborEnd !== null) {
+                if ($laborEnd !== false) {
                     $laborTextBlock = trim(substr($text, $laborStart, $laborEnd - $laborStart));
                 }
                 
-            // Debug logging
-            // $logContent .= "LABOR SECTION EXTRACTED:\n" . $laborTextBlock . "\n--- END LABOR ---\n\n";
+                // Debug logging
+                $logContent .= "LABOR SECTION EXTRACTED:\n" . $laborTextBlock . "\n--- END LABOR ---\n\n";
             }
 
             $partItems = $partsTextBlock ? parsePartsSection($partsTextBlock) : [];
