@@ -231,13 +231,13 @@ if (!$collection_id) {
                     document.getElementById('editDescription').value = collection.description || "";
 
                     const partsList = JSON.parse(collection.parts_list || '[]');
-                    partsList.forEach(item => {
-                        if (item.type === 'labor') {
-                            addLabor(item.name, item.quantity, item.price);
-                        } else {
-                            addPart(item.name, item.quantity, item.price, item.collected || false);
-                        }
-                    });
+                        partsList.forEach(item => {
+                            if (item.type === 'labor') {
+                                addLabor(item.name, item.quantity, item.price, item.cost || 0);
+                            } else {
+                                addPart(item.name, item.quantity, item.price, item.collected || false, item.cost || 0);
+                            }
+                        });
                     updateTotals();
                 } else {
                     showToast('Collection not found.', 'error');
@@ -349,13 +349,13 @@ if (!$collection_id) {
             });
         }
 
-        function addPart(name = '', quantity = 1, price = 0, collected = false) {
+        function addPart(name = '', quantity = 1, price = 0, collected = false, cost = 0) {
             const container = document.getElementById('editPartsList');
             const itemDiv = document.createElement('div');
             itemDiv.className = 'part-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
             itemDiv.innerHTML = `
                 <div class="grid grid-cols-12 gap-x-3 items-end">
-                    <div class="col-span-7">
+                    <div class="col-span-5">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Part Name</label>
                         <div class="relative">
                             <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-gray-900" value="${name}" placeholder="Enter part name..." autocomplete="off">
@@ -373,6 +373,10 @@ if (!$collection_id) {
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
                         <input type="number" class="part-price block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Cost</label>
+                        <input type="number" class="part-cost block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0">
                     </div>
                     <div class="col-span-1 flex items-end">
                         <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
@@ -398,13 +402,13 @@ if (!$collection_id) {
             updateTotals();
         }
 
-        function addLabor(name = '', quantity = 1, price = 0) {
+        function addLabor(name = '', quantity = 1, price = 0, cost = 0) {
             const container = document.getElementById('editLaborList');
             const itemDiv = document.createElement('div');
             itemDiv.className = 'labor-item bg-white/40 rounded-lg p-3 border border-white/30 backdrop-blur-sm';
             itemDiv.innerHTML = `
                 <div class="grid grid-cols-12 gap-x-3 items-end">
-                    <div class="col-span-7">
+                    <div class="col-span-5">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Service Name</label>
                         <div class="relative">
                             <input type="text" class="labor-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${name}" placeholder="Enter service name..." autocomplete="off">
@@ -418,6 +422,10 @@ if (!$collection_id) {
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
                         <input type="number" class="labor-price block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-800 mb-1">Cost</label>
+                        <input type="number" class="labor-cost block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0">
                     </div>
                     <div class="col-span-1 flex items-end">
                         <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center">
@@ -519,23 +527,25 @@ if (!$collection_id) {
             const description = document.getElementById('editDescription').value;
 
             const items = [];
-            document.querySelectorAll('#editPartsList .part-item').forEach(item => {
-                items.push({
-                    name: item.querySelector('.part-name').value,
-                    quantity: parseInt(item.querySelector('.part-quantity').value),
-                    price: parseFloat(item.querySelector('.part-price').value),
-                    type: 'part',
-                    collected: item.querySelector('.part-collected').checked
+                document.querySelectorAll('#editPartsList .part-item').forEach(item => {
+                    items.push({
+                        name: item.querySelector('.part-name').value,
+                        quantity: parseInt(item.querySelector('.part-quantity').value),
+                        price: parseFloat(item.querySelector('.part-price').value),
+                        type: 'part',
+                        collected: item.querySelector('.part-collected').checked,
+                        cost: parseFloat(item.querySelector('.part-cost').value) || 0
+                    });
                 });
-            });
-            document.querySelectorAll('#editLaborList .labor-item').forEach(item => {
-                items.push({
-                    name: item.querySelector('.labor-name').value,
-                    quantity: parseInt(item.querySelector('.labor-quantity').value),
-                    price: parseFloat(item.querySelector('.labor-price').value),
-                    type: 'labor'
+                document.querySelectorAll('#editLaborList .labor-item').forEach(item => {
+                    items.push({
+                        name: item.querySelector('.labor-name').value,
+                        quantity: parseInt(item.querySelector('.labor-quantity').value),
+                        price: parseFloat(item.querySelector('.labor-price').value),
+                        type: 'labor',
+                        cost: parseFloat(item.querySelector('.labor-cost').value) || 0
+                    });
                 });
-            });
 
             try {
                 const response = await fetch('api.php?action=update_parts_collection', {
