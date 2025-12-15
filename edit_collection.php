@@ -352,40 +352,26 @@ if (!$collection_id) {
         function addPart(name = '', quantity = 1, price = 0, collected = false, cost = 0) {
             const container = document.getElementById('editPartsList');
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'part-item bg-white/70 hover:bg-indigo-50/80 transition rounded-xl p-4 border border-gray-200 shadow-sm group flex flex-col gap-2';
+            itemDiv.className = 'part-item bg-white/70 hover:bg-indigo-50/80 transition rounded-xl p-4 border border-gray-200 shadow-sm group';
             itemDiv.innerHTML = `
-                <div class="grid grid-cols-12 gap-x-3 items-end">
-                    <div class="col-span-5 flex flex-col gap-1">
-                        <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1">
-                            <i data-lucide="package" class="w-3 h-3 text-purple-500"></i> Part Name
-                        </label>
-                        <div class="relative">
-                            <input type="text" class="part-name block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-gray-900" value="${name}" placeholder="Enter part name..." autocomplete="off">
-                            <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
-                        </div>
+                <div class="flex flex-row items-center gap-3 w-full">
+                    <div class="flex-1 min-w-0">
+                        <input type="text" class="part-name block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-gray-900" value="${name}" placeholder="Enter part name..." autocomplete="off">
                     </div>
-                    <div class="col-span-1 flex flex-col items-center justify-center">
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">✔</label>
-                        <input type="checkbox" class="part-collected h-5 w-5 text-green-600 focus:ring-green-400" ${collected ? 'checked' : ''}>
+                    <div class="flex flex-col items-center justify-center">
+                        <input type="checkbox" class="part-collected h-5 w-5 text-green-600 focus:ring-green-400" ${collected ? 'checked' : ''} title="Collected">
                     </div>
-                    <div class="col-span-2 flex flex-col gap-1">
-                        <label class="block text-xs font-semibold text-gray-700">Qty</label>
-                        <input type="number" class="part-quantity block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()">
+                    <div class="w-20">
+                        <input type="number" class="part-quantity block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()" placeholder="Qty">
                     </div>
-                    <div class="col-span-2 flex flex-col gap-1">
-                        <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1" title="Sale price to customer">
-                            <i data-lucide="tag" class="w-3 h-3 text-blue-500"></i> Price
-                        </label>
-                        <input type="number" class="part-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" title="Sale price to customer">
+                    <div class="w-28">
+                        <input type="number" class="part-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" placeholder="Price" title="Sale price to customer">
                     </div>
-                    <div class="col-span-2 flex flex-col gap-1">
-                        <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1" title="Actual cost to company">
-                            <i data-lucide="coins" class="w-3 h-3 text-amber-500"></i> Cost
-                        </label>
-                        <input type="number" class="part-cost block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0" title="Actual cost to company">
+                    <div class="w-28">
+                        <input type="number" class="part-cost block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0" placeholder="Cost" title="Actual cost to company">
                     </div>
-                    <div class="col-span-1 flex items-center justify-center self-center">
-                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center items-center group-hover:scale-110">
+                    <div class="flex items-center justify-center">
+                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm flex justify-center group-hover:scale-110">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -411,30 +397,20 @@ if (!$collection_id) {
         function addLabor(name = '', quantity = 1, price = 0, cost = 0) {
             const container = document.getElementById('editLaborList');
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'labor-item bg-white/70 hover:bg-sky-50/80 transition rounded-xl p-4 border border-gray-200 shadow-sm group flex flex-col gap-2';
+            itemDiv.className = 'labor-item bg-white/70 hover:bg-sky-50/80 transition rounded-xl p-4 border border-gray-200 shadow-sm group';
             itemDiv.innerHTML = `
-                <div class="grid grid-cols-12 gap-x-3 items-end">
-                    <div class="col-span-7 flex flex-col gap-1">
-                        <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1">
-                            <i data-lucide="wrench" class="w-3 h-3 text-sky-500"></i> Service Name
-                        </label>
-                        <div class="relative">
-                            <input type="text" class="labor-name block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${name}" placeholder="Enter service name..." autocomplete="off">
-                            <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
-                        </div>
+                <div class="flex flex-row items-center gap-3 w-full">
+                    <div class="flex-1 min-w-0">
+                        <input type="text" class="labor-name block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${name}" placeholder="Enter service name..." autocomplete="off">
                     </div>
-                    <div class="col-span-2 flex flex-col gap-1">
-                        <label class="block text-xs font-semibold text-gray-700">Qty</label>
-                        <input type="number" class="labor-quantity block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()">
+                    <div class="w-20">
+                        <input type="number" class="labor-quantity block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()" placeholder="Qty">
                     </div>
-                    <div class="col-span-2 flex flex-col gap-1">
-                        <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1" title="Sale price to customer">
-                            <i data-lucide="tag" class="w-3 h-3 text-blue-500"></i> Price
-                        </label>
-                        <input type="number" class="labor-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" title="Sale price to customer">
+                    <div class="w-28">
+                        <input type="number" class="labor-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" placeholder="Price" title="Sale price to customer">
                     </div>
-                    <div class="col-span-1 flex items-center justify-center self-center">
-                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center items-center group-hover:scale-110">
+                    <div class="flex items-center justify-center">
+                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm flex justify-center group-hover:scale-110">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
