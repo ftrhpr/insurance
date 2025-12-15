@@ -1285,14 +1285,19 @@ try {
                     $singleLineRegex = '/^(.+?)\t([\d,.]+)$/u';
 
                     $matches = [];
+                    // Debug logging
+                    global $logContent;
+                    $logContent .= "PROCESSING LINE: '$line'\n";
                     // Check if the line is just a price (end of a multi-line item)
                     if (preg_match($priceOnlyRegex, $line, $matches)) {
+                        // Debug logging
+                        global $logContent;
+                        $logContent .= "PRICE LINE DETECTED: '$line' matches price regex, nameBuffer: " . (!empty($nameBuffer) ? implode(' ', $nameBuffer) : 'EMPTY') . "\n";
                         if (!empty($nameBuffer)) {
                             $price = (float)str_replace(',', '', $matches[1]);
                             $name = implode(' ', $nameBuffer);
                             $items[] = ['name' => $name, 'quantity' => 1, 'price' => $price, 'type' => 'labor'];
                             // Debug logging
-                            global $logContent;
                             $logContent .= "CREATED MULTI-LINE LABOR ITEM: '$name' = $price\n";
                             $nameBuffer = []; // Reset
                         }
@@ -1313,6 +1318,13 @@ try {
                         $logContent .= "ADDED TO NAME BUFFER: '$line' (buffer now: " . implode(' ', $nameBuffer) . ")\n";
                     }
                 }
+                
+                // Handle any remaining content in nameBuffer (shouldn't happen with proper formatting)
+                if (!empty($nameBuffer)) {
+                    global $logContent;
+                    $logContent .= "WARNING: Leftover content in nameBuffer: " . implode(' ', $nameBuffer) . "\n";
+                }
+                
                 return $items;
             }
 
