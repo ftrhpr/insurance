@@ -21,6 +21,7 @@ $defaultTemplatesData = [
     'contacted' => 'გამარჯობა {name}, თქვენ დაგიკავშირდით. ავტომობილი: {plate}. მალე მოგაწვდით დეტალურ ინფორმაციას.',
     'schedule' => 'გამარჯობა {name}, თქვენი სერვისის თარიღი: {date}. ავტომობილი: {plate}. დაადასტურეთ ან გადაავადეთ: {link}',
     'parts_ordered' => 'გამარჯობა {name}, თქვენი ნაწილები შეკვეთილია. ავტომობილი: {plate}',
+    'parts_request_local' => 'გამარჯობა, მიმდინარეობს თქვენი ავტომობილის აღსადგენად საჭირო დეტალების შეგროვება. სერვისთან დაკავშირებულ დეტალებს, უახლოეს მომავალში მიიღებთ.',
     'parts_arrived' => 'გამარჯობა {name}, თქვენი ნაწილები მივიდა. დაადასტურეთ თქვენი ვიზიტი: {link}',
     'rescheduled' => 'გამარჯობა, კლიენტმა {name} მოითხოვა თარიღის შეცვლა. ავტომობილი: {plate}',
     'reschedule_accepted' => 'გამარჯობა {name}, თქვენი თარიღის შეცვლის მოთხოვნა მიღებულია. ახალი თარიღი: {date}',
@@ -131,6 +132,7 @@ try {
                         'contacted' => ['icon' => 'phone', 'color' => 'cyan', 'label' => 'Contacted Notification'],
                         'schedule' => ['icon' => 'calendar-check', 'color' => 'indigo', 'label' => 'Service Scheduled'],
                         'parts_ordered' => ['icon' => 'package', 'color' => 'amber', 'label' => 'Parts Ordered'],
+                        'parts_request_local' => ['icon' => 'shopping-cart', 'color' => 'teal', 'label' => 'Parts Request (Local)'],
                         'parts_arrived' => ['icon' => 'box', 'color' => 'purple', 'label' => 'Parts Arrived'],
                         'rescheduled' => ['icon' => 'clock', 'color' => 'orange', 'label' => 'Reschedule Request'],
                         'reschedule_accepted' => ['icon' => 'calendar-check', 'color' => 'cyan', 'label' => 'Reschedule Accepted'],
@@ -140,8 +142,15 @@ try {
                     ];
 
                     // Sort templates by a predefined order
-                    $templateOrder = ['registered', 'called', 'contacted', 'schedule', 'parts_ordered', 'parts_arrived', 'rescheduled', 'reschedule_accepted', 'completed', 'issue', 'system'];
+                    $templateOrder = ['registered', 'called', 'contacted', 'schedule', 'parts_request_local', 'parts_ordered', 'parts_arrived', 'rescheduled', 'reschedule_accepted', 'completed', 'issue', 'system'];
                     $sortedTemplates = [];
+                    // Ensure default templates are present in the data (show editable defaults if DB missing)
+                    foreach ($defaultTemplatesData as $dslug => $dcontent) {
+                        if (!isset($templatesData[$dslug])) {
+                            $templatesData[$dslug] = ['content' => $dcontent, 'workflow_stages' => [], 'is_active' => 1];
+                        }
+                    }
+
                     foreach ($templateOrder as $slug) {
                         if (isset($templatesData[$slug])) {
                             $sortedTemplates[$slug] = $templatesData[$slug];
