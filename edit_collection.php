@@ -107,6 +107,13 @@ if (!$collection_id) {
                             </select>
                         </div>
                     </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                            <i data-lucide="file-text" class="w-4 h-4 mr-2 text-green-600"></i>
+                            Description
+                        </label>
+                        <textarea id="editDescription" rows="3" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-green-400 focus:ring-green-400 px-3 py-2 text-sm text-gray-900" placeholder="Describe the parts collection request..."></textarea>
+                    </div>
                 </div>
 
                 <!-- Parts Section -->
@@ -198,6 +205,7 @@ if (!$collection_id) {
                     document.getElementById('editTransferInfo').textContent = `For: ${collection.transfer_plate} - ${collection.transfer_name}`;
                     document.getElementById('editStatus').value = collection.status;
                     document.getElementById('editAssignedManager').value = collection.assigned_manager_id || "";
+                    document.getElementById('editDescription').value = collection.description || "";
 
                     const partsList = JSON.parse(collection.parts_list || '[]');
                     partsList.forEach(item => {
@@ -369,6 +377,7 @@ if (!$collection_id) {
             const id = document.getElementById('editId').value;
             const status = document.getElementById('editStatus').value;
             const assigned_manager_id = document.getElementById('editAssignedManager').value;
+            const description = document.getElementById('editDescription').value;
 
             const items = [];
             document.querySelectorAll('#editPartsList .part-item').forEach(item => {
@@ -392,7 +401,7 @@ if (!$collection_id) {
                 const response = await fetch('api.php?action=update_parts_collection', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, parts_list: items, status, assigned_manager_id })
+                    body: JSON.stringify({ id, parts_list: items, status, assigned_manager_id, description })
                 });
                 const result = await response.json();
                 if (result.success) {
