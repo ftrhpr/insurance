@@ -498,7 +498,7 @@ try {
                     }
 
                     try {
-                        await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { ...updates, systemLogs });
+                        await fetchAPI('update_transfer', 'POST', { ...updates, systemLogs });
                         Object.assign(this.currentCase, updates, { systemLogs });
                         initialCaseData = { ...this.currentCase };
                         showToast("Changes Saved", "Case updated successfully.", "success");
