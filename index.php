@@ -2459,7 +2459,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             };
 
             try {
-                const result = await fetchAPI('create_transfer', 'POST', orderData);
+                const result = await fetchAPI('add_transfer', 'POST', orderData);
                 
                 if (result && result.status === 'success') {
                     showToast('Success', 'Order created successfully!', 'success');
