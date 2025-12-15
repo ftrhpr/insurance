@@ -1699,37 +1699,38 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                     // Service date formatting
                     let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
-                    
+
                     if (t.rescheduleDate && t.user_response === 'Reschedule Requested') {
-                        // Priority 1: Show reschedule request
                         const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
                         const rescheduleDateStr = rescheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                         serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 w-fit">
                             <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
                             <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
                         </div>`;
-                    } else if (t.serviceDate) {
-                        // Priority 2: Show the service date if it exists, regardless of status
-                        try {
-                            let dateStr = t.serviceDate;
-                            if (dateStr.includes(' ')) {
-                                dateStr = dateStr.replace(' ', 'T');
-                            }
-                            const serviceDate = new Date(dateStr);
-                            if (isNaN(serviceDate.getTime())) throw new Error('Invalid date');
-
-                            const formattedDate = serviceDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                            const formattedTime = serviceDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-                            
-                            serviceDateDisplay = `<div class="font-semibold text-slate-800 text-xs">${formattedDate}</div><div class="text-slate-500 text-xs">${formattedTime}</div>`;
-                        } catch(e) {
-                            serviceDateDisplay = '<span class="text-red-500 text-xs font-semibold">Invalid date</span>';
-                        }
                     } else if (t.status === 'Scheduled') {
-                        // Priority 3: If no date, but status is Scheduled, it's needed
-                        serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
+                        if (t.serviceDate) {
+                            try {
+                                let dateStr = t.serviceDate;
+                                if (dateStr.includes(' ')) {
+                                    dateStr = dateStr.replace(' ', 'T');
+                                }
+                                const serviceDate = new Date(dateStr);
+                                if (isNaN(serviceDate.getTime())) {
+                                    throw new Error('Invalid date');
+                                }
+                                const formattedDate = serviceDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                                const formattedTime = serviceDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                serviceDateDisplay = `<div class="font-semibold text-slate-800 text-xs">${formattedDate}</div><div class="text-slate-500 text-xs">${formattedTime}</div>`;
+                            } catch (e) {
+                                serviceDateDisplay = '<span class="text-red-500 text-xs font-semibold">Invalid date format</span>';
+                            }
+                        } else {
+                            serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
+                        }
+                    } else if (t.serviceDate) {
+                        // For other statuses with a date, you might want to display it, but differently
+                        // For now, we'll stick to the original logic of "Not scheduled" for non-scheduled items.
                     }
-                    // Default is "Not scheduled"
 
 
                     // Action buttons
