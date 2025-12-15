@@ -472,6 +472,7 @@ try {
                     }
 
                     const updates = {
+                        id: CASE_ID,
                         name: document.getElementById('input-name').value.trim(),
                         plate: document.getElementById('input-plate').value.trim(),
                         amount: document.getElementById('input-amount').value.trim(),
