@@ -20,14 +20,6 @@ if (!$collection_id) {
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
-        /* Ensure placeholders are visible on small screens */
-        input::placeholder, textarea::placeholder {
-            color: rgba(107, 114, 128, 0.6);
-            opacity: 1;
-        }
-
-        /* Prevent input text from being clipped on very small devices */
-        .part-name, .labor-name { word-break: break-word; }
         .glass-card {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
@@ -59,6 +51,16 @@ if (!$collection_id) {
         .input-focus:focus {
             box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
             border-color: #0ea5e9;
+        }
+        /* Ensure placeholders are visible on mobile and across themes */
+        #editForm input::placeholder,
+        #editForm textarea::placeholder {
+            color: rgba(75,85,99,0.8) !important; /* Tailwind slate-700 */
+            opacity: 1 !important;
+        }
+        /* Allow long part names to wrap instead of getting cut off on small screens */
+        #editForm .part-name, #editForm .labor-name {
+            overflow-wrap: anywhere;
         }
     </style>
 </head>
