@@ -1209,9 +1209,10 @@ try {
 
             // Parses the Parts section - simple line-by-line processing
             function parsePartsSection($textBlock) {
+
                 global $logContent;
                 $logContent .= "PARTS SECTION TEXT:\n'$textBlock'\n--- END PARTS SECTION ---\n\n";
-                
+
                 $lines = preg_split('/\r?\n/', $textBlock);
                 $items = [];
                 $currentItem = null;
@@ -1224,6 +1225,23 @@ try {
                     // Skip header lines
                     if (strpos($line, 'რაოდენობა') !== false && strpos($line, 'სტატუსი') !== false) {
                         $logContent .= "SKIPPING HEADER\n";
+                        continue;
+                    }
+
+                    // Try to match: name, quantity, status, price (all on one line, separated by spaces or tabs)
+                    if (preg_match('/^(.+?)\s{1,}(\d+)\s+([^\s]+)\s*([\d,.]+)$/u', $line, $matches)) {
+                        $name = trim($matches[1]);
+                        $quantity = (int)$matches[2];
+                        $status = $matches[3];
+                        $price = (float)str_replace(',', '', $matches[4]);
+                        $items[] = [
+                            'name' => $name,
+                            'quantity' => $quantity,
+                            'price' => $price,
+                            'type' => 'part',
+                        ];
+                        $logContent .= "PARSED SINGLE-LINE PARTS ITEM: '$name' qty=$quantity price=$price\n";
+                        $currentItem = null;
                         continue;
                     }
 
@@ -1242,15 +1260,16 @@ try {
                             $logContent .= "COMPLETED PARTS ITEM: '" . $currentItem['name'] . "' qty=$quantity price=$price\n";
                             $currentItem = null;
                         }
+                        continue;
+                    }
+
+                    // This is part of an item name
+                    if ($currentItem === null) {
+                        $currentItem = ['name' => $line, 'type' => 'part'];
+                        $logContent .= "STARTED NEW PARTS ITEM: '$line'\n";
                     } else {
-                        // This is part of an item name
-                        if ($currentItem === null) {
-                            $currentItem = ['name' => $line, 'type' => 'part'];
-                            $logContent .= "STARTED NEW PARTS ITEM: '$line'\n";
-                        } else {
-                            $currentItem['name'] .= ' ' . $line;
-                            $logContent .= "EXTENDED PARTS ITEM: '" . $currentItem['name'] . "'\n";
-                        }
+                        $currentItem['name'] .= ' ' . $line;
+                        $logContent .= "EXTENDED PARTS ITEM: '" . $currentItem['name'] . "'\n";
                     }
                 }
 
