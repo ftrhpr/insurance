@@ -384,8 +384,8 @@ if (!$collection_id) {
                         </label>
                         <input type="number" class="part-cost block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0" title="Actual cost to company">
                     </div>
-                    <div class="col-span-1 flex items-end justify-center self-stretch">
-                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center group-hover:scale-110 h-full items-center">
+                    <div class="col-span-1 flex items-center justify-center self-center">
+                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center items-center group-hover:scale-110">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -433,8 +433,8 @@ if (!$collection_id) {
                         </label>
                         <input type="number" class="labor-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" title="Sale price to customer">
                     </div>
-                    <div class="col-span-1 flex items-end justify-center self-stretch">
-                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center group-hover:scale-110 h-full items-center">
+                    <div class="col-span-1 flex items-center justify-center self-center">
+                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center items-center group-hover:scale-110">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
