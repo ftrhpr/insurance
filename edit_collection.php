@@ -107,7 +107,7 @@ if (!$collection_id) {
                 <!-- General Info -->
                 <div class="glass-card shadow-xl rounded-3xl p-4 sm:p-8 border border-white/20">
                     <h2 class="text-lg font-bold text-gray-900 mb-4">General Information</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="bg-white/50 rounded-xl p-4 border border-white/30">
                             <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
                                 <i data-lucide="user" class="w-4 h-4 mr-2 text-orange-600"></i>
@@ -126,6 +126,16 @@ if (!$collection_id) {
                                 <option value="pending">Pending</option>
                                 <option value="collected">Collected</option>
                                 <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="bg-white/50 rounded-xl p-4 border border-white/30">
+                            <label class="block text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                                <i data-lucide="shuffle-2" class="w-4 h-4 mr-2 text-teal-600"></i>
+                                Collection Type
+                            </label>
+                            <select id="editCollectionType" class="block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus focus:border-teal-400 focus:ring-teal-400 px-3 py-2 text-sm text-gray-900">
+                                <option value="local">Local Market</option>
+                                <option value="order">Order</option>
                             </select>
                         </div>
                     </div>
@@ -229,6 +239,9 @@ if (!$collection_id) {
                     document.getElementById('editStatus').value = collection.status;
                     document.getElementById('editAssignedManager').value = collection.assigned_manager_id || "";
                     document.getElementById('editDescription').value = collection.description || "";
+                    if (document.getElementById('editCollectionType')) {
+                        document.getElementById('editCollectionType').value = collection.collection_type || 'local';
+                    }
 
                     const partsList = JSON.parse(collection.parts_list || '[]');
                         partsList.forEach(item => {
@@ -508,7 +521,7 @@ if (!$collection_id) {
             const assigned_manager_id = document.getElementById('editAssignedManager').value;
             const description = document.getElementById('editDescription').value;
 
-            const items = [];
+                const items = [];
                 document.querySelectorAll('#editPartsList .part-item').forEach(item => {
                     items.push({
                         name: item.querySelector('.part-name').value,
@@ -528,11 +541,12 @@ if (!$collection_id) {
                     });
                 });
 
-            try {
+                try {
+                const collection_type = document.getElementById('editCollectionType') ? document.getElementById('editCollectionType').value : 'local';
                 const response = await fetch('api.php?action=update_parts_collection', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, parts_list: items, status, assigned_manager_id, description })
+                    body: JSON.stringify({ id, parts_list: items, status, assigned_manager_id, description, collection_type })
                 });
                 const result = await response.json();
                 if (result.success) {
