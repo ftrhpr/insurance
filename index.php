@@ -561,6 +561,297 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                 <!-- Body -->
                 <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                            <span>Processing</span>
+                            <span>Contacted</span>
+                            <span>Parts Ordered</span>
+                            <span>Parts Arrived</span>
+                            <span>Scheduled</span>
+                            <span>Completed</span>
+                            <span>Issue</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Content Grid -->
+                    <div class="p-3 sm:p-4 md:p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                    
+                    <!-- Left Column: Order Details & Status -->
+                    <div class="space-y-1.5 sm:space-y-2">
+                        <!-- Order Information Card -->
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-blue-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-blue-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="file-text" class="w-3 h-3 text-white"></i>
+                                </div>
+                                <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wider">Order Details</h3>
+                            </div>
+                            <div class="space-y-1.5">
+                                <div class="bg-white/80 rounded-lg p-2 border border-blue-100">
+                                    <div class="text-[10px] text-blue-600 font-bold uppercase mb-1">Amount</div>
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="coins" class="w-5 h-5 text-emerald-500"></i>
+                                        <span class="text-2xl font-bold text-emerald-600"><span id="modal-amount">0</span>₾</span>
+                                    </div>
+                                </div>
+                                <div class="bg-white/80 rounded-lg p-2 border border-blue-100">
+                                    <div class="text-[10px] text-blue-600 font-bold uppercase mb-1">Franchise</div>
+                                    <input id="input-franchise" type="number" placeholder="0.00" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-base font-bold text-orange-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 outline-none">
+                                </div>
+                                <div class="bg-white/80 rounded-lg p-2 border border-blue-100">
+                                    <div class="text-[10px] text-blue-600 font-bold uppercase mb-1">Created At</div>
+                                    <div class="flex items-center gap-2 text-sm text-slate-700">
+                                        <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+                                        <span id="modal-created-date" class="font-medium">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Status Selection -->
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-purple-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-purple-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="activity" class="w-3 h-3 text-white"></i>
+                                </div>
+                                <h3 class="text-xs font-bold text-purple-900 uppercase tracking-wider">Workflow Stage</h3>
+                            </div>
+                            <div class="relative">
+                                <select id="input-status" class="w-full appearance-none bg-white border-2 border-purple-200 text-slate-800 py-4 pl-12 pr-10 rounded-xl leading-tight focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 text-sm font-bold shadow-lg transition-all cursor-pointer hover:border-purple-300">
+                                    <option value="New">🔵 New Case</option>
+                                    <option value="Processing">🟡 Processing</option>
+                                    <option value="Called">🟣 Contacted</option>
+                                    <option value="Parts Ordered">📦 Parts Ordered</option>
+                                    <option value="Parts Arrived">🏁 Parts Arrived</option>
+                                    <option value="Scheduled">🟠 Scheduled</option>
+                                    <option value="Completed">🟢 Completed</option>
+                                    <option value="Issue">🔴 Issue</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-purple-500">
+                                    <i data-lucide="git-branch" class="w-5 h-5"></i>
+                                </div>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-purple-400">
+                                    <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Activity Log -->
+                        <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+                            <div class="px-1.5 sm:px-2 py-1 sm:py-1.5 bg-gradient-to-r from-slate-700 to-slate-600 flex items-center gap-1.5">
+                                <i data-lucide="history" class="w-3 h-3 text-white"></i>
+                                <label class="text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">Activity Timeline</label>
+                            </div>
+                            <div id="activity-log-container" class="p-1.5 sm:p-2 h-16 sm:h-18 md:h-20 overflow-y-auto custom-scrollbar text-[10px] space-y-0.5 bg-white/50"></div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Column: Communication & Actions -->
+                    <div class="space-y-1.5 sm:space-y-2">
+                        <!-- Contact Information -->
+                        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-teal-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-teal-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="phone" class="w-3 h-3 text-white"></i>
+                                </div>
+                                <h3 class="text-xs font-bold text-teal-900 uppercase tracking-wider">Contact Information</h3>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                    <i data-lucide="smartphone" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-teal-500"></i>
+                                    <input id="input-phone" type="text" placeholder="Phone Number" class="w-full pl-11 pr-3 py-3 bg-white border-2 border-teal-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-4 focus:ring-teal-500/20 focus:border-teal-400 outline-none shadow-sm">
+                                </div>
+                                <a id="btn-call-real" href="#" class="bg-white text-teal-600 border-2 border-teal-200 p-3 rounded-xl hover:bg-teal-50 hover:border-teal-300 hover:scale-105 transition-all shadow-lg active:scale-95">
+                                    <i data-lucide="phone-call" class="w-5 h-5"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Service Appointment -->
+                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-amber-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-orange-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="calendar-check" class="w-3 h-3 text-white"></i>
+                                </div>
+                                <h3 class="text-xs font-bold text-orange-900 uppercase tracking-wider">Service Appointment</h3>
+                            </div>
+                            <div class="relative">
+                                <i data-lucide="calendar" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500"></i>
+                                <input id="input-service-date" type="datetime-local" class="w-full pl-11 pr-3 py-3 bg-white border-2 border-orange-200 rounded-xl text-sm font-semibold focus:border-orange-400 focus:ring-4 focus:ring-orange-400/20 outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <!-- Quick SMS Actions -->
+                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg p-1.5 sm:p-2 md:p-3 border border-indigo-100 shadow-sm">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="bg-indigo-600 p-1 rounded-md shadow-sm">
+                                    <i data-lucide="message-circle" class="w-3 h-3 text-white"></i>
+                                </div>
+                                <h3 class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Quick SMS Actions</h3>
+                            </div>
+                            <div class="space-y-2 sm:space-y-2.5 md:space-y-3">
+                                <button id="btn-sms-register" class="group w-full flex justify-between items-center px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 bg-white border-2 border-indigo-200 rounded-lg sm:rounded-xl hover:border-indigo-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-800 group-hover:text-indigo-700">Send Welcome SMS</div>
+                                        <div class="text-[10px] text-slate-500 mt-0.5">Registration confirmation</div>
+                                    </div>
+                                    <div class="bg-indigo-100 group-hover:bg-indigo-600 p-2 rounded-lg transition-colors">
+                                        <i data-lucide="message-square" class="w-4 h-4 text-indigo-600 group-hover:text-white"></i>
+                                    </div>
+                                </button>
+                                <button id="btn-sms-arrived" class="group w-full flex justify-between items-center px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 bg-white border-2 border-teal-200 rounded-lg sm:rounded-xl hover:border-teal-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-800 group-hover:text-teal-700">Parts Arrived SMS</div>
+                                        <div class="text-[10px] text-slate-500 mt-0.5">Includes customer link</div>
+                                    </div>
+                                    <div class="bg-teal-100 group-hover:bg-teal-600 p-2 rounded-lg transition-colors">
+                                        <i data-lucide="package-check" class="w-4 h-4 text-teal-600 group-hover:text-white"></i>
+                                    </div>
+                                </button>
+                                <button id="btn-sms-schedule" class="group w-full flex justify-between items-center px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 bg-white border-2 border-orange-200 rounded-lg sm:rounded-xl hover:border-orange-400 hover:shadow-xl hover:scale-[1.02] transition-all text-left active:scale-95">
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-800 group-hover:text-orange-700">Send Schedule SMS</div>
+                                        <div class="text-[10px] text-slate-500 mt-0.5">Appointment reminder</div>
+                                    </div>
+                                    <div class="bg-orange-100 group-hover:bg-orange-600 p-2 rounded-lg transition-colors">
+                                        <i data-lucide="calendar-check" class="w-4 h-4 text-orange-600 group-hover:text-white"></i>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Customer Feedback & Notes -->
+                    <div class="space-y-1.5 sm:space-y-2 flex flex-col h-full">
+                        <!-- Customer Review Preview -->
+                        <div id="modal-review-section" class="hidden bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg sm:rounded-xl border-2 border-amber-200 overflow-hidden shadow-lg">
+                            <div class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center gap-2">
+                                <div class="bg-white/20 p-1.5 rounded-lg">
+                                    <i data-lucide="star" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <label class="text-xs font-bold text-white uppercase tracking-wider">Customer Review</label>
+                            </div>
+                            <div class="p-2 sm:p-3 md:p-4 space-y-2">
+                                <div class="flex items-center gap-4">
+                                    <div id="modal-review-stars" class="flex gap-1"></div>
+                                    <span id="modal-review-rating" class="text-3xl font-black text-amber-600"></span>
+                                </div>
+                                <div class="bg-white/80 p-2 rounded-lg border border-amber-200">
+                                    <p id="modal-review-comment" class="text-sm text-slate-700 italic leading-relaxed"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reschedule Request Preview -->
+                        <div id="modal-reschedule-section" class="hidden bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-lg sm:rounded-xl border-2 border-purple-200 overflow-hidden shadow-lg">
+                            <div class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="bg-white/20 p-1.5 rounded-lg">
+                                        <i data-lucide="calendar-clock" class="w-4 h-4 text-white"></i>
+                                    </div>
+                                    <label class="text-xs font-bold text-white uppercase tracking-wider">Reschedule Request</label>
+                                </div>
+                                <span id="reschedule-status-badge" class="text-[10px] bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold border border-white/30">Pending</span>
+                            </div>
+                            <div class="p-2 sm:p-3 md:p-4 space-y-2">
+                                <div class="bg-white/80 p-2 rounded-lg border-2 border-purple-200">
+                                    <span class="text-xs text-purple-700 font-bold block mb-2 uppercase tracking-wider">Requested Date</span>
+                                    <div class="flex items-center gap-2">
+                                        <div class="bg-purple-100 p-2 rounded-lg">
+                                            <i data-lucide="calendar" class="w-4 h-4 text-purple-600"></i>
+                                        </div>
+                                        <span id="modal-reschedule-date" class="text-base font-bold text-slate-800"></span>
+                                    </div>
+                                </div>
+                                <div class="bg-white/80 p-4 rounded-xl border-2 border-purple-200">
+                                    <span class="text-xs text-purple-700 font-bold block mb-2 uppercase tracking-wider">Customer Comment</span>
+                                    <p id="modal-reschedule-comment" class="text-sm text-slate-700 leading-relaxed"></p>
+                                </div>
+                                <div id="reschedule-actions" class="flex gap-2 pt-2">
+                                    <button onclick="window.acceptReschedule()" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-4 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl">
+                                        <i data-lucide="check" class="w-5 h-5"></i> Accept & Update
+                                    </button>
+                                    <button onclick="window.declineReschedule()" class="flex-1 bg-white hover:bg-red-50 text-red-600 border-2 border-red-300 py-3 px-4 rounded-xl font-bold text-sm transition-all active:scale-95 hover:border-red-400">
+                                        <i data-lucide="x" class="w-4 h-4 inline mr-1"></i> Decline
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Team Notes Section -->
+                        <div class="flex-1 flex flex-col bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg sm:rounded-xl border-2 border-emerald-200 overflow-hidden shadow-lg">
+                            <div class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-emerald-600 to-teal-600 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <div class="bg-white/20 p-1.5 rounded-lg">
+                                        <i data-lucide="sticky-note" class="w-4 h-4 text-white"></i>
+                                    </div>
+                                    <label class="text-xs font-bold text-white uppercase tracking-wider">Team Notes</label>
+                                </div>
+                                <span class="text-[10px] bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold border border-white/30">Internal</span>
+                            </div>
+                            <div id="notes-list" class="flex-1 p-1.5 sm:p-2 overflow-y-auto custom-scrollbar space-y-0.5 sm:space-y-1 min-h-[80px] sm:min-h-[100px] md:min-h-[120px] bg-white/60"></div>
+                            <div class="p-2 sm:p-3 bg-white border-t-2 border-emerald-200 flex gap-2">
+                                <input id="new-note-input" type="text" placeholder="Add a note..." class="flex-1 text-sm px-4 py-2.5 bg-emerald-50 border-2 border-emerald-200 rounded-xl focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 outline-none font-medium">
+                                <button onclick="window.addNote()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white p-3 rounded-xl transition-all shadow-lg active:scale-95">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Premium Footer with Actions - Fixed/Floating -->
+                <div class="bg-gradient-to-r from-slate-50 via-white to-slate-50 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-1.5 sm:gap-2 rounded-b-xl shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] shrink-0 backdrop-blur-sm">
+                    <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
+                    <button type="button" onclick="window.deleteRecord(window.currentEditingId)" class="group text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 text-sm font-bold flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-lg sm:rounded-xl transition-all border-2 border-red-200 hover:border-red-600 shadow-lg hover:shadow-2xl hover:shadow-red-600/50 active:scale-95 w-full sm:w-auto hover:scale-105">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> 
+                        <span>Delete Order</span>
+                    </button>
+                    <?php endif; ?>
+                    <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
+                        <button type="button" onclick="window.closeModal()" class="flex-1 sm:flex-initial px-4 sm:px-6 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg sm:rounded-xl font-bold text-sm transition-all border-2 border-slate-200 hover:border-slate-300 shadow-lg hover:shadow-xl active:scale-95 hover:scale-105">
+                            <i data-lucide="x" class="w-4 h-4 inline mr-1"></i> Cancel
+                        </button>
+                        <button type="button" onclick="window.saveEdit()" class="flex-1 sm:flex-initial px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg sm:rounded-xl font-bold text-sm shadow-2xl shadow-blue-600/50 transition-all active:scale-95 hover:scale-105 flex items-center justify-center gap-2 border border-blue-500/50">
+                            <i data-lucide="save" class="w-5 h-5"></i> 
+                            <span>Save Changes</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Manual Create Order Modal -->
+    <div id="manual-create-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-gradient-to-br from-slate-900/60 via-emerald-900/40 to-teal-900/50 backdrop-blur-lg transition-all duration-300" onclick="window.closeManualCreateModal()"></div>
+
+        <!-- Modal Container -->
+        <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl z-[10001]">
+                
+                <!-- Header -->
+                <div class="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 backdrop-blur-md border-2 border-white/40 p-2 rounded-xl">
+                            <i data-lucide="plus-circle" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Create New Order</h3>
+                            <p class="text-xs text-white/80">Manually add a new insurance order</p>
+                        </div>
+                    </div>
+                    <button onclick="window.closeManualCreateModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                     <!-- Vehicle Plate -->
                     <div>
                         <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
@@ -1624,7 +1915,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
 
                 const dateObj = new Date(t.created_at || Date.now());
-                const dateStr = dateObj.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
+                const dateStr = dateObj.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
                 // Find linked vehicle info for display (Normalized Matching)
                 const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
@@ -1649,7 +1940,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 ${t.franchise ? `<p class="text-[10px] text-orange-500 mt-1">Franchise: ${escapeHtml(t.franchise)}</p>` : ''}
                             </div>
                             <div class="pl-3 text-right">
-                                <button onclick="window.location.href='edit_case.php?id=${t.id}'" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm hover:shadow-lg hover:-translate-y-0.5">
+                                <button onclick="window.location.href='edit_case.php?id=${t.id}'" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 ml-auto group-hover:bg-primary-50">
                                     Process Case <i data-lucide="arrow-right" class="w-3 h-3"></i>
                                 </button>
                             </div>
@@ -1708,7 +1999,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
                             <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
                         </div>`;
-                    } else if (t.status === 'Scheduled' && t.serviceDate) {
+                    } else if (t.status === 'Scheduled' && !t.serviceDate) {
+                        serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
+                    } else if (t.serviceDate) {
                         try {
                             // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
                             let dateStr = t.serviceDate;
@@ -1716,34 +2009,38 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 // MySQL DATETIME format: replace space with T
                                 dateStr = dateStr.replace(' ', 'T');
                             }
-                            const serviceDate = new Date(dateStr);
-                            if (isNaN(serviceDate.getTime())) {
-                                throw new Error('Invalid date');
+                            // Ensure it has seconds
+                            if (dateStr.length === 16) {
+                                dateStr += ':00';
+                            } else if (dateStr.length === 19 && dateStr.includes('T')) {
+                                // Already in full ISO format
                             }
-                            const formattedDate = serviceDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                            const formattedTime = serviceDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
                             
-                            serviceDateDisplay = `<div class="font-semibold text-slate-800 text-xs">${formattedDate}</div><div class="text-slate-500 text-xs">${formattedTime}</div>`;
-                        } catch(e) {
-                            serviceDateDisplay = '<span class="text-red-500 text-xs font-semibold">Invalid date format</span>';
+                            const svcDate = new Date(dateStr);
+                            if (!isNaN(svcDate.getTime())) {
+                                const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
+                                    <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span class="font-semibold">${svcDateStr}</span>
+                                </div>`;
+                            } else {
+                                serviceDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
+                            }
+                        } catch (e) {
+                            serviceDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
                         }
-                    } else if (t.status === 'Scheduled' && !t.serviceDate) {
-                        serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
+                    }
+                    
+                    // Review stars display
+                    let reviewDisplay = '';
+                    if (t.reviewStars && t.reviewStars > 0) {
+                        const stars = '⭐'.repeat(parseInt(t.reviewStars));
+                        reviewDisplay = `<div class="flex items-center gap-1 mt-1">
+                            <span class="text-xs">${stars}</span>
+                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
+                        </div>`;
                     }
 
-
-                    // Action buttons
-                    const actionButtons = `
-                        <div class="flex gap-2">
-                            <button onclick="window.openEditModal(${t.id})" class="flex-1 bg-white text-slate-700 border border-slate-200 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 ml-auto group-hover:bg-primary-50">
-                                <i data-lucide="edit-2" class="w-4 h-4"></i> Edit
-                            </button>
-                            <button onclick="window.viewInvoice(${t.id})" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-md hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center gap-2">
-                                <i data-lucide="file-text" class="w-4 h-4"></i> Invoice
-                            </button>
-                        </div>
-                    `;
-                    
                     activeContainer.innerHTML += `
                         <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
@@ -1967,7 +2264,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <i data-lucide="clock" class="w-4 h-4 text-slate-500"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="text-xs text-slate-500 mb-1">${l.timestamp.split('T')[0]}</div>
+                            <div class="text-xs text-slate-400 font-medium mb-1">${l.timestamp.split('T')[0]}</div>
                             <div class="text-sm text-slate-700 leading-relaxed">${escapeHtml(l.message)}</div>
                         </div>
                     </div>
@@ -2317,9 +2614,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             // Re-render notes
             const noteHTML = (t.internalNotes || []).map(n => `
-                <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3 last:mb-0 animate-in slide-in-from-bottom-2 fade-in">
+                <div class="bg-white p-3 rounded-lg border border-yellow-100 shadow-sm mb-3 animate-in slide-in-from-bottom-2 fade-in">
                     <p class="text-sm text-slate-700">${escapeHtml(n.text)}</p>
-                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-full">${escapeHtml(n.authorName)}</span></div>
+                    <div class="flex justify-end mt-2"><span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${escapeHtml(n.authorName)}</span></div>
                 </div>`).join('');
             const notesListEl = document.getElementById('notes-list');
             if (notesListEl) notesListEl.innerHTML = noteHTML;
@@ -2497,11 +2794,42 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Service date
             let serviceDateText = 'Not scheduled';
             if (t.rescheduleDate && t.user_response === 'Reschedule Requested') {
-                serviceDateText = `Requested: ${new Date(t.rescheduleDate.replace(' ', 'T')).toLocaleString('en-US')}`;
+                const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                serviceDateText = `Requested: ${rescheduleDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}`;
             } else if (t.serviceDate) {
-                serviceDateText = new Date(t.serviceDate.replace(' ', 'T')).toLocaleString('en-US');
-            } else if (t.status === 'Scheduled') {
-                serviceDateText = '⚠️ Date needed';
+                try {
+                    // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
+                    let dateStr = t.serviceDate;
+                    if (dateStr.includes(' ')) {
+                        // MySQL DATETIME format: replace space with T
+                        dateStr = dateStr.replace(' ', 'T');
+                    }
+                    // Ensure it has seconds
+                    if (dateStr.length === 16) {
+                        dateStr += ':00';
+                    } else if (dateStr.length === 19 && dateStr.includes('T')) {
+                        // Already in full ISO format
+                    }
+                    
+                    const svcDate = new Date(dateStr);
+                    if (!isNaN(svcDate.getTime())) {
+                        serviceDateText = svcDate.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } else {
+                        serviceDateText = 'Invalid date format';
+                    }
+                } catch (e) {
+                    serviceDateText = 'Date parsing error';
+                }
             }
             document.getElementById('invoice-service-date').textContent = serviceDateText;
 
@@ -2523,7 +2851,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 let responseText = t.user_response;
                 if (t.user_response === 'Reschedule Requested' && t.rescheduleDate) {
                     const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                    responseText += ` - ${rescheduleDate.toLocaleString('en-US')}`;
+                    responseText += ` - ${rescheduleDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}`;
                 }
                 responseValue.textContent = responseText;
             } else {
@@ -2568,7 +2901,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <div class="bg-yellow-200 rounded-full p-1 mt-0.5">
                                 <i data-lucide="user" class="w-3 h-3 text-yellow-700"></i>
                             </div>
-                            <div class="flex-1 min-w-0">
+                            <div class="flex-1">
                                 <div class="text-xs text-yellow-700 mb-1">${date} - ${escapeHtml(note.authorName || 'Manager')}</div>
                                 <div class="text-sm text-slate-700">${escapeHtml(note.text)}</div>
                             </div>
