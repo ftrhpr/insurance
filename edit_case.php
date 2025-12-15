@@ -109,7 +109,7 @@ try {
             <div class="mb-8">
                 <a href="index.php" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 mb-2">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                    <span>Back to Dashboard</span>
+                    <span>Back to Dashboard.</span>
                 </a>
                 <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                     <div class="flex items-center gap-4">
