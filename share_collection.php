@@ -1,5 +1,9 @@
 <?php
 require_once 'session_config.php';
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
 require_once 'config.php';
 
 // Initialize PDO
