@@ -36,10 +36,9 @@ try {
 
 // Fetch case data
 $stmt = $pdo->prepare("
-    SELECT t.*, v.ownerName as vehicle_owner, v.model as vehicle_model, cr.review_stars, cr.review_comment, cr.status as review_status
+    SELECT t.*, v.ownerName as vehicle_owner, v.model as vehicle_model
     FROM transfers t
     LEFT JOIN vehicles v ON t.plate = v.plate
-    LEFT JOIN customer_reviews cr ON cr.order_id = t.id AND cr.status = 'approved'
     WHERE t.id = ?
 ");
 $stmt->execute([$case_id]);
@@ -267,19 +266,19 @@ try {
                             </div>
                             <!-- Display View -->
                             <div id="review-display" x-show="!editingReview">
-                                <?php if (empty($case['reviewStars'])): ?>
+                                <?php if (empty($case['review_stars'])): ?>
                                     <div class="text-center py-6 text-slate-500 text-sm">No review submitted yet.</div>
                                 <?php else: ?>
                                     <div class="flex items-center gap-4">
                                         <div class="flex gap-1">
                                             <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                <i data-lucide="star" class="w-6 h-6 <?php echo $i <= $case['reviewStars'] ? 'text-amber-400 fill-amber-400' : 'text-slate-300'; ?>"></i>
+                                                <i data-lucide="star" class="w-6 h-6 <?php echo $i <= $case['review_stars'] ? 'text-amber-400 fill-amber-400' : 'text-slate-300'; ?>"></i>
                                             <?php endfor; ?>
                                         </div>
-                                        <span class="text-xl font-bold text-slate-700"><?php echo $case['reviewStars']; ?> out of 5</span>
+                                        <span class="text-xl font-bold text-slate-700"><?php echo $case['review_stars']; ?> out of 5</span>
                                     </div>
-                                    <?php if (!empty($case['reviewComment'])): ?>
-                                    <blockquote class="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4 text-sm text-slate-700 italic">"<?php echo htmlspecialchars($case['reviewComment']); ?>"</blockquote>
+                                    <?php if (!empty($case['review_comment'])): ?>
+                                    <blockquote class="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4 text-sm text-slate-700 italic">"<?php echo htmlspecialchars($case['review_comment']); ?>"</blockquote>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </div>
@@ -289,16 +288,16 @@ try {
                                     <label class="block text-sm font-medium text-slate-600 mb-1.5">Rating</label>
                                     <select id="input-review-stars" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5">
                                         <option value="">No rating</option>
-                                        <option value="1" <?php echo $case['reviewStars'] == 1 ? 'selected' : ''; ?>>⭐ 1 Star</option>
-                                        <option value="2" <?php echo $case['reviewStars'] == 2 ? 'selected' : ''; ?>>⭐⭐ 2 Stars</option>
-                                        <option value="3" <?php echo $case['reviewStars'] == 3 ? 'selected' : ''; ?>>⭐⭐⭐ 3 Stars</option>
-                                        <option value="4" <?php echo $case['reviewStars'] == 4 ? 'selected' : ''; ?>>⭐⭐⭐⭐ 4 Stars</option>
-                                        <option value="5" <?php echo $case['reviewStars'] == 5 ? 'selected' : ''; ?>>⭐⭐⭐⭐⭐ 5 Stars</option>
+                                        <option value="1" <?php echo $case['review_stars'] == 1 ? 'selected' : ''; ?>>⭐ 1 Star</option>
+                                        <option value="2" <?php echo $case['review_stars'] == 2 ? 'selected' : ''; ?>>⭐⭐ 2 Stars</option>
+                                        <option value="3" <?php echo $case['review_stars'] == 3 ? 'selected' : ''; ?>>⭐⭐⭐ 3 Stars</option>
+                                        <option value="4" <?php echo $case['review_stars'] == 4 ? 'selected' : ''; ?>>⭐⭐⭐⭐ 4 Stars</option>
+                                        <option value="5" <?php echo $case['review_stars'] == 5 ? 'selected' : ''; ?>>⭐⭐⭐⭐⭐ 5 Stars</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-600 mb-1.5">Comment</label>
-                                    <textarea id="input-review-comment" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5"><?php echo htmlspecialchars($case['reviewComment'] ?? ''); ?></textarea>
+                                    <textarea id="input-review-comment" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5"><?php echo htmlspecialchars($case['review_comment'] ?? ''); ?></textarea>
                                 </div>
                                 <button id="btn-save-review" @click="editingReview = false" class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm">Save Review</button>
                             </div>
