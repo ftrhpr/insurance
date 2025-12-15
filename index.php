@@ -548,7 +548,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <i data-lucide="plus-circle" class="w-5 h-5 text-white"></i>
                         </div>
                         <div>
-                            <h3 class="text-lg font-bold text-white">Create New Order</h3>
+                            <h3 class="text-lg font-bold text-white"><?php echo __('order.create_new','Create New Order'); ?></h3>
                             <p class="text-xs text-white/80">Manually add a new insurance order</p>
                         </div>
                     </div>
@@ -633,11 +633,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 <!-- Footer -->
                 <div class="px-6 py-4 bg-slate-50 border-t-2 border-slate-200 flex justify-between items-center gap-3 rounded-b-2xl">
                     <button type="button" onclick="window.closeManualCreateModal()" class="px-6 py-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-xl font-bold text-sm transition-all border-2 border-slate-300">
-                        Cancel
+                        <?php echo __('action.cancel','Cancel'); ?>
                     </button>
                     <button type="button" id="manual-create-submit" onclick="window.saveManualOrder()" class="px-8 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-sm shadow-lg transition-all flex items-center gap-2">
                         <i data-lucide="check" class="w-4 h-4"></i>
-                        Create Order
+                        <?php echo __('order.create','Create Order'); ?>
                     </button>
                 </div>
             </div>
@@ -2060,7 +2060,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.openManualCreateModal = async () => {
             // Check permissions
             if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
+                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.need_manager_role','You need Manager or Admin role to create orders')); ?>', 'error');
                 return;
             }
             
@@ -2100,7 +2100,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.saveManualOrder = async () => {
             // Check permissions
             if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
+                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.need_manager_role','You need Manager or Admin role to create orders')); ?>', 'error');
                 return;
             }
             
@@ -2122,22 +2122,22 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             // Validation
             if (!plate) {
-                showToast('Validation Error', 'Vehicle plate number is required', 'error');
+                showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.plate_required','Vehicle plate number is required')); ?>', 'error');
                 if (plateEl) plateEl.focus();
                 return;
             }
             if (!name) {
-                showToast('Validation Error', 'Customer name is required', 'error');
+                showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.name_required','Customer name is required')); ?>', 'error');
                 if (nameEl) nameEl.focus();
                 return;
             }
             if (isNaN(amount) || amount <= 0) {
-                showToast('Validation Error', 'Amount must be a valid number greater than 0', 'error');
+                showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.amount_positive','Amount must be a valid number greater than 0')); ?>', 'error');
                 if (amountEl) amountEl.focus();
                 return;
             }
             if (franchise < 0) {
-                showToast('Validation Error', 'Franchise cannot be negative', 'error');
+                showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.franchise_nonnegative','Franchise cannot be negative')); ?>', 'error');
                 if (franchiseEl) franchiseEl.focus();
                 return;
             }
@@ -2169,7 +2169,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const result = await fetchAPI('add_transfer', 'POST', orderData);
                 
                 if (result && result.status === 'success') {
-                    showToast('Success', 'Order created successfully!', 'success');
+                    showToast('<?php echo addslashes(__('order.created_success','Order created successfully!')); ?>', '', 'success');
                     window.closeManualCreateModal();
                     
                     // Refresh the table
@@ -2180,11 +2180,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         setTimeout(() => window.location.href = `edit_case.php?id=${result.id}`, 500);
                     }
                 } else {
-                    const errorMsg = result?.message || 'Failed to create order';
+                    const errorMsg = result?.message || '<?php echo addslashes(__('error.failed_create_order','Failed to create order')); ?>';
                     showToast('Error', errorMsg, 'error');
                 }
             } catch (error) {
-                showToast('Error', error.message || 'Failed to create order', 'error');
+                showToast('<?php echo addslashes(__('error.general','Error')); ?>', error.message || '<?php echo addslashes(__('error.failed_create_order','Failed to create order')); ?>', 'error');
             } finally {
                 // Re-enable button
                 if (submitBtn) {
@@ -2201,7 +2201,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         window.saveEdit = async () => {
             if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You do not have permission to edit cases', 'error');
+                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_edit_cases','You do not have permission to edit cases')); ?>', 'error');
                 return;
             }
             const t = transfers.find(i => i.id == window.currentEditingId);
@@ -2422,7 +2422,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 showToast("Error: No record ID", "error");
                 return;
             }
-            if(confirm("Delete this case permanently?")) {
+            if(confirm('<?php echo addslashes(__("confirm.delete_transfer","Delete this case permanently?")); ?>')) {
                 const statusEl = document.getElementById('connection-status');
                 if (statusEl && statusEl.innerText.includes('Offline')) {
                     transfers = transfers.filter(t => t.id !== id);
@@ -2437,7 +2437,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             loadData(); 
                             showToast("Order deleted successfully", "success");
                         } else {
-                            showToast(result.message || "Failed to delete order", "error");
+                            showToast(result.message || '<?php echo addslashes(__("error.failed_delete","Failed to delete order")); ?>', "error");
                         }
                     } catch (error) {
                         console.error('Delete error:', error);
@@ -2479,7 +2479,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.viewInvoice = (id) => {
             const t = transfers.find(i => i.id == id);
             if (!t) {
-                showToast('Error', 'Order not found', 'error');
+                showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('error.order_not_found','Order not found')); ?>', 'error');
                 return;
             }
 
@@ -2724,7 +2724,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             loadData();
         } catch (e) {
             console.error('Error loading initial data:', e);
-            showToast('Error', 'Failed to load data. Please refresh the page.', 'error');
+            showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('error.failed_load_data','Failed to load data. Please refresh the page.')); ?>', 'error');
         }
         
         if(window.lucide) lucide.createIcons();

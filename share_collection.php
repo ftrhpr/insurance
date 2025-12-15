@@ -38,7 +38,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parts Collection - <?php echo htmlspecialchars($collection['transfer_plate'] . ' - ' . $collection['transfer_name']); ?> - OTOMOTORS</title>
+    <title><?php echo __('parts.title', 'Parts Collection'); ?> - <?php echo htmlspecialchars($collection['transfer_plate'] . ' - ' . $collection['transfer_name']); ?> - OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -71,13 +71,13 @@ try {
         <div class="glass-card rounded-2xl shadow-xl p-6 mb-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold gradient-text">Parts Collection</h1>
+                    <h1 class="text-2xl font-bold gradient-text"><?php echo __('parts.title', 'Parts Collection'); ?></h1>
                     <p class="text-gray-700"><?php echo htmlspecialchars($collection['transfer_plate'] . ' - ' . $collection['transfer_name']); ?></p>
                     <p class="text-sm text-gray-600">ID: #<?php echo $collection['id']; ?> | Status: <?php echo ucfirst($collection['status']); ?></p>
                 </div>
                 <a href="edit_collection.php?id=<?php echo $collection['id']; ?>" class="btn-gradient px-6 py-3 text-white rounded-lg shadow-md hover:shadow-lg transition-all">
                     <i data-lucide="play" class="w-5 h-5 mr-2 inline"></i>
-                    Start Collection Process
+                    <?php echo __('parts.start_process', 'Start Collection Process'); ?>
                 </a>
             </div>
         </div>
@@ -87,11 +87,11 @@ try {
             <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center justify-between">
                 <div class="flex items-center">
                     <i data-lucide="package" class="w-6 h-6 mr-2 text-purple-600"></i>
-                    Parts to Collect
+                    <?php echo __('parts.to_collect','Parts to Collect'); ?>
                 </div>
                 <button onclick="toggleLabors()" id="toggleLaborsBtn" class="px-3 py-1 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300">
                     <i data-lucide="eye" class="w-4 h-4 mr-1 inline"></i>
-                    Show Services
+                    <?php echo __('parts.show_services','Show Services'); ?>
                 </button>
             </h2>
             <?php
@@ -99,7 +99,7 @@ try {
             $labors = array_filter($parts_list, fn($item) => $item['type'] === 'labor');
             ?>
             <?php if (empty($parts)): ?>
-                <p class="text-gray-600">No parts listed for this collection.</p>
+                <p class="text-gray-600"><?php echo __('parts.empty','No parts listed for this collection.'); ?></p>
             <?php else: ?>
                 <div class="space-y-3">
                     <?php foreach ($parts as $item): ?>
@@ -128,10 +128,10 @@ try {
             <div id="laborsSection" class="mt-6 hidden">
                 <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
                     <i data-lucide="wrench" class="w-5 h-5 mr-2 text-sky-600"></i>
-                    Services
+                    <?php echo __('parts.services','Services'); ?>
                 </h3>
                 <?php if (empty($labors)): ?>
-                    <p class="text-gray-600">No services listed for this collection.</p>
+                    <p class="text-gray-600"><?php echo __('parts.services_empty','No services listed for this collection.'); ?></p>
                 <?php else: ?>
                     <div class="space-y-3">
                         <?php foreach ($labors as $item): ?>
@@ -156,12 +156,12 @@ try {
         <div class="glass-card rounded-2xl shadow-xl p-6">
             <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
                 <i data-lucide="share-2" class="w-6 h-6 mr-2 text-blue-600"></i>
-                Share This Collection
+                <?php echo __('parts.share','Share This Collection'); ?>
             </h2>
             <div class="flex flex-col sm:flex-row items-center gap-4">
                 <input type="text" readonly value="<?php echo htmlspecialchars((isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/share_collection.php?id=' . urlencode($collection_id)); ?>" class="flex-1 text-sm bg-gray-100 rounded px-3 py-2 border border-gray-200 cursor-pointer" onclick="this.select()" title="Shareable link">
-                <button onclick="copyToClipboard(this.previousElementSibling.value)" class="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">Copy Link</button>
-                <button onclick="showQrModal()" class="px-4 py-2 rounded bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700">Show QR Code</button>
+                <button onclick="copyToClipboard(this.previousElementSibling.value)" class="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"><?php echo __('action.copy', 'Copy Link'); ?></button>
+                <button onclick="showQrModal()" class="px-4 py-2 rounded bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700"><?php echo __('parts.show_qr','Show QR Code'); ?></button>
             </div>
         </div>
     </div>
@@ -184,7 +184,7 @@ try {
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('Link copied to clipboard!');
+                showToast('<?php echo addslashes(__('parts.copy_link', 'Link copied to clipboard!')); ?>', '', 'success');
             });
         }
 
@@ -193,10 +193,10 @@ try {
             const btn = document.getElementById('toggleLaborsBtn');
             if (section.classList.contains('hidden')) {
                 section.classList.remove('hidden');
-                btn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4 mr-1 inline"></i>Hide Services';
+                btn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4 mr-1 inline"></i><?php echo addslashes(__('parts.hide_services','Hide Services')); ?>';
             } else {
                 section.classList.add('hidden');
-                btn.innerHTML = '<i data-lucide="eye" class="w-4 h-4 mr-1 inline"></i>Show Services';
+                btn.innerHTML = '<i data-lucide="eye" class="w-4 h-4 mr-1 inline"></i><?php echo addslashes(__('parts.show_services','Show Services')); ?>';
             }
             lucide.createIcons();
         }

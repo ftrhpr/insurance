@@ -296,7 +296,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                         <h3 class="text-lg font-medium text-slate-600 mb-2">No parsing templates yet</h3>
                         <p class="text-slate-500 mb-4">Create your first SMS parsing template to get started.</p>
                         <button onclick="showCreateForm()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            Create First Template
+                            <?php echo __('sms.create_first_template','Create First Template'); ?>
                         </button>
                     </div>
                 <?php else: ?>
@@ -394,7 +394,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                                 Save Template
                             </button>
                             <button type="button" onclick="hideForm()" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                                Cancel
+                                <?php echo __('action.cancel','Cancel'); ?>
                             </button>
                         </div>
                     </div>
@@ -427,7 +427,7 @@ function editTemplate(id) {
 }
 
 function deleteTemplate(id, name) {
-    if (confirm(`Are you sure you want to delete the template "${name}"?`)) {
+    if (confirm('<?php echo addslashes(__('sms.delete_confirm_template','Are you sure you want to delete the template "{name}"?')); ?>'.replace('{name}', name))) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.innerHTML = `
@@ -476,7 +476,7 @@ function removeFieldMapping(id) {
 // Initialize form with existing data
 document.addEventListener('DOMContentLoaded', function() {
     <?php if ($editTemplate): ?>
-        document.getElementById('form-title').textContent = 'Edit Template';
+        document.getElementById('form-title').textContent = '<?php echo __('sms.edit_template','Edit Template'); ?>';
         document.getElementById('template_id').value = '<?php echo $editTemplate['id']; ?>';
         document.getElementById('template_name').value = '<?php echo htmlspecialchars($editTemplate['name']); ?>';
         document.getElementById('insurance_company').value = '<?php echo htmlspecialchars($editTemplate['insurance_company']); ?>';

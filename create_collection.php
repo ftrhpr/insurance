@@ -41,7 +41,7 @@ if (empty($_SESSION['user_id'])) {
                                 <i data-lucide="plus-circle" class="w-6 h-6 text-white"></i>
                             </div>
                             <div>
-                                <h1 class="text-2xl font-bold gradient-text">Create Collection</h1>
+                                <h1 class="text-2xl font-bold gradient-text"><?php echo __('collection.create','Create Collection'); ?></h1>
                                 <p class="text-xs text-gray-600">Select transfer and add parts/labor</p>
                             </div>
                         </div>
@@ -141,9 +141,9 @@ if (empty($_SESSION['user_id'])) {
                     <div class="text-lg font-bold text-gray-800">Total Price: <span class="gradient-text" id="createTotalPrice">₾0.00</span></div>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="parts_collection.php" class="px-4 py-2 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</a>
+                    <a href="parts_collection.php" class="px-4 py-2 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"><?php echo __('action.cancel','Cancel'); ?></a>
                     <button type="submit" form="collectionForm" class="btn-gradient px-4 py-2 text-white rounded-lg shadow-md">
-                        <i data-lucide="save" class="w-4 h-4 mr-1 inline"></i> Create Collection
+                        <i data-lucide="save" class="w-4 h-4 mr-1 inline"></i> <?php echo __('collection.create','Create Collection'); ?>
                     </button>
                 </div>
             </div>
@@ -331,7 +331,7 @@ if (empty($_SESSION['user_id'])) {
                             });
 
                             if (selectedItems.length === 0) {
-                                showToast('No items selected.', 'info');
+                                showToast('<?php echo addslashes(__('info.no_items_selected','No items selected.')); ?>', '', 'info');
                                 return;
                             }
 
@@ -544,7 +544,7 @@ if (empty($_SESSION['user_id'])) {
         async function createCollection(e) {
             e.preventDefault();
             const transferId = document.getElementById('transferSelect').value;
-            if (!transferId) { showToast('Please select a transfer.', 'error'); return; }
+            if (!transferId) { showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.select_transfer','Please select a transfer.')); ?>', 'error'); return; }
             
             const items = [];
             document.querySelectorAll('.part-item, .labor-item').forEach(row => {
@@ -560,7 +560,7 @@ if (empty($_SESSION['user_id'])) {
                 }
             });
 
-            if (items.length === 0) { showToast('Please add at least one item.', 'error'); return; }
+            if (items.length === 0) { showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.add_item','Please add at least one item.')); ?>', 'error'); return; }
 
             const response = await fetch('api.php?action=create_parts_collection', {
                 method: 'POST',
@@ -573,7 +573,7 @@ if (empty($_SESSION['user_id'])) {
             });
             const result = await response.json();
             if (result.success) {
-                showToast('Collection created successfully!', 'success');
+                showToast('<?php echo addslashes(__('success.collection_created','Collection created successfully!')); ?>', '', 'success');
                 setTimeout(() => window.location.href = 'parts_collection.php', 1000);
             } else {
                 showToast(result.error || 'Error creating collection.', 'error');

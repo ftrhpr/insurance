@@ -199,7 +199,7 @@ if (!isset($users) || !is_array($users)) {
 <div id="create-user-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b border-slate-200">
-            <h3 class="text-xl font-bold text-slate-800">Create New User</h3>
+            <h3 class="text-xl font-bold text-slate-800"><?php echo __('users.create_new','Create New User'); ?></h3>
         </div>
         <form id="create-user-form" class="p-6 space-y-4">
             <div>
@@ -229,10 +229,10 @@ if (!isset($users) || !is_array($users)) {
         </form>
         <div class="p-6 border-t border-slate-200 flex gap-3">
             <button onclick="closeCreateUserModal()" class="flex-1 px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                Cancel
+                <?php echo __('action.cancel','Cancel'); ?>
             </button>
             <button onclick="submitCreateUser()" class="flex-1 px-4 py-2 gradient-primary text-white rounded-lg hover:shadow-lg transition-all">
-                Create User
+                <?php echo __('users.create','Create User'); ?>
             </button>
         </div>
     </div>
@@ -317,22 +317,22 @@ async function submitCreateUser() {
         const result = await response.json();
         
         if (result.success) {
-            showToast('User created successfully', 'success');
+            showToast('<?php echo addslashes(__('users.create_success','User created successfully')); ?>', 'success');
             closeCreateUserModal();
             // Refresh users list
             location.reload();
         } else {
-            showToast(result.message || 'Failed to create user', 'error');
+            showToast(result.message || '<?php echo addslashes(__('users.create_failed','Failed to create user')); ?>', 'error');
         }
     } catch (error) {
         console.error('Error creating user:', error);
-        showToast('Failed to create user', 'error');
+        showToast('<?php echo addslashes(__('users.create_failed','Failed to create user')); ?>', 'error');
     }
 }
 
 function editUser(userId) {
     // TODO: Implement edit functionality
-    showToast('Edit functionality coming soon', 'info');
+    showToast('<?php echo addslashes(__('users.edit_coming_soon','Edit functionality coming soon')); ?>', 'info');
 }
 
 async function deleteUser(userId) {
@@ -345,10 +345,10 @@ async function deleteUser(userId) {
         const result = await response.json();
         
         if (result.success) {
-            showToast('User deleted successfully', 'success');
+            showToast('<?php echo addslashes(__('users.delete_success','User deleted successfully')); ?>', 'success');
             location.reload();
         } else {
-            showToast(result.message || 'Failed to delete user', 'error');
+            showToast(result.message || '<?php echo addslashes(__('users.delete_failed','Failed to delete user')); ?>', 'error');
         }
     } catch (error) {
         console.error('Error deleting user:', error);
@@ -438,9 +438,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
 
                 <div class="flex gap-3 justify-end px-6 pb-6">
-                    <button onclick="window.closeUserModal()" class="px-4 py-2.5 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
+                    <button onclick="window.closeUserModal()" class="px-4 py-2.5 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"><?php echo __('action.cancel','Cancel'); ?></button>
                     <button onclick="window.saveUser()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 rounded-lg font-semibold shadow-lg transition-all">
-                        <span id="user-save-btn-text">Create User</span>
+                        <span id="user-save-btn-text"><?php echo __('users.create','Create User'); ?></span>
                     </button>
                 </div>
             </div>
@@ -477,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
 
                 <div class="flex gap-3 justify-end px-6 pb-6">
-                    <button onclick="window.closePasswordModal()" class="px-4 py-2.5 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
+                    <button onclick="window.closePasswordModal()" class="px-4 py-2.5 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"><?php echo __('action.cancel','Cancel'); ?></button>
                     <button onclick="window.savePassword()" class="px-6 py-2.5 bg-slate-900 text-white hover:bg-slate-800 rounded-lg font-semibold shadow-lg transition-all">
                         Update Password
                     </button>
@@ -660,7 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         window.openCreateUserModal = function() {
             document.getElementById('user-modal-title').textContent = 'Add User';
-            document.getElementById('user-save-btn-text').textContent = 'Create User';
+            document.getElementById('user-save-btn-text').textContent = '<?php echo __('users.create','Create User'); ?>';
             document.getElementById('user-id').value = '';
             document.getElementById('user-username').value = '';
             document.getElementById('user-username').disabled = false;
@@ -677,12 +677,12 @@ document.addEventListener('DOMContentLoaded', function() {
         window.openEditUserModal = function(userId) {
             const user = allUsers.find(u => u.id === userId);
             if (!user) {
-                showToast('Error', 'User not found', 'error');
+                showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('users.not_found','User not found')); ?>', 'error');
                 return;
             }
             
-            document.getElementById('user-modal-title').textContent = 'Edit User';
-            document.getElementById('user-save-btn-text').textContent = 'Update User';
+            document.getElementById('user-modal-title').textContent = '<?php echo __('users.edit','Edit User'); ?>';
+            document.getElementById('user-save-btn-text').textContent = '<?php echo __('users.update','Update User'); ?>';
             document.getElementById('user-id').value = user.id;
             document.getElementById('user-username').value = user.username;
             document.getElementById('user-username').disabled = true;
@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadUsers();
             } catch (err) {
                 console.error('Error saving user:', err);
-                showToast('Error', err.message || 'Failed to save user', 'error');
+                showToast('<?php echo addslashes(__('users.save_failed','Failed to save user')); ?>', err.message || '', 'error');
             }
         };
 
@@ -777,7 +777,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.closePasswordModal();
             } catch (err) {
                 console.error('Error changing password:', err);
-                showToast('Error', err.message || 'Failed to change password', 'error');
+                showToast('<?php echo addslashes(__('users.password_failed','Failed to change password')); ?>', err.message || '', 'error');
             }
         };
 
@@ -788,7 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            if (!confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
+            if (!confirm('<?php echo addslashes(__('users.delete_confirm','Are you sure you want to delete user "{username}"? This action cannot be undone.')); ?>'.replace('{username}', user.username))) {
                 return;
             }
             
@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadUsers();
             } catch (err) {
                 console.error('Error deleting user:', err);
-                showToast('Error', err.message || 'Failed to delete user', 'error');
+                showToast('<?php echo addslashes(__('users.delete_failed','Failed to delete user')); ?>', err.message || '', 'error');
             }
         };
 

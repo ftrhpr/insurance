@@ -261,8 +261,8 @@ try {
                         <div class="border-t border-slate-200 pt-6">
                              <div class="flex justify-end mb-4 -mt-2">
                                 <button @click="editingReview = !editingReview" id="btn-edit-review" class="text-sm font-semibold text-blue-600 hover:underline">
-                                    <span x-show="!editingReview">Edit</span>
-                                    <span x-show="editingReview">Cancel</span>
+                                    <span x-show="!editingReview"><?php echo __('action.edit','Edit'); ?></span>
+                                    <span x-show="editingReview"><?php echo __('action.cancel','Cancel'); ?></span>
                                 </button>
                             </div>
                             <!-- Display View -->
@@ -300,7 +300,7 @@ try {
                                     <label class="block text-sm font-medium text-slate-600 mb-1.5">Comment</label>
                                     <textarea id="input-review-comment" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5"><?php echo htmlspecialchars($case['review_comment'] ?? ''); ?></textarea>
                                 </div>
-                                <button id="btn-save-review" @click="editingReview = false" class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm">Save Review</button>
+                                <button id="btn-save-review" @click="editingReview = false" class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm"><?php echo __('case.save_review','Save Review'); ?></button>
                             </div>
                         </div>
                     </div>
@@ -337,17 +337,17 @@ try {
                 <div x-data="{ tab: 'activity' }" class="bg-white rounded-2xl border border-slate-200/80">
                     <div class="p-3 border-b border-slate-200">
                         <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-                            <button @click="tab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'activity'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Activity</button>
-                            <button @click="tab = 'vehicle'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'vehicle'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Vehicle</button>
-                            <button @click="tab = 'parts'" :class="{'bg-white text-green-600 shadow-sm': tab === 'parts'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Parts</button>
-                            <button @click="tab = 'danger'" :class="{'bg-white text-red-600 shadow-sm': tab === 'danger'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Danger</button>
+                            <button @click="tab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'activity'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('tab.activity','Activity'); ?></button>
+                            <button @click="tab = 'vehicle'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'vehicle'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('tab.vehicle','Vehicle'); ?></button>
+                            <button @click="tab = 'parts'" :class="{'bg-white text-green-600 shadow-sm': tab === 'parts'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('tab.parts','Parts'); ?></button>
+                            <button @click="tab = 'danger'" :class="{'bg-white text-red-600 shadow-sm': tab === 'danger'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('tab.danger','Danger'); ?></button>
                         </div>
                     </div>
                     <div class="p-5">
                         <!-- Activity Log -->
                         <div x-show="tab === 'activity'" id="activity-log-container" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar -mr-3 pr-3">
                              <?php if (empty($case['systemLogs'])): ?>
-                                <div class="text-center py-4 text-slate-500 text-sm">No activity recorded.</div>
+                                <div class="text-center py-4 text-slate-500 text-sm"><?php echo __('activity.none','No activity recorded.'); ?></div>
                             <?php else: ?>
                                  <?php foreach (array_reverse($case['systemLogs']) as $log): ?>
                                     <div class='flex items-start gap-3'>
@@ -367,26 +367,26 @@ try {
                         </div>
                         <!-- Parts Request -->
                         <div x-show="tab === 'parts'" x-cloak class="space-y-4">
-                            <h3 class="font-semibold text-slate-700">Request Parts Collection</h3>
+                            <h3 class="font-semibold text-slate-700"><?php echo __('case.request_parts','Request Parts Collection'); ?></h3>
                             <form @submit.prevent="requestParts" class="space-y-3">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Description</label>
-                                    <textarea x-model="partsRequest.description" placeholder="Describe the parts collection request..." class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3" required></textarea>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1"><?php echo __('action.description','Description'); ?></label>
+                                    <textarea x-model="partsRequest.description" placeholder="<?php echo addslashes(__('collection.description_placeholder','Describe the parts collection request...')); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3" required></textarea>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Supplier (Optional)</label>
-                                    <input x-model="partsRequest.supplier" type="text" placeholder="Supplier name" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                    <label class="block text-sm font-medium text-slate-600 mb-1"><?php echo __('field.supplier_optional','Supplier (Optional)'); ?></label>
+                                    <input x-model="partsRequest.supplier" type="text" placeholder="<?php echo addslashes(__('field.supplier_optional','Supplier (Optional)')); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Collection Type</label>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1"><?php echo __('collection.type','Collection Type'); ?></label>
                                     <select x-model="partsRequest.collection_type" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                        <option value="local">Local Market</option>
-                                        <option value="order">Order</option>
+                                        <option value="local"><?php echo __('collection.local_market','Local Market'); ?></option>
+                                        <option value="order"><?php echo __('collection.order','Order'); ?></option>
                                     </select>
                                 </div>
                                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
                                     <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
-                                    Create Parts Request
+                                    <?php echo __('case.create_parts_request','Create Parts Request'); ?>
                                 </button>
                             </form>
                         </div>
@@ -394,7 +394,7 @@ try {
                         <div x-show="tab === 'danger'" x-cloak>
                             <h3 class="font-bold text-red-700">Danger Zone</h3>
                             <p class="text-sm text-red-600 mt-1">This action is permanent and cannot be undone.</p>
-                            <button onclick="deleteCase()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg mt-4 text-sm">Delete This Case</button>
+                            <button onclick="deleteCase()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg mt-4 text-sm"><?php echo __('action.delete_case','Delete This Case'); ?></button>
                         </div>
                     </div>
                 </div>
@@ -485,7 +485,7 @@ try {
                 },
                 printCase() { window.print(); },
                 async saveChanges() {
-                    if (!CAN_EDIT) return showToast('Permission Denied', 'You do not have permission to edit.', 'error');
+                    if (!CAN_EDIT) return showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_edit','You do not have permission to edit.')); ?>', 'error');
                     
                     const status = this.currentCase.status;
                     let serviceDate = document.getElementById('input-service-date').value;
@@ -566,7 +566,7 @@ try {
                         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         const result = await response.json();
                         
-                        showToast("Parts Request Created", "Parts collection request has been created.", "success");
+                        showToast('<?php echo addslashes(__("case.parts_request_created","Parts Request Created")); ?>', '<?php echo addslashes(__("case.parts_request_created_msg","Parts collection request has been created.")); ?>', 'success');
                         this.partsRequest = { description: '', supplier: '', collection_type: 'local' };
                     } catch (error) {
                         showToast("Error", "Failed to create parts request.", "error");
@@ -675,16 +675,16 @@ try {
         }
         
         async function deleteCase() {
-            if (!confirm("Permanently delete this case? This cannot be undone.")) return;
+            if (!confirm('<?php echo addslashes(__("confirm.delete_case","Permanently delete this case? This cannot be undone.")); ?>')) return; 
             try {
                 const result = await fetchAPI(`delete_transfer&id=${CASE_ID}`, 'POST');
                 if (result.status === 'deleted') {
-                    showToast("Case Deleted", "Permanently removed.", "success");
+                    showToast('<?php echo addslashes(__("case.deleted","Case Deleted")); ?>', '<?php echo addslashes(__("case.deleted_msg","Permanently removed.")); ?>', 'success');
                     setTimeout(() => window.location.href = 'index.php', 1000);
                 } else {
-                    showToast(result.message || "Failed to delete.", "error");
+                    showToast(result.message || '<?php echo addslashes(__("error.failed_delete","Failed to delete.")); ?>', 'error');
                 }
-            } catch (error) { showToast("Error", "Failed to delete case.", "error"); }
+            } catch (error) { showToast('<?php echo addslashes(__("error.general","Error")); ?>', '<?php echo addslashes(__("case.delete_failed","Failed to delete case.")); ?>', 'error'); }
         }
 
         function updateActivityLog(logs) {
@@ -747,7 +747,7 @@ try {
                 document.getElementById(btnId)?.addEventListener('click', () => {
                     const phone = document.getElementById('input-phone')?.value;
                     if (slug === 'schedule' && !document.getElementById('input-service-date')?.value) {
-                        return showToast('No Service Date', 'Please set a service date first.', 'error');
+                        return showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.set_service_date','Please set a service date first.')); ?>', 'error');
                     }
                     sendSmsAndUpdateLog(phone, getFormattedMessage(slug, getTemplateData()), slug);
                 });
@@ -756,7 +756,7 @@ try {
             document.getElementById('btn-send-custom-sms')?.addEventListener('click', () => {
                 const slug = document.getElementById('sms-template-selector')?.value;
                 const phone = document.getElementById('input-phone')?.value;
-                if (!slug) return showToast('No Template', 'Please select an SMS template.', 'error');
+                if (!slug) return showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.select_sms_template','Please select an SMS template.')); ?>', 'error');
                 sendSmsAndUpdateLog(phone, getFormattedMessage(slug, getTemplateData()), `custom_${slug}`);
             });
 

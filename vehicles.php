@@ -130,7 +130,7 @@ try {
                     <!-- Search -->
                     <div class="flex-1 flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5">
                         <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
-                        <input id="vehicle-search" type="text" placeholder="Search by plate, owner or model..." class="w-full bg-transparent outline-none text-sm ml-3">
+                        <input id="vehicle-search" type="text" placeholder="<?php echo __('vehicles.search_placeholder','Search by plate, owner or model...'); ?>" class="w-full bg-transparent outline-none text-sm ml-3">
                     </div>
                     
                     <!-- Status Filter -->
@@ -282,7 +282,7 @@ try {
                 </div>
 
                 <div class="flex gap-3 justify-end pt-2 border-t border-slate-100">
-                    <button onclick="window.closeVehicleModal()" class="px-4 py-2.5 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">Cancel</button>
+                    <button onclick="window.closeVehicleModal()" class="px-4 py-2.5 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors"><?php echo __('action.cancel','Cancel'); ?></button>
                     <?php if ($current_user_role === 'admin' || $current_user_role === 'manager'): ?>
                     <button onclick="window.saveVehicle()" class="px-6 py-2.5 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-sm font-semibold shadow-lg shadow-slate-900/10 transition-all active:scale-95">Save Vehicle</button>
                     <?php endif; ?>
@@ -318,7 +318,7 @@ try {
                 </div>
                 
                 <div id="order-edit-actions" class="hidden flex gap-3 justify-end pt-4 border-t border-slate-100">
-                    <button onclick="window.cancelOrderEdit()" class="px-4 py-2.5 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">Cancel</button>
+                    <button onclick="window.cancelOrderEdit()" class="px-4 py-2.5 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors"><?php echo __('action.cancel','Cancel'); ?></button>
                     <button onclick="window.saveOrderEdit()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all active:scale-95">Save Changes</button>
                 </div>
             </div>
@@ -368,17 +368,17 @@ try {
         // Send SMS function
         async function sendSMS(phone, message, context = 'manual') {
             if (!phone) {
-                showToast('Error', 'Phone number is required', 'error');
+                showToast('<?php echo addslashes(__('validation.title','Validation Error')); ?>', '<?php echo addslashes(__('validation.phone_required','Phone number is required')); ?>', 'error');
                 return;
             }
             
             try {
                 await fetchAPI('send_sms', 'POST', { to: phone, text: message, context });
                 console.log('SMS sent:', context, phone);
-                showToast('SMS Sent', 'Notification delivered successfully', 'success');
+                showToast('<?php echo addslashes(__('sms.sent','Notification delivered successfully')); ?>', '', 'success');
             } catch(e) {
                 console.error('SMS send error:', e);
-                showToast('SMS Error', 'Failed to send SMS notification', 'error');
+                showToast('<?php echo addslashes(__('sms.failed','Failed to send SMS notification')); ?>', '', 'error');
             }
         }
 
@@ -704,7 +704,7 @@ try {
             
             if (!order) {
                 console.error('Order not found:', orderId);
-                showToast('Error', 'Order not found. Please refresh the page.', 'error');
+                showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('error.order_not_found','Order not found. Please refresh the page.')); ?>', 'error');
                 return;
             }
             
@@ -736,8 +736,8 @@ try {
             const createdAt = order.createdAt ? new Date(order.createdAt.replace(' ', 'T')).toLocaleString() : 'N/A';
             
             // Update modal title
-            document.getElementById('order-modal-title').textContent = editMode ? 'Edit Service Order' : 'Service Order Details';
-            document.getElementById('order-modal-subtitle').textContent = editMode ? 'Update order information below.' : 'Complete order information and history.';
+            document.getElementById('order-modal-title').textContent = editMode ? '<?php echo __('vehicles.edit_order','Edit Service Order'); ?>' : '<?php echo __('vehicles.order_details','Service Order Details'); ?>';
+            document.getElementById('order-modal-subtitle').textContent = editMode ? '<?php echo __('vehicles.order_edit_sub','Update order information below.'); ?>' : '<?php echo __('vehicles.order_view_sub','Complete order information and history.'); ?>';
             document.getElementById('order-edit-actions').classList.toggle('hidden', !editMode);
             
             const contentHTML = editMode ? `
@@ -906,7 +906,7 @@ try {
 
         window.toggleOrderEdit = () => {
             if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You do not have permission to edit orders', 'error');
+                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_edit_orders','You do not have permission to edit orders')); ?>', 'error');
                 return;
             }
             
@@ -927,7 +927,7 @@ try {
 
         window.saveOrderEdit = async () => {
             if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You do not have permission to edit orders', 'error');
+                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_edit_orders','You do not have permission to edit orders')); ?>', 'error');
                 return;
             }
 
@@ -1022,7 +1022,7 @@ try {
                 window.closeOrderModal();
             } catch (err) {
                 console.error('Save error:', err);
-                showToast('Error', 'Failed to update order', 'error');
+                showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('order.update_failed','Failed to update order')); ?>', 'error');
             }
         };
 
@@ -1036,7 +1036,7 @@ try {
             const v = vehicles.find(i => i.id == id);
             if (!v) {
                 console.error('Vehicle not found:', id);
-                showToast('Error', 'Vehicle not found', 'error');
+                showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('error.vehicle_not_found','Vehicle not found')); ?>', 'error');
                 return;
             }
             
@@ -1092,7 +1092,7 @@ try {
 
         window.saveVehicle = async () => {
             if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You do not have permission to edit vehicles', 'error');
+                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_edit_vehicles','You do not have permission to edit vehicles')); ?>', 'error');
                 return;
             }
 
@@ -1122,7 +1122,7 @@ try {
 
         window.deleteVehicle = async (id) => {
             if (!CAN_EDIT) {
-                showToast('Permission Denied', 'You do not have permission to delete vehicles', 'error');
+                showToast('<?php echo addslashes(__('error.permission_denied','Permission denied')); ?>', '<?php echo addslashes(__('error.no_permission_delete_vehicles','You do not have permission to delete vehicles')); ?>', 'error');
                 return;
             }
 
@@ -1132,7 +1132,7 @@ try {
                     await loadData();
                     showToast("Vehicle Deleted", "Customer record removed", "success");
                 } catch (err) {
-                    showToast("Error", "Failed to delete vehicle", "error");
+                    showToast('<?php echo addslashes(__('error.general','Error')); ?>', '<?php echo addslashes(__('error.failed_delete_vehicle','Failed to delete vehicle')); ?>', 'error');
                 }
             }
         };
