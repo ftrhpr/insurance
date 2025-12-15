@@ -18,6 +18,7 @@ if (!$collection_id) {
     <title>Edit Parts Collection - OTOMOTORS Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
         .glass-card {
             background: rgba(255, 255, 255, 0.9);
@@ -363,33 +364,33 @@ if (!$collection_id) {
         }
 
         function addPart(name = '', quantity = 1, price = 0, collected = false, cost = 0) {
-            const container = document.getElementById('editPartsList');
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'part-item bg-white/70 hover:bg-indigo-50/80 transition rounded-xl p-4 border border-gray-200 shadow-sm group';
-            itemDiv.innerHTML = `
-                <div class="flex flex-row items-center gap-3 w-full">
-                    <div class="flex-1 min-w-0">
-                        <input type="text" class="part-name block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-gray-900" value="${name}" placeholder="Enter part name..." autocomplete="off">
+                const container = document.getElementById('editPartsList');
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'part-item bg-white/70 hover:bg-indigo-50/80 transition rounded-xl p-4 border border-gray-200 shadow-sm group';
+                itemDiv.innerHTML = `
+                    <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+                        <div class="flex-1 min-w-0">
+                            <input type="text" class="part-name block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-gray-900 break-words" value="${name}" placeholder="Enter part name..." autocomplete="off">
+                        </div>
+                        <div class="flex items-center justify-center sm:ml-2">
+                            <input type="checkbox" class="part-collected h-5 w-5 text-green-600 focus:ring-green-400" ${collected ? 'checked' : ''} title="Collected">
+                        </div>
+                        <div class="w-full sm:w-20 mt-2 sm:mt-0">
+                            <input type="number" class="part-quantity block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()" placeholder="Qty">
+                        </div>
+                        <div class="w-full sm:w-28 mt-2 sm:mt-0">
+                            <input type="number" class="part-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" placeholder="Price" title="Sale price to customer">
+                        </div>
+                        <div class="w-full sm:w-28 mt-2 sm:mt-0">
+                            <input type="number" class="part-cost block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0" placeholder="Cost" title="Actual cost to company">
+                        </div>
+                        <div class="flex items-center justify-center mt-2 sm:mt-0">
+                            <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm flex justify-center group-hover:scale-110">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex flex-col items-center justify-center">
-                        <input type="checkbox" class="part-collected h-5 w-5 text-green-600 focus:ring-green-400" ${collected ? 'checked' : ''} title="Collected">
-                    </div>
-                    <div class="w-20">
-                        <input type="number" class="part-quantity block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()" placeholder="Qty">
-                    </div>
-                    <div class="w-28">
-                        <input type="number" class="part-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" placeholder="Price" title="Sale price to customer">
-                    </div>
-                    <div class="w-28">
-                        <input type="number" class="part-cost block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0" placeholder="Cost" title="Actual cost to company">
-                    </div>
-                    <div class="flex items-center justify-center">
-                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm flex justify-center group-hover:scale-110">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
+                `;
             // Visual feedback for collected
             const collectedCheckbox = itemDiv.querySelector('.part-collected');
             function updateCollectedStyle() {
@@ -412,17 +413,17 @@ if (!$collection_id) {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'labor-item bg-white/70 hover:bg-sky-50/80 transition rounded-xl p-4 border border-gray-200 shadow-sm group';
             itemDiv.innerHTML = `
-                <div class="flex flex-row items-center gap-3 w-full">
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
                     <div class="flex-1 min-w-0">
-                        <input type="text" class="labor-name block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${name}" placeholder="Enter service name..." autocomplete="off">
+                        <input type="text" class="labor-name block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm break-words" value="${name}" placeholder="Enter service name..." autocomplete="off">
                     </div>
-                    <div class="w-20">
+                    <div class="w-full sm:w-20 mt-2 sm:mt-0">
                         <input type="number" class="labor-quantity block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${quantity}" min="1" oninput="updateTotals()" placeholder="Qty">
                     </div>
-                    <div class="w-28">
+                    <div class="w-full sm:w-28 mt-2 sm:mt-0">
                         <input type="number" class="labor-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" placeholder="Price" title="Sale price to customer">
                     </div>
-                    <div class="flex items-center justify-center">
+                    <div class="flex items-center justify-center mt-2 sm:mt-0">
                         <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm flex justify-center group-hover:scale-110">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
