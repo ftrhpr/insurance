@@ -267,70 +267,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 0.85rem;
         }
         /* Ensure placeholders are visible and have sufficient contrast */
-        input::placeholder, textarea::placeholder { color: rgba(75,85,99,0.85); opacity: 1; }
+        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.65); opacity: 1; }
         .gradient-left { background: linear-gradient(135deg, #573BFF 0%, #8662FF 100%); }
         @media (max-width: 576px) {
-            .login-card { border-radius: 16px; }
+            .login-card { border-radius: 12px; }
             .login-icon { width: 64px; height: 64px; }
         }
     </style>
 </head>
 <body>
-    <div class="min-vh-100 d-flex align-items-center justify-content-center p-3">
-        <div class="login-card d-flex flex-column flex-lg-row w-100 shadow-lg overflow-hidden">
-            <div class="d-none d-lg-flex flex-column justify-content-center align-items-start text-white p-5 gradient-left" style="min-width: 320px;">
-                <div class="login-icon mb-3">
-                    <i class="fas fa-shield-halved"></i>
-                </div>
-                <h2 class="h3 fw-bold mb-1">Welcome to OTOMOTORS</h2>
-                <p class="mb-0">Manager Portal — secure access to service cases and parts collections.</p>
-            </div>
-            <div class="flex-fill p-4 p-lg-5 bg-white">
-                <div class="mb-3 text-center d-lg-none">
-                    <div class="login-icon mx-auto mb-2"><i class="fas fa-shield-halved"></i></div>
-                    <h3 class="mb-0">OTOMOTORS</h3>
-                    <p class="text-muted small">Manager Portal Access</p>
+    <div class="min-vh-100 d-flex align-items-center justify-content-center p-4" style="background: linear-gradient(180deg,#0f172a 0%, #0b1220 60%);">
+        <div class="login-card w-100" style="max-width:420px; background: rgba(255,255,255,0.04); border-radius:16px; box-shadow: 0 8px 40px rgba(2,6,23,0.6); overflow:hidden; backdrop-filter: blur(8px);">
+            <div class="p-4">
+                <div class="text-center mb-3">
+                    <div class="login-icon mx-auto mb-2" style="width:72px;height:72px;border-radius:12px;background:linear-gradient(135deg,#6d28d9,#06b6d4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;">
+                        <i class="fas fa-car-side"></i>
+                    </div>
+                    <h3 class="mb-0 text-white fw-bold">OTOMOTORS</h3>
+                    <p class="text-muted small mb-0">Manager Portal</p>
                 </div>
 
                 <?php if ($error): ?>
-                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                <div class="alert alert-danger mb-3" role="alert">
                     <i class="fas fa-exclamation-circle me-2"></i>
-                    <div><?php echo htmlspecialchars($error); ?></div>
+                    <?php echo htmlspecialchars($error); ?>
                 </div>
                 <?php endif; ?>
 
-                <form method="POST" action="" class="mt-3">
-                    <div class="mb-3">
-                        <label for="username" class="form-label small fw-semibold"><?php echo __('login.username', 'Username'); ?></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-user"></i></span>
-                            <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus autocomplete="username">
-                        </div>
+                <form method="POST" action="" class="mt-2">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control bg-transparent text-white border-0" id="username" name="username" placeholder="Username" required autofocus autocomplete="username" style="border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:1rem;">
+                        <label for="username" class="text-white">Username</label>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label small fw-semibold"><?php echo __('login.password', 'Password'); ?></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                            <input type="password" id="password" name="password" class="form-control" placeholder="Password" required autocomplete="current-password">
-                        </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control bg-transparent text-white border-0" id="password" name="password" placeholder="Password" required autocomplete="current-password" style="border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:1rem;">
+                        <label for="password" class="text-white">Password</label>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="1" id="rememberMe" name="remember">
+                        <div class="form-check text-white">
+                            <input class="form-check-input" type="checkbox" value="1" id="rememberMe" name="remember" style="transform:scale(1.05);">
                             <label class="form-check-label small" for="rememberMe">Remember me</label>
                         </div>
-                        <a href="#" class="small">Forgot password?</a>
+                        <a href="#" class="small text-white">Forgot?</a>
                     </div>
 
-                    <button type="submit" class="btn btn-login w-100">
-                        <i class="fas fa-sign-in-alt me-2"></i><?php echo __('login.sign_in', 'Sign In'); ?>
+                    <button type="submit" class="btn btn-primary w-100" style="background:linear-gradient(90deg,#6d28d9,#06b6d4); border:none; padding:0.85rem 1rem; border-radius:10px; font-weight:700;">
+                        <i class="fas fa-sign-in-alt me-2"></i> <?php echo __('login.sign_in', 'Sign In'); ?>
                     </button>
                 </form>
 
-                <div class="text-center mt-4 small text-muted">
-                    © <?php echo date('Y'); ?> OTOMOTORS — Secure Access Portal
+                <div class="text-center mt-4 small text-muted" style="color:rgba(255,255,255,0.6);">
+                    © <?php echo date('Y'); ?> OTOMOTORS
                 </div>
             </div>
         </div>
