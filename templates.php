@@ -66,6 +66,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMS Templates - OTOMOTORS</title>
+    <!-- Prefer local BPG Arial; keep Google Fonts link as fallback -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -75,7 +76,7 @@ try {
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { sans: ['BPG Arial Caps', 'BPG Arial', 'Inter', 'sans-serif'] },
                     colors: {
                         primary: {
                             50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc',
@@ -91,7 +92,8 @@ try {
         }
     </script>
     <style>
-        * { font-family: 'Inter', -apple-system, system-ui, sans-serif; }
+        /* Use BPG Arial family when available */
+        * { font-family: 'BPG Arial Caps', 'BPG Arial', Arial, sans-serif; }
         .gradient-primary {
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
         }

@@ -13,7 +13,7 @@ $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo htmlspecialchars(get_current_language()); ?>">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,7 +39,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['BPG Arial Caps', 'BPG Arial', 'Inter', 'sans-serif'],
                     },
                     colors: {
                         primary: {
@@ -2640,8 +2640,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 <html>
                 <head>
                     <title>Service Invoice - Order #${document.getElementById('invoice-order-id').textContent}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        <style>
+                        body { font-family: 'BPG Arial Caps', 'BPG Arial', Arial, sans-serif; margin: 20px; }
                         .invoice-header { background: linear-gradient(to right, #3b82f6, #6366f1, #8b5cf6); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
                         .invoice-section { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
                         .invoice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }

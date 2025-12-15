@@ -44,6 +44,7 @@ try {
     <title>Customer Reviews - OTOMOTORS</title>
     
     <!-- Google Fonts: Inter -->
+    <!-- Prefer local BPG Arial; keep Google Fonts link as fallback -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -70,7 +71,7 @@ try {
                             800: '#86198f', 900: '#701a75'
                         }
                     },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                    fontFamily: { sans: ['BPG Arial Caps', 'BPG Arial', 'Inter', 'system-ui', 'sans-serif'] }
                 }
             }
         }
