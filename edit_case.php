@@ -369,8 +369,8 @@ try {
                             <h3 class="font-semibold text-slate-700">Request Parts Collection</h3>
                             <form @submit.prevent="requestParts" class="space-y-3">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Parts Needed</label>
-                                    <textarea x-model="partsRequest.description" placeholder="Describe the parts needed..." class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3" required></textarea>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">Description</label>
+                                    <textarea x-model="partsRequest.description" placeholder="Describe the parts collection request..." class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3" required></textarea>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-600 mb-1">Supplier (Optional)</label>
@@ -532,12 +532,12 @@ try {
                 },
                 async requestParts() {
                     if (!this.partsRequest.description.trim()) {
-                        return showToast("Error", "Please describe the parts needed.", "error");
+                        return showToast("Error", "Please provide a description.", "error");
                     }
 
                     try {
                         const partsList = [{
-                            name: this.partsRequest.description,
+                            name: "Parts Request",
                             quantity: 1,
                             price: 0
                         }];
@@ -548,7 +548,8 @@ try {
                             body: JSON.stringify({
                                 transfer_id: CASE_ID,
                                 parts_list: partsList,
-                                assigned_manager_id: null
+                                assigned_manager_id: null,
+                                description: this.partsRequest.description
                             })
                         });
                         

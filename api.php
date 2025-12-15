@@ -913,6 +913,7 @@ try {
         $transfer_id = $data['transfer_id'] ?? null;
         $parts_list = $data['parts_list'] ?? [];
         $assigned_manager_id = $data['assigned_manager_id'] ?? null;
+        $description = $data['description'] ?? null;
 
         if (!$transfer_id || empty($parts_list)) {
             http_response_code(400);
@@ -925,8 +926,8 @@ try {
             $total_cost += ($part['quantity'] ?? 0) * ($part['price'] ?? 0);
         }
 
-        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost, assigned_manager_id, currency) VALUES (?, ?, ?, ?, 'GEL')");
-        $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost, $assigned_manager_id]);
+        $stmt = $pdo->prepare("INSERT INTO parts_collections (transfer_id, parts_list, total_cost, assigned_manager_id, currency, description) VALUES (?, ?, ?, ?, 'GEL', ?)");
+        $stmt->execute([$transfer_id, json_encode($parts_list), $total_cost, $assigned_manager_id, $description]);
         $new_collection_id = $pdo->lastInsertId();
 
         // --- NEW: UPDATE SUGGESTIONS ---
@@ -941,6 +942,7 @@ try {
         $parts_list = $data['parts_list'] ?? [];
         $new_status = $data['status'] ?? null;
         $assigned_manager_id = $data['assigned_manager_id'] ?? null;
+        $description = $data['description'] ?? null;
 
         if (!$id) {
             http_response_code(400);
@@ -971,6 +973,11 @@ try {
         if ($assigned_manager_id !== null) {
             $query .= ", assigned_manager_id = ?";
             $params[] = $assigned_manager_id;
+        }
+
+        if ($description !== null) {
+            $query .= ", description = ?";
+            $params[] = $description;
         }
 
         $query .= " WHERE id = ?";

@@ -315,6 +315,13 @@ if (empty($_SESSION['user_id'])) {
                                     <i data-lucide="user-cog" class="w-4 h-4 mr-2 text-orange-500"></i>
                                     Manager: <span class="font-semibold ml-1">${managerName}</span>
                                 </div>
+                                ${collection.description ? `<div class="flex items-start text-gray-700">
+                                    <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-500 mt-0.5"></i>
+                                    <div>
+                                        <span class="font-semibold">Description:</span>
+                                        <p class="text-xs mt-1 text-gray-600">${collection.description}</p>
+                                    </div>
+                                </div>` : ''}
                                 <div class="flex items-center text-gray-700">
                                     <i data-lucide="package" class="w-4 h-4 mr-2 text-purple-500"></i>
                                     Items: <span class="font-semibold ml-1">${totalItems}</span>
