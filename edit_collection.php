@@ -233,7 +233,7 @@ if (!$collection_id) {
                     const partsList = JSON.parse(collection.parts_list || '[]');
                         partsList.forEach(item => {
                             if (item.type === 'labor') {
-                                addLabor(item.name, item.quantity, item.price, item.cost || 0);
+                                addLabor(item.name, item.quantity, item.price);
                             } else {
                                 addPart(item.name, item.quantity, item.price, item.collected || false, item.cost || 0);
                             }
@@ -384,8 +384,8 @@ if (!$collection_id) {
                         </label>
                         <input type="number" class="part-cost block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0" title="Actual cost to company">
                     </div>
-                    <div class="col-span-1 flex items-end justify-center">
-                        <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center group-hover:scale-110">
+                    <div class="col-span-1 flex flex-col justify-end h-full">
+                        <button type="button" onclick="removeItem(this)" class="self-end px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center group-hover:scale-110">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -408,7 +408,7 @@ if (!$collection_id) {
             updateTotals();
         }
 
-        function addLabor(name = '', quantity = 1, price = 0, cost = 0) {
+        function addLabor(name = '', quantity = 1, price = 0) {
             const container = document.getElementById('editLaborList');
             const itemDiv = document.createElement('div');
             itemDiv.className = 'labor-item bg-white/70 hover:bg-sky-50/80 transition rounded-xl p-4 border border-gray-200 shadow-sm group flex flex-col gap-2';
@@ -433,12 +433,12 @@ if (!$collection_id) {
                         </label>
                         <input type="number" class="labor-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" title="Sale price to customer">
                     </div>
-                    <div class="col-span-2 flex flex-col gap-1">
-                        <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1" title="Actual cost to company">
-                            <i data-lucide="coins" class="w-3 h-3 text-amber-500"></i> Cost
-                        </label>
-                        <input type="number" class="labor-cost block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${cost}" step="0.01" min="0" title="Actual cost to company">
-                    </div>
+                        <div class="col-span-2 flex flex-col gap-1">
+                            <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1" title="Sale price to customer">
+                                <i data-lucide="tag" class="w-3 h-3 text-blue-500"></i> Price
+                            </label>
+                            <input type="number" class="labor-price block w-full rounded-lg border border-gray-300 bg-white/90 shadow-sm input-focus px-3 py-2 text-sm" value="${price}" step="0.01" min="0" oninput="updateTotals()" title="Sale price to customer">
+                        </div>
                     <div class="col-span-1 flex items-end justify-center">
                         <button type="button" onclick="removeItem(this)" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm w-full flex justify-center group-hover:scale-110">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
