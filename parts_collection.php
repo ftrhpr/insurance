@@ -355,7 +355,7 @@ if (empty($_SESSION['user_id'])) {
                 return;
             }
 
-            let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>';
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">';
 
             list.forEach(collection => {
                 const statusColors = {
