@@ -445,6 +445,41 @@ try {
                 init() {
                     this.$nextTick(() => initializeIcons());
                     document.getElementById('sms-template-selector')?.addEventListener('change', this.updateSmsPreview.bind(this));
+
+                    // Auto-fill phone if plate exists in Vehicle DB
+                    const plateEl = document.getElementById('input-plate');
+                    const phoneEl = document.getElementById('input-phone');
+                    const callBtn = document.getElementById('btn-call-real');
+                    const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+
+                    const lookupAndFillPhone = async (value) => {
+                        const plate = (value || '').trim();
+                        if (!plate) return;
+                        if (!phoneEl || phoneEl.value.trim()) return; // don't overwrite existing phone
+                        try {
+                            const vehicles = await fetchAPI('get_vehicles');
+                            if (!Array.isArray(vehicles)) return;
+                            const match = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(plate));
+                            if (match && match.phone) {
+                                phoneEl.value = match.phone;
+                                if (callBtn) callBtn.href = 'tel:' + match.phone;
+                                showToast('Phone Auto-filled', 'Phone number populated from Vehicle DB.', 'success');
+                            }
+                        } catch (e) {
+                            // ignore lookup errors
+                        }
+                    };
+
+                    plateEl?.addEventListener('blur', (e) => lookupAndFillPhone(e.target.value));
+                    plateEl?.addEventListener('change', (e) => lookupAndFillPhone(e.target.value));
+                    plateEl?.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') setTimeout(() => lookupAndFillPhone(e.target.value), 10);
+                    });
+
+                    // Try to auto-fill on load if we already have a plate and no phone
+                    if (plateEl && plateEl.value) {
+                        setTimeout(() => lookupAndFillPhone(plateEl.value), 50);
+                    }
                 },
                 isSectionOpen(section) {
                     return this.openSections.includes(section);

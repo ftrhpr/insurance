@@ -280,15 +280,31 @@ try {
                 jsonResponse(['status' => 'error', 'message' => 'Invalid amount format']);
             }
             
-            $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, amount, franchise, rawText, status, created_at) 
-                                   VALUES (?, ?, ?, ?, ?, 'New', NOW())");
+            $plate = trim($data['plate']);
+
+            // Try to fill phone automatically from vehicles DB if available
+            $phoneFromVehicle = null;
+            try {
+                $vStmt = $pdo->prepare("SELECT phone FROM vehicles WHERE plate = ? LIMIT 1");
+                $vStmt->execute([$plate]);
+                $v = $vStmt->fetch(PDO::FETCH_ASSOC);
+                if ($v && !empty($v['phone'])) {
+                    $phoneFromVehicle = $v['phone'];
+                }
+            } catch (Exception $e) {
+                // Ignore vehicle lookup failures - non-fatal
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, amount, franchise, rawText, phone, status, created_at) 
+                                   VALUES (?, ?, ?, ?, ?, ?, 'New', NOW())");
             
             $stmt->execute([
-                trim($data['plate']),
+                $plate,
                 trim($data['name']), 
                 $amount,
                 isset($data['franchise']) ? trim($data['franchise']) : '',
-                isset($data['rawText']) ? trim($data['rawText']) : ''
+                isset($data['rawText']) ? trim($data['rawText']) : '',
+                $phoneFromVehicle
             ]);
 
             $newId = $pdo->lastInsertId();
