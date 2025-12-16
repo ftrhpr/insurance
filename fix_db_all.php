@@ -103,6 +103,9 @@ try {
         phone VARCHAR(64) NOT NULL,
         type VARCHAR(50) DEFAULT 'system',
         description TEXT NULL,
+        workflow_stages JSON DEFAULT NULL,
+        template_slug VARCHAR(100) DEFAULT NULL,
+        enabled TINYINT(1) DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )";
     $pdo->exec($sql);

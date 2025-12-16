@@ -9,6 +9,28 @@ if (!$collection_id) {
     header('Location: parts_collection.php');
     exit;
 }
+
+// Enforce Collector-specific permissions: collectors can only edit collections assigned to them
+require_once 'config.php';
+try {
+    $pdo = getDBConnection();
+    $stmt = $pdo->prepare("SELECT assigned_manager_id FROM parts_collections WHERE id = ?");
+    $stmt->execute([$collection_id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $assigned = $row['assigned_manager_id'] ?? null;
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'collector') {
+        if (empty($_SESSION['user_id']) || intval($assigned) !== intval($_SESSION['user_id'])) {
+            http_response_code(403);
+            echo "<h2>Access Denied</h2><p>Collectors can only edit collections assigned to them.</p>";
+            exit;
+        }
+    }
+} catch (Exception $e) {
+    // If DB is unavailable, deny access to be safe
+    http_response_code(403);
+    echo "<h2>Access Denied</h2><p>Unable to verify permissions at this time.</p>";
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

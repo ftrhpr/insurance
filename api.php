@@ -1008,12 +1008,30 @@ try {
             jsonResponse(['error' => 'Collection ID is required']);
         }
 
-        // Get OLD status and transfer_id before updating
-        $stmt = $pdo->prepare("SELECT status, transfer_id FROM parts_collections WHERE id = ?");
+        // Get OLD status and transfer_id and assigned_manager_id before updating
+        $stmt = $pdo->prepare("SELECT status, transfer_id, assigned_manager_id FROM parts_collections WHERE id = ?");
         $stmt->execute([$id]);
         $collection_info = $stmt->fetch(PDO::FETCH_ASSOC);
         $old_status = $collection_info['status'] ?? null;
         $transfer_id = $collection_info['transfer_id'] ?? null;
+        $current_assigned = $collection_info['assigned_manager_id'] ?? null;
+
+        // Permission check: if not manager/admin, collectors may only update collections assigned to them
+        $user_role = $_SESSION['role'] ?? 'viewer';
+        $user_id = getCurrentUserId();
+        if (!checkPermission('manager')) {
+            if ($user_role === 'collector') {
+                if (empty($current_assigned) || intval($current_assigned) !== intval($user_id)) {
+                    http_response_code(403);
+                    jsonResponse(['error' => 'Collector may only update collections assigned to them']);
+                }
+                // Prevent collectors from reassigning manager or altering protected fields
+                $assigned_manager_id = null; // ignore changes
+            } else {
+                http_response_code(403);
+                jsonResponse(['error' => 'Manager access required']);
+            }
+        }
 
         // Calculate total cost
         $total_cost = 0;
@@ -1084,6 +1102,12 @@ try {
     }
 
     if ($action === 'delete_parts_collection' && $method === 'POST') {
+        // Only managers and admins may delete collections
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+
         $data = getJsonInput();
         $id = $data['id'] ?? null;
 
@@ -1218,9 +1242,13 @@ try {
         if (!checkPermission('manager')) {
             jsonResponse(['error' => 'Manager access required']);
         }
-        $stmt = $pdo->prepare("SELECT id, name, phone, type, description FROM sms_recipients ORDER BY name");
+        $stmt = $pdo->prepare("SELECT id, name, phone, type, description, workflow_stages, template_slug, enabled FROM sms_recipients ORDER BY name");
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$r) {
+            $r['workflow_stages'] = json_decode($r['workflow_stages'] ?? '[]', true) ?: [];
+            $r['enabled'] = (int)($r['enabled'] ?? 0);
+        }
         jsonResponse(['recipients' => $rows]);
     }
 
@@ -1234,6 +1262,9 @@ try {
         $phone = trim($data['phone'] ?? '');
         $type = trim($data['type'] ?? 'system');
         $desc = trim($data['description'] ?? '');
+        $workflow = is_array($data['workflow_stages'] ?? null) ? $data['workflow_stages'] : [];
+        $template_slug = trim($data['template_slug'] ?? '');
+        $enabled = isset($data['enabled']) ? (int)$data['enabled'] : 1;
 
         if (!$name || !$phone) {
             jsonResponse(['status' => 'error', 'message' => 'Name and phone are required']);
@@ -1241,12 +1272,12 @@ try {
 
         try {
             if ($id) {
-                $stmt = $pdo->prepare("UPDATE sms_recipients SET name = ?, phone = ?, type = ?, description = ? WHERE id = ?");
-                $stmt->execute([$name, $phone, $type, $desc, $id]);
+                $stmt = $pdo->prepare("UPDATE sms_recipients SET name = ?, phone = ?, type = ?, description = ?, workflow_stages = ?, template_slug = ?, enabled = ? WHERE id = ?");
+                $stmt->execute([$name, $phone, $type, $desc, json_encode($workflow), $template_slug ?: null, $enabled, $id]);
                 jsonResponse(['status' => 'success', 'id' => $id]);
             } else {
-                $stmt = $pdo->prepare("INSERT INTO sms_recipients (name, phone, type, description, created_at) VALUES (?, ?, ?, ?, NOW())");
-                $stmt->execute([$name, $phone, $type, $desc]);
+                $stmt = $pdo->prepare("INSERT INTO sms_recipients (name, phone, type, description, workflow_stages, template_slug, enabled, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                $stmt->execute([$name, $phone, $type, $desc, json_encode($workflow), $template_slug ?: null, $enabled]);
                 $newId = $pdo->lastInsertId();
                 jsonResponse(['status' => 'success', 'id' => $newId]);
             }

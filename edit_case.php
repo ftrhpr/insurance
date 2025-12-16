@@ -560,6 +560,26 @@ try {
                                 const msg = getFormattedMessage(template.slug, templateData);
                                 sendSmsAndUpdateLog(updates.phone, msg, `${template.slug}_sms`);
                             });
+
+                            // Also send to configured SMS recipients assigned to this workflow stage
+                            (async () => {
+                                try {
+                                    const recResp = await fetchAPI('get_sms_recipients');
+                                    const recs = recResp?.recipients || [];
+                                    for (const r of recs) {
+                                        if (!r.enabled) continue;
+                                        const stages = r.workflow_stages || [];
+                                        if (stages.includes(status)) {
+                                            const slug = r.template_slug || (smsWorkflowBindings[status] && smsWorkflowBindings[status][0] && smsWorkflowBindings[status][0].slug) || null;
+                                            if (!slug) continue;
+                                            const msg = getFormattedMessage(slug, templateData);
+                                            sendSmsAndUpdateLog(r.phone, msg, `recipient_${r.id}`);
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error('Failed to notify recipients for stage', e);
+                                }
+                            })();
                         }
                     }
 

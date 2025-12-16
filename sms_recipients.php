@@ -1,4 +1,9 @@
 <?php
+require_once 'session_config.php';
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
 $current_user_role = $_SESSION['role'] ?? 'viewer';
 if ($current_user_role !== 'admin' && $current_user_role !== 'manager') {
     http_response_code(403);
@@ -28,7 +33,9 @@ if ($current_user_role !== 'admin' && $current_user_role !== 'manager') {
                         <th class="p-2">Name</th>
                         <th class="p-2">Phone</th>
                         <th class="p-2">Type</th>
-                        <th class="p-2">Description</th>
+                        <th class="p-2">Stages</th>
+                        <th class="p-2">Template</th>
+                        <th class="p-2">Enabled</th>
                         <th class="p-2">Actions</th>
                     </tr>
                 </thead>
@@ -61,8 +68,30 @@ if ($current_user_role !== 'admin' && $current_user_role !== 'manager') {
                 </select>
             </div>
             <div>
+                <label class="text-sm font-medium">Workflow Stages</label>
+                <div id="workflow-stages" class="grid grid-cols-2 gap-2 text-sm text-slate-700">
+                    <label><input type="checkbox" value="New"> New</label>
+                    <label><input type="checkbox" value="Processing"> Processing</label>
+                    <label><input type="checkbox" value="Called"> Called</label>
+                    <label><input type="checkbox" value="Parts Ordered"> Parts Ordered</label>
+                    <label><input type="checkbox" value="Parts Arrived"> Parts Arrived</label>
+                    <label><input type="checkbox" value="Scheduled"> Scheduled</label>
+                    <label><input type="checkbox" value="Completed"> Completed</label>
+                    <label><input type="checkbox" value="Issue"> Issue</label>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm font-medium">Template (Optional)</label>
+                <select id="recipient-template" class="w-full p-2 border rounded">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            <div>
                 <label class="text-sm font-medium">Description</label>
                 <textarea id="recipient-description" class="w-full p-2 border rounded" rows="3"></textarea>
+            </div>
+            <div>
+                <label class="inline-flex items-center gap-2"><input id="recipient-enabled" type="checkbox" checked> <span class="text-sm">Enabled</span></label>
             </div>
             <div class="flex gap-2 justify-end">
                 <button onclick="closeRecipientModal()" class="px-4 py-2 rounded border">Cancel</button>
@@ -95,11 +124,14 @@ async function loadRecipients() {
     if (!data || !data.recipients) return;
     data.recipients.forEach(r => {
         const tr = document.createElement('tr');
+        const stages = (r.workflow_stages || []).join(', ');
         tr.innerHTML = `
             <td class="p-2">${escapeHtml(r.name)}</td>
             <td class="p-2">${escapeHtml(r.phone)}</td>
             <td class="p-2">${escapeHtml(r.type || '')}</td>
-            <td class="p-2">${escapeHtml(r.description || '')}</td>
+            <td class="p-2">${escapeHtml(stages)}</td>
+            <td class="p-2">${escapeHtml(r.template_slug || '')}</td>
+            <td class="p-2">${r.enabled ? 'Yes' : 'No'}</td>
             <td class="p-2"><button onclick="editRecipient(${r.id})" class="mr-2 text-blue-600">Edit</button><button onclick="deleteRecipient(${r.id})" class="text-red-600">Delete</button></td>
         `;
         body.appendChild(tr);
@@ -108,13 +140,33 @@ async function loadRecipients() {
 
 function escapeHtml(s) { return String(s || '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]); }
 
-function openRecipientModal() {
+async function openRecipientModal() {
     document.getElementById('recipient-id').value = '';
     document.getElementById('recipient-name').value = '';
     document.getElementById('recipient-phone').value = '';
     document.getElementById('recipient-type').value = 'system';
     document.getElementById('recipient-description').value = '';
+    document.getElementById('recipient-template').value = '';
+    document.getElementById('recipient-enabled').checked = true;
     document.getElementById('recipient-modal-title').textContent = 'Add Recipient';
+
+    // Clear workflow checkboxes
+    document.querySelectorAll('#workflow-stages input[type=checkbox]').forEach(cb => cb.checked = false);
+
+    // Load templates for selector
+    const tdata = await fetchAPI('get_sms_templates');
+    const tpl = document.getElementById('recipient-template');
+    tpl.innerHTML = '<option value="">-- None --</option>';
+    if (tdata && Array.isArray(tdata)) {
+        tdata.forEach(t => {
+            const opt = document.createElement('option'); opt.value = t.slug; opt.textContent = t.slug; tpl.appendChild(opt);
+        });
+    } else if (tdata && tdata.templates) {
+        tdata.templates.forEach(t => {
+            const opt = document.createElement('option'); opt.value = t.slug; opt.textContent = t.slug; tpl.appendChild(opt);
+        });
+    }
+
     document.getElementById('recipient-modal').classList.remove('hidden');
     document.getElementById('recipient-modal').classList.add('flex');
 }
@@ -130,8 +182,11 @@ async function saveRecipient() {
     const phone = document.getElementById('recipient-phone').value.trim();
     const type = document.getElementById('recipient-type').value;
     const description = document.getElementById('recipient-description').value.trim();
+    const enabled = document.getElementById('recipient-enabled').checked ? 1 : 0;
+    const template_slug = document.getElementById('recipient-template').value || '';
+    const workflow = Array.from(document.querySelectorAll('#workflow-stages input[type=checkbox]:checked')).map(cb => cb.value);
     if (!name || !phone) return alert('Name and phone required');
-    const res = await fetchAPI('save_sms_recipient', 'POST', { id, name, phone, type, description });
+    const res = await fetchAPI('save_sms_recipient', 'POST', { id, name, phone, type, description, workflow_stages: workflow, template_slug, enabled });
     if (res && res.status === 'success') {
         closeRecipientModal();
         loadRecipients();
@@ -149,6 +204,14 @@ async function editRecipient(id) {
     document.getElementById('recipient-phone').value = rec.phone;
     document.getElementById('recipient-type').value = rec.type || 'system';
     document.getElementById('recipient-description').value = rec.description || '';
+    document.getElementById('recipient-template').value = rec.template_slug || '';
+    document.getElementById('recipient-enabled').checked = !!rec.enabled;
+
+    // Set workflow checkboxes
+    document.querySelectorAll('#workflow-stages input[type=checkbox]').forEach(cb => {
+        cb.checked = (rec.workflow_stages || []).includes(cb.value);
+    });
+
     document.getElementById('recipient-modal-title').textContent = 'Edit Recipient';
     document.getElementById('recipient-modal').classList.remove('hidden');
     document.getElementById('recipient-modal').classList.add('flex');
@@ -161,7 +224,19 @@ async function deleteRecipient(id) {
     else alert('Delete failed');
 }
 
+// Load recipients and templates on page load
 loadRecipients();
+(async function loadTemplatesOnStart(){
+    const tdata = await fetchAPI('get_sms_templates');
+    const tpl = document.getElementById('recipient-template');
+    if (!tpl) return;
+    tpl.innerHTML = '<option value="">-- None --</option>';
+    if (tdata && Array.isArray(tdata)) {
+        tdata.forEach(t => tpl.appendChild(Object.assign(document.createElement('option'), { value: t.slug, textContent: t.slug })));
+    } else if (tdata && tdata.templates) {
+        tdata.templates.forEach(t => tpl.appendChild(Object.assign(document.createElement('option'), { value: t.slug, textContent: t.slug })));
+    }
+})();
 </script>
 </body>
 </html>
