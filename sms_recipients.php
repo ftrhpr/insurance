@@ -69,6 +69,14 @@ $initialRecipientsJson = json_encode($initialRecipients, JSON_HEX_TAG | JSON_HEX
                             <option value="other">Other</option>
                         </select>
                         <button onclick="openRecipientModal()" class="px-4 py-2 rounded bg-blue-600 text-white">Add Recipient</button>
+
+                        <!-- CSV Import -->
+                        <label class="flex items-center gap-2 px-3 py-2 rounded bg-white border cursor-pointer ml-2">
+                            <i data-lucide="upload" class="w-4 h-4 text-slate-600"></i>
+                            <span class="text-sm text-slate-700">Import CSV</span>
+                            <input id="import-file" type="file" accept=".csv" class="hidden" />
+                        </label>
+                        <button onclick="startImport()" id="btn-import" class="px-3 py-2 rounded bg-amber-500 text-white">Import</button>
                     </div>
                 </div>
 
@@ -293,6 +301,37 @@ async function deleteRecipient(id) {
     const res = await fetchAPI(`delete_sms_recipient&id=${id}`, 'POST', {});
     if (res && res.status === 'success') loadRecipients();
     else alert('Delete failed');
+}
+
+async function startImport() {
+    const fileInput = document.getElementById('import-file');
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return alert('Please choose a CSV file to import');
+
+    const ok = confirm('Importing will add or update recipients by phone. Continue?');
+    if (!ok) return;
+
+    const btn = document.getElementById('btn-import');
+    btn.disabled = true; btn.textContent = 'Importing...';
+
+    const fd = new FormData();
+    fd.append('file', file);
+
+    try {
+        const res = await fetch(`api.php?action=import_sms_recipients`, { method: 'POST', body: fd });
+        const j = await res.json();
+        if (j && j.status === 'success') {
+            alert(`Imported: ${j.imported}, Updated: ${j.updated}\nErrors: ${j.errors.length}`);
+            loadRecipients();
+        } else {
+            alert('Import failed: ' + (j.message || j.error || JSON.stringify(j)));
+        }
+    } catch (e) {
+        console.error('Import error', e);
+        alert('Import failed');
+    }
+
+    btn.disabled = false; btn.textContent = 'Import';
 }
 
 // Expose initialRecipients from server and initialize UI

@@ -1323,6 +1323,87 @@ try {
         }
     }
 
+    // --- IMPORT SMS RECIPIENTS (CSV) ---
+    if ($action === 'import_sms_recipients' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+
+        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            http_response_code(400);
+            jsonResponse(['status' => 'error', 'message' => 'File upload failed']);
+        }
+
+        $tmp = $_FILES['file']['tmp_name'];
+        $handle = fopen($tmp, 'r');
+        if (!$handle) {
+            http_response_code(500);
+            jsonResponse(['status' => 'error', 'message' => 'Could not open uploaded file']);
+        }
+
+        $headers = [];
+        $imported = 0;
+        $updated = 0;
+        $errors = [];
+        $lineNo = 0;
+
+        try {
+            while (($row = fgetcsv($handle)) !== false) {
+                $lineNo++;
+                if ($lineNo === 1) {
+                    // normalize headers
+                    $headers = array_map(function($h){ return strtolower(trim($h)); }, $row);
+                    continue;
+                }
+                if (count($row) === 0) continue;
+
+                $data = [];
+                foreach ($headers as $i => $col) {
+                    $data[$col] = trim($row[$i] ?? '');
+                }
+
+                // Expected columns: name, phone, type, workflow_stages (comma-separated), template_slug, enabled, description
+                $name = $data['name'] ?? '';
+                $phone = preg_replace('/\D+/', '', $data['phone'] ?? '');
+                $type = $data['type'] ?? 'system';
+                $workflow = [];
+                if (!empty($data['workflow_stages'])) {
+                    $workflow = array_values(array_filter(array_map('trim', preg_split('/[,;]+/', $data['workflow_stages']))));
+                }
+                $template_slug = $data['template_slug'] ?? null;
+                $enabled = isset($data['enabled']) ? (int)($data['enabled'] === '1' || strtolower($data['enabled']) === 'yes' || strtolower($data['enabled']) === 'true') : 1;
+                $description = $data['description'] ?? '';
+
+                if (empty($name) || empty($phone)) {
+                    $errors[] = "Line $lineNo: missing name or phone";
+                    continue;
+                }
+
+                // Upsert by phone
+                $stmt = $pdo->prepare("SELECT id FROM sms_recipients WHERE phone = ? LIMIT 1");
+                $stmt->execute([$phone]);
+                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($existing) {
+                    $stmt = $pdo->prepare("UPDATE sms_recipients SET name = ?, type = ?, description = ?, workflow_stages = ?, template_slug = ?, enabled = ? WHERE id = ?");
+                    $stmt->execute([$name, $type, $description, json_encode($workflow), $template_slug, $enabled, $existing['id']]);
+                    $updated++;
+                } else {
+                    $stmt = $pdo->prepare("INSERT INTO sms_recipients (name, phone, type, description, workflow_stages, template_slug, enabled, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                    $stmt->execute([$name, $phone, $type, $description, json_encode($workflow), $template_slug, $enabled]);
+                    $imported++;
+                }
+            }
+            fclose($handle);
+            jsonResponse(['status' => 'success', 'imported' => $imported, 'updated' => $updated, 'errors' => $errors]);
+        } catch (Exception $e) {
+            if (is_resource($handle)) fclose($handle);
+            error_log('import_sms_recipients error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()]);
+        }
+    }
+
     // --- NEW: PDF INVOICE PARSING ---
     if ($action === 'parse_invoice_pdf' && $method === 'POST') {
         if (!isset($_FILES['pdf']) || $_FILES['pdf']['error'] != UPLOAD_ERR_OK) {
