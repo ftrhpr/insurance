@@ -587,7 +587,7 @@ try {
             // Render pagination
             renderVehiclesPagination(totalPages);
             
-            lucide.createIcons();
+            setTimeout(() => lucide.createIcons(), 0);
         }
 
         // Pagination rendering
@@ -662,7 +662,7 @@ try {
             `;
 
             container.innerHTML = html;
-            lucide.createIcons();
+            setTimeout(() => lucide.createIcons(), 0);
         }
 
         // Modal Functions
@@ -680,7 +680,7 @@ try {
             document.getElementById('veh-model').value = '';
             document.getElementById('veh-history-section').classList.add('hidden');
             modal.classList.remove('hidden');
-            lucide.createIcons();
+            setTimeout(() => lucide.createIcons(), 0);
         };
 
         window.closeVehicleModal = () => document.getElementById('vehicle-modal').classList.add('hidden');
@@ -712,7 +712,7 @@ try {
             isEditMode = false;
             renderOrderModal(order, false);
             document.getElementById('order-modal').classList.remove('hidden');
-            lucide.createIcons();
+            setTimeout(() => lucide.createIcons(), 0);
         };
 
         function renderOrderModal(order, editMode = false) {
@@ -1246,7 +1246,7 @@ try {
         
         loadData();
         loadSMSTemplates(); // Load SMS templates from API
-        lucide.createIcons();
+        setTimeout(() => lucide.createIcons(), 0);
         
         console.log('Initialization complete');
     </script>
