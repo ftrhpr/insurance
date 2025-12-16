@@ -13,6 +13,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
 // Database connection
 require_once 'config.php';
+require_once 'language.php';
 
 // Default templates
 $defaultTemplatesData = [
@@ -61,11 +62,11 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo get_current_language(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMS Templates - OTOMOTORS</title>
+    <title><?php echo __('templates.title', 'SMS Templates'); ?> - OTOMOTORS</title>
     <!-- Prefer local BPG Arial; keep Google Fonts link as fallback -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -114,14 +115,14 @@ try {
             <!-- Templates Section -->
             <div class="lg:col-span-2 space-y-6">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Manage SMS Templates</h2>
+                    <h2 class="text-2xl font-bold text-slate-800"><?php echo __('templates.title', 'Manage SMS Templates'); ?></h2>
                     <?php if ($current_user_role === 'admin' || $current_user_role === 'manager' || $current_user_role === 'viewer'): ?>
                     <button onclick="window.saveAllTemplates()" class="px-6 py-3 gradient-primary text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i>
-                        Save All Templates
+                        <?php echo __('templates.save_all', 'Save All Templates'); ?>
                     </button>
                     <?php else: ?>
-                    <div class="text-sm text-slate-500 italic">View only - editing disabled</div>
+                    <div class="text-sm text-slate-500 italic"><?php echo __('templates.view_only', 'View only - editing disabled'); ?></div>
                     <?php endif; ?>
                 </div>
 
@@ -130,18 +131,18 @@ try {
                     <?php
                     // Define template metadata for icons and colors
                     $templateMeta = [
-                        'registered' => ['icon' => 'user-check', 'color' => 'emerald', 'label' => 'Welcome SMS'],
-                        'called' => ['icon' => 'phone-call', 'color' => 'blue', 'label' => 'Customer Contacted'],
-                        'contacted' => ['icon' => 'phone', 'color' => 'cyan', 'label' => 'Contacted Notification'],
-                        'schedule' => ['icon' => 'calendar-check', 'color' => 'indigo', 'label' => 'Service Scheduled'],
-                        'parts_ordered' => ['icon' => 'package', 'color' => 'amber', 'label' => 'Parts Ordered'],
-                        'parts_request_local' => ['icon' => 'shopping-cart', 'color' => 'teal', 'label' => 'Parts Request (Local)'],
-                        'parts_arrived' => ['icon' => 'box', 'color' => 'purple', 'label' => 'Parts Arrived'],
-                        'rescheduled' => ['icon' => 'clock', 'color' => 'orange', 'label' => 'Reschedule Request'],
-                        'reschedule_accepted' => ['icon' => 'calendar-check', 'color' => 'cyan', 'label' => 'Reschedule Accepted'],
-                        'completed' => ['icon' => 'check-circle', 'color' => 'green', 'label' => 'Service Completed'],
-                        'issue' => ['icon' => 'alert-circle', 'color' => 'red', 'label' => 'Issue Reported'],
-                        'system' => ['icon' => 'bell', 'color' => 'gray', 'label' => 'System Alert']
+                        'registered' => ['icon' => 'user-check', 'color' => 'emerald', 'label' => __('templates.welcome_sms', 'Welcome SMS')],
+                        'called' => ['icon' => 'phone-call', 'color' => 'blue', 'label' => __('templates.customer_contacted', 'Customer Contacted')],
+                        'contacted' => ['icon' => 'phone', 'color' => 'cyan', 'label' => __('templates.contacted_notification', 'Contacted Notification')],
+                        'schedule' => ['icon' => 'calendar-check', 'color' => 'indigo', 'label' => __('templates.service_scheduled', 'Service Scheduled')],
+                        'parts_ordered' => ['icon' => 'package', 'color' => 'amber', 'label' => __('templates.parts_ordered', 'Parts Ordered')],
+                        'parts_request_local' => ['icon' => 'shopping-cart', 'color' => 'teal', 'label' => __('templates.parts_request_local', 'Parts Request (Local)')],
+                        'parts_arrived' => ['icon' => 'box', 'color' => 'purple', 'label' => __('templates.parts_arrived', 'Parts Arrived')],
+                        'rescheduled' => ['icon' => 'clock', 'color' => 'orange', 'label' => __('templates.reschedule_request', 'Reschedule Request')],
+                        'reschedule_accepted' => ['icon' => 'calendar-check', 'color' => 'cyan', 'label' => __('templates.reschedule_accepted', 'Reschedule Accepted')],
+                        'completed' => ['icon' => 'check-circle', 'color' => 'green', 'label' => __('templates.service_completed', 'Service Completed')],
+                        'issue' => ['icon' => 'alert-circle', 'color' => 'red', 'label' => __('templates.issue_reported', 'Issue Reported')],
+                        'system' => ['icon' => 'bell', 'color' => 'gray', 'label' => __('templates.system_alert', 'System Alert')]
                     ];
 
                     // Sort templates by a predefined order
@@ -184,12 +185,12 @@ try {
                             <div class="flex items-center gap-2">
                                 <label class="flex items-center gap-1 text-xs">
                                     <input type="checkbox" id="active-<?php echo $slug; ?>" <?php echo ($template['is_active'] ?? true) ? 'checked' : ''; ?> class="w-3 h-3 template-active">
-                                    Active
+                                    <?php echo __('templates.active', 'Active'); ?>
                                 </label>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Workflow Stages:</label>
+                            <label class="block text-xs font-medium text-slate-600 mb-1"><?php echo __('templates.workflow_stages', 'Workflow Stages:'); ?></label>
                             <div class="flex flex-wrap gap-1">
                                 <?php foreach ($workflowStages as $stage): ?>
                                 <label class="flex items-center gap-1 text-xs bg-slate-100 px-2 py-1 rounded">
@@ -214,39 +215,39 @@ try {
                 <div class="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-6 sticky top-6">
                     <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
                         <i data-lucide="info" class="w-5 h-5"></i>
-                        Template Variables
+                        <?php echo __('templates.variables', 'Template Variables'); ?>
                     </h3>
                     <div class="space-y-3 text-sm">
                         <div class="bg-white rounded-lg p-3 border border-slate-200">
                             <code class="text-blue-600 font-mono font-bold">{name}</code>
-                            <p class="text-xs text-slate-600 mt-1">Customer's full name</p>
+                            <p class="text-xs text-slate-600 mt-1"><?php echo __("templates.customer_name", "Customer's full name"); ?></p>
                         </div>
                         <div class="bg-white rounded-lg p-3 border border-slate-200">
                             <code class="text-blue-600 font-mono font-bold">{plate}</code>
-                            <p class="text-xs text-slate-600 mt-1">Vehicle plate number</p>
+                            <p class="text-xs text-slate-600 mt-1"><?php echo __("templates.plate_number", "Vehicle plate number"); ?></p>
                         </div>
                         <div class="bg-white rounded-lg p-3 border border-slate-200">
                             <code class="text-blue-600 font-mono font-bold">{amount}</code>
-                            <p class="text-xs text-slate-600 mt-1">Service amount</p>
+                            <p class="text-xs text-slate-600 mt-1"><?php echo __("templates.service_amount", "Service amount"); ?></p>
                         </div>
                         <div class="bg-white rounded-lg p-3 border border-slate-200">
                             <code class="text-blue-600 font-mono font-bold">{date}</code>
-                            <p class="text-xs text-slate-600 mt-1">Service date</p>
+                            <p class="text-xs text-slate-600 mt-1"><?php echo __("templates.service_date", "Service date"); ?></p>
                         </div>
                         <div class="bg-white rounded-lg p-3 border border-slate-200">
                             <code class="text-blue-600 font-mono font-bold">{link}</code>
-                            <p class="text-xs text-slate-600 mt-1">Customer confirmation link</p>
+                            <p class="text-xs text-slate-600 mt-1"><?php echo __("templates.confirmation_link", "Customer confirmation link"); ?></p>
                         </div>
                         <div class="bg-white rounded-lg p-3 border border-slate-200">
                             <code class="text-blue-600 font-mono font-bold">{count}</code>
-                            <p class="text-xs text-slate-600 mt-1">Count/number (for system alerts)</p>
+                            <p class="text-xs text-slate-600 mt-1"><?php echo __("templates.count_system_alerts", "Count/number (for system alerts)"); ?></p>
                         </div>
                     </div>
                     
                     <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <p class="text-xs text-blue-800">
                             <i data-lucide="lightbulb" class="w-4 h-4 inline mb-1"></i>
-                            <strong>Tip:</strong> Use these placeholders in your templates. They will be automatically replaced with actual customer data when SMS is sent.
+                            <strong><?php echo __("templates.tip", "Tip:"); ?></strong> <?php echo __("templates.tip_text", "Use these placeholders in your templates. They will be automatically replaced with actual customer data when SMS is sent."); ?>
                         </p>
                     </div>
                 </div>

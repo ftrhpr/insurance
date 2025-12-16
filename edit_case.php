@@ -2,6 +2,7 @@
 session_start();
 require_once 'session_config.php';
 require_once 'config.php';
+require_once 'language.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -76,11 +77,11 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo get_current_language(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRO v2 Edit Case #<?php echo $case_id; ?> - OTOMOTORS</title>
+    <title><?php echo __('case.title', 'Edit Case'); ?> #<?php echo $case_id; ?> - OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -110,7 +111,7 @@ try {
             <div class="mb-8">
                 <a href="index.php" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 mb-2">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                    <span>Back to Dashboard</span>
+                    <span><?php echo __('case.back_to_dashboard', 'Back to Dashboard'); ?></span>
                 </a>
                 <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                     <div class="flex items-center gap-4">
@@ -120,10 +121,10 @@ try {
                         <span class="font-mono text-sm bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-medium" x-text="currentCase.status"></span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button @click="printCase()" class="text-slate-600 h-10 px-4 inline-flex items-center justify-center rounded-lg border bg-white hover:bg-slate-50 font-semibold text-sm">Print</button>
+                        <button @click="printCase()" class="text-slate-600 h-10 px-4 inline-flex items-center justify-center rounded-lg border bg-white hover:bg-slate-50 font-semibold text-sm"><?php echo __('case.print', 'Print'); ?></button>
                         <button @click="saveChanges()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-6 rounded-lg flex items-center gap-2 text-sm shadow-sm">
                             <i data-lucide="save" class="w-4 h-4"></i>
-                            <span>Save Changes</span>
+                            <span><?php echo __('case.save_changes', 'Save Changes'); ?></span>
                         </button>
                     </div>
                 </div>
@@ -155,37 +156,37 @@ try {
                 <!-- Collapsible Section: Case Details -->
                 <div x-data="{ open: isSectionOpen('details') }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('details')" class="w-full flex items-center justify-between p-5">
-                        <h2 class="text-xl font-bold text-slate-800">Case Details</h2>
+                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.details', 'Case Details'); ?></h2>
                         <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
                     </button>
                     <div x-show="open" x-cloak x-transition class="px-5 pb-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 border-t border-slate-200 pt-6">
                             <!-- Form Fields -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Customer Name</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.customer_name', 'Customer Name'); ?></label>
                                 <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                              <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Vehicle Plate</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.vehicle_plate', 'Vehicle Plate'); ?></label>
                                 <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Phone Number</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.phone_number', 'Phone Number'); ?></label>
                                 <div class="flex items-center gap-2">
                                     <input id="input-phone" type="text" value="<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                                     <a id="btn-call-real" href="tel:<?php echo htmlspecialchars($case['phone'] ?? ''); ?>" class="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg border bg-white hover:bg-slate-50"><i data-lucide="phone" class="w-4 h-4 text-slate-600"></i></a>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Service Date</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.service_date', 'Service Date'); ?></label>
                                 <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Amount (₾)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.amount', 'Amount'); ?> (₾)</label>
                                 <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Franchise (₾)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.franchise', 'Franchise'); ?> (₾)</label>
                                 <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                         </div>
@@ -198,14 +199,14 @@ try {
                     <div class="flex items-start gap-4">
                         <i data-lucide="calendar-clock" class="w-8 h-8 text-yellow-600 mt-1 flex-shrink-0"></i>
                         <div>
-                            <h3 class="text-lg font-bold text-yellow-900">Reschedule Request Pending</h3>
-                            <p class="font-bold text-slate-700 mt-2">Requested: <span class="font-normal"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span></p>
+                            <h3 class="text-lg font-bold text-yellow-900"><?php echo __('case.reschedule_request', 'Reschedule Request Pending'); ?></h3>
+                            <p class="font-bold text-slate-700 mt-2"><?php echo __('case.requested', 'Requested'); ?>: <span class="font-normal"><?php echo date('M j, Y g:i A', strtotime($case['rescheduleDate'])); ?></span></p>
                             <?php if (!empty($case['rescheduleComment'])): ?>
                             <p class="text-sm text-slate-600 mt-1 italic">"<?php echo htmlspecialchars($case['rescheduleComment']); ?>"</p>
                             <?php endif; ?>
                             <div class="flex gap-2 mt-4">
-                                <button onclick="acceptReschedule()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-4 rounded-md text-sm">Accept</button>
-                                <button onclick="declineReschedule()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-4 rounded-md text-sm">Decline</button>
+                                <button onclick="acceptReschedule()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-4 rounded-md text-sm"><?php echo __('case.accept', 'Accept'); ?></button>
+                                <button onclick="declineReschedule()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-4 rounded-md text-sm"><?php echo __('case.decline', 'Decline'); ?></button>
                             </div>
                         </div>
                     </div>
@@ -215,36 +216,36 @@ try {
                 <!-- Collapsible Section: Communication -->
                  <div x-data="{ open: isSectionOpen('communication') }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('communication')" class="w-full flex items-center justify-between p-5">
-                        <h2 class="text-xl font-bold text-slate-800">Communication</h2>
+                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.communication', 'Communication'); ?></h2>
                         <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
                     </button>
                     <div x-show="open" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6 space-y-5" x-data="{ activeTab: 'quick' }">
                             <div class="flex items-center justify-center">
                                  <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-                                    <button @click="activeTab = 'quick'" :class="{'bg-white text-blue-600 shadow-sm': activeTab === 'quick'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Quick SMS</button>
-                                    <button @click="activeTab = 'advanced'" :class="{'bg-white text-blue-600 shadow-sm': activeTab === 'advanced'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Advanced SMS</button>
+                                    <button @click="activeTab = 'quick'" :class="{'bg-white text-blue-600 shadow-sm': activeTab === 'quick'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('case.quick_sms', 'Quick SMS'); ?></button>
+                                    <button @click="activeTab = 'advanced'" :class="{'bg-white text-blue-600 shadow-sm': activeTab === 'advanced'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('case.advanced_sms', 'Advanced SMS'); ?></button>
                                 </div>
                             </div>
                             <!-- Quick SMS -->
                             <div x-show="activeTab === 'quick'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                <button id="btn-sms-register" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="party-popper" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Welcome</span></button>
-                                <button id="btn-sms-called" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="phone-outgoing" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Called</span></button>
-                                <button id="btn-sms-arrived" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="package-check" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Parts Arrived</span></button>
-                                <button id="btn-sms-schedule" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="calendar-check" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Scheduled</span></button>
-                                <button id="btn-sms-completed" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="check-circle" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold">Completed</span></button>
+                                <button id="btn-sms-register" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="party-popper" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold"><?php echo __('case.welcome', 'Welcome'); ?></span></button>
+                                <button id="btn-sms-called" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="phone-outgoing" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold"><?php echo __('case.called', 'Called'); ?></span></button>
+                                <button id="btn-sms-arrived" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="package-check" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold"><?php echo __('case.parts_arrived', 'Parts Arrived'); ?></span></button>
+                                <button id="btn-sms-schedule" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="calendar-check" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold"><?php echo __('case.scheduled', 'Scheduled'); ?></span></button>
+                                <button id="btn-sms-completed" class="text-center p-4 bg-slate-50/80 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg group transition"><i data-lucide="check-circle" class="w-7 h-7 mx-auto text-slate-500 group-hover:text-blue-600"></i><span class="text-xs mt-2 block font-semibold"><?php echo __('case.completed', 'Completed'); ?></span></button>
                             </div>
                             <!-- Advanced SMS -->
                             <div x-show="activeTab === 'advanced'" x-cloak class="space-y-3">
                                  <select id="sms-template-selector" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm">
-                                    <option value="">Choose a template...</option>
+                                    <option value=""><?php echo __('case.choose_template', 'Choose a template...'); ?></option>
                                     <?php foreach ($smsTemplates as $slug => $template): ?>
                                     <option value="<?php echo htmlspecialchars($slug); ?>"><?php echo htmlspecialchars($template['name'] ?? ucfirst(str_replace('_', ' ', $slug))); ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <div id="sms-preview" class="bg-slate-100 border border-slate-200 rounded-lg p-3 min-h-[120px] text-sm text-slate-700 whitespace-pre-wrap"><span class="text-slate-400 italic">Select a template...</span></div>
+                                <div id="sms-preview" class="bg-slate-100 border border-slate-200 rounded-lg p-3 min-h-[120px] text-sm text-slate-700 whitespace-pre-wrap"><span class="text-slate-400 italic"><?php echo __('case.select_template', 'Select a template...'); ?></span></div>
                                 <button id="btn-send-custom-sms" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-sm">
-                                    <i data-lucide="send" class="w-4 h-4"></i> Send Custom SMS
+                                    <i data-lucide="send" class="w-4 h-4"></i> <?php echo __('case.send_custom_sms', 'Send Custom SMS'); ?>
                                 </button>
                             </div>
                         </div>
@@ -254,21 +255,21 @@ try {
                  <!-- Collapsible Section: Customer Feedback -->
                 <div x-data="{ open: isSectionOpen('feedback'), editingReview: false }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('feedback')" class="w-full flex items-center justify-between p-5">
-                        <h2 class="text-xl font-bold text-slate-800">Customer Feedback</h2>
+                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.customer_feedback', 'Customer Feedback'); ?></h2>
                         <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
                     </button>
                     <div x-show="open" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6">
                              <div class="flex justify-end mb-4 -mt-2">
                                 <button @click="editingReview = !editingReview" id="btn-edit-review" class="text-sm font-semibold text-blue-600 hover:underline">
-                                    <span x-show="!editingReview">Edit</span>
-                                    <span x-show="editingReview">Cancel</span>
+                                    <span x-show="!editingReview"><?php echo __('case.edit', 'Edit'); ?></span>
+                                    <span x-show="editingReview"><?php echo __('case.cancel', 'Cancel'); ?></span>
                                 </button>
                             </div>
                             <!-- Display View -->
                             <div id="review-display" x-show="!editingReview">
                                 <?php if (empty($case['review_stars'])): ?>
-                                    <div class="text-center py-6 text-slate-500 text-sm">No review submitted yet.</div>
+                                    <div class="text-center py-6 text-slate-500 text-sm"><?php echo __('case.no_review', 'No review submitted yet.'); ?></div>
                                 <?php else: ?>
                                     <div class="flex items-center gap-4">
                                         <div class="flex gap-1">
@@ -286,21 +287,21 @@ try {
                             <!-- Edit View -->
                              <div id="review-edit" x-show="editingReview" x-cloak class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Rating</label>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1.5"><?php echo __('case.rating', 'Rating'); ?></label>
                                     <select id="input-review-stars" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                                        <option value="">No rating</option>
-                                        <option value="1" <?php echo $case['review_stars'] == 1 ? 'selected' : ''; ?>>⭐ 1 Star</option>
-                                        <option value="2" <?php echo $case['review_stars'] == 2 ? 'selected' : ''; ?>>⭐⭐ 2 Stars</option>
-                                        <option value="3" <?php echo $case['review_stars'] == 3 ? 'selected' : ''; ?>>⭐⭐⭐ 3 Stars</option>
-                                        <option value="4" <?php echo $case['review_stars'] == 4 ? 'selected' : ''; ?>>⭐⭐⭐⭐ 4 Stars</option>
-                                        <option value="5" <?php echo $case['review_stars'] == 5 ? 'selected' : ''; ?>>⭐⭐⭐⭐⭐ 5 Stars</option>
+                                        <option value=""><?php echo __('case.no_rating', 'No rating'); ?></option>
+                                        <option value="1" <?php echo $case['review_stars'] == 1 ? 'selected' : ''; ?>>⭐ 1 <?php echo __('case.star', 'Star'); ?></option>
+                                        <option value="2" <?php echo $case['review_stars'] == 2 ? 'selected' : ''; ?>>⭐⭐ 2 <?php echo __('case.stars', 'Stars'); ?></option>
+                                        <option value="3" <?php echo $case['review_stars'] == 3 ? 'selected' : ''; ?>>⭐⭐⭐ 3 <?php echo __('case.stars', 'Stars'); ?></option>
+                                        <option value="4" <?php echo $case['review_stars'] == 4 ? 'selected' : ''; ?>>⭐⭐⭐⭐ 4 <?php echo __('case.stars', 'Stars'); ?></option>
+                                        <option value="5" <?php echo $case['review_stars'] == 5 ? 'selected' : ''; ?>>⭐⭐⭐⭐⭐ 5 <?php echo __('case.stars', 'Stars'); ?></option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Comment</label>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1.5"><?php echo __('case.comment', 'Comment'); ?></label>
                                     <textarea id="input-review-comment" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5"><?php echo htmlspecialchars($case['review_comment'] ?? ''); ?></textarea>
                                 </div>
-                                <button id="btn-save-review" @click="editingReview = false" class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm">Save Review</button>
+                                <button id="btn-save-review" @click="editingReview = false" class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm"><?php echo __('case.save_review', 'Save Review'); ?></button>
                             </div>
                         </div>
                     </div>
@@ -312,15 +313,15 @@ try {
             <aside class="lg:col-span-1 space-y-6 lg:sticky lg:top-8 self-start">
                  <!-- Internal Notes -->
                 <div class="bg-white rounded-2xl border border-slate-200/80">
-                    <h2 class="text-xl font-bold text-slate-800 p-5">Internal Notes</h2>
+                    <h2 class="text-xl font-bold text-slate-800 p-5"><?php echo __('case.internal_notes', 'Internal Notes'); ?></h2>
                     <div class="px-5 pb-5 border-t border-slate-200">
                         <div class="flex gap-2 my-5">
-                            <input id="new-note-input" type="text" placeholder="Add a new note..." class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 outline-none">
-                            <button onclick="addNote()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 rounded-lg font-semibold text-sm">Add</button>
+                            <input id="new-note-input" type="text" placeholder="<?php echo __('case.add_note_placeholder', 'Add a new note...'); ?>" class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 outline-none">
+                            <button onclick="addNote()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 rounded-lg font-semibold text-sm"><?php echo __('case.add', 'Add'); ?></button>
                         </div>
                         <div id="notes-container" class="space-y-3 max-h-72 overflow-y-auto custom-scrollbar -mr-3 pr-3">
                              <?php if (empty($case['internalNotes'])): ?>
-                                <div class="text-center py-4 text-slate-500 text-sm">No internal notes yet.</div>
+                                <div class="text-center py-4 text-slate-500 text-sm"><?php echo __('case.no_internal_notes', 'No internal notes yet.'); ?></div>
                             <?php else: ?>
                                 <?php foreach (array_reverse($case['internalNotes']) as $note): ?>
                                 <div class='bg-slate-100 p-3 rounded-lg border border-slate-200/80'>
@@ -337,17 +338,17 @@ try {
                 <div x-data="{ tab: 'activity' }" class="bg-white rounded-2xl border border-slate-200/80">
                     <div class="p-3 border-b border-slate-200">
                         <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-                            <button @click="tab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'activity'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Activity</button>
-                            <button @click="tab = 'vehicle'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'vehicle'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Vehicle</button>
-                            <button @click="tab = 'parts'" :class="{'bg-white text-green-600 shadow-sm': tab === 'parts'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Parts</button>
-                            <button @click="tab = 'danger'" :class="{'bg-white text-red-600 shadow-sm': tab === 'danger'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600">Danger</button>
+                            <button @click="tab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'activity'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('case.activity', 'Activity'); ?></button>
+                            <button @click="tab = 'vehicle'" :class="{'bg-white text-blue-600 shadow-sm': tab === 'vehicle'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('case.vehicle', 'Vehicle'); ?></button>
+                            <button @click="tab = 'parts'" :class="{'bg-white text-green-600 shadow-sm': tab === 'parts'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('case.parts', 'Parts'); ?></button>
+                            <button @click="tab = 'danger'" :class="{'bg-white text-red-600 shadow-sm': tab === 'danger'}" class="flex-1 px-3 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('case.danger', 'Danger'); ?></button>
                         </div>
                     </div>
                     <div class="p-5">
                         <!-- Activity Log -->
                         <div x-show="tab === 'activity'" id="activity-log-container" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar -mr-3 pr-3">
                              <?php if (empty($case['systemLogs'])): ?>
-                                <div class="text-center py-4 text-slate-500 text-sm">No activity recorded.</div>
+                                <div class="text-center py-4 text-slate-500 text-sm"><?php echo __('case.no_activity', 'No activity recorded.'); ?></div>
                             <?php else: ?>
                                  <?php foreach (array_reverse($case['systemLogs']) as $log): ?>
                                     <div class='flex items-start gap-3'>
@@ -362,39 +363,39 @@ try {
                         </div>
                         <!-- Vehicle Info -->
                          <div x-show="tab === 'vehicle'" x-cloak class="space-y-3">
-                            <div class="flex justify-between text-sm"><span class="font-medium text-slate-600">Owner:</span> <span class="text-slate-500"><?php echo htmlspecialchars($case['vehicle_owner'] ?? 'N/A'); ?></span></div>
-                            <div class="flex justify-between text-sm"><span class="font-medium text-slate-600">Model:</span> <span class="text-slate-500"><?php echo htmlspecialchars($case['vehicle_model'] ?? 'N/A'); ?></span></div>
+                            <div class="flex justify-between text-sm"><span class="font-medium text-slate-600"><?php echo __('case.owner', 'Owner'); ?>:</span> <span class="text-slate-500"><?php echo htmlspecialchars($case['vehicle_owner'] ?? 'N/A'); ?></span></div>
+                            <div class="flex justify-between text-sm"><span class="font-medium text-slate-600"><?php echo __('case.model', 'Model'); ?>:</span> <span class="text-slate-500"><?php echo htmlspecialchars($case['vehicle_model'] ?? 'N/A'); ?></span></div>
                         </div>
                         <!-- Parts Request -->
                         <div x-show="tab === 'parts'" x-cloak class="space-y-4">
-                            <h3 class="font-semibold text-slate-700">Request Parts Collection</h3>
+                            <h3 class="font-semibold text-slate-700"><?php echo __('case.request_parts', 'Request Parts Collection'); ?></h3>
                             <form @submit.prevent="requestParts" class="space-y-3">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Description</label>
-                                    <textarea x-model="partsRequest.description" placeholder="Describe the parts collection request..." class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3" required></textarea>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1"><?php echo __('case.description', 'Description'); ?></label>
+                                    <textarea x-model="partsRequest.description" placeholder="<?php echo __('case.describe_request', 'Describe the parts collection request...'); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3" required></textarea>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Supplier (Optional)</label>
-                                    <input x-model="partsRequest.supplier" type="text" placeholder="Supplier name" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                    <label class="block text-sm font-medium text-slate-600 mb-1"><?php echo __('case.supplier', 'Supplier (Optional)'); ?></label>
+                                    <input x-model="partsRequest.supplier" type="text" placeholder="<?php echo __('case.supplier_name', 'Supplier name'); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Collection Type</label>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1"><?php echo __('case.collection_type', 'Collection Type'); ?></label>
                                     <select x-model="partsRequest.collection_type" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                        <option value="local">Local Market</option>
-                                        <option value="order">Order</option>
+                                        <option value="local"><?php echo __('case.local_market', 'Local Market'); ?></option>
+                                        <option value="order"><?php echo __('case.order', 'Order'); ?></option>
                                     </select>
                                 </div>
                                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
                                     <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
-                                    Create Parts Request
+                                    <?php echo __('case.create_request', 'Create Parts Request'); ?>
                                 </button>
                             </form>
                         </div>
                         <!-- Danger Zone -->
                         <div x-show="tab === 'danger'" x-cloak>
-                            <h3 class="font-bold text-red-700">Danger Zone</h3>
-                            <p class="text-sm text-red-600 mt-1">This action is permanent and cannot be undone.</p>
-                            <button onclick="deleteCase()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg mt-4 text-sm">Delete This Case</button>
+                            <h3 class="font-bold text-red-700"><?php echo __('case.danger_zone', 'Danger Zone'); ?></h3>
+                            <p class="text-sm text-red-600 mt-1"><?php echo __('case.permanent_action', 'This action is permanent and cannot be undone.'); ?></p>
+                            <button onclick="deleteCase()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg mt-4 text-sm"><?php echo __('case.delete_case', 'Delete This Case'); ?></button>
                         </div>
                     </div>
                 </div>
