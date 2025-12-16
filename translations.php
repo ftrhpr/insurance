@@ -161,6 +161,9 @@ foreach ($allKeys as $k) {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <button onclick="scanNonTranslatedStrings()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
+                        <i data-lucide="search" class="w-4 h-4 inline mr-2"></i>Scan Project
+                    </button>
                     <button onclick="exportTranslations()" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium">
                         <i data-lucide="download" class="w-4 h-4 inline mr-2"></i>Export
                     </button>
@@ -336,6 +339,32 @@ foreach ($allKeys as $k) {
         </div>
     </div>
 
+    <!-- Scan Non-Translated Strings Modal -->
+    <div id="scan-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div class="bg-white rounded-xl shadow-lg w-11/12 max-w-4xl p-4">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">Scan for Non-Translated Strings</h3>
+                    <div id="scan-modal-info" class="text-sm text-slate-500 mt-1">Scanning project for hardcoded strings that should be translated...</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeScanModal()" class="px-3 py-1 bg-slate-100 rounded hover:bg-slate-200 text-sm">Close</button>
+                </div>
+            </div>
+
+            <div id="scan-results" class="mt-4 max-h-96 overflow-y-auto text-sm border border-slate-100 rounded p-2 bg-slate-50">
+                <div class="text-sm text-slate-500 py-4 text-center">Click "Scan Project" to start scanning...</div>
+            </div>
+
+            <div id="scan-summary" class="mt-4 p-3 bg-slate-100 rounded-lg text-sm">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>Total matches: <span id="total-matches" class="font-semibold">0</span></div>
+                    <div>Unique strings: <span id="unique-strings" class="font-semibold">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'api.php';
         const CURRENT_LANG = '<?php echo $current_lang; ?>';
@@ -503,6 +532,116 @@ foreach ($allKeys as $k) {
                 document.getElementById('find-summary').textContent = 'Replace failed: ' + e.message;
                 showToast('Replace failed', e.message, 'error');
             }
+        }
+
+        // --- SCAN FOR NON-TRANSLATED STRINGS ---
+        async function scanNonTranslatedStrings() {
+            document.getElementById('scan-modal').classList.remove('hidden');
+            document.getElementById('scan-results').innerHTML = '<div class="text-sm text-slate-500 py-4 text-center">Scanning project files...</div>';
+            document.getElementById('scan-modal-info').textContent = 'Scanning project for hardcoded strings...';
+            document.getElementById('total-matches').textContent = '0';
+            document.getElementById('unique-strings').textContent = '0';
+
+            try {
+                const res = await fetch(`${API_URL}?action=scan_non_translated_strings`);
+                const data = await res.json();
+
+                if (!data.success) throw new Error(data.message || 'Scan failed');
+
+                renderScanResults(data.grouped_matches || {}, data.total_matches || 0, data.unique_strings || 0);
+                document.getElementById('scan-modal-info').textContent = `Found ${data.total_matches} matches across ${data.unique_strings} unique strings`;
+
+            } catch (e) {
+                console.error('Scan error:', e);
+                document.getElementById('scan-results').innerHTML = `<div class="text-sm text-red-600 p-3">Scan failed: ${e.message}</div>`;
+            }
+        }
+
+        function closeScanModal() {
+            document.getElementById('scan-modal').classList.add('hidden');
+        }
+
+        function renderScanResults(groupedMatches, totalMatches, uniqueStrings) {
+            const container = document.getElementById('scan-results');
+
+            if (!groupedMatches || Object.keys(groupedMatches).length === 0) {
+                container.innerHTML = '<div class="text-sm text-green-600 p-3 text-center">No hardcoded strings found! All strings appear to be properly translated.</div>';
+                return;
+            }
+
+            let html = '<div class="space-y-4">';
+
+            Object.keys(groupedMatches).sort().forEach(text => {
+                const matches = groupedMatches[text];
+                html += `
+                    <div class="border border-slate-200 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-slate-800">"${text}"</h4>
+                            <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">${matches.length} occurrences</span>
+                        </div>
+                        <div class="space-y-1 max-h-32 overflow-y-auto">
+                            ${matches.slice(0, 5).map(m => `
+                                <div class="text-xs bg-slate-50 p-2 rounded border-l-2 border-blue-200">
+                                    <div class="font-mono text-slate-600">${m.file} <span class="text-slate-400">: ${m.line}</span></div>
+                                    <div class="text-slate-700 mt-1">${m.context.replace(/</g,'&lt;')}</div>
+                                </div>
+                            `).join('')}
+                            ${matches.length > 5 ? `<div class="text-xs text-slate-500 text-center py-1">... and ${matches.length - 5} more</div>` : ''}
+                        </div>
+                        <div class="mt-2 flex gap-2">
+                            <button onclick="createTranslationKey('${text}')" class="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                                Create Translation Key
+                            </button>
+                            <button onclick="findUsages(encodeURIComponent('new_key'), encodeURIComponent('${text}'))" class="px-2 py-1 bg-slate-600 text-white text-xs rounded hover:bg-slate-700">
+                                Find & Replace
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+
+            document.getElementById('total-matches').textContent = totalMatches;
+            document.getElementById('unique-strings').textContent = uniqueStrings;
+        }
+
+        function createTranslationKey(text) {
+            // Suggest a key based on the text
+            const suggestedKey = text.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+
+            // Close scan modal and open a simple prompt
+            closeScanModal();
+
+            const key = prompt(`Create translation key for "${text}":`, `action.${suggestedKey}`);
+            if (!key) return;
+
+            // Create the translation key via API
+            fetch(`${API_URL}?action=create_translation_key`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': CSRF_TOKEN
+                },
+                body: JSON.stringify({
+                    key: key,
+                    default_text: text
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Translation Key Created', `Key "${key}" created for "${text}". Refreshing page...`, 'success');
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    showToast('Failed to create key', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error creating translation key:', error);
+                showToast('Failed to create key', error.message, 'error');
+            });
         }
 
         function showToast(title, message = '', type = 'info') {

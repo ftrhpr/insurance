@@ -997,6 +997,113 @@ try {
         jsonResponse(['success' => true, 'summary' => $summary]);
     }
 
+    // --- SCAN FOR NON-TRANSLATED STRINGS ---
+    if ($action === 'scan_non_translated_strings' && $method === 'GET') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        $baseDir = __DIR__;
+        $excludeDirs = ['.git', 'vendor', 'fonts', 'node_modules'];
+        $allowedExt = ['php','html','js','css','txt','tpl','phtml'];
+
+        // Common hardcoded strings to look for
+        $commonStrings = [
+            'Save', 'Cancel', 'Delete', 'Edit', 'Add', 'Remove', 'Update', 'Create',
+            'Success', 'Error', 'Warning', 'Info', 'Loading', 'Please wait',
+            'Name', 'Phone', 'Email', 'Status', 'Date', 'Amount', 'Description',
+            'Search', 'Filter', 'Export', 'Import', 'Login', 'Logout'
+        ];
+
+        $hardcodedMatches = [];
+        $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($baseDir));
+
+        foreach ($rii as $file) {
+            if ($file->isDir()) continue;
+            $filePath = $file->getPathname();
+            // Exclude paths
+            $skip = false;
+            foreach ($excludeDirs as $ex) {
+                if (strpos($filePath, DIRECTORY_SEPARATOR.$ex.DIRECTORY_SEPARATOR) !== false) {
+                    $skip = true; break;
+                }
+            }
+            if ($skip) continue;
+
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowedExt)) continue;
+
+            $lines = @file($filePath, FILE_IGNORE_NEW_LINES);
+            if ($lines === false) continue;
+
+            foreach ($lines as $i => $line) {
+                // Skip lines that already use translation functions
+                if (preg_match('/__\([^)]+\)/', $line)) continue;
+
+                foreach ($commonStrings as $pattern) {
+                    // Look for exact word matches (case-sensitive for UI consistency)
+                    if (preg_match('/\b' . preg_quote($pattern, '/') . '\b/', $line)) {
+                        $hardcodedMatches[] = [
+                            'file' => substr($filePath, strlen($baseDir)+1),
+                            'line' => $i+1,
+                            'text' => $pattern,
+                            'context' => trim($line)
+                        ];
+                        break; // Only count once per line
+                    }
+                }
+            }
+        }
+
+        // Group by text for better organization
+        $grouped = [];
+        foreach ($hardcodedMatches as $match) {
+            $key = $match['text'];
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [];
+            }
+            $grouped[$key][] = $match;
+        }
+
+        jsonResponse([
+            'success' => true,
+            'total_matches' => count($hardcodedMatches),
+            'unique_strings' => count($grouped),
+            'grouped_matches' => $grouped
+        ]);
+    }
+
+    // --- CREATE TRANSLATION KEY ---
+    if ($action === 'create_translation_key' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+
+        $data = getJsonInput();
+        $key = trim($data['key'] ?? '');
+        $defaultText = trim($data['default_text'] ?? '');
+
+        if (!$key || !$defaultText) {
+            jsonResponse(['success' => false, 'message' => 'Missing key or default text']);
+        }
+
+        require_once 'language.php';
+
+        // Check if key already exists
+        $stmt = $pdo->prepare("SELECT id FROM translations WHERE translation_key = ? AND language_code = ?");
+        $stmt->execute([$key, DEFAULT_LANGUAGE]);
+        if ($stmt->fetch()) {
+            jsonResponse(['success' => false, 'message' => 'Translation key already exists']);
+        }
+
+        // Create the key with default text
+        $success = save_translation($key, $defaultText, DEFAULT_LANGUAGE);
+
+        jsonResponse(['success' => $success]);
+    }
+
     if ($action === 'get_current_user' && $method === 'GET') {
         jsonResponse([
             'user_id' => $_SESSION['user_id'] ?? null,
