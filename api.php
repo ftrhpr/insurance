@@ -17,15 +17,15 @@ try {
     $pdo = getDBConnection();
 // --- DELETE VEHICLE ENDPOINT ---
 if ($action === 'delete_vehicle' && $method === 'POST') {
-    if (!checkPermission('manager')) {
-        http_response_code(403);
-        jsonResponse(['status' => 'error', 'message' => 'Manager access required to delete vehicles']);
-    }
-    $id = intval($_GET['id'] ?? 0);
-    if ($id <= 0) {
-        jsonResponse(['status' => 'error', 'message' => 'Invalid vehicle ID']);
-    }
     try {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Manager access required to delete vehicles']);
+        }
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid vehicle ID']);
+        }
         $stmt = $pdo->prepare("DELETE FROM vehicles WHERE id = ?");
         $stmt->execute([$id]);
         if ($stmt->rowCount() > 0) {
@@ -34,8 +34,12 @@ if ($action === 'delete_vehicle' && $method === 'POST') {
             jsonResponse(['status' => 'error', 'message' => 'Vehicle not found or already deleted']);
         }
     } catch (Exception $e) {
-        error_log("Delete vehicle error: " . $e->getMessage());
-        jsonResponse(['status' => 'error', 'message' => 'Failed to delete vehicle: ' . $e->getMessage()]);
+        error_log("Delete vehicle error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+        jsonResponse([
+            'status' => 'error',
+            'message' => 'Failed to delete vehicle: ' . $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
     }
 }
 <?php
