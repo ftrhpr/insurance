@@ -1240,20 +1240,36 @@ try {
     // --- SMS RECIPIENTS (Manager-level) ---
     if ($action === 'get_sms_recipients' && $method === 'GET') {
         if (!checkPermission('manager')) {
+            http_response_code(403);
             jsonResponse(['error' => 'Manager access required']);
         }
-        $stmt = $pdo->prepare("SELECT id, name, phone, type, description, workflow_stages, template_slug, enabled FROM sms_recipients ORDER BY name");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rows as &$r) {
-            $r['workflow_stages'] = json_decode($r['workflow_stages'] ?? '[]', true) ?: [];
-            $r['enabled'] = (int)($r['enabled'] ?? 0);
+
+        // If table doesn't exist yet, return empty list (avoids 400 on missing migration)
+        try {
+            $tableExists = $pdo->query("SHOW TABLES LIKE 'sms_recipients'")->rowCount() > 0;
+            if (!$tableExists) {
+                jsonResponse(['recipients' => []]);
+            }
+
+            $stmt = $pdo->prepare("SELECT id, name, phone, type, description, workflow_stages, template_slug, enabled FROM sms_recipients ORDER BY name");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$r) {
+                $r['workflow_stages'] = json_decode($r['workflow_stages'] ?? '[]', true) ?: [];
+                $r['enabled'] = (int)($r['enabled'] ?? 0);
+            }
+
+            jsonResponse(['recipients' => $rows]);
+        } catch (Exception $e) {
+            error_log('get_sms_recipients error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Failed to load SMS recipients']);
         }
-        jsonResponse(['recipients' => $rows]);
     }
 
     if ($action === 'save_sms_recipient' && $method === 'POST') {
         if (!checkPermission('manager')) {
+            http_response_code(403);
             jsonResponse(['error' => 'Manager access required']);
         }
         $data = getJsonInput();
@@ -1288,13 +1304,23 @@ try {
 
     if ($action === 'delete_sms_recipient' && $method === 'POST') {
         if (!checkPermission('manager')) {
+            http_response_code(403);
             jsonResponse(['error' => 'Manager access required']);
         }
         $id = $_GET['id'] ?? null;
-        if (!$id) jsonResponse(['status' => 'error', 'message' => 'Missing id']);
-        $stmt = $pdo->prepare("DELETE FROM sms_recipients WHERE id = ?");
-        $stmt->execute([$id]);
-        jsonResponse(['status' => 'success']);
+        if (!$id) {
+            http_response_code(400);
+            jsonResponse(['status' => 'error', 'message' => 'Missing id']);
+        }
+        try {
+            $stmt = $pdo->prepare("DELETE FROM sms_recipients WHERE id = ?");
+            $stmt->execute([$id]);
+            jsonResponse(['status' => 'success']);
+        } catch (Exception $e) {
+            error_log('delete_sms_recipient error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['status' => 'error', 'message' => 'Delete failed']);
+        }
     }
 
     // --- NEW: PDF INVOICE PARSING ---
