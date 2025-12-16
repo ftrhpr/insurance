@@ -42,6 +42,11 @@ if ($current_user_role === 'admin') {
     $nav_items['users'] = ['icon' => 'users', 'label' => 'Users', 'url' => 'users.php'];
     $nav_items['translations'] = ['icon' => 'languages', 'label' => 'Translations', 'url' => 'translations.php'];
 }
+
+// SMS Recipients config for managers and admins
+if ($current_user_role === 'admin' || $current_user_role === 'manager') {
+    $nav_items['sms_recipients'] = ['icon' => 'bookmark', 'label' => 'SMS Recipients', 'url' => 'sms_recipients.php'];
+}
 ?>
 <style>
 /* Modern Header Styles - CSP Compatible */
