@@ -84,6 +84,9 @@ $initialRecipientsJson = json_encode($initialRecipients, JSON_HEX_TAG | JSON_HEX
                             <option value="transfers">From Transfers</option>
                         </select>
                         <button onclick="startImportFromDB()" id="btn-import-db" class="px-3 py-2 rounded bg-emerald-500 text-white">Import from DB</button>
+
+                        <!-- Run Schema Migration -->
+                        <button onclick="runMigration()" id="btn-run-migration" class="px-3 py-2 rounded bg-indigo-600 text-white ml-2">Run Migration</button>
                     </div>
                 </div>
 
@@ -364,6 +367,37 @@ async function startImportFromDB() {
     }
 
     btn.disabled = false; btn.textContent = 'Import from DB';
+}
+
+async function runMigration() {
+    if (!confirm('This will attempt to add missing columns or create the recipients table. Proceed?')) return;
+    const btn = document.getElementById('btn-run-migration');
+    btn.disabled = true; btn.textContent = 'Migrating...';
+    try {
+        const res = await fetch('api.php?action=run_sms_recipients_migration', { method: 'POST' });
+        const j = await res.json();
+        if (j && j.status === 'success') {
+            const r = j.result || {};
+            let msg = '';
+            msg += r.created_table ? 'Table created.\n' : 'Table already existed.\n';
+            if (r.schema) {
+                msg += 'Columns added: ' + (r.schema.added.length ? r.schema.added.join(', ') : 'None') + '\n';
+                msg += 'Columns skipped: ' + (r.schema.skipped.length ? r.schema.skipped.join(', ') : 'None') + '\n';
+                if (r.schema.failed && Object.keys(r.schema.failed).length) {
+                    msg += 'Failed: ' + Object.entries(r.schema.failed).map(k => k.join(': ')).join('; ') + '\n';
+                }
+            }
+            if (r.errors && r.errors.length) msg += 'Errors: ' + r.errors.join('; ');
+            alert('Migration result:\n\n' + msg);
+            loadRecipients();
+        } else {
+            alert('Migration failed: ' + (j.message || JSON.stringify(j)));
+        }
+    } catch (e) {
+        console.error('Migration error', e);
+        alert('Migration failed');
+    }
+    btn.disabled = false; btn.textContent = 'Run Migration';
 }
 
 // Expose initialRecipients from server and initialize UI
