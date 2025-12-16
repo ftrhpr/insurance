@@ -75,42 +75,6 @@ function getJsonInput() {
     return (json_last_error() === JSON_ERROR_NONE) ? $input : [];
 }
 
-// Ensure sms_recipients table contains expected columns. Try to add missing columns when possible.
-function ensureSmsRecipientsSchema($pdo) {
-    $result = ['added' => [], 'skipped' => [], 'failed' => []];
-    try {
-        $colsStmt = $pdo->query("SHOW COLUMNS FROM sms_recipients");
-        $cols = array_map(function($c){ return $c['Field']; }, $colsStmt->fetchAll(PDO::FETCH_ASSOC));
-
-        // Column definitions
-        $definitions = [
-            'workflow_stages' => "ALTER TABLE sms_recipients ADD COLUMN workflow_stages JSON DEFAULT NULL",
-            'template_slug' => "ALTER TABLE sms_recipients ADD COLUMN template_slug VARCHAR(100) DEFAULT NULL",
-            'enabled' => "ALTER TABLE sms_recipients ADD COLUMN enabled TINYINT(1) DEFAULT 1",
-        ];
-
-        foreach ($definitions as $col => $sql) {
-            if (in_array($col, $cols)) {
-                $result['skipped'][] = $col;
-                continue;
-            }
-            try {
-                $pdo->exec($sql);
-                $result['added'][] = $col;
-            } catch (Exception $e) {
-                $result['failed'][$col] = $e->getMessage();
-                error_log('ensureSmsRecipientsSchema alter failed for ' . $col . ': ' . $e->getMessage());
-            }
-        }
-
-        return $result;
-    } catch (Exception $e) {
-        error_log('ensureSmsRecipientsSchema error: ' . $e->getMessage());
-        $result['error'] = $e->getMessage();
-        return $result;
-    }
-}
-
 // --- HELPER: GET ACCESS TOKEN (V1) ---
 function getAccessToken($keyFile) {
     if (!file_exists($keyFile)) return null;
@@ -1044,30 +1008,12 @@ try {
             jsonResponse(['error' => 'Collection ID is required']);
         }
 
-        // Get OLD status and transfer_id and assigned_manager_id before updating
-        $stmt = $pdo->prepare("SELECT status, transfer_id, assigned_manager_id FROM parts_collections WHERE id = ?");
+        // Get OLD status and transfer_id before updating
+        $stmt = $pdo->prepare("SELECT status, transfer_id FROM parts_collections WHERE id = ?");
         $stmt->execute([$id]);
         $collection_info = $stmt->fetch(PDO::FETCH_ASSOC);
         $old_status = $collection_info['status'] ?? null;
         $transfer_id = $collection_info['transfer_id'] ?? null;
-        $current_assigned = $collection_info['assigned_manager_id'] ?? null;
-
-        // Permission check: if not manager/admin, collectors may only update collections assigned to them
-        $user_role = $_SESSION['role'] ?? 'viewer';
-        $user_id = getCurrentUserId();
-        if (!checkPermission('manager')) {
-            if ($user_role === 'collector') {
-                if (empty($current_assigned) || intval($current_assigned) !== intval($user_id)) {
-                    http_response_code(403);
-                    jsonResponse(['error' => 'Collector may only update collections assigned to them']);
-                }
-                // Prevent collectors from reassigning manager or altering protected fields
-                $assigned_manager_id = null; // ignore changes
-            } else {
-                http_response_code(403);
-                jsonResponse(['error' => 'Manager access required']);
-            }
-        }
 
         // Calculate total cost
         $total_cost = 0;
@@ -1138,12 +1084,6 @@ try {
     }
 
     if ($action === 'delete_parts_collection' && $method === 'POST') {
-        // Only managers and admins may delete collections
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['error' => 'Manager access required']);
-        }
-
         $data = getJsonInput();
         $id = $data['id'] ?? null;
 
@@ -1276,39 +1216,16 @@ try {
     // --- SMS RECIPIENTS (Manager-level) ---
     if ($action === 'get_sms_recipients' && $method === 'GET') {
         if (!checkPermission('manager')) {
-            http_response_code(403);
             jsonResponse(['error' => 'Manager access required']);
         }
-
-        // If table doesn't exist yet, return empty list (avoids 400 on missing migration)
-        try {
-            $tableExists = $pdo->query("SHOW TABLES LIKE 'sms_recipients'")->rowCount() > 0;
-            if (!$tableExists) {
-                jsonResponse(['recipients' => []]);
-            }
-
-            // Ensure expected columns exist (attempt to add them if missing)
-            ensureSmsRecipientsSchema($pdo);
-
-            $stmt = $pdo->prepare("SELECT id, name, phone, type, description, workflow_stages, template_slug, enabled FROM sms_recipients ORDER BY name");
-            $stmt->execute();
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($rows as &$r) {
-                $r['workflow_stages'] = json_decode($r['workflow_stages'] ?? '[]', true) ?: [];
-                $r['enabled'] = (int)($r['enabled'] ?? 0);
-            }
-
-            jsonResponse(['recipients' => $rows]);
-        } catch (Exception $e) {
-            error_log('get_sms_recipients error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['error' => 'Failed to load SMS recipients']);
-        }
+        $stmt = $pdo->prepare("SELECT id, name, phone, type, description FROM sms_recipients ORDER BY name");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        jsonResponse(['recipients' => $rows]);
     }
 
     if ($action === 'save_sms_recipient' && $method === 'POST') {
         if (!checkPermission('manager')) {
-            http_response_code(403);
             jsonResponse(['error' => 'Manager access required']);
         }
         $data = getJsonInput();
@@ -1317,9 +1234,6 @@ try {
         $phone = trim($data['phone'] ?? '');
         $type = trim($data['type'] ?? 'system');
         $desc = trim($data['description'] ?? '');
-        $workflow = is_array($data['workflow_stages'] ?? null) ? $data['workflow_stages'] : [];
-        $template_slug = trim($data['template_slug'] ?? '');
-        $enabled = isset($data['enabled']) ? (int)$data['enabled'] : 1;
 
         if (!$name || !$phone) {
             jsonResponse(['status' => 'error', 'message' => 'Name and phone are required']);
@@ -1327,12 +1241,12 @@ try {
 
         try {
             if ($id) {
-                $stmt = $pdo->prepare("UPDATE sms_recipients SET name = ?, phone = ?, type = ?, description = ?, workflow_stages = ?, template_slug = ?, enabled = ? WHERE id = ?");
-                $stmt->execute([$name, $phone, $type, $desc, json_encode($workflow), $template_slug ?: null, $enabled, $id]);
+                $stmt = $pdo->prepare("UPDATE sms_recipients SET name = ?, phone = ?, type = ?, description = ? WHERE id = ?");
+                $stmt->execute([$name, $phone, $type, $desc, $id]);
                 jsonResponse(['status' => 'success', 'id' => $id]);
             } else {
-                $stmt = $pdo->prepare("INSERT INTO sms_recipients (name, phone, type, description, workflow_stages, template_slug, enabled, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-                $stmt->execute([$name, $phone, $type, $desc, json_encode($workflow), $template_slug ?: null, $enabled]);
+                $stmt = $pdo->prepare("INSERT INTO sms_recipients (name, phone, type, description, created_at) VALUES (?, ?, ?, ?, NOW())");
+                $stmt->execute([$name, $phone, $type, $desc]);
                 $newId = $pdo->lastInsertId();
                 jsonResponse(['status' => 'success', 'id' => $newId]);
             }
@@ -1343,224 +1257,13 @@ try {
 
     if ($action === 'delete_sms_recipient' && $method === 'POST') {
         if (!checkPermission('manager')) {
-            http_response_code(403);
             jsonResponse(['error' => 'Manager access required']);
         }
         $id = $_GET['id'] ?? null;
-        if (!$id) {
-            http_response_code(400);
-            jsonResponse(['status' => 'error', 'message' => 'Missing id']);
-        }
-        try {
-            $stmt = $pdo->prepare("DELETE FROM sms_recipients WHERE id = ?");
-            $stmt->execute([$id]);
-            jsonResponse(['status' => 'success']);
-        } catch (Exception $e) {
-            error_log('delete_sms_recipient error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => 'Delete failed']);
-        }
-    }
-
-    // --- IMPORT SMS RECIPIENTS (CSV) ---
-    if ($action === 'import_sms_recipients' && $method === 'POST') {
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['error' => 'Manager access required']);
-        }
-
-        // Ensure schema is present before import
-        ensureSmsRecipientsSchema($pdo);
-
-        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-            http_response_code(400);
-            jsonResponse(['status' => 'error', 'message' => 'File upload failed']);
-        }
-
-        $tmp = $_FILES['file']['tmp_name'];
-        $handle = fopen($tmp, 'r');
-        if (!$handle) {
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => 'Could not open uploaded file']);
-        }
-
-        $headers = [];
-        $imported = 0;
-        $updated = 0;
-        $errors = [];
-        $lineNo = 0;
-
-        try {
-            while (($row = fgetcsv($handle)) !== false) {
-                $lineNo++;
-                if ($lineNo === 1) {
-                    // normalize headers
-                    $headers = array_map(function($h){ return strtolower(trim($h)); }, $row);
-                    continue;
-                }
-                if (count($row) === 0) continue;
-
-                $data = [];
-                foreach ($headers as $i => $col) {
-                    $data[$col] = trim($row[$i] ?? '');
-                }
-
-                // Expected columns: name, phone, type, workflow_stages (comma-separated), template_slug, enabled, description
-                $name = $data['name'] ?? '';
-                $phone = preg_replace('/\D+/', '', $data['phone'] ?? '');
-                $type = $data['type'] ?? 'system';
-                $workflow = [];
-                if (!empty($data['workflow_stages'])) {
-                    $workflow = array_values(array_filter(array_map('trim', preg_split('/[,;]+/', $data['workflow_stages']))));
-                }
-                $template_slug = $data['template_slug'] ?? null;
-                $enabled = isset($data['enabled']) ? (int)($data['enabled'] === '1' || strtolower($data['enabled']) === 'yes' || strtolower($data['enabled']) === 'true') : 1;
-                $description = $data['description'] ?? '';
-
-                if (empty($name) || empty($phone)) {
-                    $errors[] = "Line $lineNo: missing name or phone";
-                    continue;
-                }
-
-                // Upsert by phone
-                $stmt = $pdo->prepare("SELECT id FROM sms_recipients WHERE phone = ? LIMIT 1");
-                $stmt->execute([$phone]);
-                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($existing) {
-                    // Use column-safe update (in case some columns still missing)
-                    $updateCols = [];
-                    $params = [];
-                    $updateCols[] = 'name = ?'; $params[] = $name;
-                    $updateCols[] = 'type = ?'; $params[] = $type;
-                    $updateCols[] = 'description = ?'; $params[] = $description;
-
-                    // Check if workflow_stages column exists before including
-                    try {
-                        $colCheck = $pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'workflow_stages'")->rowCount() > 0;
-                        if ($colCheck) { $updateCols[] = 'workflow_stages = ?'; $params[] = json_encode($workflow); }
-                    } catch (Exception $e) { /* ignore */ }
-
-                    try {
-                        $colCheck = $pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'template_slug'")->rowCount() > 0;
-                        if ($colCheck) { $updateCols[] = 'template_slug = ?'; $params[] = $template_slug; }
-                    } catch (Exception $e) { /* ignore */ }
-
-                    try {
-                        $colCheck = $pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'enabled'")->rowCount() > 0;
-                        if ($colCheck) { $updateCols[] = 'enabled = ?'; $params[] = $enabled; }
-                    } catch (Exception $e) { /* ignore */ }
-
-                    $params[] = $existing['id'];
-                    $sql = "UPDATE sms_recipients SET " . implode(', ', $updateCols) . " WHERE id = ?";
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute($params);
-                    $updated++;
-                } else {
-                    // Use column-safe insert
-                    $cols = ['name', 'phone', 'type', 'description'];
-                    $placeholders = ['?', '?', '?', '?'];
-                    $params = [$name, $phone, $type, $description];
-
-                    try {
-                        $colCheck = $pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'workflow_stages'")->rowCount() > 0;
-                        if ($colCheck) { $cols[] = 'workflow_stages'; $placeholders[] = '?'; $params[] = json_encode($workflow); }
-                    } catch (Exception $e) { /* ignore */ }
-
-                    try {
-                        $colCheck = $pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'template_slug'")->rowCount() > 0;
-                        if ($colCheck) { $cols[] = 'template_slug'; $placeholders[] = '?'; $params[] = $template_slug; }
-                    } catch (Exception $e) { /* ignore */ }
-
-                    try {
-                        $colCheck = $pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'enabled'")->rowCount() > 0;
-                        if ($colCheck) { $cols[] = 'enabled'; $placeholders[] = '?'; $params[] = $enabled; }
-                    } catch (Exception $e) { /* ignore */ }
-
-                    $sql = "INSERT INTO sms_recipients (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $placeholders) . ")";
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute($params);
-                    $imported++;
-                }
-            }
-            fclose($handle);
-            jsonResponse(['status' => 'success', 'imported' => $imported, 'updated' => $updated, 'errors' => $errors]);
-        } catch (Exception $e) {
-            if (is_resource($handle)) fclose($handle);
-            error_log('import_sms_recipients error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()]);
-        }
-    }
-
-    // --- IMPORT FROM EXISTING DB TABLES ---
-    if ($action === 'import_sms_recipients_from_db' && $method === 'POST') {
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['error' => 'Manager access required']);
-        }
-
-        $data = getJsonInput();
-        $source = $data['source'] ?? 'vehicles';
-        $limit = intval($data['limit'] ?? 0);
-
-        try {
-            // Ensure schema exists (attempt to add missing columns)
-            ensureSmsRecipientsSchema($pdo);
-
-            if ($source === 'vehicles') {
-                $sql = "SELECT ownerName AS name, phone FROM vehicles WHERE phone IS NOT NULL AND phone != '' ORDER BY created_at DESC";
-            } elseif ($source === 'transfers') {
-                $sql = "SELECT name, phone FROM transfers WHERE phone IS NOT NULL AND phone != '' ORDER BY created_at DESC";
-            } else {
-                http_response_code(400);
-                jsonResponse(['status' => 'error', 'message' => 'Unknown source']);
-            }
-
-            if ($limit > 0) $sql .= " LIMIT " . $limit;
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute();
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $imported = 0; $updated = 0; $errors = [];
-            foreach ($rows as $r) {
-                $name = trim($r['name'] ?? '');
-                $phone = preg_replace('/\D+/', '', $r['phone'] ?? '');
-                if (empty($phone) || strlen($phone) < 6) {
-                    $errors[] = 'Invalid phone: ' . ($r['phone'] ?? '');
-                    continue;
-                }
-
-                // Upsert by phone
-                $s = $pdo->prepare("SELECT id FROM sms_recipients WHERE phone = ? LIMIT 1");
-                $s->execute([$phone]);
-                $ex = $s->fetch(PDO::FETCH_ASSOC);
-                if ($ex) {
-                    $u = $pdo->prepare("UPDATE sms_recipients SET name = ?, description = ? WHERE id = ?");
-                    $u->execute([$name, '', $ex['id']]);
-                    $updated++;
-                } else {
-                    // Insert using available columns
-                    $cols = ['name', 'phone', 'type', 'description'];
-                    $placeholders = ['?', '?', '?', '?'];
-                    $params = [$name, $phone, 'system', ''];
-
-                    try { if ($pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'workflow_stages'")->rowCount() > 0) { $cols[]='workflow_stages'; $placeholders[]='?'; $params[]='[]'; } } catch(Exception $e) {}
-                    try { if ($pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'template_slug'")->rowCount() > 0) { $cols[]='template_slug'; $placeholders[]='?'; $params[]=NULL; } } catch(Exception $e) {}
-                    try { if ($pdo->query("SHOW COLUMNS FROM sms_recipients LIKE 'enabled'")->rowCount() > 0) { $cols[]='enabled'; $placeholders[]='?'; $params[]=1; } } catch(Exception $e) {}
-
-                    $sqlIns = "INSERT INTO sms_recipients (".implode(',',$cols).") VALUES (".implode(',',$placeholders).")";
-                    $i = $pdo->prepare($sqlIns);
-                    $i->execute($params);
-                    $imported++;
-                }
-            }
-
-            jsonResponse(['status' => 'success', 'imported' => $imported, 'updated' => $updated, 'errors' => $errors]);
-        } catch (Exception $e) {
-            error_log('import_sms_recipients_from_db error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()]);
-        }
+        if (!$id) jsonResponse(['status' => 'error', 'message' => 'Missing id']);
+        $stmt = $pdo->prepare("DELETE FROM sms_recipients WHERE id = ?");
+        $stmt->execute([$id]);
+        jsonResponse(['status' => 'success']);
     }
 
     // --- NEW: PDF INVOICE PARSING ---
@@ -1903,52 +1606,6 @@ try {
         } catch (Exception $e) {
             error_log("SMS sending exception for $to: " . $e->getMessage());
             jsonResponse(['status' => 'error', 'message' => 'Failed to send SMS - exception occurred']);
-        }
-    }
-
-    // --- RUN MIGRATION: add missing columns / create table if needed ---
-    if ($action === 'run_sms_recipients_migration' && $method === 'POST') {
-        // Only admin can run schema migration
-        if (!checkPermission('admin')) {
-            http_response_code(403);
-            jsonResponse(['error' => 'Admin access required']);
-        }
-
-        $result = ['created_table' => false, 'schema' => null, 'errors' => []];
-
-        try {
-            // Check table exists
-            $tableExists = $pdo->query("SHOW TABLES LIKE 'sms_recipients'")->rowCount() > 0;
-            if (!$tableExists) {
-                // Try to create table
-                try {
-                    $createSql = "CREATE TABLE IF NOT EXISTS sms_recipients (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        name VARCHAR(255) NOT NULL,
-                        phone VARCHAR(64) NOT NULL,
-                        type VARCHAR(50) DEFAULT 'system',
-                        description TEXT NULL,
-                        workflow_stages JSON DEFAULT NULL,
-                        template_slug VARCHAR(100) DEFAULT NULL,
-                        enabled TINYINT(1) DEFAULT 1,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-                    $pdo->exec($createSql);
-                    $result['created_table'] = true;
-                } catch (Exception $e) {
-                    $result['errors'][] = 'Failed to create table: ' . $e->getMessage();
-                }
-            }
-
-            // Now ensure columns
-            $schemaRes = ensureSmsRecipientsSchema($pdo);
-            $result['schema'] = $schemaRes;
-
-            jsonResponse(['status' => 'success', 'result' => $result]);
-        } catch (Exception $e) {
-            error_log('run_sms_recipients_migration error: ' . $e->getMessage());
-            http_response_code(500);
-            jsonResponse(['status' => 'error', 'message' => 'Migration failed: ' . $e->getMessage()]);
         }
     }
 

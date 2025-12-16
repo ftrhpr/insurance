@@ -15,8 +15,6 @@ if (empty($_SESSION['user_id'])) {
     <script>
         // Suppress Tailwind CDN warning for development
         console.log('Tailwind CSS loaded from CDN (development mode)');
-        const USER_ROLE = '<?php echo $_SESSION['role'] ?? 'viewer'; ?>';
-        const USER_ID = <?php echo json_encode($_SESSION['user_id'] ?? null); ?>;
     </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
@@ -440,10 +438,9 @@ if (empty($_SESSION['user_id'])) {
                             <button onclick="window.location.href='edit_collection.php?id=${collection.id}'" class="inline-flex items-center px-3 py-1.5 border-2 border-transparent rounded-lg text-xs font-medium text-indigo-600 bg-indigo-100 hover:bg-indigo-200 transition-all duration-200">
                                 <i data-lucide="edit" class="w-3 h-3 mr-1"></i> Edit
                             </button>
-                            ${ (USER_ROLE === 'admin' || USER_ROLE === 'manager') ? `
                             <button onclick="deleteCollection(${collection.id})" class="inline-flex items-center px-3 py-1.5 border-2 border-transparent rounded-lg text-xs font-medium text-red-600 bg-red-100 hover:bg-red-200 transition-all duration-200">
                                 <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i> Delete
-                            </button>` : '' }
+                            </button>
                         </div>
                     </div>
                 `;
