@@ -1,3 +1,33 @@
+    // --- DELETE VEHICLE ENDPOINT ---
+    if ($action === 'delete_vehicle' && $method === 'POST') {
+        // Only managers/admins can delete vehicles
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Manager access required to delete vehicles']);
+        }
+
+        // Accept either id or plate
+        $id = $_GET['id'] ?? null;
+        $plate = $_GET['plate'] ?? null;
+        if (!$id && !$plate) {
+            http_response_code(400);
+            jsonResponse(['status' => 'error', 'message' => 'Vehicle ID or plate required']);
+        }
+
+        try {
+            if ($id) {
+                $stmt = $pdo->prepare("DELETE FROM vehicles WHERE id = ?");
+                $stmt->execute([$id]);
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM vehicles WHERE plate = ?");
+                $stmt->execute([$plate]);
+            }
+            jsonResponse(['status' => 'deleted', 'message' => 'Vehicle deleted successfully']);
+        } catch (Exception $e) {
+            error_log("Delete vehicle error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to delete vehicle: ' . $e->getMessage()]);
+        }
+    }
 <?php
 require_once 'session_config.php';
 
