@@ -77,6 +77,13 @@ $initialRecipientsJson = json_encode($initialRecipients, JSON_HEX_TAG | JSON_HEX
                             <input id="import-file" type="file" accept=".csv" class="hidden" />
                         </label>
                         <button onclick="startImport()" id="btn-import" class="px-3 py-2 rounded bg-amber-500 text-white">Import</button>
+
+                        <!-- Import from DB -->
+                        <select id="import-source" class="px-3 py-2 rounded-lg border text-sm ml-2">
+                            <option value="vehicles">From Vehicles</option>
+                            <option value="transfers">From Transfers</option>
+                        </select>
+                        <button onclick="startImportFromDB()" id="btn-import-db" class="px-3 py-2 rounded bg-emerald-500 text-white">Import from DB</button>
                     </div>
                 </div>
 
@@ -332,6 +339,31 @@ async function startImport() {
     }
 
     btn.disabled = false; btn.textContent = 'Import';
+}
+
+async function startImportFromDB() {
+    const source = document.getElementById('import-source').value || 'vehicles';
+    const ok = confirm(`Import from ${source} will add/update recipients by phone. Continue?`);
+    if (!ok) return;
+
+    const btn = document.getElementById('btn-import-db');
+    btn.disabled = true; btn.textContent = 'Importing...';
+
+    try {
+        const res = await fetch(`api.php?action=import_sms_recipients_from_db`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ source }) });
+        const j = await res.json();
+        if (j && j.status === 'success') {
+            alert(`Imported: ${j.imported}, Updated: ${j.updated}\nErrors: ${j.errors.length}`);
+            loadRecipients();
+        } else {
+            alert('Import failed: ' + (j.message || j.error || JSON.stringify(j)));
+        }
+    } catch (e) {
+        console.error('Import-from-DB error', e);
+        alert('Import failed');
+    }
+
+    btn.disabled = false; btn.textContent = 'Import from DB';
 }
 
 // Expose initialRecipients from server and initialize UI

@@ -1404,6 +1404,64 @@ try {
         }
     }
 
+    // --- IMPORT FROM EXISTING DB TABLES ---
+    if ($action === 'import_sms_recipients_from_db' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+
+        $data = getJsonInput();
+        $source = $data['source'] ?? 'vehicles';
+        $limit = intval($data['limit'] ?? 0);
+
+        try {
+            if ($source === 'vehicles') {
+                $sql = "SELECT ownerName AS name, phone FROM vehicles WHERE phone IS NOT NULL AND phone != '' ORDER BY created_at DESC";
+            } elseif ($source === 'transfers') {
+                $sql = "SELECT name, phone FROM transfers WHERE phone IS NOT NULL AND phone != '' ORDER BY created_at DESC";
+            } else {
+                http_response_code(400);
+                jsonResponse(['status' => 'error', 'message' => 'Unknown source']);
+            }
+
+            if ($limit > 0) $sql .= " LIMIT " . $limit;
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $imported = 0; $updated = 0; $errors = [];
+            foreach ($rows as $r) {
+                $name = trim($r['name'] ?? '');
+                $phone = preg_replace('/\D+/', '', $r['phone'] ?? '');
+                if (empty($phone) || strlen($phone) < 6) {
+                    $errors[] = 'Invalid phone: ' . ($r['phone'] ?? '');
+                    continue;
+                }
+
+                // Upsert by phone
+                $s = $pdo->prepare("SELECT id FROM sms_recipients WHERE phone = ? LIMIT 1");
+                $s->execute([$phone]);
+                $ex = $s->fetch(PDO::FETCH_ASSOC);
+                if ($ex) {
+                    $u = $pdo->prepare("UPDATE sms_recipients SET name = ?, description = ? WHERE id = ?");
+                    $u->execute([$name, '', $ex['id']]);
+                    $updated++;
+                } else {
+                    $i = $pdo->prepare("INSERT INTO sms_recipients (name, phone, type, description, workflow_stages, template_slug, enabled, created_at) VALUES (?, ?, 'system', '', '[]', NULL, 1, NOW())");
+                    $i->execute([$name, $phone]);
+                    $imported++;
+                }
+            }
+
+            jsonResponse(['status' => 'success', 'imported' => $imported, 'updated' => $updated, 'errors' => $errors]);
+        } catch (Exception $e) {
+            error_log('import_sms_recipients_from_db error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()]);
+        }
+    }
+
     // --- NEW: PDF INVOICE PARSING ---
     if ($action === 'parse_invoice_pdf' && $method === 'POST') {
         if (!isset($_FILES['pdf']) || $_FILES['pdf']['error'] != UPLOAD_ERR_OK) {
