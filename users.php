@@ -182,15 +182,6 @@ if (!isset($users) || !is_array($users)) {
                 </div>
                 <p class="text-sm text-blue-700">Access to vehicle database, customer management, and service tracking</p>
             </div>
-            <div class="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <div class="w-8 h-8 rounded-lg bg-amber-200 flex items-center justify-center">
-                        <i data-lucide="truck" class="w-4 h-4 text-amber-700"></i>
-                    </div>
-                    <h4 class="font-bold text-amber-900">Collector</h4>
-                </div>
-                <p class="text-sm text-amber-700">Role for parts collection staff — can view parts collections and be assigned to collections</p>
-            </div>
             <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-4">
                 <div class="flex items-center gap-2 mb-2">
                     <div class="w-8 h-8 rounded-lg bg-green-200 flex items-center justify-center">
@@ -228,7 +219,6 @@ if (!isset($users) || !is_array($users)) {
                 <select name="role" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                     <option value="viewer">Viewer</option>
                     <option value="manager">Manager</option>
-                    <option value="collector">Collector</option>
                     <option value="admin">Admin</option>
                 </select>
             </div>
@@ -435,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select id="user-role" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none">
                             <option value="viewer">Viewer (Read-only)</option>
                             <option value="manager" selected>Manager (Edit cases)</option>
-                            <option value="collector">Collector (Collections)</option>
                             <option value="admin">Admin (Full access)</option>
                         </select>
                     </div>
@@ -612,7 +601,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const roleColors = {
                     admin: 'bg-purple-100 text-purple-800 border-purple-200',
                     manager: 'bg-blue-100 text-blue-800 border-blue-200',
-                    collector: 'bg-amber-100 text-amber-800 border-amber-200',
                     viewer: 'bg-slate-100 text-slate-800 border-slate-200'
                 };
                 

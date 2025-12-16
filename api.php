@@ -56,9 +56,8 @@ if ($method === 'POST' && !in_array($action, $publicEndpoints) && !empty($_SESSI
 function checkPermission($required_role) {
     global $pdo;
     $user_role = $_SESSION['role'] ?? 'viewer';
-    // Added 'collector' role (between manager and viewer in capability by default)
-    $hierarchy = ['viewer' => 1, 'collector' => 2, 'manager' => 3, 'admin' => 4];
-    return ($hierarchy[$user_role] ?? 0) >= ($hierarchy[$required_role] ?? 0);
+    $hierarchy = ['viewer' => 1, 'manager' => 2, 'admin' => 3];
+    return $hierarchy[$user_role] >= $hierarchy[$required_role];
 }
 
 function getCurrentUserId() {
@@ -714,7 +713,7 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Username, password, and full name are required']);
         }
         
-        if (!in_array($role, ['admin', 'manager', 'collector', 'viewer'])) {
+        if (!in_array($role, ['admin', 'manager', 'viewer'])) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid role']);
         }
         
@@ -1205,65 +1204,11 @@ try {
     // GET MANAGERS ENDPOINT
     // --------------------------------------------------
     if ($action === 'get_managers' && $method === 'GET') {
-        // Include collectors so they can be assigned where appropriate
-        $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE role IN ('admin', 'manager', 'collector') ORDER BY full_name");
+        $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
         $stmt->execute();
         $managers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         jsonResponse(['managers' => $managers]);
-    }
-
-    // --- SMS RECIPIENTS (Manager-level) ---
-    if ($action === 'get_sms_recipients' && $method === 'GET') {
-        if (!checkPermission('manager')) {
-            jsonResponse(['error' => 'Manager access required']);
-        }
-        $stmt = $pdo->prepare("SELECT id, name, phone, type, description FROM sms_recipients ORDER BY name");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        jsonResponse(['recipients' => $rows]);
-    }
-
-    if ($action === 'save_sms_recipient' && $method === 'POST') {
-        if (!checkPermission('manager')) {
-            jsonResponse(['error' => 'Manager access required']);
-        }
-        $data = getJsonInput();
-        $id = $data['id'] ?? null;
-        $name = trim($data['name'] ?? '');
-        $phone = trim($data['phone'] ?? '');
-        $type = trim($data['type'] ?? 'system');
-        $desc = trim($data['description'] ?? '');
-
-        if (!$name || !$phone) {
-            jsonResponse(['status' => 'error', 'message' => 'Name and phone are required']);
-        }
-
-        try {
-            if ($id) {
-                $stmt = $pdo->prepare("UPDATE sms_recipients SET name = ?, phone = ?, type = ?, description = ? WHERE id = ?");
-                $stmt->execute([$name, $phone, $type, $desc, $id]);
-                jsonResponse(['status' => 'success', 'id' => $id]);
-            } else {
-                $stmt = $pdo->prepare("INSERT INTO sms_recipients (name, phone, type, description, created_at) VALUES (?, ?, ?, ?, NOW())");
-                $stmt->execute([$name, $phone, $type, $desc]);
-                $newId = $pdo->lastInsertId();
-                jsonResponse(['status' => 'success', 'id' => $newId]);
-            }
-        } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'DB error: ' . $e->getMessage()]);
-        }
-    }
-
-    if ($action === 'delete_sms_recipient' && $method === 'POST') {
-        if (!checkPermission('manager')) {
-            jsonResponse(['error' => 'Manager access required']);
-        }
-        $id = $_GET['id'] ?? null;
-        if (!$id) jsonResponse(['status' => 'error', 'message' => 'Missing id']);
-        $stmt = $pdo->prepare("DELETE FROM sms_recipients WHERE id = ?");
-        $stmt->execute([$id]);
-        jsonResponse(['status' => 'success']);
     }
 
     // --- NEW: PDF INVOICE PARSING ---

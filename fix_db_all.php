@@ -94,21 +94,6 @@ try {
     echo " - Table structure verified.\n";
 
     // ---------------------------------------------------------
-    // 4.5. TABLE: sms_recipients (Configurable SMS recipient entries)
-    // ---------------------------------------------------------
-    echo "\nChecking table 'sms_recipients'...\n";
-    $sql = "CREATE TABLE IF NOT EXISTS sms_recipients (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        phone VARCHAR(64) NOT NULL,
-        type VARCHAR(50) DEFAULT 'system',
-        description TEXT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )";
-    $pdo->exec($sql);
-    echo " - Table structure verified.\n";
-
-    // ---------------------------------------------------------
     // 4.5. TABLE: users (User Management System)
     // ---------------------------------------------------------
     echo "\nChecking table 'users'...\n";
@@ -118,7 +103,7 @@ try {
         password VARCHAR(255) NOT NULL,
         full_name VARCHAR(100) NOT NULL,
         email VARCHAR(100),
-        role ENUM('admin', 'manager', 'collector', 'viewer') DEFAULT 'manager',
+        role ENUM('admin', 'manager', 'viewer') DEFAULT 'manager',
         status ENUM('active', 'inactive') DEFAULT 'active',
         last_login TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

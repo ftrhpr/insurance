@@ -45,9 +45,6 @@ if (!isset($_SESSION['user_id'])) {
                 $nav_items['users'] = ['icon' => 'users', 'label' => 'Users', 'url' => 'users.php'];
                 $nav_items['translations'] = ['icon' => 'languages', 'label' => 'Translations', 'url' => 'translations.php'];
             }
-            if ($current_user_role === 'admin' || $current_user_role === 'manager') {
-                $nav_items['sms_recipients'] = ['icon' => 'bookmark', 'label' => 'SMS Recipients', 'url' => 'sms_recipients.php'];
-            }
             $icons = [
                 'layout-dashboard' => '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
                 'database' => '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
