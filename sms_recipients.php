@@ -10,6 +10,27 @@ if ($current_user_role !== 'admin' && $current_user_role !== 'manager') {
     echo "<h2>Access Denied</h2><p>You do not have permission to view this page.</p>";
     exit;
 }
+
+// Try to load existing recipients server-side so page displays them immediately
+$initialRecipients = [];
+try {
+    require_once 'config.php';
+    $pdo = getDBConnection();
+    $tableExists = $pdo->query("SHOW TABLES LIKE 'sms_recipients'")->rowCount() > 0;
+    if ($tableExists) {
+        $stmt = $pdo->prepare("SELECT id, name, phone, type, description, workflow_stages, template_slug, enabled FROM sms_recipients ORDER BY name");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$r) {
+            $r['workflow_stages'] = json_decode($r['workflow_stages'] ?? '[]', true) ?: [];
+            $r['enabled'] = (int)($r['enabled'] ?? 0);
+        }
+        $initialRecipients = $rows;
+    }
+} catch (Exception $e) {
+    error_log('sms_recipients server load error: ' . $e->getMessage());
+}
+$initialRecipientsJson = json_encode($initialRecipients, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 ?>
 <!doctype html>
 <html>
@@ -145,7 +166,8 @@ async function fetchAPI(action, method = 'GET', body = null) {
     }
 }
 
-let recipientsCache = [];
+// Use server-provided recipients when available to show existing entries immediately
+let recipientsCache = (typeof initialRecipients !== 'undefined' && Array.isArray(initialRecipients)) ? initialRecipients : [];
 
 function renderRecipients() {
     const body = document.getElementById('recipients-body');
@@ -273,6 +295,8 @@ async function deleteRecipient(id) {
     else alert('Delete failed');
 }
 
+// Expose initialRecipients from server and initialize UI
+window.initialRecipients = <?php echo $initialRecipientsJson ?: '[]'; ?> || [];
 // Load recipients and templates on page load
 loadRecipients();
 (async function loadTemplatesOnStart(){
