@@ -881,6 +881,27 @@ try {
         ]);
     }
 
+    // Admin action: seed default translations into DB (calls initializer)
+    if ($action === 'seed_translations' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['success' => false, 'message' => 'Admin access required']);
+        }
+
+        require_once 'language.php';
+        try {
+            $result = initialize_default_translations();
+            if ($result) {
+                jsonResponse(['success' => true, 'message' => 'Default translations seeded']);
+            } else {
+                jsonResponse(['success' => false, 'message' => 'Seeding completed but no changes made']);
+            }
+        } catch (Exception $e) {
+            error_log('seed_translations error: ' . $e->getMessage());
+            jsonResponse(['success' => false, 'message' => 'Exception: ' . $e->getMessage()]);
+        }
+    }
+
     if ($action === 'set_language' && $method === 'POST') {
         $data = getJsonInput();
         $lang = trim($data['language'] ?? '');

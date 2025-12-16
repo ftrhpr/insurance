@@ -66,6 +66,37 @@ try {
     $missing_translations = [];
     error_log("Database error in translations.php: " . $e->getMessage());
 }
+
+// Helper: determine a human-friendly group for a translation key (used to surface index/dashboard keys)
+function get_translation_group($key) {
+    $map = [
+        'dashboard.' => 'Dashboard',
+        'nav.' => 'Navigation',
+        'status.' => 'Status',
+        'reschedule.' => 'Reschedule',
+        'validation.' => 'Validation',
+        'sms.' => 'SMS',
+        'import.' => 'Import',
+        'notifications.' => 'Notifications',
+        'action.' => 'Actions',
+        'error.' => 'Errors',
+        'success.' => 'Success'
+    ];
+    foreach ($map as $prefix => $label) {
+        if (strpos($key, $prefix) === 0) return $label;
+    }
+    if ($key === 'processing') return 'Status';
+    return 'Other';
+}
+
+// Build list of groups present in fetched translations (for the filter selector)
+$allKeys = array_column(array_merge($translations, $missing_translations), 'translation_key');
+$groupsFound = [];
+foreach ($allKeys as $k) {
+    if (!$k) continue;
+    $g = get_translation_group($k);
+    if (!in_array($g, $groupsFound)) $groupsFound[] = $g;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -133,6 +164,22 @@ try {
                     <button onclick="exportTranslations()" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium">
                         <i data-lucide="download" class="w-4 h-4 inline mr-2"></i>Export
                     </button>
+                    <button id="seed-btn" onclick="seedDefaults()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-2"></i>Seed Defaults
+                    </button>
+                </div>
+
+                <!-- Group filter & search -->
+                <div class="flex items-center gap-3 mt-3">
+                    <label class="text-sm text-slate-600">Group:</label>
+                    <select id="group-filter" onchange="filterByGroup(this.value)" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
+                        <option value="">All</option>
+                        <?php foreach ($groupsFound as $g): ?>
+                            <option value="<?php echo htmlspecialchars($g); ?>"><?php echo htmlspecialchars($g); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <input id="key-search" placeholder="Search key or default..." oninput="filterTable()" class="px-3 py-2 border border-slate-200 rounded-lg text-sm ml-2 flex-1" />
                 </div>
             </div>
 
@@ -201,8 +248,9 @@ try {
                         <tbody class="divide-y divide-slate-200">
                             <!-- Existing Translations -->
                             <?php foreach ($translations as $translation): ?>
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-6 py-4 text-sm font-mono text-slate-800"><?php echo htmlspecialchars($translation['translation_key']); ?></td>
+                            <?php $group = get_translation_group($translation['translation_key']); ?>
+                            <tr class="hover:bg-slate-50 translation-row" data-group="<?php echo htmlspecialchars($group); ?>">
+                                <td class="px-6 py-4 text-sm font-mono text-slate-800"><?php echo htmlspecialchars($translation['translation_key']); ?> <span class="ml-2 text-xs text-slate-400"><?php echo htmlspecialchars($group); ?></span></td>
                                 <td class="px-6 py-4 text-sm text-slate-600"><?php echo htmlspecialchars($translation['default_text']); ?></td>
                                 <td class="px-6 py-4">
                                     <input type="text"
@@ -221,8 +269,9 @@ try {
 
                             <!-- Missing Translations -->
                             <?php foreach ($missing_translations as $translation): ?>
-                            <tr class="hover:bg-orange-50 bg-orange-25">
-                                <td class="px-6 py-4 text-sm font-mono text-orange-800"><?php echo htmlspecialchars($translation['translation_key']); ?></td>
+                            <?php $group = get_translation_group($translation['translation_key']); ?>
+                            <tr class="hover:bg-orange-50 bg-orange-25 translation-row" data-group="<?php echo htmlspecialchars($group); ?>">
+                                <td class="px-6 py-4 text-sm font-mono text-orange-800"><?php echo htmlspecialchars($translation['translation_key']); ?> <span class="ml-2 text-xs text-orange-600"><?php echo htmlspecialchars($group); ?></span></td>
                                 <td class="px-6 py-4 text-sm text-slate-600"><?php echo htmlspecialchars($translation['default_text']); ?></td>
                                 <td class="px-6 py-4">
                                     <input type="text"
@@ -337,6 +386,27 @@ try {
             }
         }
 
+        async function seedDefaults() {
+            const btn = document.getElementById('seed-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Seeding...'; }
+            try {
+                const resp = await fetch(`${API_URL}?action=seed_translations`, { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast('Defaults seeded', '', 'success');
+                    // Reload to show new keys
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('Seeding failed', data.message || '', 'error');
+                }
+            } catch (e) {
+                console.error('Seed defaults error:', e);
+                showToast('Seeding failed', e.message || '', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 inline mr-2"></i>Seed Defaults'; lucide.createIcons(); }
+            }
+        }
+
         function showToast(title, message = '', type = 'info') {
             const container = document.getElementById('toast-container') || createToastContainer();
 
@@ -396,6 +466,32 @@ try {
             document.body.appendChild(container);
             return container;
         }
+
+        // Filtering helpers for groups & search
+        function filterByGroup(group) {
+            document.querySelectorAll('table tbody tr.translation-row').forEach(r => {
+                const rowGroup = r.dataset.group || '';
+                r.style.display = (!group || group === '' || group === 'All' || rowGroup === group) ? '' : 'none';
+            });
+        }
+
+        function filterTable() {
+            const group = document.getElementById('group-filter')?.value || '';
+            const q = (document.getElementById('key-search')?.value || '').toLowerCase().trim();
+            document.querySelectorAll('table tbody tr.translation-row').forEach(r => {
+                const rowGroup = r.dataset.group || '';
+                const key = (r.querySelector('td')?.textContent || '').toLowerCase();
+                const defaultText = (r.children[1]?.textContent || '').toLowerCase();
+                const matchesGroup = !group || group === '' || group === 'All' || rowGroup === group;
+                const matchesQuery = !q || key.includes(q) || defaultText.includes(q);
+                r.style.display = (matchesGroup && matchesQuery) ? '' : 'none';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('group-filter')?.addEventListener('change', (e) => filterByGroup(e.target.value));
+            document.getElementById('key-search')?.addEventListener('input', filterTable);
+        });
 
         // Auto-save on input change (debounced)
         let saveTimeout;

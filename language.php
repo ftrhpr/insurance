@@ -188,6 +188,46 @@ function initialize_default_translations() {
         'status.import_errors' => 'succeeded, {failed} failed',
         'status.system_alert' => 'System Alert: {count} new transfer(s) added to OTOMOTORS portal.',
 
+        // Index / Dashboard specific messages and small UI strings
+        'status.import_errors_title' => 'Import Completed with Errors',
+        'status.import_successful_title' => 'Import Successful',
+        'import.no_matches' => 'No matches found',
+        'import.no_matches_desc' => 'Could not parse any transfers from the text',
+        'notifications.enabled' => 'Notifications Enabled',
+        'action.saving' => 'Saving...',
+
+        // Validation and workflow
+        'validation.time_required' => 'Time Required',
+        'validation.set_appointment_parts_arrived' => 'Please set an Appointment date for Parts Arrived SMS',
+        'validation.set_appointment_first' => 'Please set an Appointment date first',
+        'validation.scheduling_required' => 'Scheduling Required',
+        'validation.scheduling_required_desc' => "Please select a service date to save 'Parts Arrived' status.",
+        'error.no_edit_permission' => 'You do not have permission to edit cases',
+
+        // Reschedule flow
+        'processing' => 'Processing...',
+        'reschedule.accept_confirm' => 'Accept reschedule request for {name} ({plate})?\n\nNew appointment: {date}\n\nCustomer will receive SMS confirmation.',
+        'reschedule.accepting' => 'Accepting reschedule request',
+        'reschedule.accepted_title' => 'Reschedule Accepted',
+        'reschedule.accepted_msg' => 'Appointment updated and SMS sent to {name}',
+        'reschedule.accept_failed' => 'Failed to accept reschedule request',
+        'reschedule.accept_update_confirm' => 'Accept reschedule request and update appointment to {date}?',
+        'reschedule.decline_confirm' => 'Decline this reschedule request? The customer will need to be contacted manually.',
+        'reschedule.declined_title' => 'Request Declined',
+        'reschedule.declined_msg' => 'Reschedule request removed',
+        'reschedule.decline_failed' => 'Failed to decline request',
+
+        // Delete / Misc
+        'error.no_record_id' => 'Error: No record ID',
+        'action.delete_confirm' => 'Delete this case permanently?',
+        'success.order_deleted' => 'Order deleted successfully',
+        'error.delete_failed' => 'Failed to delete order',
+        'error.no_phone' => 'No phone number',
+        'sms.sent' => 'SMS Sent',
+        'sms.failed' => 'SMS Failed',
+        'error.create_order_permission' => 'You need Manager or Admin role to create orders',
+        'success.changes_saved' => 'Changes Saved' 
+
         // SMS Templates
         'sms.registered' => "Hello {name}, payment received. Ref: {plate}. Welcome to OTOMOTORS service.",
         'sms.schedule' => "Hello {name}, your service is scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link} - OTOMOTORS",
@@ -214,6 +254,16 @@ function initialize_default_translations() {
         'error.database_error' => 'Database error',
         'error.file_not_found' => 'File not found',
         'error.unknown_error' => 'Unknown error',
+        'error.create_order_failed' => 'Failed to create order',
+        'error.order_not_found' => 'Order not found',
+        'error.load_failed' => 'Failed to load data. Please refresh the page.',
+
+        // Validation
+        'validation.title' => 'Validation Error',
+        'validation.plate_required' => 'Vehicle plate number is required',
+        'validation.name_required' => 'Customer name is required',
+        'validation.amount_invalid' => 'Amount must be a valid number greater than 0',
+        'validation.franchise_negative' => 'Franchise cannot be negative',
 
         // Common actions
         'action.save' => 'Save',
@@ -294,7 +344,51 @@ function initialize_default_translations() {
         'sms.schedule' => "გამარჯობა {name}, სერვისი დაგეგმილია {date} თარიღზე. მიმართ: {plate}. დაადასტურეთ ან გადაავადეთ: {link}",
         'sms.parts_arrived' => "გამარჯობა {name}, თქვენი ნაწილები მოვიდა! დაადასტურეთ ვიზიტი აქ: {link}",
         'sms.completed' => "{plate} სერვისი დასრულებულია. შეაფასეთ თქვენი გამოცდილება: {link}",
-        'sms.reschedule_accepted' => "გამარჯობა {name}, თქვენი გადავადების მოთხოვნა დადასტურებულია! ახალი დანიშვნა: {date}. მიმართ: {plate}."
+        'sms.reschedule_accepted' => "გამარჯობა {name}, თქვენი გადავადების მოთხოვნა დადასტურებულია! ახალი დანიშვნა: {date}. მიმართ: {plate}.",
+
+        // Georgian placeholders for newly added index / dashboard strings
+        'status.import_errors_title' => 'იმპორტი დასრულდა შეცდომებით',
+        'status.import_successful_title' => 'იმპორტი დასრულდა წარმატებით',
+        'import.no_matches' => 'ჩანაწერები ვერ მოიძებნა',
+        'import.no_matches_desc' => 'ტექსტიდან ვერ გამოვლინდა გადაცემები',
+        'notifications.enabled' => 'შეტყობინებები ჩართულია',
+        'action.saving' => 'მისახა...',
+        'validation.time_required' => 'დაინიშნა დროა საჭირო',
+        'validation.set_appointment_parts_arrived' => 'გთხოვთ დააყენოთ დანიშვნა ნაწილების მისვლის SMS-ისთვის',
+        'validation.set_appointment_first' => 'გთხოვთ, პირველ რიგში დააყენოთ დანიშვნა',
+        'validation.scheduling_required' => 'დაგეგმვა აუცილებელია',
+        'validation.scheduling_required_desc' => "Ընդունեք შეკვეთის გადაწყვეტას 'ნაწილები მივიდა' სტატუსის შენახვისთვის.",
+        'error.no_edit_permission' => 'თქვენ არ გაქვთ უფლება რედაქტირების',
+        'processing' => 'მუშავდება...',
+        'reschedule.accept_confirm' => 'მიიღეთ გადადების მოთხოვნა {name} ({plate})?\n\nახალი დანიშვნა: {date}\n\nკლიენტი მიიღებს SMS დადასტურებას.',
+        'reschedule.accepting' => 'გადადების მოთხოვნის მიღება',
+        'reschedule.accepted_title' => 'გადმოყვანა მიღებულია',
+        'reschedule.accepted_msg' => 'დანიშვნა განახლდა და SMS გაგზავნილია {name}',
+        'reschedule.accept_failed' => 'გადადების მოთხოვნის მიღება ვერ მოხერხდა',
+        'reschedule.accept_update_confirm' => 'მიიღეთ გადადების მოთხოვნა და განახლეთ დანიშვნა: {date}?',
+        'reschedule.decline_confirm' => 'უარყოფთ გადადების მოთხოვნას? კლიენტი უნდა იყოს კონტაქტირებული ხელით.',
+        'reschedule.declined_title' => 'გადავადება უარყოფილია',
+        'reschedule.declined_msg' => 'გადადების მოთხოვნა წაიშალა',
+        'reschedule.decline_failed' => 'გადადების მოთხოვნის უარყოფა ვერ მოხერხდა',
+        'error.no_record_id' => 'შეცდომა: ჩანაწერი ID არ არსებობს',
+        'action.delete_confirm' => 'დაამყარეთ ჩანაწერის მუდმივად წაშლა?',
+        'success.order_deleted' => 'შეკვეთა წარმატებით წაიშალა',
+        'error.delete_failed' => 'ჩანიერთი წაშლა ვერ მოხერხდა',
+        'error.no_phone' => 'ტელეფონი არ არის',
+        'sms.sent' => 'SMS გაგზავნილია',
+        'sms.failed' => 'SMS გაგზავნა ვერ შესრულდა',
+        'error.create_order_permission' => 'თქვენს საჭიროა მენეჯერის ან ადმინის როლი შეკვეთის შესაქმნელად',
+        'success.changes_saved' => 'ცვლილებები შენახულია',
+        // Remaining Georgian placeholders for validation and misc messages
+        'validation.title' => 'ვალიდაციის შეცდომა',
+        'validation.plate_required' => 'ავტომობილის ნომერი აუცილებელია',
+        'validation.name_required' => 'კლიენტის სახელი აუცილებელია',
+        'validation.amount_invalid' => 'თანხა უნდა იყოს დადებითი რიცხვი',
+        'validation.franchise_negative' => 'ფრანშიზა არ შეიძლება იყოს უარყოფითი',
+        'success.order_created' => 'შეკვეთა წარმატებით შეიქმნა!',
+        'error.create_order_failed' => 'შეკვეთის შექმნა ვერ მოხერხდა',
+        'error.order_not_found' => 'შეკვეთა ვერ მოიძებნა',
+        'error.load_failed' => 'მონაცემების ჩატვირთვა ვერ მოხერხდა. გთხოვთ, განაახლოთ გვერდი.'
     ];
 
     try {
