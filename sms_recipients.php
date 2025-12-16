@@ -17,36 +17,64 @@ if ($current_user_role !== 'admin' && $current_user_role !== 'manager') {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SMS Recipients - OTOMOTORS</title>
-    <?php include 'header.php'; ?>
+    <!-- Fonts & Styles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Small adjustments for recipients table */
+        .table-actions button { margin-left: 0.5rem; }
+    </style>
 </head>
-<body class="bg-slate-50">
-<main class="max-w-5xl mx-auto p-6">
-    <div class="bg-white rounded-2xl border border-slate-200 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h1 class="text-xl font-bold">SMS Recipients</h1>
-            <button onclick="openRecipientModal()" class="px-4 py-2 rounded bg-blue-600 text-white">Add Recipient</button>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm" id="recipients-table">
-                <thead>
-                    <tr class="text-left text-xs text-slate-500 uppercase">
-                        <th class="p-2">Name</th>
-                        <th class="p-2">Phone</th>
-                        <th class="p-2">Type</th>
-                        <th class="p-2">Stages</th>
-                        <th class="p-2">Template</th>
-                        <th class="p-2">Enabled</th>
-                        <th class="p-2">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="recipients-body" class="divide-y divide-slate-100"></tbody>
-            </table>
-        </div>
-    </div>
-</main>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    <div class="flex">
+        <?php include 'sidebar.php'; ?>
+        <main class="flex-1 ml-64 p-8">
+            <div class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">SMS Recipients</h2>
+                        <p class="text-slate-500 text-sm">Configure additional phone recipients for automated workflow notifications.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input id="recipient-search" placeholder="Search name, phone, stage or template" class="px-3 py-2 rounded-lg border w-80 text-sm" />
+                        <select id="filter-type" class="px-3 py-2 rounded-lg border text-sm">
+                            <option value="">All types</option>
+                            <option value="system">System</option>
+                            <option value="parts">Parts</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <button onclick="openRecipientModal()" class="px-4 py-2 rounded bg-blue-600 text-white">Add Recipient</button>
+                    </div>
+                </div>
 
-<!-- Modal -->
-<div id="recipient-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
+                <div class="bg-white rounded-2xl border border-slate-200 p-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm" id="recipients-table">
+                            <thead>
+                                <tr class="text-left text-xs text-slate-500 uppercase">
+                                    <th class="p-2">Name</th>
+                                    <th class="p-2">Phone</th>
+                                    <th class="p-2">Type</th>
+                                    <th class="p-2">Stages</th>
+                                    <th class="p-2">Template</th>
+                                    <th class="p-2">Enabled</th>
+                                    <th class="p-2">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recipients-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="recipient-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-lg p-6 w-full max-w-md">
         <h3 class="text-lg font-bold mb-4" id="recipient-modal-title">Add Recipient</h3>
         <div class="space-y-3">
@@ -117,12 +145,22 @@ async function fetchAPI(action, method = 'GET', body = null) {
     }
 }
 
-async function loadRecipients() {
-    const data = await fetchAPI('get_sms_recipients');
+let recipientsCache = [];
+
+function renderRecipients() {
     const body = document.getElementById('recipients-body');
     body.innerHTML = '';
-    if (!data || !data.recipients) return;
-    data.recipients.forEach(r => {
+    const q = (document.getElementById('recipient-search')?.value || '').toLowerCase();
+    const typeFilter = (document.getElementById('filter-type')?.value || '').toLowerCase();
+
+    const list = recipientsCache.filter(r => {
+        if (typeFilter && (r.type || '').toLowerCase() !== typeFilter) return false;
+        if (!q) return true;
+        const stages = (r.workflow_stages || []).join(' ').toLowerCase();
+        return (r.name || '').toLowerCase().includes(q) || (r.phone || '').toLowerCase().includes(q) || stages.includes(q) || (r.template_slug || '').toLowerCase().includes(q);
+    });
+
+    list.forEach(r => {
         const tr = document.createElement('tr');
         const stages = (r.workflow_stages || []).join(', ');
         tr.innerHTML = `
@@ -131,11 +169,22 @@ async function loadRecipients() {
             <td class="p-2">${escapeHtml(r.type || '')}</td>
             <td class="p-2">${escapeHtml(stages)}</td>
             <td class="p-2">${escapeHtml(r.template_slug || '')}</td>
-            <td class="p-2">${r.enabled ? 'Yes' : 'No'}</td>
-            <td class="p-2"><button onclick="editRecipient(${r.id})" class="mr-2 text-blue-600">Edit</button><button onclick="deleteRecipient(${r.id})" class="text-red-600">Delete</button></td>
+            <td class="p-2">${r.enabled ? '<span class="text-emerald-600 font-semibold">Yes</span>' : '<span class="text-slate-400">No</span>'}</td>
+            <td class="p-2 table-actions"><button onclick="editRecipient(${r.id})" class="px-2 py-1 rounded bg-white border text-blue-600 text-sm">Edit</button><button onclick="deleteRecipient(${r.id})" class="px-2 py-1 rounded bg-white border text-red-600 text-sm">Delete</button></td>
         `;
         body.appendChild(tr);
     });
+}
+
+async function loadRecipients() {
+    const data = await fetchAPI('get_sms_recipients');
+    if (!data || !data.recipients) {
+        recipientsCache = [];
+        renderRecipients();
+        return;
+    }
+    recipientsCache = data.recipients;
+    renderRecipients();
 }
 
 function escapeHtml(s) { return String(s || '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]); }
@@ -237,6 +286,10 @@ loadRecipients();
         tdata.templates.forEach(t => tpl.appendChild(Object.assign(document.createElement('option'), { value: t.slug, textContent: t.slug })));
     }
 })();
+
+// Search & filters
+document.getElementById('recipient-search')?.addEventListener('input', () => renderRecipients());
+document.getElementById('filter-type')?.addEventListener('change', () => renderRecipients());
 </script>
 </body>
 </html>
