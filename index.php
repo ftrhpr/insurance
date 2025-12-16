@@ -833,10 +833,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     const token = await firebase.messaging().getToken({ vapidKey: 'BPmaDT11APIDJCEoLFGA7ZoUCmc2IM9wxsNPJsy4984GaZNhBEEJa1VG6C65t1oCMTtUPVSudeivYsAmINDGc-w' });
                     if (token) {
                         await fetchAPI('register_token', 'POST', { token });
-                        showToast("<?php echo __('notifications.enabled','Notifications Enabled'); ?>", "", "success");
+                        showToast("Notifications Enabled");
                     }
                 } else {
-                    showToast("<?php echo __('error.permission_denied','Permission denied'); ?>", "", "error");
+                    showToast("Permission denied", "error");
                 }
             } catch (error) {
                 console.error('Unable to get permission', error);
@@ -906,7 +906,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-red-500 rounded-full"></span> Connection Failed`;
                 
                 // Show detailed error in toast
-                showToast("<?php echo __('error.connection','Connection Error'); ?>", e.message, "error");
+                showToast("Connection Error", e.message, "error");
                 throw e; 
             }
         }
@@ -1519,7 +1519,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 if (btnSaveImportEl) btnSaveImportEl.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Save ${parsedImportData.length} Items`;
                 lucide.createIcons();
             } else {
-                showToast("<?php echo __('import.no_matches','No matches found'); ?>", "<?php echo __('import.no_matches_desc','Could not parse any transfers from the text'); ?>", "error");
+                showToast("No matches found", "Could not parse any transfers from the text", "error");
             }
         };
 
@@ -1527,7 +1527,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const btn = document.getElementById('btn-save-import');
             if (btn) {
                 btn.disabled = true; 
-                btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <?php echo addslashes(__('action.saving','Saving...')); ?>`;
+                btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...`;
+            }
+            
             let successCount = 0;
             let failCount = 0;
             
@@ -1572,9 +1574,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             loadData();
             
             if (failCount > 0) {
-                showToast("<?php echo __('status.import_errors_title','Import Completed with Errors'); ?>", `<?php echo __('status.import_errors', '{success} succeeded, {failed} failed'); ?>`.replace('{success}', successCount).replace('{failed}', failCount), "error");
+                showToast("Import Completed with Errors", `<?php echo __('status.import_errors', '{success} succeeded, {failed} failed'); ?>`.replace('{success}', successCount).replace('{failed}', failCount), "error");
             } else {
-                showToast("<?php echo __('status.import_successful_title','Import Successful'); ?>", `<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>`.replace('{count}', successCount), "success");
+                showToast("<?php echo __('status.import_successful', 'Import Successful'); ?>", `<?php echo __('status.import_successful', '{count} orders imported successfully'); ?>`.replace('{count}', successCount), "success");
             }
             
             if (btn) {
@@ -1930,7 +1932,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (smsArrivedBtnEl) smsArrivedBtnEl.onclick = () => {
                 const serviceDateEl = document.getElementById('input-service-date');
                 const date = serviceDateEl ? serviceDateEl.value : '';
-                if (!date) return showToast("<?php echo __('validation.time_required','Time Required'); ?>", "<?php echo __('validation.set_appointment_parts_arrived','Please set an Appointment date for Parts Arrived SMS'); ?>", "error");
+                if (!date) return showToast("Time Required", "Please set an Appointment date for Parts Arrived SMS", "error");
                 
                 const templateData = { 
                     id: t.id,
@@ -1948,7 +1950,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (smsScheduleBtnEl) smsScheduleBtnEl.onclick = () => {
                 const serviceDateEl = document.getElementById('input-service-date');
                 const date = serviceDateEl ? serviceDateEl.value : '';
-                if (!date) return showToast("<?php echo __('validation.set_appointment_first','Please set an Appointment date first'); ?>", "", "error");
+                if (!date) return showToast("Please set an Appointment date first", "error");
                 // Use Template for Schedule SMS
                 const templateData = { 
                     id: t.id,
@@ -2058,7 +2060,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.openManualCreateModal = async () => {
             // Check permissions
             if (!CAN_EDIT) {
-                showToast("<?php echo __('error.permission_denied','Permission Denied'); ?>", "<?php echo __('error.create_order_permission','You need Manager or Admin role to create orders'); ?>", "error");
+                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
                 return;
             }
             
@@ -2098,7 +2100,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.saveManualOrder = async () => {
             // Check permissions
             if (!CAN_EDIT) {
-                showToast("<?php echo __('error.permission_denied','Permission Denied'); ?>", "<?php echo __('error.create_order_permission','You need Manager or Admin role to create orders'); ?>", "error");
+                showToast('Permission Denied', 'You need Manager or Admin role to create orders', 'error');
                 return;
             }
             
@@ -2120,22 +2122,22 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
             // Validation
             if (!plate) {
-                showToast("<?php echo __('validation.title','Validation Error'); ?>", "<?php echo __('validation.plate_required','Vehicle plate number is required'); ?>", "error");
+                showToast('Validation Error', 'Vehicle plate number is required', 'error');
                 if (plateEl) plateEl.focus();
                 return;
             }
             if (!name) {
-                showToast("<?php echo __('validation.title','Validation Error'); ?>", "<?php echo __('validation.name_required','Customer name is required'); ?>", "error");
+                showToast('Validation Error', 'Customer name is required', 'error');
                 if (nameEl) nameEl.focus();
                 return;
             }
             if (isNaN(amount) || amount <= 0) {
-                showToast("<?php echo __('validation.title','Validation Error'); ?>", "<?php echo __('validation.amount_invalid','Amount must be a valid number greater than 0'); ?>", "error");
+                showToast('Validation Error', 'Amount must be a valid number greater than 0', 'error');
                 if (amountEl) amountEl.focus();
                 return;
             }
             if (franchise < 0) {
-                showToast("<?php echo __('validation.title','Validation Error'); ?>", "<?php echo __('validation.franchise_negative','Franchise cannot be negative'); ?>", "error");
+                showToast('Validation Error', 'Franchise cannot be negative', 'error');
                 if (franchiseEl) franchiseEl.focus();
                 return;
             }
@@ -2167,7 +2169,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const result = await fetchAPI('add_transfer', 'POST', orderData);
                 
                 if (result && result.status === 'success') {
-                    showToast("<?php echo __('success.order_created','Order created successfully!'); ?>", "", "success");
+                    showToast('Success', 'Order created successfully!', 'success');
                     window.closeManualCreateModal();
                     
                     // Refresh the table
@@ -2179,10 +2181,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     }
                 } else {
                     const errorMsg = result?.message || 'Failed to create order';
-                    showToast("<?php echo __('error.unknown_error','Error'); ?>", errorMsg, "error");
+                    showToast('Error', errorMsg, 'error');
                 }
             } catch (error) {
-                showToast("<?php echo __('error.unknown_error','Error'); ?>", error.message || "<?php echo __('error.create_order_failed','Failed to create order'); ?>", "error");
+                showToast('Error', error.message || 'Failed to create order', 'error');
             } finally {
                 // Re-enable button
                 if (submitBtn) {
@@ -2199,7 +2201,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         window.saveEdit = async () => {
             if (!CAN_EDIT) {
-                showToast("<?php echo __('error.permission_denied','Permission Denied'); ?>", "<?php echo __('error.no_edit_permission','You do not have permission to edit cases'); ?>", "error");
+                showToast('Permission Denied', 'You do not have permission to edit cases', 'error');
                 return;
             }
             const t = transfers.find(i => i.id == window.currentEditingId);
@@ -2214,7 +2216,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             // VALIDATION: Parts Arrived requires a date
             if (status === 'Parts Arrived' && !serviceDate) {
-                return showToast("<?php echo __('validation.scheduling_required','Scheduling Required'); ?>", "<?php echo __('validation.scheduling_required_desc',"Please select a service date to save 'Parts Arrived' status."); ?>", "error");
+                return showToast("Scheduling Required", "Please select a service date to save 'Parts Arrived' status.", "error");
             }
 
             const updates = {
@@ -2294,7 +2296,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
             
             loadData();
-            showToast("<?php echo __('success.changes_saved','Changes Saved'); ?>", "", "success");
+            showToast("Changes Saved", "success");
         };
 
         window.addNote = async () => {
@@ -2334,14 +2336,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
             const dateStr = reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             
-            let confirmMsg = "<?php echo addslashes(__('reschedule.accept_confirm','Accept reschedule request for {name} ({plate})?\n\nNew appointment: {date}\n\nCustomer will receive SMS confirmation.')); ?>";
-            confirmMsg = confirmMsg.replace('{name}', t.name).replace('{plate}', t.plate).replace('{date}', dateStr);
-            if (!confirm(confirmMsg)) {
+            if (!confirm(`Accept reschedule request for ${t.name} (${t.plate})?\n\nNew appointment: ${dateStr}\n\nCustomer will receive SMS confirmation.`)) {
                 return;
             }
 
             try {
-                showToast("<?php echo __('processing','Processing...'); ?>", "<?php echo __('reschedule.accepting','Accepting reschedule request'); ?>", "info");
+                showToast("Processing...", "Accepting reschedule request", "info");
                 
                 const rescheduleDateTime = t.rescheduleDate.replace(' ', 'T');
                 await fetchAPI(`accept_reschedule&id=${id}`, 'POST', {
@@ -2353,11 +2353,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 t.rescheduleDate = null;
                 t.rescheduleComment = null;
                 
-                showToast("<?php echo __('reschedule.accepted_title','Reschedule Accepted'); ?>", "<?php echo __('reschedule.accepted_msg','Appointment updated and SMS sent to {name}'); ?>".replace('{name}', t.name), "success");
+                showToast("Reschedule Accepted", `Appointment updated and SMS sent to ${t.name}`, "success");
                 loadData();
             } catch(e) {
                 console.error('Quick accept reschedule error:', e);
-                showToast("<?php echo __('error.unknown_error','Error'); ?>", "<?php echo __('reschedule.accept_failed','Failed to accept reschedule request'); ?>", "error");
+                showToast("Error", "Failed to accept reschedule request", "error");
             }
         };
 
@@ -2365,9 +2365,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const t = transfers.find(i => i.id == window.currentEditingId);
             if (!t || !t.rescheduleDate) return;
 
-            let confirmMsg2 = "<?php echo addslashes(__('reschedule.accept_update_confirm','Accept reschedule request and update appointment to {date}?')); ?>";
-            confirmMsg2 = confirmMsg2.replace('{date}', new Date(t.rescheduleDate.replace(' ', 'T')).toLocaleString());
-            if (!confirm(confirmMsg2)) {
+            if (!confirm(`Accept reschedule request and update appointment to ${new Date(t.rescheduleDate.replace(' ', 'T')).toLocaleString()}?`)) {
                 return;
             }
 
@@ -2386,17 +2384,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 t.serviceDate = rescheduleDateTime;
                 t.userResponse = 'Confirmed';
                 
-                showToast("<?php echo __('reschedule.accepted_title','Reschedule Accepted'); ?>", "<?php echo __('reschedule.accepted_msg','Appointment updated and SMS sent to {name}'); ?>".replace('{name}', t.name || ''), "success");
+                showToast("Reschedule Accepted", "Appointment updated and SMS sent to customer", "success");
                 window.closeModal();
                 loadData();
             } catch(e) {
                 console.error('Accept reschedule error:', e);
-                showToast("<?php echo __('error.unknown_error','Error'); ?>", "<?php echo __('reschedule.accept_failed','Failed to accept reschedule request'); ?>", "error");
+                showToast("Error", "Failed to accept reschedule request", "error");
             }
         };
 
         window.declineReschedule = async () => {
-            if (!confirm("<?php echo addslashes(__('reschedule.decline_confirm','Decline this reschedule request? The customer will need to be contacted manually.')); ?>")) {
+            if (!confirm('Decline this reschedule request? The customer will need to be contacted manually.')) {
                 return;
             }
 
@@ -2410,47 +2408,47 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     t.userResponse = 'Pending';
                 }
                 
-                showToast("<?php echo __('reschedule.declined_title','Request Declined'); ?>", "<?php echo __('reschedule.declined_msg','Reschedule request removed'); ?>", "info");
+                showToast("Request Declined", "Reschedule request removed", "info");
                 window.closeModal();
                 loadData();
             } catch(e) {
                 console.error('Decline reschedule error:', e);
-                showToast("<?php echo __('error.unknown_error','Error'); ?>", "<?php echo __('reschedule.decline_failed','Failed to decline request'); ?>", "error");
+                showToast("Error", "Failed to decline request", "error");
             }
         };
 
         window.deleteRecord = async (id) => {
             if(!id) {
-                showToast("<?php echo __('error.no_record_id','Error: No record ID'); ?>", "", "error");
+                showToast("Error: No record ID", "error");
                 return;
             }
-            if(confirm("<?php echo addslashes(__('action.delete_confirm','Delete this case permanently?')); ?>")) {
+            if(confirm("Delete this case permanently?")) {
                 const statusEl = document.getElementById('connection-status');
                 if (statusEl && statusEl.innerText.includes('Offline')) {
                     transfers = transfers.filter(t => t.id !== id);
                     window.closeModal();
                     loadData(); 
-                    showToast("<?php echo __('success.deleted','Deleted'); ?>", "", "error");
+                    showToast("Deleted", "error");
                 } else {
                     try {
                         const result = await fetchAPI(`delete_transfer&id=${id}`, 'POST');
                         if (result.status === 'deleted') {
                             window.closeModal();
                             loadData(); 
-                            showToast("<?php echo __('success.order_deleted','Order deleted successfully'); ?>", "", "success");
+                            showToast("Order deleted successfully", "success");
                         } else {
-                            showToast(result.message || "<?php echo __('error.delete_failed','Failed to delete order'); ?>", "", "error");
+                            showToast(result.message || "Failed to delete order", "error");
                         }
                     } catch (error) {
                         console.error('Delete error:', error);
-                        showToast("<?php echo __('error.delete_failed','Failed to delete order'); ?>", "", "error");
+                        showToast("Failed to delete order", "error");
                     }
                 }
             }
         };
 
         window.sendSMS = async (phone, text, type) => {
-            if(!phone) return showToast("<?php echo __('error.no_phone','No phone number'); ?>", "", "error");
+            if(!phone) return showToast("No phone number", "error");
             const clean = phone.replace(/\D/g, '');
             try {
                 const result = await fetchAPI('send_sms', 'POST', { to: clean, text: text });
@@ -2474,14 +2472,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     const activityLogEl = document.getElementById('activity-log-container');
                     if (activityLogEl) activityLogEl.innerHTML = logHTML;
                 }
-                showToast("<?php echo __('sms.sent','SMS Sent'); ?>", "", "success");
-            } catch(e) { console.error(e); showToast("<?php echo __('sms.failed','SMS Failed'); ?>", "", "error"); }
+                showToast("SMS Sent", "success");
+            } catch(e) { console.error(e); showToast("SMS Failed", "error"); }
         };
 
         window.viewInvoice = (id) => {
             const t = transfers.find(i => i.id == id);
             if (!t) {
-                showToast("<?php echo __('error.unknown_error','Error'); ?>", "<?php echo __('error.order_not_found','Order not found'); ?>", "error");
+                showToast('Error', 'Order not found', 'error');
                 return;
             }
 
@@ -2726,7 +2724,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             loadData();
         } catch (e) {
             console.error('Error loading initial data:', e);
-            showToast("<?php echo __('error.unknown_error','Error'); ?>", "<?php echo __('error.load_failed','Failed to load data. Please refresh the page.'); ?>", "error");
+            showToast('Error', 'Failed to load data. Please refresh the page.', 'error');
         }
         
         if(window.lucide) lucide.createIcons();
