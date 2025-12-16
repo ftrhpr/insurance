@@ -75,6 +75,31 @@ function getJsonInput() {
     return (json_last_error() === JSON_ERROR_NONE) ? $input : [];
 }
 
+// Ensure sms_recipients table contains expected columns. Try to add missing columns when possible.
+function ensureSmsRecipientsSchema($pdo) {
+    try {
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM sms_recipients");
+        $cols = array_map(function($c){ return $c['Field']; }, $colsStmt->fetchAll(PDO::FETCH_ASSOC));
+        $toAdd = [];
+        if (!in_array('workflow_stages', $cols)) {
+            $toAdd[] = "ALTER TABLE sms_recipients ADD COLUMN workflow_stages JSON DEFAULT NULL";
+        }
+        if (!in_array('template_slug', $cols)) {
+            $toAdd[] = "ALTER TABLE sms_recipients ADD COLUMN template_slug VARCHAR(100) DEFAULT NULL";
+        }
+        if (!in_array('enabled', $cols)) {
+            $toAdd[] = "ALTER TABLE sms_recipients ADD COLUMN enabled TINYINT(1) DEFAULT 1";
+        }
+        foreach ($toAdd as $sql) {
+            try { $pdo->exec($sql); } catch (Exception $e) { error_log('ensureSmsRecipientsSchema alter failed: ' . $e->getMessage()); }
+        }
+        return true;
+    } catch (Exception $e) {
+        error_log('ensureSmsRecipientsSchema error: ' . $e->getMessage());
+        return false;
+    }
+}
+
 // --- HELPER: GET ACCESS TOKEN (V1) ---
 function getAccessToken($keyFile) {
     if (!file_exists($keyFile)) return null;
@@ -1250,6 +1275,9 @@ try {
             if (!$tableExists) {
                 jsonResponse(['recipients' => []]);
             }
+
+            // Ensure expected columns exist (attempt to add them if missing)
+            ensureSmsRecipientsSchema($pdo);
 
             $stmt = $pdo->prepare("SELECT id, name, phone, type, description, workflow_stages, template_slug, enabled FROM sms_recipients ORDER BY name");
             $stmt->execute();
