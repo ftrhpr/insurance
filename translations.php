@@ -256,16 +256,10 @@ foreach ($allKeys as $k) {
                                            value="<?php echo htmlspecialchars($translation['translation_text']); ?>">
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button onclick="saveTranslation('<?php echo htmlspecialchars($translation['translation_key']); ?>')"
-                                                class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors save-btn">
-                                            Save
-                                        </button>
-                                        <button onclick="findUsages('<?php echo rawurlencode($translation['translation_key']); ?>','<?php echo rawurlencode($translation['default_text']); ?>')" title="Find & Replace in project"
-                                                class="px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded hover:bg-slate-200 transition-colors">
-                                            Find
-                                        </button>
-                                    </div>
+                                    <button onclick="saveTranslation('<?php echo htmlspecialchars($translation['translation_key']); ?>')"
+                                            class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors save-btn">
+                                        Save
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -284,16 +278,10 @@ foreach ($allKeys as $k) {
                                            value="">
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button onclick="saveTranslation('<?php echo htmlspecialchars($translation['translation_key']); ?>')"
-                                                class="px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors save-btn">
-                                            Add
-                                        </button>
-                                        <button onclick="findUsages('<?php echo rawurlencode($translation['translation_key']); ?>','<?php echo rawurlencode($translation['default_text']); ?>')" title="Find & Replace in project"
-                                                class="px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded hover:bg-slate-200 transition-colors">
-                                            Find
-                                        </button>
-                                    </div>
+                                    <button onclick="saveTranslation('<?php echo htmlspecialchars($translation['translation_key']); ?>')"
+                                            class="px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors save-btn">
+                                        Add
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -311,30 +299,6 @@ foreach ($allKeys as $k) {
             <?php endif; ?>
         </div>
     </main>
-
-    <!-- Find & Replace Modal -->
-    <div id="find-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div class="bg-white rounded-xl shadow-lg w-11/12 max-w-3xl p-4">
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <h3 id="find-modal-title" class="text-lg font-bold text-slate-800">Find in Project</h3>
-                    <div id="find-modal-info" class="text-sm text-slate-500 mt-1">&nbsp;</div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="closeFindModal()" class="px-3 py-1 bg-slate-100 rounded hover:bg-slate-200 text-sm">Close</button>
-                </div>
-            </div>
-
-            <div id="find-results" class="mt-4 max-h-64 overflow-y-auto text-sm border border-slate-100 rounded p-2 bg-slate-50"></div>
-
-            <div class="mt-4 flex items-center gap-2">
-                <button id="replace-php-btn" onclick="replaceUsages('php')" class="px-3 py-2 bg-blue-600 text-white rounded">Replace with <?php echo addslashes("<?php echo __('key'); ?>"); ?></button>
-                <button id="replace-literal-btn" onclick="replaceUsages('literal')" class="px-3 py-2 bg-green-600 text-white rounded">Replace with literal</button>
-                <input id="replace-literal-input" class="flex-1 px-3 py-2 border rounded ml-auto text-sm" placeholder="Literal replacement text">
-            </div>
-            <div id="find-summary" class="mt-2 text-xs text-slate-500"></div>
-        </div>
-    </div>
 
     <script>
         const API_URL = 'api.php';
@@ -416,92 +380,6 @@ foreach ($allKeys as $k) {
             } catch (error) {
                 console.error('Error exporting translations:', error);
                 showToast('Failed to export translations', error.message, 'error');
-            }
-        }
-
-        // --- Find & Replace in Project ---
-        let _findCurrentKey = null;
-        let _findCurrentText = null;
-
-        async function findUsages(keyEncoded, textEncoded) {
-            const key = decodeURIComponent(keyEncoded);
-            const text = decodeURIComponent(textEncoded);
-            _findCurrentKey = key;
-            _findCurrentText = text;
-
-            document.getElementById('find-modal-title').textContent = `Find occurrences for: ${key}`;
-            document.getElementById('find-modal-info').textContent = `Searching for occurrences of: "${text}"`;
-            document.getElementById('find-results').innerHTML = '<div class="text-sm text-slate-500 py-4">Searching...</div>';
-            document.getElementById('replace-literal-input').value = (document.querySelector(`input[data-key="${key}"]`) || {}).value || '';
-            document.getElementById('find-summary').textContent = '';
-            document.getElementById('find-modal').classList.remove('hidden');
-
-            try {
-                const res = await fetch(`${API_URL}?action=find_translation_usages&key=${encodeURIComponent(key)}&text=${encodeURIComponent(text)}`);
-                const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Search failed');
-                renderFindResults(data.matches || []);
-            } catch (e) {
-                console.error('Find error:', e);
-                document.getElementById('find-results').innerHTML = `<div class="text-sm text-red-600 p-3">Search failed: ${e.message}</div>`;
-            }
-        }
-
-        function closeFindModal() {
-            document.getElementById('find-modal').classList.add('hidden');
-            document.getElementById('find-results').innerHTML = '';
-            _findCurrentKey = null;
-            _findCurrentText = null;
-        }
-
-        function renderFindResults(matches) {
-            const container = document.getElementById('find-results');
-            if (!matches || matches.length === 0) {
-                container.innerHTML = '<div class="text-sm text-slate-500 p-3">No matches found in project files.</div>';
-                return;
-            }
-            container.innerHTML = matches.map(m => `
-                <div class="p-2 border-b border-slate-100">
-                    <div class="font-mono text-xs text-slate-600">${m.file} <span class="text-slate-400">: ${m.line}</span></div>
-                    <div class="text-sm text-slate-800 mt-1">${m.context.replace(/</g,'&lt;')}</div>
-                </div>
-            `).join('');
-            document.getElementById('find-summary').textContent = `${matches.length} matches found`;
-        }
-
-        async function replaceUsages(replaceType) {
-            if (!_findCurrentKey || !_findCurrentText) return showToast('No search in progress', '', 'error');
-
-            let translatedText = document.getElementById('replace-literal-input').value || '';
-            if (replaceType === 'literal' && !translatedText.trim()) return showToast('Please enter a literal replacement text', '', 'error');
-
-            const payload = { key: _findCurrentKey, text: _findCurrentText, type: replaceType === 'php' ? 'php' : 'literal', translatedText };
-            document.getElementById('find-summary').textContent = 'Replacing...';
-
-            try {
-                const res = await fetch(`${API_URL}?action=replace_translation_usages`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Replace failed');
-
-                const changed = data.summary.changed || [];
-                const errors = data.summary.errors || [];
-                let msg = `Changed ${changed.length} files`;
-                if (changed.length > 0) msg += ` (${changed.reduce((s,c)=>s+c.replacements,0)} replacements)`;
-                if (errors.length > 0) msg += `, ${errors.length} errors`;
-
-                document.getElementById('find-summary').textContent = msg;
-                showToast('Replace complete', msg, 'success');
-
-                // Refresh search results to reflect changes
-                findUsages(encodeURIComponent(_findCurrentKey), encodeURIComponent(_findCurrentText));
-            } catch (e) {
-                console.error('Replace error:', e);
-                document.getElementById('find-summary').textContent = 'Replace failed: ' + e.message;
-                showToast('Replace failed', e.message, 'error');
             }
         }
 
