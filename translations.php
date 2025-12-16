@@ -164,9 +164,6 @@ foreach ($allKeys as $k) {
                     <button onclick="exportTranslations()" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium">
                         <i data-lucide="download" class="w-4 h-4 inline mr-2"></i>Export
                     </button>
-                    <button id="seed-btn" onclick="seedDefaults()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
-                        <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-2"></i>Seed Defaults
-                    </button>
                 </div>
 
                 <!-- Group filter & search -->
@@ -383,27 +380,6 @@ foreach ($allKeys as $k) {
             } catch (error) {
                 console.error('Error exporting translations:', error);
                 showToast('Failed to export translations', error.message, 'error');
-            }
-        }
-
-        async function seedDefaults() {
-            const btn = document.getElementById('seed-btn');
-            if (btn) { btn.disabled = true; btn.textContent = 'Seeding...'; }
-            try {
-                const resp = await fetch(`${API_URL}?action=seed_translations`, { method: 'POST' });
-                const data = await resp.json();
-                if (data.success) {
-                    showToast('Defaults seeded', '', 'success');
-                    // Reload to show new keys
-                    setTimeout(() => location.reload(), 800);
-                } else {
-                    showToast('Seeding failed', data.message || '', 'error');
-                }
-            } catch (e) {
-                console.error('Seed defaults error:', e);
-                showToast('Seeding failed', e.message || '', 'error');
-            } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 inline mr-2"></i>Seed Defaults'; lucide.createIcons(); }
             }
         }
 
