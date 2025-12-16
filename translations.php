@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once 'language.php';
 
-// Check admin access
+// Check admin accesss
 if ($_SESSION['role'] !== 'admin') {
     header('Location: index.php');
     exit();
