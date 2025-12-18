@@ -155,13 +155,14 @@ try {
                                     events: [
                                         <?php foreach ($cases as $c): ?>
                                         {
-                                            title: '<?php echo addslashes($c['plate'] . ' - ' . $c['name']); ?>',
+                                            title: '<?php echo addslashes($c['plate']); ?>',
                                             start: '<?php echo date('Y-m-d\TH:i:s', strtotime($c['due_date'])); ?>',
                                             url: 'edit_case.php?id=<?php echo $c['id']; ?>',
                                             color: '<?php echo ($c['status'] === 'Completed') ? '#22c55e' : (($c['status'] === 'Issue') ? '#ef4444' : ((strtotime($c['due_date']) < strtotime('today')) ? '#f59e42' : '#2563eb')); ?>',
                                             className: '<?php echo ($c['status'] === 'Completed') ? 'completed-case' : ''; ?>',
                                             extendedProps: {
                                                 status: '<?php echo addslashes($c['status']); ?>',
+                                                name: '<?php echo addslashes($c['name']); ?>',
                                                 phone: '<?php echo addslashes($c['phone']); ?>',
                                                 amount: '<?php echo addslashes($c['amount']); ?>',
                                                 serviceDate: '<?php echo addslashes($c['service_date']); ?>'
@@ -180,8 +181,8 @@ try {
                                         var tooltip = document.createElement('div');
                                         tooltip.className = 'absolute z-50 p-2 bg-white border border-slate-200 rounded shadow text-xs text-slate-700 hidden';
                                         tooltip.innerHTML =
-                                            '<div><b>Plate:</b> ' + info.event.title.split(' - ')[0] + '</div>' +
-                                            '<div><b>Customer:</b> ' + info.event.title.split(' - ')[1] + '</div>' +
+                                            '<div><b>Plate:</b> ' + info.event.title + '</div>' +
+                                            '<div><b>Customer:</b> ' + info.event.extendedProps.name + '</div>' +
                                             '<div><b>Status:</b> ' + info.event.extendedProps.status + '</div>' +
                                             '<div><b>Due:</b> ' + info.event.start.toLocaleString() + '</div>' +
                                             '<div><b>Phone:</b> ' + info.event.extendedProps.phone + '</div>' +
