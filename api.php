@@ -334,6 +334,7 @@ try {
                 'status' => 'status',
                 'phone' => 'phone',
                 'serviceDate' => 'service_date',
+                'dueDate' => 'due_date',
                 'franchise' => 'franchise',
                 'internalNotes' => 'internalNotes',
                 'systemLogs' => 'systemLogs',

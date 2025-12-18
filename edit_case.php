@@ -182,6 +182,10 @@ try {
                                 <input id="input-service-date" type="datetime-local" value="<?php echo $case['service_date'] ? date('Y-m-d\TH:i', strtotime($case['service_date'])) : ''; ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.due_date', 'Due Date'); ?></label>
+                                <input id="input-due-date" type="datetime-local" value="<?php echo $case['due_date'] ? date('Y-m-d\TH:i', strtotime($case['due_date'])) : ''; ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.amount', 'Amount'); ?> (₾)</label>
                                 <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
@@ -525,6 +529,7 @@ try {
                     
                     const status = this.currentCase.status;
                     let serviceDate = document.getElementById('input-service-date').value;
+                    let dueDate = document.getElementById('input-due-date').value;
 
                     if ((status === 'Parts Arrived' || status === 'Scheduled') && !serviceDate) {
                         return showToast("Scheduling Required", `Please select a service date for the '${status}' status.`, "error");
@@ -538,6 +543,14 @@ try {
                         }
                     }
 
+                    // Format due date for MySQL (add seconds if missing)
+                    if (dueDate) {
+                        dueDate = dueDate.replace('T', ' ');
+                        if (dueDate.split(':').length === 2) {
+                            dueDate += ':00';
+                        }
+                    }
+
                     const updates = {
                         id: CASE_ID,
                         name: document.getElementById('input-name').value.trim(),
@@ -546,6 +559,7 @@ try {
                         status: status,
                         phone: document.getElementById('input-phone').value.trim(),
                         serviceDate: serviceDate || null,
+                        dueDate: dueDate || null,
                         franchise: document.getElementById('input-franchise').value || 0,
                         user_response: this.currentCase.user_response || null,
                         internalNotes: this.currentCase.internalNotes || [],

@@ -428,6 +428,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         </th>
                                         <th class="px-5 py-4">
                                             <div class="flex items-center gap-2">
+                                                <i data-lucide="clock" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.due_date', 'Due Date'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
                                                 <i data-lucide="message-circle" class="w-4 h-4"></i>
                                                 <span>Customer Reply</span>
                                             </div>
@@ -747,6 +753,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <div class="bg-slate-50 rounded-lg p-4">
                                 <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Service Date</div>
                                 <div class="font-bold text-slate-800" id="invoice-service-date">-</div>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Due Date</div>
+                                <div class="font-bold text-slate-800" id="invoice-due-date">-</div>
                             </div>
                             <div class="bg-slate-50 rounded-lg p-4">
                                 <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Created</div>
@@ -1737,6 +1747,33 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             serviceDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
                         }
                     }
+
+                    // Due date formatting
+                    let dueDateDisplay = '<span class="text-slate-400 text-xs">Not set</span>';
+                    if (t.due_date) {
+                        try {
+                            let dateStr = t.due_date;
+                            if (dateStr.includes(' ')) {
+                                dateStr = dateStr.replace(' ', 'T');
+                            }
+                            if (dateStr.length === 16) {
+                                dateStr += ':00';
+                            }
+                            
+                            const dueDate = new Date(dateStr);
+                            if (!isNaN(dueDate.getTime())) {
+                                const dueDateStr = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                dueDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-red-50 px-2 py-1 rounded-lg border border-red-200 w-fit">
+                                    <i data-lucide="alarm-clock" class="w-3.5 h-3.5 text-red-600"></i>
+                                    <span class="font-semibold">${dueDateStr}</span>
+                                </div>`;
+                            } else {
+                                dueDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
+                            }
+                        } catch (e) {
+                            dueDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
+                        }
+                    }
                     
                     // Review stars display
                     let reviewDisplay = '';
@@ -1790,6 +1827,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4">
                                 ${serviceDateDisplay}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${dueDateDisplay}
                             </td>
                             <td class="px-5 py-4">
                                 ${replyBadge}
@@ -2540,6 +2580,36 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
             document.getElementById('invoice-service-date').textContent = serviceDateText;
 
+            // Due date
+            let dueDateText = 'Not set';
+            if (t.due_date) {
+                try {
+                    let dateStr = t.due_date;
+                    if (dateStr.includes(' ')) {
+                        dateStr = dateStr.replace(' ', 'T');
+                    }
+                    if (dateStr.length === 16) {
+                        dateStr += ':00';
+                    }
+                    
+                    const dueDate = new Date(dateStr);
+                    if (!isNaN(dueDate.getTime())) {
+                        dueDateText = dueDate.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } else {
+                        dueDateText = 'Invalid date format';
+                    }
+                } catch (e) {
+                    dueDateText = 'Date parsing error';
+                }
+            }
+            document.getElementById('invoice-due-date').textContent = dueDateText;
+
             // Franchise
             const franchiseRow = document.getElementById('invoice-franchise-row');
             const franchiseValue = document.getElementById('invoice-franchise');
@@ -2677,6 +2747,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <h3>Service Details</h3>
                         <p><strong>Status:</strong> ${document.getElementById('invoice-status').textContent}</p>
                         <p><strong>Service Date:</strong> ${document.getElementById('invoice-service-date').textContent}</p>
+                        <p><strong>Due Date:</strong> ${document.getElementById('invoice-due-date').textContent}</p>
                         <p><strong>Created:</strong> ${document.getElementById('invoice-created-date').textContent}</p>
                         ${document.getElementById('invoice-response-section').style.display !== 'none' ?
                             `<p><strong>Customer Response:</strong> ${document.getElementById('invoice-customer-response').textContent}</p>` : ''}
