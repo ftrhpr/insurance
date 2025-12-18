@@ -116,7 +116,7 @@ try {
                                             <tbody>
                                                 <?php 
                                                 $overdue_cases = array_filter($cases, function($c) {
-                                                    return strtotime($c['due_date']) < time();
+                                                    return strtotime($c['due_date']) < time() && $c['status'] !== 'Completed';
                                                 });
                                                 foreach ($overdue_cases as $c): 
                                                 ?>
