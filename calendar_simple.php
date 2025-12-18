@@ -166,22 +166,7 @@ foreach ($cases as $case) {
                     echo "<div class='font-semibold text-slate-800 mb-1'>{$day}</div>";
 
                     if ($hasCases) {
-                        $caseCount = count($casesByDate[$dateStr]);
-                        echo "<div class='text-xs text-red-600 font-medium mb-1'>{$caseCount} case" . ($caseCount > 1 ? 's' : '') . "</div>";
-
-                        // Show first case only - with safety checks
-                        if (is_array($casesByDate[$dateStr]) && count($casesByDate[$dateStr]) > 0) {
-                            $firstCase = $casesByDate[$dateStr][0];
-                            if (is_array($firstCase)) {
-                                $plate = $firstCase['plate'] ?? '';
-                                $name = $firstCase['name'] ?? '';
-                                echo "<div class='case-item bg-red-50 text-red-800 rounded px-1 py-0.5 text-xs'>{$plate} - {$name}</div>";
-                            }
-                        }
-
-                        if ($caseCount > 1) {
-                            echo "<div class='text-xs text-slate-500'>+{$caseCount - 1} more</div>";
-                        }
+                        echo "<div class='text-xs text-red-600 font-medium mb-1'>Has cases</div>";
                     }
 
                     echo "</div>";
