@@ -13,6 +13,18 @@ if (!isset($_SESSION['user_id'])) {
 try {
     $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Ensure transfers table has repair management columns (defensive migration)
+    $pdo->exec("ALTER TABLE transfers
+               ADD COLUMN IF NOT EXISTS repair_status VARCHAR(50) DEFAULT NULL,
+               ADD COLUMN IF NOT EXISTS repair_start_date DATETIME DEFAULT NULL,
+               ADD COLUMN IF NOT EXISTS repair_end_date DATETIME DEFAULT NULL,
+               ADD COLUMN IF NOT EXISTS assigned_mechanic VARCHAR(100) DEFAULT NULL,
+               ADD COLUMN IF NOT EXISTS repair_notes TEXT DEFAULT NULL,
+               ADD COLUMN IF NOT EXISTS repair_parts TEXT DEFAULT NULL,
+               ADD COLUMN IF NOT EXISTS repair_labor TEXT DEFAULT NULL,
+               ADD COLUMN IF NOT EXISTS repair_activity_log TEXT DEFAULT NULL");
+
     $stmt = $pdo->query("SELECT id, plate, name, due_date, status, service_date, amount, phone, franchise, user_response, reschedule_date, reschedule_comment, created_at, repair_status, assigned_mechanic, repair_start_date, repair_end_date, repair_notes, repair_parts, repair_labor, repair_activity_log FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

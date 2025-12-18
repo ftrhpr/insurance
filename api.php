@@ -326,6 +326,21 @@ try {
             return;
         }
 
+        // Ensure transfers table has repair management columns (defensive migration)
+        try {
+            $pdo->exec("ALTER TABLE transfers
+                       ADD COLUMN IF NOT EXISTS repair_status VARCHAR(50) DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_start_date DATETIME DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_end_date DATETIME DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS assigned_mechanic VARCHAR(100) DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_notes TEXT DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_parts TEXT DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_labor TEXT DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_activity_log TEXT DEFAULT NULL");
+        } catch (Exception $alterError) {
+            // Continue anyway - columns might already exist or ALTER might fail on some DB versions
+        }
+
         try {
             $field_map = [
                 'name' => 'name',
@@ -462,6 +477,21 @@ try {
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
+        // Ensure transfers table has repair management columns (defensive migration)
+        try {
+            $pdo->exec("ALTER TABLE transfers
+                       ADD COLUMN IF NOT EXISTS repair_status VARCHAR(50) DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_start_date DATETIME DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_end_date DATETIME DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS assigned_mechanic VARCHAR(100) DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_notes TEXT DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_parts TEXT DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_labor TEXT DEFAULT NULL,
+                       ADD COLUMN IF NOT EXISTS repair_activity_log TEXT DEFAULT NULL");
+        } catch (Exception $alterError) {
+            // Continue anyway - columns might already exist or ALTER might fail on some DB versions
+        }
+
         // Includes review columns and reschedule data, now includes completed transfers for processing queue
         $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
         $stmt->execute();
