@@ -29,29 +29,7 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-    <?php
-    // calendar.php - Modern calendar view for cases with due dates
-    session_start();
-    require_once 'config.php';
-    require_once 'language.php';
-
-    if (!isset($_SESSION['user_id'])) {
-        header('Location: login.php');
-        exit;
-    }
-
-    // Fetch all cases with due dates
-    try {
-        $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $stmt = $pdo->query("SELECT id, plate, name, due_date, status, service_date, amount, phone FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
-        $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        die('Database error: ' . $e->getMessage());
-    }
-
-    // For sidebar
-    include 'sidebar.php';
+    // ...existing code...
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
