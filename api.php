@@ -326,6 +326,41 @@ try {
             return;
         }
 
+        // Ensure transfers table has repair management columns (defensive migration)
+        $rpirColum = [
+            'repair_status
+            'repair_start_date
+            'repair_end_date
+            'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
+            'rpr_notesTEXT
+            'repair_parts' => "TEXT DEFAULT NULL",
+           r'repair_labos' =>>"TEXT DEFAULT NULL",
+            'repair_activity_log' => "EEXT DEFAULT NULL"
+        ];
+
+        freach ($repairCoumns as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE transfers ADD COLUMN $col`
+            }rcatche(Exception $e) {
+                p/aiolumn might alreadycexist, continue
+      
+        }
+
+        try {
+      foreach($repamap = [
+                'name' => 'name',
+                'plate' => 'plate',
+                'amoint' => 'arouCt',
+                'statuo' =>lustatum',
+                'phons as$col => $d
+      ef) {
+            try {
+                $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+            } catch (Exception $e) {
+                // Column might already exist, continue
+            }
+        }
+
         try {
             $field_map = [
                 'name' => 'name',
@@ -446,127 +481,7 @@ try {
 
     // --- DECLINE RESCHEDULE REQUEST ---
     if ($action === 'decline_reschedule' && $method === 'POST') {
-        $id = intval($_GET['id'] ?? 0);
-
-        if ($id > 0) {
-            // Clear reschedule data and reset to pending
-            $pdo->prepare("UPDATE transfers SET reschedule_date = NULL, reschedule_comment = NULL, user_response = 'Pending' WHERE id = ?")
-                ->execute([$id]);
-
-            jsonResponse(['status' => 'success', 'message' => 'Reschedule request declined']);
-        } else {
-            jsonResponse(['status' => 'error', 'message' => 'Invalid ID']);
-        }
-    }
-
-    // --- MANAGER ACTIONS ---
-
-    if ($action === 'get_transfers' && $method === 'GET') {
-        // Includes review columns and reschedule data, now includes completed transfers for processing queue
-        $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rows as &$row) {
-            $row['internalNotes'] = json_decode($row['internalNotes'] ?? '[]');
-            $row['systemLogs'] = json_decode($row['systemLogs'] ?? '[]');
-            // serviceDate is already correctly named in the database
-        }        // Also get vehicles for vehicle DB page
-        $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles ORDER BY plate ASC");
-        $vehicleStmt->execute();
-        $vehicles = $vehicleStmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        jsonResponse([
-            'transfers' => $rows,
-            'vehicles' => $vehicles
-        ]);
-    }
-
-    // --- GET TRANSFERS FOR PARTS COLLECTION (exclude Completed) ---
-    if ($action === 'get_transfers_for_parts' && $method === 'GET') {
-        $stmt = $pdo->prepare("SELECT id, plate, name, status FROM transfers WHERE status != 'Completed' ORDER BY created_at DESC");
-        $stmt->execute();
-        $transfers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        jsonResponse(['transfers' => $transfers]);
-    }
-
-    // --- SMS TEMPLATES ACTIONS ---
-    if ($action === 'get_sms_templates' && $method === 'GET') {
-        $stmt = $pdo->prepare("SELECT slug, content, workflow_stages, is_active FROM sms_templates WHERE is_active = 1 ORDER BY slug");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Convert workflow_stages JSON to array
-        foreach ($rows as &$row) {
-            $row['workflow_stages'] = json_decode($row['workflow_stages'] ?? '[]', true);
-        }
-
-        jsonResponse($rows ?: []);
-    }
-
-    if ($action === 'get_workflow_stages' && $method === 'GET') {
-        $stmt = $pdo->prepare("SELECT stage_name, description, stage_order FROM workflow_stages WHERE is_active = 1 ORDER BY stage_order");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        jsonResponse($rows ?: []);
-    }
-
-    if ($action === 'save_templates' && $method === 'POST') {
-        if (!checkPermission('manager')) {
-            http_response_code(403);
-            jsonResponse(['error' => 'Manager or Admin access required to manage SMS templates']);
-        }
-
-        $data = getJsonInput();
-
-        // Validate input data
-        if (empty($data) || !is_array($data)) {
-            http_response_code(400);
-            jsonResponse(['error' => 'Invalid or empty data received']);
-            exit;
-        }
-
-        try {
-            // Check if table exists first
-            $tableExists = $pdo->query("SHOW TABLES LIKE 'sms_templates'")->rowCount() > 0;
-            
-            if (!$tableExists) {
-                error_log("save_templates: sms_templates table does not exist");
-                http_response_code(500);
-                jsonResponse(['error' => 'SMS templates table does not exist. Please run database setup scripts.']);
-                exit;
-            }
-
-            // Ensure table has new columns (defensive migration) - outside transaction
-            try {
-                $pdo->exec("ALTER TABLE sms_templates
-                           ADD COLUMN IF NOT EXISTS workflow_stages JSON DEFAULT NULL,
-                           ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT 1,
-                           ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                           ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-            } catch (Exception $alterError) {
-                // Continue anyway - columns might already exist
-            }
-
-            // Check if we can query the table
-            try {
-                $testStmt = $pdo->query("SELECT COUNT(*) as count FROM sms_templates");
-                $testResult = $testStmt->fetch(PDO::FETCH_ASSOC);
-            } catch (Exception $testError) {
-                http_response_code(500);
-                jsonResponse(['error' => 'Cannot access SMS templates table: ' . $testError->getMessage()]);
-                exit;
-            }
-
-            $pdo->beginTransaction();
-
-            foreach ($data as $slug => $templateData) {
-                $content = $templateData['content'] ?? '';
-                $workflowStages = $templateData['workflow_stages'] ?? [];
-                $isActive = $templateData['is_active'] ?? true;
-
-                // Validate data types
-                if (!is_array($workflowStages)) {
-                    $workflowStages = [];
+        $id = intval($_GEtransfers' && $m                    $workflowStages = [];
                 }
                 if (!is_bool($isActive)) {
                     $isActive = (bool)$isActive;
