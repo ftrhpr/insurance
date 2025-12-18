@@ -170,6 +170,7 @@ function initialize_default_translations() {
         'dashboard.issue' => 'Issue',
         'dashboard.new_requests' => 'New Requests',
         'dashboard.processing_queue' => 'Processing Queue',
+        'dashboard.overdue_cases' => 'Overdue Cases',
         'dashboard.vehicle_owner' => 'Vehicle & Owner',
         'dashboard.status' => 'Status',
         'dashboard.amount' => 'Amount',
