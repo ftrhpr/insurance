@@ -257,6 +257,26 @@ try {
                                         <i data-lucide="plus" class="w-4 h-4"></i> Add Part
                                     </button>
                                 </div>
+                                <!-- PDF Upload Section -->
+                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <h4 class="text-sm font-semibold text-slate-700">Import from Repair Invoice</h4>
+                                        <div class="group relative">
+                                            <i data-lucide="info" class="w-4 h-4 text-slate-400 cursor-help"></i>
+                                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                                                Upload a PDF invoice to automatically extract parts and labor
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <input type="file" id="repairPdfInput" accept=".pdf" class="text-sm">
+                                        <button type="button" id="parseRepairPdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded-lg text-sm flex items-center gap-1 disabled:opacity-50" disabled>
+                                            <i data-lucide="file-text" class="w-4 h-4"></i> Parse PDF
+                                        </button>
+                                    </div>
+                                    <div id="repairPdfStatus" class="text-sm text-slate-600 mt-2"></div>
+                                    <div id="repairParsedPreview" class="mt-3"></div>
+                                </div>
                                 <div id="partsList" class="space-y-3">
                                     <!-- Parts will be added here -->
                                 </div>
@@ -272,36 +292,11 @@ try {
                                         <i data-lucide="plus" class="w-4 h-4"></i> Add Labor
                                     </button>
                                 </div>
-                                <div class="overflow-x-auto rounded-lg border border-slate-200">
-                                    <table class="min-w-full bg-white">
-                                        <thead class="bg-slate-50">
-                                            <tr>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Description</th>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Hours</th>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Hourly Rate</th>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Total</th>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="labor-table-body">
-                                            <?php foreach (($case['repair_labor'] ?? []) as $index => $labor): ?>
-                                            <tr class="border-t border-slate-200">
-                                                <td class="px-4 py-2"><input type="text" value="<?php echo htmlspecialchars($labor['description'] ?? ''); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'description', this.value)"></td>
-                                                <td class="px-4 py-2"><input type="number" step="0.5" value="<?php echo htmlspecialchars($labor['hours'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'hours', this.value)"></td>
-                                                <td class="px-4 py-2"><input type="number" step="0.01" value="<?php echo htmlspecialchars($labor['hourly_rate'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'hourly_rate', this.value)">₾</td>
-                                                <td class="px-4 py-2 font-semibold text-slate-700"><?php echo number_format(($labor['hours'] ?? 0) * ($labor['hourly_rate'] ?? 0), 2); ?>₾</td>
-                                                <td class="px-4 py-2"><button onclick="removeLabor(<?php echo $index; ?>)" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                        <tfoot class="bg-slate-50">
-                                            <tr>
-                                                <td colspan="3" class="px-4 py-2 text-right font-semibold text-slate-700">Total Labor Cost:</td>
-                                                <td class="px-4 py-2 font-bold text-slate-800" id="labor-total">0.00₾</td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                                <div id="laborList" class="space-y-3">
+                                    <!-- Labor will be added here -->
+                                </div>
+                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                    <div class="text-right font-semibold text-slate-800">Total Labor Cost: <span id="labor-total">0.00₾</span></div>
                                 </div>
                             </div>
                             <!-- Activity History Tab -->
@@ -327,6 +322,26 @@ try {
                                         </div>
                                     </div>
                                     <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Repair Cost Summary -->
+                        <div class="mt-6 border-t border-slate-200 pt-6">
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-slate-800 mb-3">Repair Cost Summary</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-blue-600" id="summary-parts-total">0.00₾</div>
+                                        <div class="text-sm text-slate-600">Parts Cost</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-green-600" id="summary-labor-total">0.00₾</div>
+                                        <div class="text-sm text-slate-600">Labor Cost</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-3xl font-bold text-slate-800" id="summary-grand-total">0.00₾</div>
+                                        <div class="text-sm text-slate-600">Total Cost</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -673,6 +688,10 @@ try {
                     this.updatePartsList();
                     this.updateLaborList();
                     this.updateActivityLog();
+                    this.updateRepairSummary();
+
+                    // Initialize PDF parsing for repair
+                    this.initRepairPdfParsing();
                 },
                 isSectionOpen(section) {
                     return this.openSections.includes(section);
@@ -861,7 +880,7 @@ try {
                                     <input type="number" class="part-price block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${part.unit_price || 0}" step="0.01" min="0" onchange="updatePart(${index}, 'unit_price', this.value)">
                                 </div>
                                 <div class="col-span-1 flex items-end">
-                                    <button type="button" onclick="removePart(${index})" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    <button type="button" onclick="if(confirm('Remove this part?')) removePart(${index})" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -876,6 +895,7 @@ try {
                     const total = this.currentCase.repair_parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
                     totalEl.textContent = total.toFixed(2) + '₾';
                     lucide.createIcons();
+                    this.updateRepairSummary();
                 },
                 addLabor(description = '', hours = 0, hourly_rate = 0) {
                     if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
@@ -918,7 +938,7 @@ try {
                                     <input type="number" class="labor-rate block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${labor.hourly_rate || 0}" step="0.01" min="0" onchange="updateLabor(${index}, 'hourly_rate', this.value)">
                                 </div>
                                 <div class="col-span-1 flex items-end">
-                                    <button type="button" onclick="removeLabor(${index})" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    <button type="button" onclick="if(confirm('Remove this labor entry?')) removeLabor(${index})" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -933,6 +953,16 @@ try {
                     const total = this.currentCase.repair_labor.reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
                     totalEl.textContent = total.toFixed(2) + '₾';
                     lucide.createIcons();
+                    this.updateRepairSummary();
+                },
+                updateRepairSummary() {
+                    const partsTotal = this.currentCase.repair_parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
+                    const laborTotal = this.currentCase.repair_labor.reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                    const grandTotal = partsTotal + laborTotal;
+                    
+                    document.getElementById('summary-parts-total').textContent = partsTotal.toFixed(2) + '₾';
+                    document.getElementById('summary-labor-total').textContent = laborTotal.toFixed(2) + '₾';
+                    document.getElementById('summary-grand-total').textContent = grandTotal.toFixed(2) + '₾';
                 },
                 addActivity() {
                     const action = prompt('Enter activity action:');
@@ -964,6 +994,103 @@ try {
                             </div>
                         </div>
                     `).join('');
+                },
+                initRepairPdfParsing() {
+                    const pdfInput = document.getElementById('repairPdfInput');
+                    const parseBtn = document.getElementById('parseRepairPdfBtn');
+                    const statusDiv = document.getElementById('repairPdfStatus');
+                    const previewDiv = document.getElementById('repairParsedPreview');
+
+                    if (!pdfInput || !parseBtn) return;
+
+                    pdfInput.addEventListener('change', () => {
+                        parseBtn.disabled = !pdfInput.files.length;
+                        statusDiv.textContent = '';
+                        previewDiv.innerHTML = '';
+                    });
+
+                    parseBtn.addEventListener('click', async () => {
+                        if (!pdfInput.files.length) return;
+
+                        statusDiv.textContent = 'Parsing PDF, please wait...';
+                        parseBtn.disabled = true;
+                        const formData = new FormData();
+                        formData.append('pdf', pdfInput.files[0]);
+
+                        try {
+                            const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', body: formData });
+                            const data = await response.json();
+
+                            if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+                                statusDiv.textContent = `Successfully parsed ${data.items.length} items. Select which items to add.`;
+                                
+                                let checklistHtml = '';
+                                data.items.forEach((item, index) => {
+                                    const itemData = JSON.stringify(item);
+                                    checklistHtml += `
+                                        <div class="flex items-center p-1 rounded-md hover:bg-teal-100">
+                                            <input id="repair-item-${index}" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 repair-parsed-item-checkbox" data-item='${itemData}' checked>
+                                            <label for="repair-item-${index}" class="ml-3 text-sm text-gray-700">
+                                                <span class="font-medium text-indigo-700">[${item.type}]</span> ${item.name} 
+                                                <span class="text-gray-500">(Qty: ${item.quantity}, Price: ₾${item.price})</span>
+                                            </label>
+                                        </div>`;
+                                });
+
+                                previewDiv.innerHTML = `
+                                    <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+                                        <h4 class="font-bold mb-2 text-gray-800">Parsed Items</h4>
+                                        <div class="flex items-center border-b pb-2 mb-2">
+                                            <input id="selectAllRepairParsed" type="checkbox" class="h-4 w-4 rounded border-gray-300" checked>
+                                            <label for="selectAllRepairParsed" class="ml-3 text-sm font-medium text-gray-800">Select All</label>
+                                        </div>
+                                        <div id="repairParsedItemsChecklist" class="space-y-1 max-h-40 overflow-y-auto">
+                                            ${checklistHtml}
+                                        </div>
+                                        <button type="button" id="addRepairParsedItemsBtn" class="mt-3 btn-gradient text-white px-3 py-1 rounded-md text-sm">Add Selected Items</button>
+                                    </div>
+                                `;
+
+                                // Add event listener for 'Select All'
+                                document.getElementById('selectAllRepairParsed').addEventListener('change', (e) => {
+                                    document.querySelectorAll('.repair-parsed-item-checkbox').forEach(checkbox => {
+                                        checkbox.checked = e.target.checked;
+                                    });
+                                });
+                                
+                                // Add event listener for 'Add Selected Items'
+                                document.getElementById('addRepairParsedItemsBtn').onclick = () => {
+                                    const selectedItems = [];
+                                    document.querySelectorAll('.repair-parsed-item-checkbox:checked').forEach(checkbox => {
+                                        selectedItems.push(JSON.parse(checkbox.dataset.item));
+                                    });
+
+                                    if (selectedItems.length === 0) {
+                                        showToast('<?php echo addslashes(__('info.no_items_selected','No items selected.')); ?>', '', 'info');
+                                        return;
+                                    }
+
+                                    selectedItems.forEach(item => {
+                                        if (item.type === 'labor') {
+                                            this.addLabor(item.name, item.quantity, item.price);
+                                        } else {
+                                            this.addPart(item.name, item.quantity, item.price);
+                                        }
+                                    });
+                                    previewDiv.innerHTML = '';
+                                    statusDiv.textContent = `${selectedItems.length} items have been added to the lists below.`;
+                                };
+
+                            } else {
+                                statusDiv.textContent = data.error || 'Could not parse any items from the PDF.';
+                            }
+                        } catch (error) {
+                            console.error('PDF parsing error:', error);
+                            statusDiv.textContent = 'An error occurred while parsing the PDF.';
+                        } finally {
+                            parseBtn.disabled = false;
+                        }
+                    });
                 },
                 async requestParts() {
                     if (!this.partsRequest.description.trim()) {
