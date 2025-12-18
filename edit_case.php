@@ -379,13 +379,17 @@ try {
                 <?php endif; ?>
 
                 <!-- Collapsible Section: Communication -->
-                 <div x-data="{ get open() { return this.$parent.openSections.includes('communication'); } }" class="bg-white rounded-2xl border border-slate-200/80">
+                 <div x-data="{
+                    activeTab: 'quick',
+                    open: $parent.openSections.includes('communication'),
+                    $watch('$parent.openSections', () => { this.open = $parent.openSections.includes('communication'); })
+                }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="$parent.toggleSection('communication')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.communication', 'Communication'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': $parent.openSections.includes('communication')}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
                     </button>
-                    <div x-show="$parent.openSections.includes('communication')" x-cloak x-transition class="px-5 pb-6">
-                        <div class="border-t border-slate-200 pt-6 space-y-5" x-data="{ activeTab: 'quick' }">
+                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                        <div class="border-t border-slate-200 pt-6 space-y-5">
                             <div class="flex items-center justify-center">
                                  <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
                                     <button @click="activeTab = 'quick'" :class="{'bg-white text-blue-600 shadow-sm': activeTab === 'quick'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600"><?php echo __('case.quick_sms', 'Quick SMS'); ?></button>
@@ -418,12 +422,16 @@ try {
                 </div>
 
                  <!-- Collapsible Section: Customer Feedback -->
-                <div x-data="{ editingReview: false }" class="bg-white rounded-2xl border border-slate-200/80">
+                <div x-data="{
+                    editingReview: false,
+                    open: $parent.openSections.includes('feedback'),
+                    $watch('$parent.openSections', () => { this.open = $parent.openSections.includes('feedback'); })
+                }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="$parent.toggleSection('feedback')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.customer_feedback', 'Customer Feedback'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': $parent.openSections.includes('feedback')}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
                     </button>
-                    <div x-show="$parent.openSections.includes('feedback')" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6">
                              <div class="flex justify-end mb-4 -mt-2">
                                 <button @click="editingReview = !editingReview" id="btn-edit-review" class="text-sm font-semibold text-blue-600 hover:underline">
