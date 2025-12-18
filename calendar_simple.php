@@ -167,6 +167,29 @@ foreach ($cases as $case) {
 
                     if ($hasCases) {
                         echo "<div class='text-xs text-red-600 font-medium mb-1'>Has cases</div>";
+
+                        // Try to access case data with maximum safety
+                        try {
+                            $dateCases = $casesByDate[$dateStr];
+                            if (is_array($dateCases) && !empty($dateCases)) {
+                                $caseCount = count($dateCases);
+                                echo "<div class='text-xs text-blue-600'>Count: {$caseCount}</div>";
+
+                                // Try to access first case
+                                $firstCase = reset($dateCases); // Use reset() instead of [0]
+                                if ($firstCase !== false && is_array($firstCase)) {
+                                    $plate = isset($firstCase['plate']) ? strval($firstCase['plate']) : '';
+                                    $name = isset($firstCase['name']) ? strval($firstCase['name']) : '';
+                                    echo "<div class='case-item bg-red-50 text-red-800 rounded px-1 py-0.5 text-xs'>{$plate} - {$name}</div>";
+                                } else {
+                                    echo "<div class='text-xs text-gray-500'>Case data invalid</div>";
+                                }
+                            } else {
+                                echo "<div class='text-xs text-gray-500'>No case array</div>";
+                            }
+                        } catch (Exception $e) {
+                            echo "<div class='text-xs text-red-500'>Error: " . htmlspecialchars($e->getMessage()) . "</div>";
+                        }
                     }
 
                     echo "</div>";
