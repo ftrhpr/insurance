@@ -213,8 +213,16 @@ foreach ($cases as $case) {
 
     <script>
         function showDayDetails(dateStr) {
-            const cases = <?php echo json_encode($casesByDate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
-            const dateCases = cases[dateStr] || [];
+            // Safely encode the cases data
+            const casesData = <?php
+                $jsonData = json_encode($casesByDate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+                if ($jsonData === false) {
+                    echo '[]'; // Fallback to empty array if encoding fails
+                } else {
+                    echo $jsonData;
+                }
+            ?>;
+            const dateCases = casesData[dateStr] || [];
 
             const date = new Date(dateStr + 'T00:00:00');
             const formattedDate = date.toLocaleDateString('en-US', {
@@ -236,7 +244,7 @@ foreach ($cases as $case) {
                         <div class="border border-slate-200 rounded-lg p-4">
                             <div class="flex items-start justify-between mb-2">
                                 <div>
-                                    <h4 class="font-semibold text-slate-800">${caseItem.plate || 'N/A'} - ${caseItem.name || 'N/A'}</h4>
+                                    <h4 class="font-semibold text-slate-800">${(caseItem.plate || 'N/A').replace(/[<>&"']/g, '')} - ${(caseItem.name || 'N/A').replace(/[<>&"']/g, '')}</h4>
                                     <p class="text-sm text-slate-600">Amount: ${caseItem.amount || 'N/A'}</p>
                                     <p class="text-sm text-slate-600">Status: ${caseItem.status || 'N/A'}</p>
                                 </div>
