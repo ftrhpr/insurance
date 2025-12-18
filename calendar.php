@@ -51,6 +51,10 @@ try {
                                 font-weight: bold;
                                 color: #22c55e;
                             }
+                            .due-today {
+                                box-shadow: 0 0 12px rgba(59, 130, 246, 0.6) !important;
+                                border: 2px solid #3b82f6 !important;
+                            }
                         </style>
                     </head>
                     <body class="bg-slate-50 min-h-screen">
@@ -209,7 +213,7 @@ try {
                                             start: '<?php echo date('Y-m-d\TH:i:s', strtotime($c['due_date'])); ?>',
                                             url: 'edit_case.php?id=<?php echo $c['id']; ?>',
                                             color: '<?php echo ($c['status'] === 'Completed') ? '#22c55e' : (($c['status'] === 'Issue') ? '#ef4444' : ((strtotime($c['due_date']) < strtotime('today')) ? '#f59e42' : '#2563eb')); ?>',
-                                            className: '<?php echo ($c['status'] === 'Completed') ? 'completed-case' : ''; ?>',
+                                            className: '<?php echo ($c['status'] === 'Completed') ? 'completed-case' : ((date('Y-m-d', strtotime($c['due_date'])) === date('Y-m-d')) ? 'due-today' : ''); ?>',
                                             extendedProps: {
                                                 status: '<?php echo addslashes($c['status']); ?>',
                                                 name: '<?php echo addslashes($c['name']); ?>',
