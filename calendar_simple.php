@@ -162,7 +162,7 @@ foreach ($cases as $case) {
                     if ($isToday) $dayClass .= ' today';
                     if ($hasCases) $dayClass .= ' has-cases';
 
-                    echo "<div class='{$dayClass}' onclick=\"showDayDetails('{$dateStr}')\">";
+                    echo "<div class='{$dayClass}'>";
                     echo "<div class='font-semibold text-slate-800 mb-1'>{$day}</div>";
 
                     if ($hasCases) {
@@ -190,86 +190,9 @@ foreach ($cases as $case) {
                 ?>
             </div>
         </div>
-
-        <!-- Day Details Modal -->
-        <div id="day-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-                    <div class="p-6 border-b border-slate-200">
-                        <div class="flex items-center justify-between">
-                            <h3 id="modal-date-title" class="text-xl font-bold text-slate-800">Cases Due</h3>
-                            <button onclick="closeDayModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                                <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="modal-cases-content" class="p-6">
-                        <!-- Cases will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
     <script>
-        function showDayDetails(dateStr) {
-            // Safely encode the cases data
-            const casesData = <?php
-                $jsonData = json_encode($casesByDate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-                if ($jsonData === false) {
-                    echo '[]'; // Fallback to empty array if encoding fails
-                } else {
-                    echo $jsonData;
-                }
-            ?>;
-            const dateCases = casesData[dateStr] || [];
-
-            const date = new Date(dateStr + 'T00:00:00');
-            const formattedDate = date.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-
-            document.getElementById('modal-date-title').textContent = `Cases Due - ${formattedDate}`;
-
-            let content = '';
-            if (dateCases.length === 0) {
-                content = '<p class="text-slate-500">No cases due on this date.</p>';
-            } else {
-                content = '<div class="space-y-4">';
-                dateCases.forEach(caseItem => {
-                    content += `
-                        <div class="border border-slate-200 rounded-lg p-4">
-                            <div class="flex items-start justify-between mb-2">
-                                <div>
-                                    <h4 class="font-semibold text-slate-800">${(caseItem.plate || 'N/A').replace(/[<>&"']/g, '')} - ${(caseItem.name || 'N/A').replace(/[<>&"']/g, '')}</h4>
-                                    <p class="text-sm text-slate-600">Amount: ${caseItem.amount || 'N/A'}</p>
-                                    <p class="text-sm text-slate-600">Status: ${caseItem.status || 'N/A'}</p>
-                                </div>
-                                <a href="edit_case.php?id=${caseItem.id}" class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors">
-                                    View Details
-                                </a>
-                            </div>
-                            <div class="text-xs text-slate-400">
-                                Due: ${new Date(caseItem.due_date).toLocaleDateString('en-US')}
-                                <span class="text-xs text-slate-400">${new Date(caseItem.due_date).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                content += '</div>';
-            }
-
-            document.getElementById('modal-cases-content').innerHTML = content;
-            document.getElementById('day-modal').classList.remove('hidden');
-        }
-
-        function closeDayModal() {
-            document.getElementById('day-modal').classList.add('hidden');
-        }
-
         // Initialize icons
         if (window.lucide) {
             lucide.createIcons();
