@@ -592,7 +592,7 @@ try {
         function caseEditor() {
             return {
                 currentCase: { ...initialCaseData },
-                openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback'],
+                openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback', 'repair'],
                 partsRequest: { description: '', supplier: '', collection_type: 'local' },
                 repairTab: 'parts',
                 statuses: [
