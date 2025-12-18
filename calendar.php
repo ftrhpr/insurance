@@ -192,6 +192,8 @@ try {
                                 var now = new Date();
                                 <?php foreach ($cases as $c): ?>
                                     (function(){
+                                        var status = '<?php echo addslashes($c['status']); ?>';
+                                        if (status === 'Completed') return; // Exclude completed cases from active counts
                                         var due = new Date('<?php echo date('Y-m-d\TH:i:s', strtotime($c['due_date'])); ?>');
                                         if (due.toDateString() === now.toDateString()) today++;
                                         else if (due < now) overdue++;
