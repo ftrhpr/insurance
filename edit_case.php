@@ -211,33 +211,33 @@ try {
                             <!-- Repair Status -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_status', 'Repair Status'); ?></label>
-                                <select id="input-repair-status" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                                <select x-model="currentCase.repair_status" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                                     <option value=""><?php echo __('case.not_started', 'Not Started'); ?></option>
-                                    <option value="Repair Started" <?php echo ($case['repair_status'] ?? '') === 'Repair Started' ? 'selected' : ''; ?>><?php echo __('case.repair_started', 'Repair Started'); ?></option>
-                                    <option value="In Progress" <?php echo ($case['repair_status'] ?? '') === 'In Progress' ? 'selected' : ''; ?>><?php echo __('case.in_progress', 'In Progress'); ?></option>
-                                    <option value="Parts Waiting" <?php echo ($case['repair_status'] ?? '') === 'Parts Waiting' ? 'selected' : ''; ?>><?php echo __('case.parts_waiting', 'Parts Waiting'); ?></option>
-                                    <option value="Repair Completed" <?php echo ($case['repair_status'] ?? '') === 'Repair Completed' ? 'selected' : ''; ?>><?php echo __('case.repair_completed', 'Repair Completed'); ?></option>
+                                    <option value="Repair Started"><?php echo __('case.repair_started', 'Repair Started'); ?></option>
+                                    <option value="In Progress"><?php echo __('case.in_progress', 'In Progress'); ?></option>
+                                    <option value="Parts Waiting"><?php echo __('case.parts_waiting', 'Parts Waiting'); ?></option>
+                                    <option value="Repair Completed"><?php echo __('case.repair_completed', 'Repair Completed'); ?></option>
                                 </select>
                             </div>
                             <!-- Assigned Mechanic -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.assigned_mechanic', 'Assigned Mechanic'); ?></label>
-                                <input id="input-assigned-mechanic" type="text" value="<?php echo htmlspecialchars($case['assigned_mechanic'] ?? ''); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                                <input x-model="currentCase.assigned_mechanic" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <!-- Repair Start Date -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_start_date', 'Repair Start Date'); ?></label>
-                                <input id="input-repair-start-date" type="datetime-local" value="<?php echo ($case['repair_start_date'] ?? '') ? date('Y-m-d\TH:i', strtotime($case['repair_start_date'])) : ''; ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                                <input x-model="currentCase.repair_start_date" type="datetime-local" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <!-- Repair End Date -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_end_date', 'Repair End Date'); ?></label>
-                                <input id="input-repair-end-date" type="datetime-local" value="<?php echo ($case['repair_end_date'] ?? '') ? date('Y-m-d\TH:i', strtotime($case['repair_end_date'])) : ''; ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                                <input x-model="currentCase.repair_end_date" type="datetime-local" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <!-- Repair Notes -->
                             <div class="sm:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_notes', 'Repair Notes'); ?></label>
-                                <textarea id="input-repair-notes" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none resize-vertical"><?php echo htmlspecialchars($case['repair_notes'] ?? ''); ?></textarea>
+                                <textarea x-model="currentCase.repair_notes" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none resize-vertical"></textarea>
                             </div>
                         </div>
                         <!-- Tabs for Parts, Labor, Activity -->
@@ -731,11 +731,39 @@ try {
                         franchise: document.getElementById('input-franchise').value || 0,
                         user_response: this.currentCase.user_response || null,
                         internalNotes: this.currentCase.internalNotes || [],
-                        repair_status: document.getElementById('input-repair-status').value || null,
-                        assigned_mechanic: document.getElementById('input-assigned-mechanic').value.trim() || null,
-                        repair_start_date: document.getElementById('input-repair-start-date').value ? document.getElementById('input-repair-start-date').value.replace('T', ' ') + (document.getElementById('input-repair-start-date').value.split(':').length === 2 ? ':00' : '') : null,
-                        repair_end_date: document.getElementById('input-repair-end-date').value ? document.getElementById('input-repair-end-date').value.replace('T', ' ') + (document.getElementById('input-repair-end-date').value.split(':').length === 2 ? ':00' : '') : null,
-                        repair_notes: document.getElementById('input-repair-notes').value.trim() || null,
+                        repair_status: this.currentCase.repair_status || null,
+                        assigned_mechanic: this.currentCase.assigned_mechanic?.trim() || null,
+                        repair_start_date: (() => {
+
+                            let d = this.currentCase.repair_start_date;
+
+                            if (d) {
+
+                                d = d.replace('T', ' ');
+
+                                if (d.split(':').length === 2) d += ':00';
+
+                            }
+
+                            return d || null;
+
+                        })(),
+                        repair_end_date: (() => {
+
+                            let d = this.currentCase.repair_end_date;
+
+                            if (d) {
+
+                                d = d.replace('T', ' ');
+
+                                if (d.split(':').length === 2) d += ':00';
+
+                            }
+
+                            return d || null;
+
+                        })(),
+                        repair_notes: this.currentCase.repair_notes?.trim() || null,
                         repair_parts: this.currentCase.repair_parts || [],
                         repair_labor: this.currentCase.repair_labor || [],
                         repair_activity_log: this.currentCase.repair_activity_log || [],
