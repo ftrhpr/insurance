@@ -326,17 +326,25 @@ try {
             return;
         }
 
-        // Ensure transfers table has repair management columns (defensive migration)
+        // Ensure transfers table has repair management columns (defensive migration compatible with older MySQL)
         try {
-            $pdo->exec("ALTER TABLE transfers
-                       ADD COLUMN IF NOT EXISTS repair_status VARCHAR(50) DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_start_date DATETIME DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_end_date DATETIME DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS assigned_mechanic VARCHAR(100) DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_notes TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_parts TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_labor TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_activity_log TEXT DEFAULT NULL");
+            $required = [
+                'repair_status' => "VARCHAR(50) DEFAULT NULL",
+                'repair_start_date' => "DATETIME DEFAULT NULL",
+                'repair_end_date' => "DATETIME DEFAULT NULL",
+                'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
+                'repair_notes' => "TEXT DEFAULT NULL",
+                'repair_parts' => "TEXT DEFAULT NULL",
+                'repair_labor' => "TEXT DEFAULT NULL",
+                'repair_activity_log' => "TEXT DEFAULT NULL",
+            ];
+            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
+            foreach ($required as $col => $def) {
+                $checkStmt->execute([DB_NAME, $col]);
+                if ($checkStmt->fetchColumn() == 0) {
+                    $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+                }
+            }
         } catch (Exception $alterError) {
             // Continue anyway - columns might already exist or ALTER might fail on some DB versions
         }
@@ -477,17 +485,25 @@ try {
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
-        // Ensure transfers table has repair management columns (defensive migration)
+        // Ensure transfers table has repair management columns (defensive migration compatible with older MySQL)
         try {
-            $pdo->exec("ALTER TABLE transfers
-                       ADD COLUMN IF NOT EXISTS repair_status VARCHAR(50) DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_start_date DATETIME DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_end_date DATETIME DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS assigned_mechanic VARCHAR(100) DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_notes TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_parts TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_labor TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_activity_log TEXT DEFAULT NULL");
+            $required = [
+                'repair_status' => "VARCHAR(50) DEFAULT NULL",
+                'repair_start_date' => "DATETIME DEFAULT NULL",
+                'repair_end_date' => "DATETIME DEFAULT NULL",
+                'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
+                'repair_notes' => "TEXT DEFAULT NULL",
+                'repair_parts' => "TEXT DEFAULT NULL",
+                'repair_labor' => "TEXT DEFAULT NULL",
+                'repair_activity_log' => "TEXT DEFAULT NULL",
+            ];
+            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
+            foreach ($required as $col => $def) {
+                $checkStmt->execute([DB_NAME, $col]);
+                if ($checkStmt->fetchColumn() == 0) {
+                    $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+                }
+            }
         } catch (Exception $alterError) {
             // Continue anyway - columns might already exist or ALTER might fail on some DB versions
         }
@@ -568,11 +584,19 @@ try {
 
             // Ensure table has new columns (defensive migration) - outside transaction
             try {
-                $pdo->exec("ALTER TABLE sms_templates
-                           ADD COLUMN IF NOT EXISTS workflow_stages JSON DEFAULT NULL,
-                           ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT 1,
-                           ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                           ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+                $requiredSms = [
+                    'workflow_stages' => "JSON DEFAULT NULL",
+                    'is_active' => "BOOLEAN DEFAULT 1",
+                    'created_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+                    'updated_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+                ];
+                $checkStmtSms = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'sms_templates' AND COLUMN_NAME = ?");
+                foreach ($requiredSms as $col => $def) {
+                    $checkStmtSms->execute([DB_NAME, $col]);
+                    if ($checkStmtSms->fetchColumn() == 0) {
+                        $pdo->exec("ALTER TABLE sms_templates ADD COLUMN `$col` $def");
+                    }
+                }
             } catch (Exception $alterError) {
                 // Continue anyway - columns might already exist
             }
