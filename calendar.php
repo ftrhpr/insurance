@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 try {
     $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $stmt = $pdo->query("SELECT id, plate, name, due_date, status FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
+    $stmt = $pdo->query("SELECT id, plate, name, due_date, status, service_date, amount, phone, franchise, user_response, reschedule_date, reschedule_comment, created_at FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Database error: ' . $e->getMessage());
@@ -165,7 +165,12 @@ try {
                                                 name: '<?php echo addslashes($c['name']); ?>',
                                                 phone: '<?php echo addslashes($c['phone']); ?>',
                                                 amount: '<?php echo addslashes($c['amount']); ?>',
-                                                serviceDate: '<?php echo addslashes($c['service_date']); ?>'
+                                                serviceDate: '<?php echo addslashes($c['service_date']); ?>',
+                                                franchise: '<?php echo addslashes($c['franchise']); ?>',
+                                                userResponse: '<?php echo addslashes($c['user_response']); ?>',
+                                                rescheduleDate: '<?php echo addslashes($c['reschedule_date']); ?>',
+                                                rescheduleComment: '<?php echo addslashes($c['reschedule_comment']); ?>',
+                                                createdAt: '<?php echo addslashes($c['created_at']); ?>'
                                             }
                                         },
                                         <?php endforeach; ?>
@@ -187,7 +192,12 @@ try {
                                             '<div><b>Due:</b> ' + info.event.start.toLocaleString() + '</div>' +
                                             '<div><b>Phone:</b> ' + info.event.extendedProps.phone + '</div>' +
                                             '<div><b>Amount:</b> ' + info.event.extendedProps.amount + '₾</div>' +
-                                            '<div><b>Service Date:</b> ' + (info.event.extendedProps.serviceDate ? info.event.extendedProps.serviceDate : '-') + '</div>';
+                                            '<div><b>Franchise:</b> ' + (info.event.extendedProps.franchise ? info.event.extendedProps.franchise + '₾' : '-') + '</div>' +
+                                            '<div><b>Service Date:</b> ' + (info.event.extendedProps.serviceDate ? info.event.extendedProps.serviceDate : '-') + '</div>' +
+                                            '<div><b>User Response:</b> ' + (info.event.extendedProps.userResponse ? info.event.extendedProps.userResponse : '-') + '</div>' +
+                                            '<div><b>Reschedule Date:</b> ' + (info.event.extendedProps.rescheduleDate ? info.event.extendedProps.rescheduleDate : '-') + '</div>' +
+                                            '<div><b>Reschedule Comment:</b> ' + (info.event.extendedProps.rescheduleComment ? info.event.extendedProps.rescheduleComment : '-') + '</div>' +
+                                            '<div><b>Created:</b> ' + (info.event.extendedProps.createdAt ? new Date(info.event.extendedProps.createdAt).toLocaleString() : '-') + '</div>';
                                         document.body.appendChild(tooltip);
                                         info.el.addEventListener('mouseenter', function(e) {
                                             tooltip.style.left = (e.pageX + 10) + 'px';
