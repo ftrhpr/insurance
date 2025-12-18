@@ -20,32 +20,6 @@ try {
 }
 
 ?><!DOCTYPE html>
-<html lang="<?php echo get_current_language(); ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('calendar.title', 'Due Date Calendar'); ?> - OTOMOTORS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                events: [
-                    <?php foreach ($cases as $c): ?>
-                    {
-                        title: '<?php echo addslashes($c['plate'] . ' - ' . $c['name']); ?>',
-                        start: '<?php echo date('Y-m-d\TH:i:s', strtotime($c['due_date'])); ?>',
-                        url: 'edit_case.php?id=<?php echo $c['id']; ?>',
-                        color: '<?php echo ($c['status'] === 'Completed') ? '#22c55e' : (($c['status'] === 'Issue') ? '#ef4444' : '#2563eb'); ?>',
-                    },
-                    <?php endforeach; ?>
-                ],
-                eventClick: function(info) {
-                    info.jsEvent.preventDefault();
-                    ?><!DOCTYPE html>
                     <html lang="<?php echo get_current_language(); ?>">
                     <head>
                         <meta charset="UTF-8">
