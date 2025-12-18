@@ -98,7 +98,57 @@ try {
                                     <div id="calendar"></div>
                                 </div>
                                 <div class="mt-8">
-                                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-blue-600"></i> Cases List</h2>
+                                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5 text-orange-600"></i> Overdue Cases</h2>
+                                    <div class="overflow-x-auto rounded-xl shadow">
+                                        <table class="min-w-full bg-white text-sm">
+                                            <thead>
+                                                <tr class="bg-orange-50 text-orange-900">
+                                                    <th class="px-4 py-2 text-left">Plate</th>
+                                                    <th class="px-4 py-2 text-left">Customer</th>
+                                                    <th class="px-4 py-2 text-left">Due Date</th>
+                                                    <th class="px-4 py-2 text-left">Status</th>
+                                                    <th class="px-4 py-2 text-left">Phone</th>
+                                                    <th class="px-4 py-2 text-left">Amount</th>
+                                                    <th class="px-4 py-2 text-left">Service Date</th>
+                                                    <th class="px-4 py-2 text-left">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php 
+                                                $overdue_cases = array_filter($cases, function($c) {
+                                                    return strtotime($c['due_date']) < time();
+                                                });
+                                                foreach ($overdue_cases as $c): 
+                                                ?>
+                                                <tr class="border-b hover:bg-orange-50 transition">
+                                                    <td class="px-4 py-2 font-mono font-bold text-orange-700"><?php echo htmlspecialchars($c['plate']); ?></td>
+                                                    <td class="px-4 py-2"><?php echo htmlspecialchars($c['name']); ?></td>
+                                                    <td class="px-4 py-2"><?php echo date('M j, Y H:i', strtotime($c['due_date'])); ?></td>
+                                                    <td class="px-4 py-2">
+                                                        <span class="inline-block px-2 py-1 rounded-full text-xs font-bold <?php
+                                                            if ($c['status'] === 'Completed') echo 'bg-emerald-100 text-emerald-700';
+                                                            elseif ($c['status'] === 'Issue') echo 'bg-red-100 text-red-700';
+                                                            else echo 'bg-orange-100 text-orange-700';
+                                                        ?>"><?php echo htmlspecialchars($c['status']); ?></span>
+                                                    </td>
+                                                    <td class="px-4 py-2"><?php echo htmlspecialchars($c['phone']); ?></td>
+                                                    <td class="px-4 py-2 font-mono text-slate-700"><?php echo htmlspecialchars($c['amount']); ?>₾</td>
+                                                    <td class="px-4 py-2"><?php echo $c['service_date'] ? date('M j, Y H:i', strtotime($c['service_date'])) : '-'; ?></td>
+                                                    <td class="px-4 py-2">
+                                                        <a href="edit_case.php?id=<?php echo $c['id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-orange-600 text-white text-xs font-bold hover:bg-orange-700 transition"><i data-lucide="edit-2" class="w-3 h-3"></i> Edit</a>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                                <?php if (empty($overdue_cases)): ?>
+                                                <tr>
+                                                    <td colspan="8" class="px-4 py-8 text-center text-slate-500">No overdue cases</td>
+                                                </tr>
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="mt-8">
                                     <div class="overflow-x-auto rounded-xl shadow">
                                         <table class="min-w-full bg-white text-sm">
                                             <thead>

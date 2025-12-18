@@ -458,83 +458,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                     </div>
                 </section>
-
-                <!-- Overdue Cases -->
-                <section id="overdue-section" class="hidden">
-                    <div class="flex items-center justify-between mb-4 px-1">
-                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <span class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
-                            <?php echo __('dashboard.overdue_cases', 'Overdue Cases'); ?> <span id="overdue-count" class="text-slate-400 font-medium text-sm ml-2 bg-red-50 text-red-600 px-2 py-0.5 rounded-full border border-red-200">(0)</span>
-                        </h2>
-                    </div>
-
-                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-red-200/60 border border-red-200/80 overflow-hidden card-hover">
-                        <div class="overflow-x-auto custom-scrollbar">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-gradient-to-r from-red-600 via-red-600 to-red-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
-                                    <tr>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="car" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="coins" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="activity" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.status', 'Status'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="phone" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.phone', 'Phone'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                <span>Service Date</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="clock" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.due_date', 'Due Date'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="message-circle" class="w-4 h-4"></i>
-                                                <span>Customer Reply</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4 text-right">
-                                            <div class="flex items-center gap-2 justify-end">
-                                                <i data-lucide="settings" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="overdue-table-body" class="divide-y divide-slate-100 bg-white">
-                                    <!-- Rows injected by JS -->
-                                </tbody>
-                            </table>
-                            <div id="overdue-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
-                                <div class="bg-red-50 p-4 rounded-full mb-4 ring-8 ring-red-50/50"><i data-lucide="check-circle" class="w-8 h-8 text-red-300"></i></div>
-                                <h3 class="text-red-900 font-medium">No overdue cases</h3>
-                                <p class="text-red-400 text-sm mt-1 max-w-xs">All cases are on track. Great job!</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
             </div>
 
             <!-- VIEW: VEHICLES -->
@@ -1684,12 +1607,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             const newContainer = document.getElementById('new-cases-grid');
             const activeContainer = document.getElementById('table-body');
-            const overdueContainer = document.getElementById('overdue-table-body');
-            newContainer.innerHTML = ''; activeContainer.innerHTML = ''; overdueContainer.innerHTML = '';
+            newContainer.innerHTML = ''; activeContainer.innerHTML = '';
             
             let newCount = 0;
             let activeCount = 0;
-            let overdueCount = 0;
 
             transfers.forEach(t => {
                 // 1. Text Search Filter
@@ -1707,27 +1628,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     } else {
                         // Match specific reply (Confirmed / Reschedule)
                         if (t.user_response !== replyFilter) return;
-                    }
-                }
-
-                // Check if overdue
-                let isOverdue = false;
-                if (t.due_date && t.status !== 'Completed') {
-                    try {
-                        let dateStr = t.due_date;
-                        if (dateStr.includes(' ')) {
-                            dateStr = dateStr.replace(' ', 'T');
-                        }
-                        if (dateStr.length === 16) {
-                            dateStr += ':00';
-                        }
-                        const dueDate = new Date(dateStr);
-                        const now = new Date();
-                        if (!isNaN(dueDate.getTime()) && dueDate < now) {
-                            isOverdue = true;
-                        }
-                    } catch (e) {
-                        // Ignore invalid dates
                     }
                 }
 
@@ -1763,401 +1663,205 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </div>
                         </div>`;
                 } else {
-                    if (isOverdue) {
-                        overdueCount++;
-                        // Render in overdue table
-                        const statusColors = {
-                            'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                            'Called': 'bg-purple-100 text-purple-800 border-purple-200',
-                            'Parts Ordered': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                            'Parts Arrived': 'bg-teal-100 text-teal-800 border-teal-200',
-                            'Scheduled': 'bg-orange-100 text-orange-800 border-orange-200',
-                            'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                            'Issue': 'bg-red-100 text-red-800 border-red-200'
-                        };
-                        const badgeClass = statusColors[t.status] || 'bg-slate-100 text-slate-600 border-slate-200';
-                        
-                        const hasPhone = t.phone ? 
-                            `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(t.phone)}</span>` : 
-                            `<span class="text-red-400 text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Missing</span>`;
-                        
-                        // USER RESPONSE LOGIC
-                        let replyBadge = `<span class="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="help-circle" class="w-3 h-3"></i> Not Responded</span>`;
-                        
-                        if (t.user_response === 'Confirmed') {
-                            replyBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="check" class="w-3 h-3"></i> Confirmed</span>`;
-                        } else if (t.user_response === 'Reschedule Requested') {
-                            let rescheduleInfo = '';
-                            let quickAcceptBtn = '';
-                            if (t.rescheduleDate) {
-                                const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                                const dateStr = reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                rescheduleInfo = `<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ${dateStr}</div>`;
-                                quickAcceptBtn = `<button onclick="event.stopPropagation(); window.quickAcceptReschedule(${t.id})" class="mt-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition-all active:scale-95 shadow-sm">
-                                    <i data-lucide="check" class="w-3 h-3"></i> Accept
-                                </button>`;
-                            }
-                            replyBadge = `<div class="flex flex-col items-start gap-1">
-                                <span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
-                                    <i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request
-                                </span>
-                                ${rescheduleInfo}
-                                ${quickAcceptBtn}
-                            </div>`;
+                    activeCount++;
+                    
+                    const statusColors = {
+                        'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                        'Called': 'bg-purple-100 text-purple-800 border-purple-200',
+                        'Parts Ordered': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                        'Parts Arrived': 'bg-teal-100 text-teal-800 border-teal-200',
+                        'Scheduled': 'bg-orange-100 text-orange-800 border-orange-200',
+                        'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                        'Issue': 'bg-red-100 text-red-800 border-red-200'
+                    };
+                    const badgeClass = statusColors[t.status] || 'bg-slate-100 text-slate-600 border-slate-200';
+                    
+                    const hasPhone = t.phone ? 
+                        `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(t.phone)}</span>` : 
+                        `<span class="text-red-400 text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Missing</span>`;
+                    
+                    // USER RESPONSE LOGIC
+                    let replyBadge = `<span class="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="help-circle" class="w-3 h-3"></i> Not Responded</span>`;
+                    
+                    if (t.user_response === 'Confirmed') {
+                        replyBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="check" class="w-3 h-3"></i> Confirmed</span>`;
+                    } else if (t.user_response === 'Reschedule Requested') {
+                        let rescheduleInfo = '';
+                        let quickAcceptBtn = '';
+                        if (t.rescheduleDate) {
+                            const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                            const dateStr = reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            rescheduleInfo = `<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ${dateStr}</div>`;
+                            quickAcceptBtn = `<button onclick="event.stopPropagation(); window.quickAcceptReschedule(${t.id})" class="mt-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition-all active:scale-95 shadow-sm">
+                                <i data-lucide="check" class="w-3 h-3"></i> Accept
+                            </button>`;
                         }
-
-                        // Service date formatting
-                        let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
-                        
-                        // Show reschedule date if pending reschedule request
-                        if (t.rescheduleDate && t.user_response === 'Reschedule Requested') {
-                            const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                            const rescheduleDateStr = rescheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                            serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 w-fit">
-                                <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
-                                <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
-                            </div>`;
-                        } else if (t.status === 'Scheduled' && !t.serviceDate) {
-                            serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
-                        } else if (t.serviceDate) {
-                            try {
-                                // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
-                                let dateStr = t.serviceDate;
-                                if (dateStr.includes(' ')) {
-                                    // MySQL DATETIME format: replace space with T
-                                    dateStr = dateStr.replace(' ', 'T');
-                                }
-                                // Ensure it has seconds
-                                if (dateStr.length === 16) {
-                                    dateStr += ':00';
-                                } else if (dateStr.length === 19 && dateStr.includes('T')) {
-                                    // Already in full ISO format
-                                }
-                                
-                                const svcDate = new Date(dateStr);
-                                if (!isNaN(svcDate.getTime())) {
-                                    const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                    serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
-                                        <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
-                                        <span class="font-semibold">${svcDateStr}</span>
-                                    </div>`;
-                                } else {
-                                    serviceDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
-                                }
-                            } catch (e) {
-                                serviceDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
-                            }
-                        }
-
-                        // Due date formatting
-                        let dueDateDisplay = '<span class="text-slate-400 text-xs">Not set</span>';
-                        if (t.due_date) {
-                            try {
-                                let dateStr = t.due_date;
-                                if (dateStr.includes(' ')) {
-                                    dateStr = dateStr.replace(' ', 'T');
-                                }
-                                if (dateStr.length === 16) {
-                                    dateStr += ':00';
-                                }
-                                
-                                const dueDate = new Date(dateStr);
-                                if (!isNaN(dueDate.getTime())) {
-                                    const dueDateStr = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                    dueDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-red-50 px-2 py-1 rounded-lg border border-red-200 w-fit">
-                                        <i data-lucide="alarm-clock" class="w-3.5 h-3.5 text-red-600"></i>
-                                        <span class="font-semibold">${dueDateStr}</span>
-                                    </div>`;
-                                } else {
-                                    dueDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
-                                }
-                            } catch (e) {
-                                dueDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
-                            }
-                        }
-                        
-                        // Review stars display
-                        let reviewDisplay = '';
-                        if (t.reviewStars && t.reviewStars > 0) {
-                            const stars = '⭐'.repeat(parseInt(t.reviewStars));
-                            reviewDisplay = `<div class="flex items-center gap-1 mt-1">
-                                <span class="text-xs">${stars}</span>
-                                ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
-                            </div>`;
-                        }
-
-                        overdueContainer.innerHTML += `
-                            <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-red-50/50 hover:via-red-50/30 hover:to-red-50/50 transition-all group cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
-                                <td class="px-5 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-gradient-to-br from-red-500 to-red-600 p-2.5 rounded-xl shadow-lg shadow-red-500/25 group-hover:shadow-red-500/40 transition-all">
-                                            <i data-lucide="car" class="w-4 h-4 text-white"></i>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(t.plate)}</span>
-                                                <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
-                                            </div>
-                                            <div class="font-semibold text-xs text-slate-700">${escapeHtml(t.name)}</div>
-                                            <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                                <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                                                    <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
-                                                </span>
-                                                ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                                                    <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
-                                                </span>` : ''}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-5 py-4">
-                                    <div class="flex items-center gap-2">
-                                        <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
-                                        <span class="font-bold text-emerald-600 text-base">${escapeHtml(t.amount)}₾</span>
-                                    </div>
-                                </td>
-                                <td class="px-5 py-4">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
-                                        ${t.status}
-                                    </span>
-                                </td>
-                                <td class="px-5 py-4">
-                                    ${hasPhone}
-                                    ${reviewDisplay}
-                                </td>
-                                <td class="px-5 py-4">
-                                    ${serviceDateDisplay}
-                                </td>
-                                <td class="px-5 py-4">
-                                    ${dueDateDisplay}
-                                </td>
-                                <td class="px-5 py-4">
-                                    ${replyBadge}
-                                </td>
-                                <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Invoice">
-                                            <i data-lucide="file-text" class="w-4 h-4"></i>
-                                        </button>
-                                        ${CAN_EDIT ? 
-                                            `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95">
-                                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                            </button>` :
-                                            `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
-                                                <i data-lucide="eye" class="w-4 h-4"></i>
-                                            </button>`
-                                        }
-                                    </div>
-                                </td>
-                            </tr>`;
-                    } else {
-                        activeCount++;
-                        
-                        const statusColors = {
-                            'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                            'Called': 'bg-purple-100 text-purple-800 border-purple-200',
-                            'Parts Ordered': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                            'Parts Arrived': 'bg-teal-100 text-teal-800 border-teal-200',
-                            'Scheduled': 'bg-orange-100 text-orange-800 border-orange-200',
-                            'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                            'Issue': 'bg-red-100 text-red-800 border-red-200'
-                        };
-                        const badgeClass = statusColors[t.status] || 'bg-slate-100 text-slate-600 border-slate-200';
-                        
-                        const hasPhone = t.phone ? 
-                            `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(t.phone)}</span>` : 
-                            `<span class="text-red-400 text-xs flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Missing</span>`;
-                        
-                        // USER RESPONSE LOGIC
-                        let replyBadge = `<span class="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="help-circle" class="w-3 h-3"></i> Not Responded</span>`;
-                        
-                        if (t.user_response === 'Confirmed') {
-                            replyBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="check" class="w-3 h-3"></i> Confirmed</span>`;
-                        } else if (t.user_response === 'Reschedule Requested') {
-                            let rescheduleInfo = '';
-                            let quickAcceptBtn = '';
-                            if (t.rescheduleDate) {
-                                const reqDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                                const dateStr = reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                rescheduleInfo = `<div class="text-[9px] text-orange-600 mt-0.5 flex items-center gap-1"><i data-lucide="calendar" class="w-2.5 h-2.5"></i> ${dateStr}</div>`;
-                                quickAcceptBtn = `<button onclick="event.stopPropagation(); window.quickAcceptReschedule(${t.id})" class="mt-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 transition-all active:scale-95 shadow-sm">
-                                    <i data-lucide="check" class="w-3 h-3"></i> Accept
-                                </button>`;
-                            }
-                            replyBadge = `<div class="flex flex-col items-start gap-1">
-                                <span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
-                                    <i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request
-                                </span>
-                                ${rescheduleInfo}
-                                ${quickAcceptBtn}
-                            </div>`;
-                        }
-
-                        // Service date formatting
-                        let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
-                        
-                        // Show reschedule date if pending reschedule request
-                        if (t.rescheduleDate && t.user_response === 'Reschedule Requested') {
-                            const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
-                            const rescheduleDateStr = rescheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                            serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 w-fit">
-                                <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
-                                <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
-                            </div>`;
-                        } else if (t.status === 'Scheduled' && !t.serviceDate) {
-                            serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
-                        } else if (t.serviceDate) {
-                            try {
-                                // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
-                                let dateStr = t.serviceDate;
-                                if (dateStr.includes(' ')) {
-                                    // MySQL DATETIME format: replace space with T
-                                    dateStr = dateStr.replace(' ', 'T');
-                                }
-                                // Ensure it has seconds
-                                if (dateStr.length === 16) {
-                                    dateStr += ':00';
-                                } else if (dateStr.length === 19 && dateStr.includes('T')) {
-                                    // Already in full ISO format
-                                }
-                                
-                                const svcDate = new Date(dateStr);
-                                if (!isNaN(svcDate.getTime())) {
-                                    const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                    serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
-                                        <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
-                                        <span class="font-semibold">${svcDateStr}</span>
-                                    </div>`;
-                                } else {
-                                    serviceDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
-                                }
-                            } catch (e) {
-                                serviceDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
-                            }
-                        }
-
-                        // Due date formatting
-                        let dueDateDisplay = '<span class="text-slate-400 text-xs">Not set</span>';
-                        if (t.due_date) {
-                            try {
-                                let dateStr = t.due_date;
-                                if (dateStr.includes(' ')) {
-                                    dateStr = dateStr.replace(' ', 'T');
-                                }
-                                if (dateStr.length === 16) {
-                                    dateStr += ':00';
-                                }
-                                
-                                const dueDate = new Date(dateStr);
-                                if (!isNaN(dueDate.getTime())) {
-                                    const dueDateStr = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                    dueDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-red-50 px-2 py-1 rounded-lg border border-red-200 w-fit">
-                                        <i data-lucide="alarm-clock" class="w-3.5 h-3.5 text-red-600"></i>
-                                        <span class="font-semibold">${dueDateStr}</span>
-                                    </div>`;
-                                } else {
-                                    dueDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
-                                }
-                            } catch (e) {
-                                dueDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
-                            }
-                        }
-                        
-                        // Review stars display
-                        let reviewDisplay = '';
-                        if (t.reviewStars && t.reviewStars > 0) {
-                            const stars = '⭐'.repeat(parseInt(t.reviewStars));
-                            reviewDisplay = `<div class="flex items-center gap-1 mt-1">
-                                <span class="text-xs">${stars}</span>
-                                ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
-                            </div>`;
-                        }
-
-                        activeContainer.innerHTML += `
-                            <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
-                                <td class="px-5 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all">
-                                            <i data-lucide="car" class="w-4 h-4 text-white"></i>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(t.plate)}</span>
-                                                <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
-                                            </div>
-                                            <div class="font-semibold text-xs text-slate-700">${escapeHtml(t.name)}</div>
-                                            <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                                <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                                                    <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
-                                                </span>
-                                                ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                                                    <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
-                                                </span>` : ''}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-5 py-4">
-                                    <div class="flex items-center gap-2">
-                                        <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
-                                        <span class="font-bold text-emerald-600 text-base">${escapeHtml(t.amount)}₾</span>
-                                    </div>
-                                </td>
-                                <td class="px-5 py-4">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
-                                        ${t.status}
-                                    </span>
-                                </td>
-                                <td class="px-5 py-4">
-                                    ${hasPhone}
-                                    ${reviewDisplay}
-                                </td>
-                                <td class="px-5 py-4">
-                                    ${serviceDateDisplay}
-                                </td>
-                                <td class="px-5 py-4">
-                                    ${dueDateDisplay}
-                                </td>
-                                <td class="px-5 py-4">
-                                    ${replyBadge}
-                                </td>
-                                <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Invoice">
-                                            <i data-lucide="file-text" class="w-4 h-4"></i>
-                                        </button>
-                                        ${CAN_EDIT ? 
-                                            `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95">
-                                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                            </button>` :
-                                            `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
-                                                <i data-lucide="eye" class="w-4 h-4"></i>
-                                            </button>`
-                                        }
-                                    </div>
-                                </td>
-                            </tr>`;
+                        replyBadge = `<div class="flex flex-col items-start gap-1">
+                            <span class="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
+                                <i data-lucide="clock" class="w-3 h-3"></i> Reschedule Request
+                            </span>
+                            ${rescheduleInfo}
+                            ${quickAcceptBtn}
+                        </div>`;
                     }
+
+                    // Service date formatting
+                    let serviceDateDisplay = '<span class="text-slate-400 text-xs">Not scheduled</span>';
+                    
+                    // Show reschedule date if pending reschedule request
+                    if (t.rescheduleDate && t.user_response === 'Reschedule Requested') {
+                        const rescheduleDate = new Date(t.rescheduleDate.replace(' ', 'T'));
+                        const rescheduleDateStr = rescheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 w-fit">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
+                            <span class="font-semibold">Requested: ${rescheduleDateStr}</span>
+                        </div>`;
+                    } else if (t.status === 'Scheduled' && !t.serviceDate) {
+                        serviceDateDisplay = '<span class="text-amber-600 text-xs font-semibold">⚠️ Date needed</span>';
+                    } else if (t.serviceDate) {
+                        try {
+                            // Handle different date formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM"
+                            let dateStr = t.serviceDate;
+                            if (dateStr.includes(' ')) {
+                                // MySQL DATETIME format: replace space with T
+                                dateStr = dateStr.replace(' ', 'T');
+                            }
+                            // Ensure it has seconds
+                            if (dateStr.length === 16) {
+                                dateStr += ':00';
+                            } else if (dateStr.length === 19 && dateStr.includes('T')) {
+                                // Already in full ISO format
+                            }
+                            
+                            const svcDate = new Date(dateStr);
+                            if (!isNaN(svcDate.getTime())) {
+                                const svcDateStr = svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                serviceDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-fit">
+                                    <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span class="font-semibold">${svcDateStr}</span>
+                                </div>`;
+                            } else {
+                                serviceDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
+                            }
+                        } catch (e) {
+                            serviceDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
+                        }
+                    }
+
+                    // Due date formatting
+                    let dueDateDisplay = '<span class="text-slate-400 text-xs">Not set</span>';
+                    if (t.due_date) {
+                        try {
+                            let dateStr = t.due_date;
+                            if (dateStr.includes(' ')) {
+                                dateStr = dateStr.replace(' ', 'T');
+                            }
+                            if (dateStr.length === 16) {
+                                dateStr += ':00';
+                            }
+                            
+                            const dueDate = new Date(dateStr);
+                            if (!isNaN(dueDate.getTime())) {
+                                const dueDateStr = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                dueDateDisplay = `<div class="flex items-center gap-1 text-xs text-slate-700 bg-red-50 px-2 py-1 rounded-lg border border-red-200 w-fit">
+                                    <i data-lucide="alarm-clock" class="w-3.5 h-3.5 text-red-600"></i>
+                                    <span class="font-semibold">${dueDateStr}</span>
+                                </div>`;
+                            } else {
+                                dueDateDisplay = '<span class="text-red-400 text-xs">Invalid date</span>';
+                            }
+                        } catch (e) {
+                            dueDateDisplay = '<span class="text-red-400 text-xs">Date error</span>';
+                        }
+                    }
+                    
+                    // Review stars display
+                    let reviewDisplay = '';
+                    if (t.reviewStars && t.reviewStars > 0) {
+                        const stars = '⭐'.repeat(parseInt(t.reviewStars));
+                        reviewDisplay = `<div class="flex items-center gap-1 mt-1">
+                            <span class="text-xs">${stars}</span>
+                            ${t.reviewComment ? `<i data-lucide="message-square" class="w-3 h-3 text-amber-500" title="${t.reviewComment}"></i>` : ''}
+                        </div>`;
+                    }
+
+                    activeContainer.innerHTML += `
+                        <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all">
+                                        <i data-lucide="car" class="w-4 h-4 text-white"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(t.plate)}</span>
+                                            <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
+                                        </div>
+                                        <div class="font-semibold text-xs text-slate-700">${escapeHtml(t.name)}</div>
+                                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                            <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                                <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
+                                            </span>
+                                            ${t.franchise ? `<span class="text-[10px] text-orange-600 flex items-center gap-1 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                                                <i data-lucide="percent" class="w-3 h-3"></i> Franchise: ${escapeHtml(t.franchise)}₾
+                                            </span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="coins" class="w-4 h-4 text-emerald-500"></i>
+                                    <span class="font-bold text-emerald-600 text-base">${escapeHtml(t.amount)}₾</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
+                                    ${t.status}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4">
+                                ${hasPhone}
+                                ${reviewDisplay}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${serviceDateDisplay}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${dueDateDisplay}
+                            </td>
+                            <td class="px-5 py-4">
+                                ${replyBadge}
+                            </td>
+                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Invoice">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                                    </button>
+                                    ${CAN_EDIT ? 
+                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95">
+                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                        </button>` :
+                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm active:scale-95" title="View Only">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </button>`
+                                    }
+                                </div>
+                            </td>
+                        </tr>`;
                 }
             });
 
             const newCountEl = document.getElementById('new-count');
             const recordCountEl = document.getElementById('record-count');
-            const overdueCountEl = document.getElementById('overdue-count');
             const newCasesEmptyEl = document.getElementById('new-cases-empty');
             const emptyStateEl = document.getElementById('empty-state');
-            const overdueEmptyStateEl = document.getElementById('overdue-empty-state');
-            const overdueSectionEl = document.getElementById('overdue-section');
             
             if (newCountEl) newCountEl.innerText = `${newCount}`;
             if (recordCountEl) recordCountEl.innerText = `${activeCount} active`;
-            if (overdueCountEl) overdueCountEl.innerText = `(${overdueCount})`;
             if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
             if (emptyStateEl) emptyStateEl.classList.toggle('hidden', activeCount > 0);
-            if (overdueEmptyStateEl) overdueEmptyStateEl.classList.toggle('hidden', overdueCount > 0);
-            if (overdueSectionEl) overdueSectionEl.classList.toggle('hidden', overdueCount === 0);
             lucide.createIcons();
         }
 
