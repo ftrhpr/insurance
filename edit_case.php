@@ -201,12 +201,12 @@ try {
                 </div>
 
                 <!-- Collapsible Section: Repair Management -->
-                <div x-data="{ get open() { return this.$parent.openSections.includes('repair'); } }" class="bg-white rounded-2xl border border-slate-200/80">
-                    <button @click="$parent.toggleSection('repair')" class="w-full flex items-center justify-between p-5">
+                <div class="bg-white rounded-2xl border border-slate-200/80">
+                    <button @click="toggleSection('repair')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.repair_management', 'Repair Management'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('repair')}"></i>
                     </button>
-                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections.includes('repair')" x-cloak x-transition class="px-5 pb-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 border-t border-slate-200 pt-6">
                             <!-- Repair Status -->
                             <div>
@@ -382,9 +382,9 @@ try {
                  <div x-data="{ get open() { return this.$parent.openSections.includes('communication'); } }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="$parent.toggleSection('communication')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.communication', 'Communication'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': $parent.openSections.includes('communication')}"></i>
                     </button>
-                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="$parent.openSections.includes('communication')" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6 space-y-5" x-data="{ activeTab: 'quick' }">
                             <div class="flex items-center justify-center">
                                  <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
@@ -418,12 +418,12 @@ try {
                 </div>
 
                  <!-- Collapsible Section: Customer Feedback -->
-                <div x-data="{ editingReview: false, get open() { return this.$parent.openSections.includes('feedback'); } }" class="bg-white rounded-2xl border border-slate-200/80">
+                <div x-data="{ editingReview: false }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="$parent.toggleSection('feedback')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.customer_feedback', 'Customer Feedback'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': $parent.openSections.includes('feedback')}"></i>
                     </button>
-                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="$parent.openSections.includes('feedback')" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6">
                              <div class="flex justify-end mb-4 -mt-2">
                                 <button @click="editingReview = !editingReview" id="btn-edit-review" class="text-sm font-semibold text-blue-600 hover:underline">
