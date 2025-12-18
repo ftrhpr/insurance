@@ -300,9 +300,6 @@ function initialize_default_translations() {
         'case.local_market' => 'Local Market',
         'case.order' => 'Order',
         'case.create_request' => 'Create Parts Request',
-
-        // Calendar
-        'calendar.title' => 'Calendar View',
         'case.danger_zone' => 'Danger Zone',
         'case.permanent_action' => 'This action is permanent and cannot be undone.',
         'case.delete_case' => 'Delete This Case',
@@ -334,6 +331,9 @@ function initialize_default_translations() {
         'templates.count_system_alerts' => 'Count/number (for system alerts)',
         'templates.tip' => 'Tip:',
         'templates.tip_text' => 'Use these placeholders in your templates. They will be automatically replaced with actual customer data when SMS is sent.',
+
+        // Calendar page
+        'calendar.title' => 'Due Date Calendar',
     ];
 
     // Georgian translations
