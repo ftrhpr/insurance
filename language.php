@@ -300,6 +300,9 @@ function initialize_default_translations() {
         'case.local_market' => 'Local Market',
         'case.order' => 'Order',
         'case.create_request' => 'Create Parts Request',
+
+        // Calendar
+        'calendar.title' => 'Calendar View',
         'case.danger_zone' => 'Danger Zone',
         'case.permanent_action' => 'This action is permanent and cannot be undone.',
         'case.delete_case' => 'Delete This Case',
