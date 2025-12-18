@@ -251,11 +251,19 @@ try {
                             </div>
                             <!-- Parts Tab -->
                             <div x-show="repairTab === 'parts'" x-cloak class="space-y-4">
-                                <div class="flex justify-between items-center">
+                                <div class="flex items-center justify-between">
                                     <h3 class="text-lg font-semibold text-slate-800">Parts Used</h3>
-                                    <button @click="addPart()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
-                                        <i data-lucide="plus" class="w-4 h-4"></i> Add Part
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <input id="markupInput" type="number" min="0" step="0.1" x-model.number="markupPercentage" placeholder="Markup %" class="w-24 px-2 py-1 rounded border border-slate-200 text-sm">
+                                        <button @click="applyMarkup()" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1 rounded text-sm">Apply Markup</button>
+                                        <button id="savePartsCollectionBtn" type="button" @click="savePartsCollection()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
+                                            <i data-lucide="save" class="w-4 h-4"></i> Save as Collection
+                                        </button>
+                                        <button type="button" @click="bulkMarkOrdered()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-2 py-1 rounded text-sm">Mark All Ordered</button>
+                                        <button @click="addPart()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
+                                            <i data-lucide="plus" class="w-4 h-4"></i> Add Part
+                                        </button>
+                                    </div>
                                 </div>
                                 <!-- PDF Upload Section -->
                                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
@@ -281,7 +289,11 @@ try {
                                     <!-- Parts will be added here -->
                                 </div>
                                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                    <div class="text-right font-semibold text-slate-800">Total Parts Cost: <span id="parts-total">0.00₾</span></div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="text-sm text-slate-600">Notes for Collection:</div>
+                                        <input id="collectionNote" class="w-2/3 px-2 py-1 rounded border border-slate-200 text-sm" placeholder="Optional note to include with parts collection" x-model="collectionNote">
+                                    </div>
+                                    <div class="text-right font-semibold text-slate-800 mt-3">Total Parts Cost: <span id="parts-total">0.00₾</span></div>
                                 </div>
                             </div>
                             <!-- Labor Tab -->
@@ -626,6 +638,10 @@ try {
                 editingReview: false,
                 activeTab: 'quick',
                 repairTab: 'parts',
+                lastRemovedPart: null,
+                lastRemovedTimer: null,
+                markupPercentage: 0,
+                collectionNote: '',
                 statuses: [
                     { id: 'New', name: 'New', icon: 'file-plus-2' },
                     { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
@@ -841,7 +857,12 @@ try {
                 },
                 addPart(name = '', quantity = 1, unit_price = 0) {
                     if (!this.currentCase.repair_parts) this.currentCase.repair_parts = [];
-                    this.currentCase.repair_parts.push({ name, quantity, unit_price });
+                    this.currentCase.repair_parts.push({ name, quantity, unit_price, ordered: false, sku: '', supplier: '', notes: '' });
+                    this.updatePartsList();
+                },
+                bulkMarkOrdered() {
+                    if (!this.currentCase.repair_parts) return;
+                    this.currentCase.repair_parts.forEach(p => p.ordered = true);
                     this.updatePartsList();
                 },
                 updatePart(index, field, value) {
@@ -851,10 +872,22 @@ try {
                     }
                 },
                 removePart(index) {
-                    if (this.currentCase.repair_parts) {
-                        this.currentCase.repair_parts.splice(index, 1);
-                        this.updatePartsList();
-                    }
+                    if (!this.currentCase.repair_parts) return;
+                    const removed = this.currentCase.repair_parts.splice(index, 1)[0];
+                    // store for undo
+                    this.lastRemovedPart = { item: removed, index };
+                    if (this.lastRemovedTimer) clearTimeout(this.lastRemovedTimer);
+                    this.lastRemovedTimer = setTimeout(() => { this.lastRemovedPart = null; }, 10000); // 10s to undo
+                    this.updatePartsList();
+                    showToast('Part Removed', `<button onclick="window.caseEditor.undoRemovePart()" class="bg-white px-2 py-1 rounded text-sm border">Undo</button>`, 'info', 10000);
+                },
+                undoRemovePart() {
+                    if (!this.lastRemovedPart) return;
+                    const { item, index } = this.lastRemovedPart;
+                    this.currentCase.repair_parts.splice(index, 0, item);
+                    this.lastRemovedPart = null;
+                    if (this.lastRemovedTimer) { clearTimeout(this.lastRemovedTimer); this.lastRemovedTimer = null; }
+                    this.updatePartsList();
                 },
                 updatePartsList() {
                     const container = document.getElementById('partsList');
@@ -863,24 +896,46 @@ try {
                     
                     container.innerHTML = this.currentCase.repair_parts.map((part, index) => `
                         <div class="part-item bg-white/40 rounded-lg p-3 border border-white/30">
-                            <div class="grid grid-cols-12 gap-x-3 items-end">
+                            <div class="grid grid-cols-12 gap-x-3 items-start">
                                 <div class="col-span-7">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Part Name</label>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-xs font-semibold text-gray-800">Part Name</label>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" onclick="window.caseEditor.reorderUp(${index})" class="text-slate-500 hover:text-slate-700" title="Move up"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
+                                            <button type="button" onclick="window.caseEditor.reorderDown(${index})" class="text-slate-500 hover:text-slate-700" title="Move down"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+                                            <span class="text-xs font-medium rounded-full px-2 py-1" style="background:${part.ordered ? '#dcfce7' : '#f1f5f9'}; color:${part.ordered ? '#15803d' : '#475569'}">${part.ordered ? 'Ordered' : 'Pending'}</span>
+                                        </div>
+                                    </div>
                                     <div class="relative">
                                         <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" placeholder="Enter name..." autocomplete="off" value="${escapeHtml(part.name || '')}" onchange="updatePart(${index}, 'name', this.value)">
                                         <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
                                     </div>
+                                    <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                                        <div>SKU: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.sku || '')}" onchange="updatePart(${index}, 'sku', this.value)"></div>
+                                        <div>Supplier: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.supplier || '')}" onchange="updatePart(${index}, 'supplier', this.value)"></div>
+                                        <button class="ml-2 text-xs text-slate-600" type="button" onclick="(function(i){ const notesEl = document.getElementById('part-notes-'+i); notesEl.classList.toggle('hidden'); })( ${index} )">Notes</button>
+                                    </div>
+                                    <textarea id="part-notes-${index}" class="mt-2 hidden w-full px-2 py-1 text-sm border rounded" placeholder="Optional note..." onchange="updatePart(${index}, 'notes', this.value)">${escapeHtml(part.notes || '')}</textarea>
                                 </div>
+
                                 <div class="col-span-2">
                                     <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
-                                    <input type="number" class="part-quantity block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${part.quantity || 1}" min="1" onchange="updatePart(${index}, 'quantity', this.value)">
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" onclick="window.caseEditor.decrementQty(${index})" class="px-2 py-1 border rounded">-</button>
+                                        <input type="number" class="part-quantity block w-16 rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-2 py-1 text-sm text-center" value="${part.quantity || 1}" min="1" onchange="updatePart(${index}, 'quantity', this.value)">
+                                        <button type="button" onclick="window.caseEditor.incrementQty(${index})" class="px-2 py-1 border rounded">+</button>
+                                    </div>
                                 </div>
+
                                 <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
+                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Unit Price</label>
                                     <input type="number" class="part-price block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${part.unit_price || 0}" step="0.01" min="0" onchange="updatePart(${index}, 'unit_price', this.value)">
+                                    <div class="text-xs text-slate-500 mt-1">Total: ${( (part.quantity || 1) * (part.unit_price || 0) ).toFixed(2)}₾</div>
                                 </div>
-                                <div class="col-span-1 flex items-end">
-                                    <button type="button" onclick="if(confirm('Remove this part?')) removePart(${index})" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+
+                                <div class="col-span-1 flex flex-col items-end gap-2">
+                                    <button type="button" onclick="window.caseEditor.toggleOrdered(${index})" class="px-2 py-1 rounded-md text-sm text-white" style="background:${part.ordered ? '#16a34a' : '#6b7280'}">${part.ordered ? 'Ordered' : 'Mark Ordered'}</button>
+                                    <button type="button" onclick="if(confirm('Remove this part?')) window.caseEditor.removePart(${index})" class="px-2 py-1 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -896,10 +951,10 @@ try {
                     totalEl.textContent = total.toFixed(2) + '₾';
                     lucide.createIcons();
                     this.updateRepairSummary();
-                },
+                }, 
                 addLabor(description = '', hours = 0, hourly_rate = 0) {
                     if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
-                    this.currentCase.repair_labor.push({ description, hours, hourly_rate });
+                    this.currentCase.repair_labor.push({ description, hours, hourly_rate, billable: true, notes: '' });
                     this.updateLaborList();
                 },
                 updateLabor(index, field, value) {
@@ -953,7 +1008,68 @@ try {
                     const total = this.currentCase.repair_labor.reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
                     totalEl.textContent = total.toFixed(2) + '₾';
                     lucide.createIcons();
-                    this.updateRepairSummary();
+                },
+                incrementQty(index) {
+                    if (!this.currentCase.repair_parts || !this.currentCase.repair_parts[index]) return;
+                    this.currentCase.repair_parts[index].quantity = (parseFloat(this.currentCase.repair_parts[index].quantity) || 0) + 1;
+                    this.updatePartsList();
+                },
+                decrementQty(index) {
+                    if (!this.currentCase.repair_parts || !this.currentCase.repair_parts[index]) return;
+                    this.currentCase.repair_parts[index].quantity = Math.max(1, (parseFloat(this.currentCase.repair_parts[index].quantity) || 1) - 1);
+                    this.updatePartsList();
+                },
+                toggleOrdered(index) {
+                    if (!this.currentCase.repair_parts || !this.currentCase.repair_parts[index]) return;
+                    this.currentCase.repair_parts[index].ordered = !this.currentCase.repair_parts[index].ordered;
+                    this.updatePartsList();
+                },
+                reorderUp(index) {
+                    if (index <= 0) return;
+                    const arr = this.currentCase.repair_parts;
+                    [arr[index-1], arr[index]] = [arr[index], arr[index-1]];
+                    this.updatePartsList();
+                },
+                reorderDown(index) {
+                    const arr = this.currentCase.repair_parts;
+                    if (index >= arr.length - 1) return;
+                    [arr[index+1], arr[index]] = [arr[index], arr[index+1]];
+                    this.updatePartsList();
+                },
+                reorderUpLab(index) {
+                    if (index <= 0) return; const arr = this.currentCase.repair_labor; [arr[index-1], arr[index]] = [arr[index], arr[index-1]]; this.updateLaborList();
+                },
+                reorderDownLab(index) {
+                    const arr = this.currentCase.repair_labor; if (index >= arr.length -1) return; [arr[index+1], arr[index]] = [arr[index], arr[index+1]]; this.updateLaborList();
+                },
+                applyMarkup() {
+                    const pct = parseFloat(this.markupPercentage) || 0;
+                    if (pct === 0) return showToast('No markup', 'Please enter a markup percentage greater than 0.', 'info');
+                    this.currentCase.repair_parts = this.currentCase.repair_parts.map(p => ({ ...p, unit_price: parseFloat(((parseFloat(p.unit_price) || 0) * (1 + pct/100)).toFixed(2)) }));
+                    this.updatePartsList();
+                    showToast('Markup Applied', `Applied ${pct}% markup to all parts.`, 'success');
+                },
+                async savePartsCollection() {
+                    if (!this.currentCase.repair_parts || this.currentCase.repair_parts.length === 0) return showToast('No items', 'Add parts before saving a collection.', 'error');
+                    const items = this.currentCase.repair_parts.map(p => ({ name: p.name, quantity: p.quantity, price: p.unit_price, type: 'part' }));
+                    try {
+                        const response = await fetch(`${API_URL}?action=create_parts_collection`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ transfer_id: CASE_ID, parts_list: items, description: this.collectionNote, collection_type: 'local' })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast('Collection Saved', 'Parts collection created successfully.', 'success');
+                        } else {
+                            showToast('Error', result.error || 'Failed to create collection.', 'error');
+                        }
+                    } catch (e) { showToast('Error', 'Failed to save collection.', 'error'); }
+                },
+                bulkMarkOrdered() {
+                    if (!this.currentCase.repair_parts) return;
+                    this.currentCase.repair_parts.forEach(p => p.ordered = true);
+                    this.updatePartsList();
                 },
                 updateRepairSummary() {
                     const partsTotal = this.currentCase.repair_parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
