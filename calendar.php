@@ -29,7 +29,7 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-    // ...existing code...
+    /* ...existing code... */
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
