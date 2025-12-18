@@ -1,4 +1,8 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 require_once 'session_config.php';
 require_once 'config.php';
@@ -47,22 +51,38 @@ if ($nextMonth > 12) {
 
 // Fetch cases with due dates for the current month
 $startDate = sprintf('%04d-%02d-01', $currentYear, $currentMonth);
-$endDate = sprintf('%04d-%02d-%02d', $currentYear, $currentMonth, cal_days_in_month(CAL_GREGORIAN, $currentMonth, $currentYear));
+$daysInMonth = date('t', strtotime("$currentYear-$currentMonth-01"));
+$endDate = sprintf('%04d-%02d-%02d', $currentYear, $currentMonth, $daysInMonth);
 
-$stmt = $pdo->prepare("
-    SELECT id, plate, name, amount, status, due_date
-    FROM transfers
-    WHERE due_date IS NOT NULL
-    AND DATE(due_date) BETWEEN ? AND ?
-    ORDER BY due_date ASC
-");
-$stmt->execute([$startDate, $endDate]);
-$cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$cases = [];
+try {
+    // Check if due_date column exists
+    $stmt = $pdo->prepare("SHOW COLUMNS FROM transfers LIKE 'due_date'");
+    $stmt->execute();
+    $columnExists = $stmt->fetch();
+
+    if ($columnExists) {
+        $stmt = $pdo->prepare("
+            SELECT id, plate, name, amount, status, due_date
+            FROM transfers
+            WHERE due_date IS NOT NULL
+            AND DATE(due_date) BETWEEN ? AND ?
+            ORDER BY due_date ASC
+        ");
+        $stmt->execute([$startDate, $endDate]);
+        $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+} catch (PDOException $e) {
+    // If there's any database error, show empty calendar
+    $cases = [];
+}
 
 // Group cases by date
 $casesByDate = [];
 foreach ($cases as $case) {
+    if (!isset($case['due_date']) || empty($case['due_date'])) continue;
     $date = date('Y-m-d', strtotime($case['due_date']));
+    if ($date === false) continue;
     if (!isset($casesByDate[$date])) {
         $casesByDate[$date] = [];
     }
@@ -70,26 +90,22 @@ foreach ($cases as $case) {
 }
 
 // Get month name
-$monthName = date('F', mktime(0, 0, 0, $currentMonth, 1, $currentYear));
+$monthName = date('F', strtotime("$currentYear-$currentMonth-01"));
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo get_current_language(); ?>">
+<html lang="<?php echo htmlspecialchars(get_current_language() ?: 'en'); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('calendar.title', 'Calendar View'); ?> - OTOMOTORS</title>
+    <title><?php echo htmlspecialchars(__('calendar.title', 'Calendar View')); ?> - OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-        .calendar-day { min-height: 120px; }
+        .calendar-day { min-height: 100px; padding: 8px; }
         .calendar-day.today { background-color: #fef3c7; }
         .calendar-day.has-cases { background-color: #fee2e2; border: 2px solid #ef4444; }
-        .case-item { font-size: 10px; line-height: 1.2; }
+        .case-item { font-size: 10px; line-height: 1.2; margin-bottom: 2px; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -128,7 +144,7 @@ $monthName = date('F', mktime(0, 0, 0, $currentMonth, 1, $currentYear));
 
                 <!-- Calendar Days -->
                 <?php
-                $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $currentMonth, $currentYear);
+                $daysInMonth = date('t', strtotime("$currentYear-$currentMonth-01"));
                 $firstDayOfMonth = date('N', strtotime("$currentYear-$currentMonth-01")); // 1=Monday, 7=Sunday
                 $today = date('Y-m-d');
 
@@ -142,34 +158,23 @@ $monthName = date('F', mktime(0, 0, 0, $currentMonth, 1, $currentYear));
                     $dateStr = sprintf('%04d-%02d-%02d', $currentYear, $currentMonth, $day);
                     $isToday = ($dateStr === $today);
                     $hasCases = isset($casesByDate[$dateStr]);
-                    $dayClasses = 'calendar-day p-3 bg-white rounded-lg border border-slate-200 hover:shadow-md transition-all cursor-pointer';
+                    $dayClasses = 'calendar-day bg-white border border-slate-200 rounded cursor-pointer';
                     if ($isToday) $dayClasses .= ' today';
                     if ($hasCases) $dayClasses .= ' has-cases';
 
                     echo "<div class='{$dayClasses}' onclick='showDayDetails(\"{$dateStr}\")'>";
-                    echo "<div class='font-semibold text-slate-800 mb-2'>{$day}</div>";
+                    echo "<div class='font-semibold text-slate-800'>{$day}</div>";
 
                     if ($hasCases) {
                         $caseCount = count($casesByDate[$dateStr]);
-                        echo "<div class='space-y-1'>";
-                        foreach (array_slice($casesByDate[$dateStr], 0, 3) as $case) {
-                            $statusColors = [
-                                'New' => 'bg-slate-100 text-slate-800',
-                                'Processing' => 'bg-yellow-100 text-yellow-800',
-                                'Called' => 'bg-purple-100 text-purple-800',
-                                'Parts Ordered' => 'bg-indigo-100 text-indigo-800',
-                                'Parts Arrived' => 'bg-teal-100 text-teal-800',
-                                'Scheduled' => 'bg-orange-100 text-orange-800',
-                                'Completed' => 'bg-emerald-100 text-emerald-800',
-                                'Issue' => 'bg-red-100 text-red-800'
-                            ];
-                            $badgeClass = $statusColors[$case['status']] ?? 'bg-slate-100 text-slate-600';
-                            echo "<div class='case-item {$badgeClass} px-1 py-0.5 rounded text-xs font-medium truncate' title='{$case['plate']} - {$case['name']}'>";
-                            echo htmlspecialchars($case['plate']);
-                            echo "</div>";
+                        echo "<div class='mt-1'>";
+                        foreach (array_slice($casesByDate[$dateStr], 0, 2) as $case) {
+                            $status = htmlspecialchars($case['status']);
+                            $plate = htmlspecialchars($case['plate']);
+                            echo "<div class='case-item bg-red-100 text-red-800 px-1 py-0.5 rounded text-xs truncate' title='{$plate}'>{$plate}</div>";
                         }
-                        if ($caseCount > 3) {
-                            echo "<div class='text-xs text-slate-500'>+{$caseCount - 3} more</div>";
+                        if ($caseCount > 2) {
+                            echo "<div class='text-xs text-slate-500'>+{$caseCount - 2} more</div>";
                         }
                         echo "</div>";
                     }
@@ -191,7 +196,7 @@ $monthName = date('F', mktime(0, 0, 0, $currentMonth, 1, $currentYear));
 
     <script>
         function showDayDetails(dateStr) {
-            const cases = <?php echo json_encode($casesByDate); ?>;
+            const cases = <?php echo json_encode($casesByDate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
             const dateCases = cases[dateStr] || [];
 
             const date = new Date(dateStr + 'T00:00:00');
