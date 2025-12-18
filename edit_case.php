@@ -257,36 +257,11 @@ try {
                                         <i data-lucide="plus" class="w-4 h-4"></i> Add Part
                                     </button>
                                 </div>
-                                <div class="overflow-x-auto rounded-lg border border-slate-200">
-                                    <table class="min-w-full bg-white">
-                                        <thead class="bg-slate-50">
-                                            <tr>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Part Name</th>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Quantity</th>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Unit Price</th>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Total</th>
-                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="parts-table-body">
-                                            <?php foreach (($case['repair_parts'] ?? []) as $index => $part): ?>
-                                            <tr class="border-t border-slate-200">
-                                                <td class="px-4 py-2"><input type="text" value="<?php echo htmlspecialchars($part['name'] ?? ''); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'name', this.value)"></td>
-                                                <td class="px-4 py-2"><input type="number" value="<?php echo htmlspecialchars($part['quantity'] ?? 1); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'quantity', this.value)"></td>
-                                                <td class="px-4 py-2"><input type="number" step="0.01" value="<?php echo htmlspecialchars($part['unit_price'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'unit_price', this.value)">₾</td>
-                                                <td class="px-4 py-2 font-semibold text-slate-700"><?php echo number_format(($part['quantity'] ?? 1) * ($part['unit_price'] ?? 0), 2); ?>₾</td>
-                                                <td class="px-4 py-2"><button onclick="removePart(<?php echo $index; ?>)" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                        <tfoot class="bg-slate-50">
-                                            <tr>
-                                                <td colspan="3" class="px-4 py-2 text-right font-semibold text-slate-700">Total Parts Cost:</td>
-                                                <td class="px-4 py-2 font-bold text-slate-800" id="parts-total">0.00₾</td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                                <div id="partsList" class="space-y-3">
+                                    <!-- Parts will be added here -->
+                                </div>
+                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                    <div class="text-right font-semibold text-slate-800">Total Parts Cost: <span id="parts-total">0.00₾</span></div>
                                 </div>
                             </div>
                             <!-- Labor Tab -->
@@ -589,6 +564,21 @@ try {
             smsWorkflowBindings = <?php echo json_encode($smsWorkflowBindings, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
         } catch(e) { console.error('Error parsing sms workflow bindings'); }
 
+        let partSuggestions = [];
+        let laborSuggestions = [];
+
+        async function loadData(url, target) {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (target === 'partSuggestions') partSuggestions = data;
+                else if (target === 'laborSuggestions') laborSuggestions = data;
+                console.log(`${target} loaded:`, data.length, 'items');
+            } catch (error) {
+                console.error(`Failed to load ${target}:`, error);
+            }
+        }
+
         function caseEditor() {
             return {
                 currentCase: { ...initialCaseData },
@@ -615,6 +605,10 @@ try {
                     window.caseEditor = this;
                     this.$nextTick(() => initializeIcons());
                     document.getElementById('sms-template-selector')?.addEventListener('change', this.updateSmsPreview.bind(this));
+
+                    // Load suggestions
+                    loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions');
+                    loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions');
 
                     // Auto-fill phone if plate exists in Vehicle DB
                     const plateEl = document.getElementById('input-plate');
