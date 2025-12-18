@@ -162,33 +162,30 @@ foreach ($cases as $case) {
                     if ($isToday) $dayClass .= ' today';
                     if ($hasCases) $dayClass .= ' has-cases';
 
-                    echo "<div class='{$dayClass}'>";
+                    echo "<div class='{$dayClass}' onclick=\"showDayDetails('{$dateStr}')\">";
                     echo "<div class='font-semibold text-slate-800 mb-1'>{$day}</div>";
 
                     if ($hasCases) {
-                        echo "<div class='text-xs text-red-600 font-medium mb-1'>Has cases</div>";
+                        $dateCases = $casesByDate[$dateStr];
+                        $caseCount = count($dateCases);
+                        echo "<div class='text-xs text-red-600 font-medium mb-1'>{$caseCount} case" . ($caseCount > 1 ? 's' : '') . "</div>";
 
-                        // Try to access case data with maximum safety
-                        try {
-                            $dateCases = $casesByDate[$dateStr];
-                            if (is_array($dateCases) && !empty($dateCases)) {
-                                $caseCount = count($dateCases);
-                                echo "<div class='text-xs text-blue-600'>Count: {$caseCount}</div>";
-
-                                // Try to access first case
-                                $firstCase = reset($dateCases); // Use reset() instead of [0]
-                                if ($firstCase !== false && is_array($firstCase)) {
-                                    $plate = isset($firstCase['plate']) ? strval($firstCase['plate']) : '';
-                                    $name = isset($firstCase['name']) ? strval($firstCase['name']) : '';
-                                    echo "<div class='case-item bg-red-50 text-red-800 rounded px-1 py-0.5 text-xs'>{$plate} - {$name}</div>";
-                                } else {
-                                    echo "<div class='text-xs text-gray-500'>Case data invalid</div>";
+                        // Show up to 2 cases
+                        $casesToShow = array_slice($dateCases, 0, 2);
+                        foreach ($casesToShow as $case) {
+                            if (is_array($case)) {
+                                $plate = isset($case['plate']) ? strval($case['plate']) : '';
+                                $name = isset($case['name']) ? strval($case['name']) : '';
+                                // Limit name length safely
+                                if (strlen($name) > 15) {
+                                    $name = substr($name, 0, 12) . '...';
                                 }
-                            } else {
-                                echo "<div class='text-xs text-gray-500'>No case array</div>";
+                                echo "<div class='case-item bg-red-50 text-red-800 rounded px-1 py-0.5 text-xs'>{$plate} - {$name}</div>";
                             }
-                        } catch (Exception $e) {
-                            echo "<div class='text-xs text-red-500'>Error: " . htmlspecialchars($e->getMessage()) . "</div>";
+                        }
+
+                        if ($caseCount > 2) {
+                            echo "<div class='text-xs text-slate-500'>+{$caseCount - 2} more</div>";
                         }
                     }
 
@@ -204,9 +201,90 @@ foreach ($cases as $case) {
                 ?>
             </div>
         </div>
+
+        <!-- Day Details Modal -->
+        <div id="day-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                    <div class="p-6 border-b border-slate-200">
+                        <div class="flex items-center justify-between">
+                            <h3 id="modal-date-title" class="text-xl font-bold text-slate-800">Cases Due</h3>
+                            <button onclick="closeDayModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="modal-cases-content" class="p-6">
+                        <!-- Cases will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
+        function showDayDetails(dateStr) {
+            // Safely encode the cases data
+            const casesData = <?php
+                $jsonData = json_encode($casesByDate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+                if ($jsonData === false) {
+                    echo '{}'; // Fallback to empty object if encoding fails
+                } else {
+                    echo $jsonData;
+                }
+            ?>;
+            const dateCases = casesData[dateStr] || [];
+
+            const date = new Date(dateStr + 'T00:00:00');
+            const formattedDate = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            document.getElementById('modal-date-title').textContent = `Cases Due - ${formattedDate}`;
+
+            let content = '';
+            if (dateCases.length === 0) {
+                content = '<p class="text-slate-500">No cases due on this date.</p>';
+            } else {
+                content = '<div class="space-y-4">';
+                dateCases.forEach(caseItem => {
+                    if (caseItem && typeof caseItem === 'object') {
+                        const plate = (caseItem.plate || '').toString().replace(/[<>&"']/g, '');
+                        const name = (caseItem.name || '').toString().replace(/[<>&"']/g, '');
+                        const amount = caseItem.amount || '';
+                        const status = caseItem.status || '';
+                        const dueDate = caseItem.due_date || '';
+                        const id = caseItem.id || '';
+
+                        content += `
+                            <div class="border border-slate-200 rounded-lg p-4">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div>
+                                        <h4 class="font-semibold text-slate-800">${plate} - ${name}</h4>
+                                        <p class="text-sm text-slate-600">Amount: ${amount}</p>
+                                        <p class="text-sm text-slate-600">Status: ${status}</p>
+                                    </div>
+                                    ${id ? `<a href="edit_case.php?id=${id}" class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors">View Details</a>` : ''}
+                                </div>
+                                ${dueDate ? `<div class="text-xs text-slate-400">Due: ${new Date(dueDate).toLocaleDateString('en-US')} ${new Date(dueDate).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</div>` : ''}
+                            </div>
+                        `;
+                    }
+                });
+                content += '</div>';
+            }
+
+            document.getElementById('modal-cases-content').innerHTML = content;
+            document.getElementById('day-modal').classList.remove('hidden');
+        }
+
+        function closeDayModal() {
+            document.getElementById('day-modal').classList.add('hidden');
+        }
+
         // Initialize icons
         if (window.lucide) {
             lucide.createIcons();
