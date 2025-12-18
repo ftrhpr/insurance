@@ -168,14 +168,6 @@ foreach ($cases as $case) {
                     if ($hasCases) {
                         $caseCount = count($casesByDate[$dateStr]);
                         echo "<div class='text-xs text-red-600 font-medium mb-1'>{$caseCount} case" . ($caseCount > 1 ? 's' : '') . "</div>";
-                        foreach (array_slice($casesByDate[$dateStr], 0, 2) as $case) {
-                            $plate = htmlspecialchars($case['plate'] ?? '');
-                            $name = htmlspecialchars(substr($case['name'] ?? '', 0, 15));
-                            echo "<div class='case-item bg-red-50 text-red-800 rounded px-1 py-0.5 text-xs'>{$plate} - {$name}</div>";
-                        }
-                        if ($caseCount > 2) {
-                            echo "<div class='text-xs text-slate-500'>+{$caseCount - 2} more</div>";
-                        }
                     }
 
                     echo "</div>";
