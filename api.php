@@ -327,18 +327,23 @@ try {
         }
 
         // Ensure transfers table has repair management columns (defensive migration)
-        try {
-            $pdo->exec("ALTER TABLE transfers
-                       ADD COLUMN IF NOT EXISTS repair_status VARCHAR(50) DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_start_date DATETIME DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_end_date DATETIME DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS assigned_mechanic VARCHAR(100) DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_notes TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_parts TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_labor TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_activity_log TEXT DEFAULT NULL");
-        } catch (Exception $alterError) {
-            // Continue anyway - columns might already exist or ALTER might fail on some DB versions
+        $repairColumns = [
+            'repair_status' => "VARCHAR(50) DEFAULT NULL",
+            'repair_start_date' => "DATETIME DEFAULT NULL",
+            'repair_end_date' => "DATETIME DEFAULT NULL",
+            'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
+            'repair_notes' => "TEXT DEFAULT NULL",
+            'repair_parts' => "TEXT DEFAULT NULL",
+            'repair_labor' => "TEXT DEFAULT NULL",
+            'repair_activity_log' => "TEXT DEFAULT NULL"
+        ];
+
+        foreach ($repairColumns as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+            } catch (Exception $e) {
+                // Column might already exist, continue
+            }
         }
 
         try {
@@ -478,18 +483,23 @@ try {
 
     if ($action === 'get_transfers' && $method === 'GET') {
         // Ensure transfers table has repair management columns (defensive migration)
-        try {
-            $pdo->exec("ALTER TABLE transfers
-                       ADD COLUMN IF NOT EXISTS repair_status VARCHAR(50) DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_start_date DATETIME DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_end_date DATETIME DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS assigned_mechanic VARCHAR(100) DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_notes TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_parts TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_labor TEXT DEFAULT NULL,
-                       ADD COLUMN IF NOT EXISTS repair_activity_log TEXT DEFAULT NULL");
-        } catch (Exception $alterError) {
-            // Continue anyway - columns might already exist or ALTER might fail on some DB versions
+        $repairColumns = [
+            'repair_status' => "VARCHAR(50) DEFAULT NULL",
+            'repair_start_date' => "DATETIME DEFAULT NULL",
+            'repair_end_date' => "DATETIME DEFAULT NULL",
+            'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
+            'repair_notes' => "TEXT DEFAULT NULL",
+            'repair_parts' => "TEXT DEFAULT NULL",
+            'repair_labor' => "TEXT DEFAULT NULL",
+            'repair_activity_log' => "TEXT DEFAULT NULL"
+        ];
+
+        foreach ($repairColumns as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+            } catch (Exception $e) {
+                // Column might already exist, continue
+            }
         }
 
         // Includes review columns and reschedule data, now includes completed transfers for processing queue

@@ -15,15 +15,24 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // Ensure transfers table has repair management columns (defensive migration)
-    $pdo->exec("ALTER TABLE transfers
-               ADD COLUMN IF NOT EXISTS repair_status VARCHAR(50) DEFAULT NULL,
-               ADD COLUMN IF NOT EXISTS repair_start_date DATETIME DEFAULT NULL,
-               ADD COLUMN IF NOT EXISTS repair_end_date DATETIME DEFAULT NULL,
-               ADD COLUMN IF NOT EXISTS assigned_mechanic VARCHAR(100) DEFAULT NULL,
-               ADD COLUMN IF NOT EXISTS repair_notes TEXT DEFAULT NULL,
-               ADD COLUMN IF NOT EXISTS repair_parts TEXT DEFAULT NULL,
-               ADD COLUMN IF NOT EXISTS repair_labor TEXT DEFAULT NULL,
-               ADD COLUMN IF NOT EXISTS repair_activity_log TEXT DEFAULT NULL");
+    $repairColumns = [
+        'repair_status' => "VARCHAR(50) DEFAULT NULL",
+        'repair_start_date' => "DATETIME DEFAULT NULL",
+        'repair_end_date' => "DATETIME DEFAULT NULL",
+        'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
+        'repair_notes' => "TEXT DEFAULT NULL",
+        'repair_parts' => "TEXT DEFAULT NULL",
+        'repair_labor' => "TEXT DEFAULT NULL",
+        'repair_activity_log' => "TEXT DEFAULT NULL"
+    ];
+
+    foreach ($repairColumns as $col => $def) {
+        try {
+            $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+        } catch (Exception $e) {
+            // Column might already exist, continue
+        }
+    }
 
     $stmt = $pdo->query("SELECT id, plate, name, due_date, status, service_date, amount, phone, franchise, user_response, reschedule_date, reschedule_comment, created_at, repair_status, assigned_mechanic, repair_start_date, repair_end_date, repair_notes, repair_parts, repair_labor, repair_activity_log FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
