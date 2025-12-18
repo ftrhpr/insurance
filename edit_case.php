@@ -257,31 +257,36 @@ try {
                                         <i data-lucide="plus" class="w-4 h-4"></i> Add Part
                                     </button>
                                 </div>
-                                <!-- PDF Upload Section -->
-                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                    <div class="flex items-center gap-2 mb-3">
-                                        <h4 class="text-sm font-semibold text-slate-700">Import from Repair Invoice</h4>
-                                        <div class="group relative">
-                                            <i data-lucide="info" class="w-4 h-4 text-slate-400 cursor-help"></i>
-                                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
-                                                Upload a PDF invoice to automatically extract parts and labor
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <input type="file" id="repairPdfInput" accept=".pdf" class="text-sm">
-                                        <button type="button" id="parseRepairPdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded-lg text-sm flex items-center gap-1 disabled:opacity-50" disabled>
-                                            <i data-lucide="file-text" class="w-4 h-4"></i> Parse PDF
-                                        </button>
-                                    </div>
-                                    <div id="repairPdfStatus" class="text-sm text-slate-600 mt-2"></div>
-                                    <div id="repairParsedPreview" class="mt-3"></div>
-                                </div>
-                                <div id="partsList" class="space-y-3">
-                                    <!-- Parts will be added here -->
-                                </div>
-                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                    <div class="text-right font-semibold text-slate-800">Total Parts Cost: <span id="parts-total">0.00₾</span></div>
+                                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                                    <table class="min-w-full bg-white">
+                                        <thead class="bg-slate-50">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Part Name</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Quantity</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Unit Price</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Total</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="parts-table-body">
+                                            <?php foreach (($case['repair_parts'] ?? []) as $index => $part): ?>
+                                            <tr class="border-t border-slate-200">
+                                                <td class="px-4 py-2"><input type="text" value="<?php echo htmlspecialchars($part['name'] ?? ''); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'name', this.value)"></td>
+                                                <td class="px-4 py-2"><input type="number" value="<?php echo htmlspecialchars($part['quantity'] ?? 1); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'quantity', this.value)"></td>
+                                                <td class="px-4 py-2"><input type="number" step="0.01" value="<?php echo htmlspecialchars($part['unit_price'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'unit_price', this.value)">₾</td>
+                                                <td class="px-4 py-2 font-semibold text-slate-700"><?php echo number_format(($part['quantity'] ?? 1) * ($part['unit_price'] ?? 0), 2); ?>₾</td>
+                                                <td class="px-4 py-2"><button onclick="removePart(<?php echo $index; ?>)" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                        <tfoot class="bg-slate-50">
+                                            <tr>
+                                                <td colspan="3" class="px-4 py-2 text-right font-semibold text-slate-700">Total Parts Cost:</td>
+                                                <td class="px-4 py-2 font-bold text-slate-800" id="parts-total">0.00₾</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
                                 </div>
                             </div>
                             <!-- Labor Tab -->
@@ -292,11 +297,36 @@ try {
                                         <i data-lucide="plus" class="w-4 h-4"></i> Add Labor
                                     </button>
                                 </div>
-                                <div id="laborList" class="space-y-3">
-                                    <!-- Labor will be added here -->
-                                </div>
-                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                    <div class="text-right font-semibold text-slate-800">Total Labor Cost: <span id="labor-total">0.00₾</span></div>
+                                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                                    <table class="min-w-full bg-white">
+                                        <thead class="bg-slate-50">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Description</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Hours</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Hourly Rate</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Total</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="labor-table-body">
+                                            <?php foreach (($case['repair_labor'] ?? []) as $index => $labor): ?>
+                                            <tr class="border-t border-slate-200">
+                                                <td class="px-4 py-2"><input type="text" value="<?php echo htmlspecialchars($labor['description'] ?? ''); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'description', this.value)"></td>
+                                                <td class="px-4 py-2"><input type="number" step="0.5" value="<?php echo htmlspecialchars($labor['hours'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'hours', this.value)"></td>
+                                                <td class="px-4 py-2"><input type="number" step="0.01" value="<?php echo htmlspecialchars($labor['hourly_rate'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'hourly_rate', this.value)">₾</td>
+                                                <td class="px-4 py-2 font-semibold text-slate-700"><?php echo number_format(($labor['hours'] ?? 0) * ($labor['hourly_rate'] ?? 0), 2); ?>₾</td>
+                                                <td class="px-4 py-2"><button onclick="removeLabor(<?php echo $index; ?>)" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                        <tfoot class="bg-slate-50">
+                                            <tr>
+                                                <td colspan="3" class="px-4 py-2 text-right font-semibold text-slate-700">Total Labor Cost:</td>
+                                                <td class="px-4 py-2 font-bold text-slate-800" id="labor-total">0.00₾</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
                                 </div>
                             </div>
                             <!-- Activity History Tab -->
@@ -322,26 +352,6 @@ try {
                                         </div>
                                     </div>
                                     <?php endforeach; ?>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Repair Cost Summary -->
-                        <div class="mt-6 border-t border-slate-200 pt-6">
-                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-                                <h3 class="text-lg font-semibold text-slate-800 mb-3">Repair Cost Summary</h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div class="text-center">
-                                        <div class="text-2xl font-bold text-blue-600" id="summary-parts-total">0.00₾</div>
-                                        <div class="text-sm text-slate-600">Parts Cost</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-2xl font-bold text-green-600" id="summary-labor-total">0.00₾</div>
-                                        <div class="text-sm text-slate-600">Labor Cost</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-3xl font-bold text-slate-800" id="summary-grand-total">0.00₾</div>
-                                        <div class="text-sm text-slate-600">Total Cost</div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -579,45 +589,6 @@ try {
             smsWorkflowBindings = <?php echo json_encode($smsWorkflowBindings, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
         } catch(e) { console.error('Error parsing sms workflow bindings'); }
 
-        let partSuggestions = [];
-        let laborSuggestions = [];
-
-        async function loadData(url, target) {
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                if (target === 'partSuggestions') partSuggestions = data;
-                else if (target === 'laborSuggestions') laborSuggestions = data;
-                console.log(`${target} loaded:`, data.length, 'items');
-            } catch (error) {
-                console.error(`Failed to load ${target}:`, error);
-            }
-        }
-
-        function setupAutocomplete(input, type) {
-            const results = input.nextElementSibling;
-            const suggestions = type === 'part' ? partSuggestions : laborSuggestions;
-            input.addEventListener('input', () => {
-                const val = input.value.toLowerCase();
-                results.innerHTML = '';
-                if (!val) { results.classList.add('hidden'); return; }
-                const filtered = suggestions.filter(s => s.toLowerCase().includes(val));
-                if (filtered.length) {
-                    results.classList.remove('hidden');
-                    filtered.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = 'p-2 hover:bg-gray-100 cursor-pointer text-sm';
-                        div.textContent = item;
-                        div.onclick = () => { input.value = item; results.classList.add('hidden'); };
-                        results.appendChild(div);
-                    });
-                } else {
-                    results.classList.add('hidden');
-                }
-            });
-            document.addEventListener('click', e => { if (!input.parentElement.contains(e.target)) results.classList.add('hidden'); });
-        }
-
         function caseEditor() {
             return {
                 currentCase: { ...initialCaseData },
@@ -644,10 +615,6 @@ try {
                     window.caseEditor = this;
                     this.$nextTick(() => initializeIcons());
                     document.getElementById('sms-template-selector')?.addEventListener('change', this.updateSmsPreview.bind(this));
-
-                    // Load suggestions
-                    loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions');
-                    loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions');
 
                     // Auto-fill phone if plate exists in Vehicle DB
                     const plateEl = document.getElementById('input-plate');
@@ -685,13 +652,9 @@ try {
                     }
 
                     // Initialize repair tables
-                    this.updatePartsList();
-                    this.updateLaborList();
+                    this.updatePartsTable();
+                    this.updateLaborTable();
                     this.updateActivityLog();
-                    this.updateRepairSummary();
-
-                    // Initialize PDF parsing for repair
-                    this.initRepairPdfParsing();
                 },
                 isSectionOpen(section) {
                     return this.openSections.includes(section);
@@ -839,130 +802,77 @@ try {
                     }
                     localStorage.setItem('openSections', JSON.stringify(this.openSections));
                 },
-                addPart(name = '', quantity = 1, unit_price = 0) {
+                addPart() {
                     if (!this.currentCase.repair_parts) this.currentCase.repair_parts = [];
-                    this.currentCase.repair_parts.push({ name, quantity, unit_price });
-                    this.updatePartsList();
+                    this.currentCase.repair_parts.push({ name: '', quantity: 1, unit_price: 0 });
+                    this.updatePartsTable();
                 },
                 updatePart(index, field, value) {
                     if (this.currentCase.repair_parts && this.currentCase.repair_parts[index]) {
                         this.currentCase.repair_parts[index][field] = field === 'quantity' || field === 'unit_price' ? parseFloat(value) || 0 : value;
-                        this.updatePartsList();
+                        this.updatePartsTable();
                     }
                 },
                 removePart(index) {
                     if (this.currentCase.repair_parts) {
                         this.currentCase.repair_parts.splice(index, 1);
-                        this.updatePartsList();
+                        this.updatePartsTable();
                     }
                 },
-                updatePartsList() {
-                    const container = document.getElementById('partsList');
+                updatePartsTable() {
+                    const tbody = document.getElementById('parts-table-body');
                     const totalEl = document.getElementById('parts-total');
-                    if (!container || !totalEl) return;
+                    if (!tbody || !totalEl) return;
                     
-                    container.innerHTML = this.currentCase.repair_parts.map((part, index) => `
-                        <div class="part-item bg-white/40 rounded-lg p-3 border border-white/30">
-                            <div class="grid grid-cols-12 gap-x-3 items-end">
-                                <div class="col-span-7">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Part Name</label>
-                                    <div class="relative">
-                                        <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" placeholder="Enter name..." autocomplete="off" value="${escapeHtml(part.name || '')}" onchange="updatePart(${index}, 'name', this.value)">
-                                        <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
-                                    </div>
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
-                                    <input type="number" class="part-quantity block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${part.quantity || 1}" min="1" onchange="updatePart(${index}, 'quantity', this.value)">
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Price</label>
-                                    <input type="number" class="part-price block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${part.unit_price || 0}" step="0.01" min="0" onchange="updatePart(${index}, 'unit_price', this.value)">
-                                </div>
-                                <div class="col-span-1 flex items-end">
-                                    <button type="button" onclick="if(confirm('Remove this part?')) removePart(${index})" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                </div>
-                            </div>
-                        </div>
+                    tbody.innerHTML = this.currentCase.repair_parts.map((part, index) => `
+                        <tr class="border-t border-slate-200">
+                            <td class="px-4 py-2"><input type="text" value="${escapeHtml(part.name || '')}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(${index}, 'name', this.value)"></td>
+                            <td class="px-4 py-2"><input type="number" value="${part.quantity || 1}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(${index}, 'quantity', this.value)"></td>
+                            <td class="px-4 py-2"><input type="number" step="0.01" value="${part.unit_price || 0}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(${index}, 'unit_price', this.value)">₾</td>
+                            <td class="px-4 py-2 font-semibold text-slate-700">${((part.quantity || 1) * (part.unit_price || 0)).toFixed(2)}₾</td>
+                            <td class="px-4 py-2"><button onclick="removePart(${index})" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                        </tr>
                     `).join('');
-                    
-                    // Setup autocomplete for each part
-                    this.currentCase.repair_parts.forEach((_, index) => {
-                        const input = container.querySelectorAll('.part-name')[index];
-                        if (input) setupAutocomplete(input, 'part');
-                    });
                     
                     const total = this.currentCase.repair_parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
                     totalEl.textContent = total.toFixed(2) + '₾';
                     lucide.createIcons();
-                    this.updateRepairSummary();
                 },
-                addLabor(description = '', hours = 0, hourly_rate = 0) {
+                addLabor() {
                     if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
-                    this.currentCase.repair_labor.push({ description, hours, hourly_rate });
-                    this.updateLaborList();
+                    this.currentCase.repair_labor.push({ description: '', hours: 0, hourly_rate: 0 });
+                    this.updateLaborTable();
                 },
                 updateLabor(index, field, value) {
                     if (this.currentCase.repair_labor && this.currentCase.repair_labor[index]) {
                         this.currentCase.repair_labor[index][field] = field === 'hours' || field === 'hourly_rate' ? parseFloat(value) || 0 : value;
-                        this.updateLaborList();
+                        this.updateLaborTable();
                     }
                 },
                 removeLabor(index) {
                     if (this.currentCase.repair_labor) {
                         this.currentCase.repair_labor.splice(index, 1);
-                        this.updateLaborList();
+                        this.updateLaborTable();
                     }
                 },
-                updateLaborList() {
-                    const container = document.getElementById('laborList');
+                updateLaborTable() {
+                    const tbody = document.getElementById('labor-table-body');
                     const totalEl = document.getElementById('labor-total');
-                    if (!container || !totalEl) return;
+                    if (!tbody || !totalEl) return;
                     
-                    container.innerHTML = this.currentCase.repair_labor.map((labor, index) => `
-                        <div class="labor-item bg-white/40 rounded-lg p-3 border border-white/30">
-                            <div class="grid grid-cols-12 gap-x-3 items-end">
-                                <div class="col-span-7">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Service Name</label>
-                                    <div class="relative">
-                                        <input type="text" class="labor-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" placeholder="Enter name..." autocomplete="off" value="${escapeHtml(labor.description || '')}" onchange="updateLabor(${index}, 'description', this.value)">
-                                        <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
-                                    </div>
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Hours</label>
-                                    <input type="number" class="labor-hours block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${labor.hours || 0}" step="0.5" onchange="updateLabor(${index}, 'hours', this.value)">
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Rate</label>
-                                    <input type="number" class="labor-rate block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${labor.hourly_rate || 0}" step="0.01" min="0" onchange="updateLabor(${index}, 'hourly_rate', this.value)">
-                                </div>
-                                <div class="col-span-1 flex items-end">
-                                    <button type="button" onclick="if(confirm('Remove this labor entry?')) removeLabor(${index})" class="px-2 py-2 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                </div>
-                            </div>
-                        </div>
+                    tbody.innerHTML = this.currentCase.repair_labor.map((labor, index) => `
+                        <tr class="border-t border-slate-200">
+                            <td class="px-4 py-2"><input type="text" value="${escapeHtml(labor.description || '')}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(${index}, 'description', this.value)"></td>
+                            <td class="px-4 py-2"><input type="number" step="0.5" value="${labor.hours || 0}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(${index}, 'hours', this.value)"></td>
+                            <td class="px-4 py-2"><input type="number" step="0.01" value="${labor.hourly_rate || 0}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(${index}, 'hourly_rate', this.value)">₾</td>
+                            <td class="px-4 py-2 font-semibold text-slate-700">${((labor.hours || 0) * (labor.hourly_rate || 0)).toFixed(2)}₾</td>
+                            <td class="px-4 py-2"><button onclick="removeLabor(${index})" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                        </tr>
                     `).join('');
-                    
-                    // Setup autocomplete for each labor
-                    this.currentCase.repair_labor.forEach((_, index) => {
-                        const input = container.querySelectorAll('.labor-name')[index];
-                        if (input) setupAutocomplete(input, 'labor');
-                    });
                     
                     const total = this.currentCase.repair_labor.reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
                     totalEl.textContent = total.toFixed(2) + '₾';
                     lucide.createIcons();
-                    this.updateRepairSummary();
-                },
-                updateRepairSummary() {
-                    const partsTotal = this.currentCase.repair_parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = this.currentCase.repair_labor.reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
-                    const grandTotal = partsTotal + laborTotal;
-                    
-                    document.getElementById('summary-parts-total').textContent = partsTotal.toFixed(2) + '₾';
-                    document.getElementById('summary-labor-total').textContent = laborTotal.toFixed(2) + '₾';
-                    document.getElementById('summary-grand-total').textContent = grandTotal.toFixed(2) + '₾';
                 },
                 addActivity() {
                     const action = prompt('Enter activity action:');
@@ -994,103 +904,6 @@ try {
                             </div>
                         </div>
                     `).join('');
-                },
-                initRepairPdfParsing() {
-                    const pdfInput = document.getElementById('repairPdfInput');
-                    const parseBtn = document.getElementById('parseRepairPdfBtn');
-                    const statusDiv = document.getElementById('repairPdfStatus');
-                    const previewDiv = document.getElementById('repairParsedPreview');
-
-                    if (!pdfInput || !parseBtn) return;
-
-                    pdfInput.addEventListener('change', () => {
-                        parseBtn.disabled = !pdfInput.files.length;
-                        statusDiv.textContent = '';
-                        previewDiv.innerHTML = '';
-                    });
-
-                    parseBtn.addEventListener('click', async () => {
-                        if (!pdfInput.files.length) return;
-
-                        statusDiv.textContent = 'Parsing PDF, please wait...';
-                        parseBtn.disabled = true;
-                        const formData = new FormData();
-                        formData.append('pdf', pdfInput.files[0]);
-
-                        try {
-                            const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', body: formData });
-                            const data = await response.json();
-
-                            if (data.success && Array.isArray(data.items) && data.items.length > 0) {
-                                statusDiv.textContent = `Successfully parsed ${data.items.length} items. Select which items to add.`;
-                                
-                                let checklistHtml = '';
-                                data.items.forEach((item, index) => {
-                                    const itemData = JSON.stringify(item);
-                                    checklistHtml += `
-                                        <div class="flex items-center p-1 rounded-md hover:bg-teal-100">
-                                            <input id="repair-item-${index}" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 repair-parsed-item-checkbox" data-item='${itemData}' checked>
-                                            <label for="repair-item-${index}" class="ml-3 text-sm text-gray-700">
-                                                <span class="font-medium text-indigo-700">[${item.type}]</span> ${item.name} 
-                                                <span class="text-gray-500">(Qty: ${item.quantity}, Price: ₾${item.price})</span>
-                                            </label>
-                                        </div>`;
-                                });
-
-                                previewDiv.innerHTML = `
-                                    <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
-                                        <h4 class="font-bold mb-2 text-gray-800">Parsed Items</h4>
-                                        <div class="flex items-center border-b pb-2 mb-2">
-                                            <input id="selectAllRepairParsed" type="checkbox" class="h-4 w-4 rounded border-gray-300" checked>
-                                            <label for="selectAllRepairParsed" class="ml-3 text-sm font-medium text-gray-800">Select All</label>
-                                        </div>
-                                        <div id="repairParsedItemsChecklist" class="space-y-1 max-h-40 overflow-y-auto">
-                                            ${checklistHtml}
-                                        </div>
-                                        <button type="button" id="addRepairParsedItemsBtn" class="mt-3 btn-gradient text-white px-3 py-1 rounded-md text-sm">Add Selected Items</button>
-                                    </div>
-                                `;
-
-                                // Add event listener for 'Select All'
-                                document.getElementById('selectAllRepairParsed').addEventListener('change', (e) => {
-                                    document.querySelectorAll('.repair-parsed-item-checkbox').forEach(checkbox => {
-                                        checkbox.checked = e.target.checked;
-                                    });
-                                });
-                                
-                                // Add event listener for 'Add Selected Items'
-                                document.getElementById('addRepairParsedItemsBtn').onclick = () => {
-                                    const selectedItems = [];
-                                    document.querySelectorAll('.repair-parsed-item-checkbox:checked').forEach(checkbox => {
-                                        selectedItems.push(JSON.parse(checkbox.dataset.item));
-                                    });
-
-                                    if (selectedItems.length === 0) {
-                                        showToast('<?php echo addslashes(__('info.no_items_selected','No items selected.')); ?>', '', 'info');
-                                        return;
-                                    }
-
-                                    selectedItems.forEach(item => {
-                                        if (item.type === 'labor') {
-                                            this.addLabor(item.name, item.quantity, item.price);
-                                        } else {
-                                            this.addPart(item.name, item.quantity, item.price);
-                                        }
-                                    });
-                                    previewDiv.innerHTML = '';
-                                    statusDiv.textContent = `${selectedItems.length} items have been added to the lists below.`;
-                                };
-
-                            } else {
-                                statusDiv.textContent = data.error || 'Could not parse any items from the PDF.';
-                            }
-                        } catch (error) {
-                            console.error('PDF parsing error:', error);
-                            statusDiv.textContent = 'An error occurred while parsing the PDF.';
-                        } finally {
-                            parseBtn.disabled = false;
-                        }
-                    });
                 },
                 async requestParts() {
                     if (!this.partsRequest.description.trim()) {

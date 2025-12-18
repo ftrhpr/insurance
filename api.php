@@ -326,26 +326,6 @@ try {
             return;
         }
 
-        // Ensure transfers table has repair management columns (defensive migration)
-        $repairColumns = [
-            'repair_status' => "VARCHAR(50) DEFAULT NULL",
-            'repair_start_date' => "DATETIME DEFAULT NULL",
-            'repair_end_date' => "DATETIME DEFAULT NULL",
-            'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
-            'repair_notes' => "TEXT DEFAULT NULL",
-            'repair_parts' => "TEXT DEFAULT NULL",
-            'repair_labor' => "TEXT DEFAULT NULL",
-            'repair_activity_log' => "TEXT DEFAULT NULL"
-        ];
-
-        foreach ($repairColumns as $col => $def) {
-            try {
-                $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
-            } catch (Exception $e) {
-                // Column might already exist, continue
-            }
-        }
-
         try {
             $field_map = [
                 'name' => 'name',
@@ -482,26 +462,6 @@ try {
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
-        // Ensure transfers table has repair management columns (defensive migration)
-        $repairColumns = [
-            'repair_status' => "VARCHAR(50) DEFAULT NULL",
-            'repair_start_date' => "DATETIME DEFAULT NULL",
-            'repair_end_date' => "DATETIME DEFAULT NULL",
-            'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
-            'repair_notes' => "TEXT DEFAULT NULL",
-            'repair_parts' => "TEXT DEFAULT NULL",
-            'repair_labor' => "TEXT DEFAULT NULL",
-            'repair_activity_log' => "TEXT DEFAULT NULL"
-        ];
-
-        foreach ($repairColumns as $col => $def) {
-            try {
-                $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
-            } catch (Exception $e) {
-                // Column might already exist, continue
-            }
-        }
-
         // Includes review columns and reschedule data, now includes completed transfers for processing queue
         $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
         $stmt->execute();
