@@ -51,6 +51,46 @@ if ($nextMonth > 12) {
 
 // Get month name
 $monthName = date('F', strtotime("$currentYear-$currentMonth-01"));
+
+// Fetch cases with due dates for the current month
+$startDate = sprintf('%04d-%02d-01', $currentYear, $currentMonth);
+$daysInMonth = date('t', strtotime("$currentYear-$currentMonth-01"));
+$endDate = sprintf('%04d-%02d-%02d', $currentYear, $currentMonth, $daysInMonth);
+
+$cases = [];
+try {
+    // Check if due_date column exists first
+    $stmt = $pdo->prepare("SHOW COLUMNS FROM transfers LIKE 'due_date'");
+    $stmt->execute();
+    $columnExists = $stmt->fetch();
+
+    if ($columnExists) {
+        $stmt = $pdo->prepare("
+            SELECT id, plate, name, amount, status, due_date
+            FROM transfers
+            WHERE due_date IS NOT NULL
+            AND DATE(due_date) BETWEEN ? AND ?
+            ORDER BY due_date ASC
+        ");
+        $stmt->execute([$startDate, $endDate]);
+        $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+} catch (PDOException $e) {
+    // If there's any database error, show empty calendar
+    $cases = [];
+}
+
+// Group cases by date
+$casesByDate = [];
+foreach ($cases as $case) {
+    if (!isset($case['due_date']) || empty($case['due_date'])) continue;
+    $date = date('Y-m-d', strtotime($case['due_date']));
+    if ($date === false) continue;
+    if (!isset($casesByDate[$date])) {
+        $casesByDate[$date] = [];
+    }
+    $casesByDate[$date][] = $case;
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo htmlspecialchars(get_current_language() ?: 'en'); ?>">
@@ -64,6 +104,8 @@ $monthName = date('F', strtotime("$currentYear-$currentMonth-01"));
     <style>
         .calendar-day { min-height: 100px; padding: 8px; }
         .calendar-day.today { background-color: #fef3c7; }
+        .calendar-day.has-cases { background-color: #fee2e2; border: 2px solid #ef4444; }
+        .case-item { font-size: 10px; line-height: 1.2; margin-bottom: 2px; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -113,12 +155,29 @@ $monthName = date('F', strtotime("$currentYear-$currentMonth-01"));
 
                 // Days of the month
                 for ($day = 1; $day <= $daysInMonth; $day++) {
+                    $dateStr = sprintf('%04d-%02d-%02d', $currentYear, $currentMonth, $day);
                     $isToday = ($day == date('j') && $currentMonth == date('n') && $currentYear == date('Y'));
+                    $hasCases = isset($casesByDate[$dateStr]);
                     $dayClass = 'calendar-day bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors';
                     if ($isToday) $dayClass .= ' today';
+                    if ($hasCases) $dayClass .= ' has-cases';
 
-                    echo "<div class='{$dayClass}'>";
+                    echo "<div class='{$dayClass}' onclick=\"showDayDetails('{$dateStr}')\">";
                     echo "<div class='font-semibold text-slate-800 mb-1'>{$day}</div>";
+
+                    if ($hasCases) {
+                        $caseCount = count($casesByDate[$dateStr]);
+                        echo "<div class='text-xs text-red-600 font-medium mb-1'>{$caseCount} case" . ($caseCount > 1 ? 's' : '') . "</div>";
+                        foreach (array_slice($casesByDate[$dateStr], 0, 2) as $case) {
+                            $plate = htmlspecialchars($case['plate'] ?? '');
+                            $name = htmlspecialchars(substr($case['name'] ?? '', 0, 15));
+                            echo "<div class='case-item bg-red-50 text-red-800 rounded px-1 py-0.5 text-xs'>{$plate} - {$name}</div>";
+                        }
+                        if ($caseCount > 2) {
+                            echo "<div class='text-xs text-slate-500'>+{$caseCount - 2} more</div>";
+                        }
+                    }
+
                     echo "</div>";
                 }
 
@@ -131,9 +190,78 @@ $monthName = date('F', strtotime("$currentYear-$currentMonth-01"));
                 ?>
             </div>
         </div>
+
+        <!-- Day Details Modal -->
+        <div id="day-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                    <div class="p-6 border-b border-slate-200">
+                        <div class="flex items-center justify-between">
+                            <h3 id="modal-date-title" class="text-xl font-bold text-slate-800">Cases Due</h3>
+                            <button onclick="closeDayModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="modal-cases-content" class="p-6">
+                        <!-- Cases will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
+        function showDayDetails(dateStr) {
+            const cases = <?php echo json_encode($casesByDate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+            const dateCases = cases[dateStr] || [];
+
+            const date = new Date(dateStr + 'T00:00:00');
+            const formattedDate = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            document.getElementById('modal-date-title').textContent = `Cases Due - ${formattedDate}`;
+
+            let content = '';
+            if (dateCases.length === 0) {
+                content = '<p class="text-slate-500">No cases due on this date.</p>';
+            } else {
+                content = '<div class="space-y-4">';
+                dateCases.forEach(caseItem => {
+                    content += `
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <div class="flex items-start justify-between mb-2">
+                                <div>
+                                    <h4 class="font-semibold text-slate-800">${caseItem.plate || 'N/A'} - ${caseItem.name || 'N/A'}</h4>
+                                    <p class="text-sm text-slate-600">Amount: ${caseItem.amount || 'N/A'}</p>
+                                    <p class="text-sm text-slate-600">Status: ${caseItem.status || 'N/A'}</p>
+                                </div>
+                                <a href="edit_case.php?id=${caseItem.id}" class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors">
+                                    View Details
+                                </a>
+                            </div>
+                            <div class="text-xs text-slate-400">
+                                Due: ${new Date(caseItem.due_date).toLocaleDateString('en-US')}
+                                <span class="text-xs text-slate-400">${new Date(caseItem.due_date).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                content += '</div>';
+            }
+
+            document.getElementById('modal-cases-content').innerHTML = content;
+            document.getElementById('day-modal').classList.remove('hidden');
+        }
+
+        function closeDayModal() {
+            document.getElementById('day-modal').classList.add('hidden');
+        }
+
         // Initialize icons
         if (window.lucide) {
             lucide.createIcons();
