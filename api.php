@@ -340,7 +340,12 @@ try {
                 'systemLogs' => 'systemLogs',
                 'user_response' => 'user_response',
                 'reviewStars' => 'review_stars',
-                'reviewComment' => 'review_comment'
+                'reviewComment' => 'review_comment',
+                'repair_status' => 'repair_status',
+                'assigned_mechanic' => 'assigned_mechanic',
+                'repair_start_date' => 'repair_start_date',
+                'repair_end_date' => 'repair_end_date',
+                'repair_notes' => 'repair_notes'
             ];
 
             $update_fields = [];

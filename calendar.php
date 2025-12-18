@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 try {
     $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $stmt = $pdo->query("SELECT id, plate, name, due_date, status, service_date, amount, phone, franchise, user_response, reschedule_date, reschedule_comment, created_at FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
+    $stmt = $pdo->query("SELECT id, plate, name, due_date, status, service_date, amount, phone, franchise, user_response, reschedule_date, reschedule_comment, created_at, repair_status, assigned_mechanic, repair_start_date, repair_end_date, repair_notes FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Database error: ' . $e->getMessage());
@@ -111,6 +111,7 @@ try {
                                                     <th class="px-4 py-2 text-left">Customer</th>
                                                     <th class="px-4 py-2 text-left">Due Date</th>
                                                     <th class="px-4 py-2 text-left">Status</th>
+                                                    <th class="px-4 py-2 text-left">Repair Status</th>
                                                     <th class="px-4 py-2 text-left">Phone</th>
                                                     <th class="px-4 py-2 text-left">Amount</th>
                                                     <th class="px-4 py-2 text-left">Service Date</th>
@@ -134,6 +135,16 @@ try {
                                                             elseif ($c['status'] === 'Issue') echo 'bg-red-100 text-red-700';
                                                             else echo 'bg-orange-100 text-orange-700';
                                                         ?>"><?php echo htmlspecialchars($c['status']); ?></span>
+                                                    </td>
+                                                    <td class="px-4 py-2">
+                                                        <span class="inline-block px-2 py-1 rounded-full text-xs font-bold <?php
+                                                            $rs = $c['repair_status'] ?? '';
+                                                            if ($rs === 'Repair Completed') echo 'bg-emerald-100 text-emerald-700';
+                                                            elseif ($rs === 'In Progress') echo 'bg-blue-100 text-blue-700';
+                                                            elseif ($rs === 'Parts Waiting') echo 'bg-yellow-100 text-yellow-700';
+                                                            elseif ($rs === 'Repair Started') echo 'bg-purple-100 text-purple-700';
+                                                            else echo 'bg-gray-100 text-gray-700';
+                                                        ?>"><?php echo htmlspecialchars($rs ?: 'Not Started'); ?></span>
                                                     </td>
                                                     <td class="px-4 py-2"><?php echo htmlspecialchars($c['phone']); ?></td>
                                                     <td class="px-4 py-2 font-mono text-slate-700"><?php echo htmlspecialchars($c['amount']); ?>₾</td>
@@ -161,6 +172,7 @@ try {
                                                     <th class="px-4 py-2 text-left">Customer</th>
                                                     <th class="px-4 py-2 text-left">Due Date</th>
                                                     <th class="px-4 py-2 text-left">Status</th>
+                                                    <th class="px-4 py-2 text-left">Repair Status</th>
                                                     <th class="px-4 py-2 text-left">Phone</th>
                                                     <th class="px-4 py-2 text-left">Amount</th>
                                                     <th class="px-4 py-2 text-left">Service Date</th>
@@ -180,6 +192,16 @@ try {
                                                             elseif (strtotime($c['due_date']) < strtotime('today')) echo 'bg-orange-100 text-orange-700';
                                                             else echo 'bg-blue-100 text-blue-700';
                                                         ?>"><?php echo htmlspecialchars($c['status']); ?></span>
+                                                    </td>
+                                                    <td class="px-4 py-2">
+                                                        <span class="inline-block px-2 py-1 rounded-full text-xs font-bold <?php
+                                                            $rs = $c['repair_status'] ?? '';
+                                                            if ($rs === 'Repair Completed') echo 'bg-emerald-100 text-emerald-700';
+                                                            elseif ($rs === 'In Progress') echo 'bg-blue-100 text-blue-700';
+                                                            elseif ($rs === 'Parts Waiting') echo 'bg-yellow-100 text-yellow-700';
+                                                            elseif ($rs === 'Repair Started') echo 'bg-purple-100 text-purple-700';
+                                                            else echo 'bg-gray-100 text-gray-700';
+                                                        ?>"><?php echo htmlspecialchars($rs ?: 'Not Started'); ?></span>
                                                     </td>
                                                     <td class="px-4 py-2"><?php echo htmlspecialchars($c['phone']); ?></td>
                                                     <td class="px-4 py-2 font-mono text-slate-700"><?php echo htmlspecialchars($c['amount']); ?>₾</td>
@@ -224,7 +246,12 @@ try {
                                                 userResponse: '<?php echo addslashes($c['user_response']); ?>',
                                                 rescheduleDate: '<?php echo addslashes($c['reschedule_date']); ?>',
                                                 rescheduleComment: '<?php echo addslashes($c['reschedule_comment']); ?>',
-                                                createdAt: '<?php echo addslashes($c['created_at']); ?>'
+                                                createdAt: '<?php echo addslashes($c['created_at']); ?>',
+                                                repairStatus: '<?php echo addslashes($c['repair_status'] ?? ''); ?>',
+                                                assignedMechanic: '<?php echo addslashes($c['assigned_mechanic'] ?? ''); ?>',
+                                                repairStartDate: '<?php echo addslashes($c['repair_start_date'] ?? ''); ?>',
+                                                repairEndDate: '<?php echo addslashes($c['repair_end_date'] ?? ''); ?>',
+                                                repairNotes: '<?php echo addslashes($c['repair_notes'] ?? ''); ?>'
                                             }
                                         },
                                         <?php endforeach; ?>
@@ -251,7 +278,12 @@ try {
                                             '<div><b>User Response:</b> ' + (info.event.extendedProps.userResponse ? info.event.extendedProps.userResponse : '-') + '</div>' +
                                             '<div><b>Reschedule Date:</b> ' + (info.event.extendedProps.rescheduleDate ? info.event.extendedProps.rescheduleDate : '-') + '</div>' +
                                             '<div><b>Reschedule Comment:</b> ' + (info.event.extendedProps.rescheduleComment ? info.event.extendedProps.rescheduleComment : '-') + '</div>' +
-                                            '<div><b>Created:</b> ' + (info.event.extendedProps.createdAt ? new Date(info.event.extendedProps.createdAt).toLocaleString() : '-') + '</div>';
+                                            '<div><b>Created:</b> ' + (info.event.extendedProps.createdAt ? new Date(info.event.extendedProps.createdAt).toLocaleString() : '-') + '</div>' +
+                                            '<div><b>Repair Status:</b> ' + (info.event.extendedProps.repairStatus ? info.event.extendedProps.repairStatus : '-') + '</div>' +
+                                            '<div><b>Assigned Mechanic:</b> ' + (info.event.extendedProps.assignedMechanic ? info.event.extendedProps.assignedMechanic : '-') + '</div>' +
+                                            '<div><b>Repair Start:</b> ' + (info.event.extendedProps.repairStartDate ? new Date(info.event.extendedProps.repairStartDate).toLocaleString() : '-') + '</div>' +
+                                            '<div><b>Repair End:</b> ' + (info.event.extendedProps.repairEndDate ? new Date(info.event.extendedProps.repairEndDate).toLocaleString() : '-') + '</div>' +
+                                            '<div><b>Repair Notes:</b> ' + (info.event.extendedProps.repairNotes ? info.event.extendedProps.repairNotes : '-') + '</div>';
                                         document.body.appendChild(tooltip);
                                         info.el.addEventListener('mouseenter', function(e) {
                                             tooltip.style.left = (e.pageX + 10) + 'px';
