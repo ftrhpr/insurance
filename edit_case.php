@@ -157,12 +157,12 @@ try {
             <div class="lg:col-span-2 space-y-6">
 
                 <!-- Collapsible Section: Case Details -->
-                <div x-data="{ open: isSectionOpen('details') }" class="bg-white rounded-2xl border border-slate-200/80">
+                <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('details')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.details', 'Case Details'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('details')}"></i>
                     </button>
-                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections.includes('details')" x-cloak x-transition class="px-5 pb-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 border-t border-slate-200 pt-6">
                             <!-- Form Fields -->
                             <div>
@@ -201,7 +201,7 @@ try {
                 </div>
 
                 <!-- Collapsible Section: Repair Management -->
-                <div x-data="{ open: isSectionOpen('repair') }" class="bg-white rounded-2xl border border-slate-200/80">
+                <div x-data="{ open: openSections.includes('repair') }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('repair')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.repair_management', 'Repair Management'); ?></h2>
                         <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
@@ -379,12 +379,12 @@ try {
                 <?php endif; ?>
 
                 <!-- Collapsible Section: Communication -->
-                 <div x-data="{ open: isSectionOpen('communication') }" class="bg-white rounded-2xl border border-slate-200/80">
+                 <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('communication')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.communication', 'Communication'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('communication')}"></i>
                     </button>
-                    <div x-show="open" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections.includes('communication')" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6 space-y-5" x-data="{ activeTab: 'quick' }">
                             <div class="flex items-center justify-center">
                                  <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
@@ -418,7 +418,7 @@ try {
                 </div>
 
                  <!-- Collapsible Section: Customer Feedback -->
-                <div x-data="{ open: isSectionOpen('feedback'), editingReview: false }" class="bg-white rounded-2xl border border-slate-200/80">
+                <div x-data="{ open: openSections.includes('feedback'), editingReview: false }" class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('feedback')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.customer_feedback', 'Customer Feedback'); ?></h2>
                         <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': open}"></i>
@@ -791,6 +791,14 @@ try {
                     } catch (error) {
                         showToast("Error", "Failed to save changes.", "error");
                     }
+                },
+                toggleSection(section) {
+                    if (this.openSections.includes(section)) {
+                        this.openSections = this.openSections.filter(s => s !== section);
+                    } else {
+                        this.openSections.push(section);
+                    }
+                    localStorage.setItem('openSections', JSON.stringify(this.openSections));
                 },
                 addPart() {
                     if (!this.currentCase.repair_parts) this.currentCase.repair_parts = [];
