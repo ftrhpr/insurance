@@ -35,6 +35,22 @@ try {
                             .fc-day-today { background: #dbeafe !important; }
                             .fc-event { border-radius: 8px; border: none; }
                             .fc-daygrid-event-dot { display: none; }
+                            .completed-case::after {
+                                content: '✓';
+                                position: absolute;
+                                top: 2px;
+                                right: 2px;
+                                background: white;
+                                border-radius: 50%;
+                                width: 16px;
+                                height: 16px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 10px;
+                                font-weight: bold;
+                                color: #22c55e;
+                            }
                         </style>
                     </head>
                     <body class="bg-slate-50 min-h-screen">
@@ -143,6 +159,7 @@ try {
                                             start: '<?php echo date('Y-m-d\TH:i:s', strtotime($c['due_date'])); ?>',
                                             url: 'edit_case.php?id=<?php echo $c['id']; ?>',
                                             color: '<?php echo ($c['status'] === 'Completed') ? '#22c55e' : (($c['status'] === 'Issue') ? '#ef4444' : ((strtotime($c['due_date']) < strtotime('today')) ? '#f59e42' : '#2563eb')); ?>',
+                                            className: '<?php echo ($c['status'] === 'Completed') ? 'completed-case' : ''; ?>',
                                             extendedProps: {
                                                 status: '<?php echo addslashes($c['status']); ?>',
                                                 phone: '<?php echo addslashes($c['phone']); ?>',
