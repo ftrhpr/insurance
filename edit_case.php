@@ -53,6 +53,9 @@ if (!$case) {
 // Decode JSON fields
 $case['internalNotes'] = json_decode($case['internalNotes'] ?? '[]', true);
 $case['systemLogs'] = json_decode($case['systemLogs'] ?? '[]', true);
+$case['repair_parts'] = json_decode($case['repair_parts'] ?? '[]', true);
+$case['repair_labor'] = json_decode($case['repair_labor'] ?? '[]', true);
+$case['repair_activity_log'] = json_decode($case['repair_activity_log'] ?? '[]', true);
 
 // Get SMS templates for workflow bindings
 $smsTemplates = [];
@@ -234,7 +237,122 @@ try {
                             <!-- Repair Notes -->
                             <div class="sm:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_notes', 'Repair Notes'); ?></label>
-                                <textarea id="input-repair-notes" rows="4" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none resize-vertical"><?php echo htmlspecialchars($case['repair_notes'] ?? ''); ?></textarea>
+                                <textarea id="input-repair-notes" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none resize-vertical"><?php echo htmlspecialchars($case['repair_notes'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                        <!-- Tabs for Parts, Labor, Activity -->
+                        <div class="mt-6 border-t border-slate-200 pt-6">
+                            <div class="flex items-center justify-center mb-4">
+                                <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                                    <button @click="repairTab = 'parts'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'parts'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Parts</button>
+                                    <button @click="repairTab = 'labor'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'labor'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Labor</button>
+                                    <button @click="repairTab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'activity'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Activity History</button>
+                                </div>
+                            </div>
+                            <!-- Parts Tab -->
+                            <div x-show="repairTab === 'parts'" x-cloak class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-semibold text-slate-800">Parts Used</h3>
+                                    <button @click="addPart()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
+                                        <i data-lucide="plus" class="w-4 h-4"></i> Add Part
+                                    </button>
+                                </div>
+                                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                                    <table class="min-w-full bg-white">
+                                        <thead class="bg-slate-50">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Part Name</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Quantity</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Unit Price</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Total</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="parts-table-body">
+                                            <?php foreach (($case['repair_parts'] ?? []) as $index => $part): ?>
+                                            <tr class="border-t border-slate-200">
+                                                <td class="px-4 py-2"><input type="text" value="<?php echo htmlspecialchars($part['name'] ?? ''); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'name', this.value)"></td>
+                                                <td class="px-4 py-2"><input type="number" value="<?php echo htmlspecialchars($part['quantity'] ?? 1); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'quantity', this.value)"></td>
+                                                <td class="px-4 py-2"><input type="number" step="0.01" value="<?php echo htmlspecialchars($part['unit_price'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(<?php echo $index; ?>, 'unit_price', this.value)">₾</td>
+                                                <td class="px-4 py-2 font-semibold text-slate-700"><?php echo number_format(($part['quantity'] ?? 1) * ($part['unit_price'] ?? 0), 2); ?>₾</td>
+                                                <td class="px-4 py-2"><button onclick="removePart(<?php echo $index; ?>)" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                        <tfoot class="bg-slate-50">
+                                            <tr>
+                                                <td colspan="3" class="px-4 py-2 text-right font-semibold text-slate-700">Total Parts Cost:</td>
+                                                <td class="px-4 py-2 font-bold text-slate-800" id="parts-total">0.00₾</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Labor Tab -->
+                            <div x-show="repairTab === 'labor'" x-cloak class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-semibold text-slate-800">Labor Hours</h3>
+                                    <button @click="addLabor()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
+                                        <i data-lucide="plus" class="w-4 h-4"></i> Add Labor
+                                    </button>
+                                </div>
+                                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                                    <table class="min-w-full bg-white">
+                                        <thead class="bg-slate-50">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Description</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Hours</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Hourly Rate</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Total</th>
+                                                <th class="px-4 py-2 text-left text-sm font-semibold text-slate-700">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="labor-table-body">
+                                            <?php foreach (($case['repair_labor'] ?? []) as $index => $labor): ?>
+                                            <tr class="border-t border-slate-200">
+                                                <td class="px-4 py-2"><input type="text" value="<?php echo htmlspecialchars($labor['description'] ?? ''); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'description', this.value)"></td>
+                                                <td class="px-4 py-2"><input type="number" step="0.5" value="<?php echo htmlspecialchars($labor['hours'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'hours', this.value)"></td>
+                                                <td class="px-4 py-2"><input type="number" step="0.01" value="<?php echo htmlspecialchars($labor['hourly_rate'] ?? 0); ?>" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(<?php echo $index; ?>, 'hourly_rate', this.value)">₾</td>
+                                                <td class="px-4 py-2 font-semibold text-slate-700"><?php echo number_format(($labor['hours'] ?? 0) * ($labor['hourly_rate'] ?? 0), 2); ?>₾</td>
+                                                <td class="px-4 py-2"><button onclick="removeLabor(<?php echo $index; ?>)" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                        <tfoot class="bg-slate-50">
+                                            <tr>
+                                                <td colspan="3" class="px-4 py-2 text-right font-semibold text-slate-700">Total Labor Cost:</td>
+                                                <td class="px-4 py-2 font-bold text-slate-800" id="labor-total">0.00₾</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Activity History Tab -->
+                            <div x-show="repairTab === 'activity'" x-cloak class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-semibold text-slate-800">Repair Activity History</h3>
+                                    <button @click="addActivity()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
+                                        <i data-lucide="plus" class="w-4 h-4"></i> Add Activity
+                                    </button>
+                                </div>
+                                <div class="space-y-3 max-h-96 overflow-y-auto" id="activity-log">
+                                    <?php foreach (array_reverse($case['repair_activity_log'] ?? []) as $activity): ?>
+                                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                        <div class="flex items-start justify-between">
+                                            <div>
+                                                <p class="text-sm text-slate-800 font-medium"><?php echo htmlspecialchars($activity['action'] ?? ''); ?></p>
+                                                <p class="text-xs text-slate-600 mt-1"><?php echo htmlspecialchars($activity['details'] ?? ''); ?></p>
+                                            </div>
+                                            <div class="text-right text-xs text-slate-500">
+                                                <div><?php echo htmlspecialchars($activity['user'] ?? ''); ?></div>
+                                                <div><?php echo isset($activity['timestamp']) ? date('M j, Y H:i', strtotime($activity['timestamp'])) : ''; ?></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -476,6 +594,7 @@ try {
                 currentCase: { ...initialCaseData },
                 openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback'],
                 partsRequest: { description: '', supplier: '', collection_type: 'local' },
+                repairTab: 'parts',
                 statuses: [
                     { id: 'New', name: 'New', icon: 'file-plus-2' },
                     { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
@@ -491,6 +610,7 @@ try {
                     return index > -1 ? index : 0;
                 },
                 init() {
+                    window.caseEditor = this;
                     this.$nextTick(() => initializeIcons());
                     document.getElementById('sms-template-selector')?.addEventListener('change', this.updateSmsPreview.bind(this));
 
@@ -528,6 +648,11 @@ try {
                     if (plateEl && plateEl.value) {
                         setTimeout(() => lookupAndFillPhone(plateEl.value), 50);
                     }
+
+                    // Initialize repair tables
+                    this.updatePartsTable();
+                    this.updateLaborTable();
+                    this.updateActivityLog();
                 },
                 isSectionOpen(section) {
                     return this.openSections.includes(section);
@@ -611,6 +736,9 @@ try {
                         repair_start_date: document.getElementById('input-repair-start-date').value ? document.getElementById('input-repair-start-date').value.replace('T', ' ') + (document.getElementById('input-repair-start-date').value.split(':').length === 2 ? ':00' : '') : null,
                         repair_end_date: document.getElementById('input-repair-end-date').value ? document.getElementById('input-repair-end-date').value.replace('T', ' ') + (document.getElementById('input-repair-end-date').value.split(':').length === 2 ? ':00' : '') : null,
                         repair_notes: document.getElementById('input-repair-notes').value.trim() || null,
+                        repair_parts: this.currentCase.repair_parts || [],
+                        repair_labor: this.currentCase.repair_labor || [],
+                        repair_activity_log: this.currentCase.repair_activity_log || [],
                     };
 
                     const systemLogs = [...(this.currentCase.systemLogs || [])];
@@ -635,6 +763,109 @@ try {
                     } catch (error) {
                         showToast("Error", "Failed to save changes.", "error");
                     }
+                },
+                addPart() {
+                    if (!this.currentCase.repair_parts) this.currentCase.repair_parts = [];
+                    this.currentCase.repair_parts.push({ name: '', quantity: 1, unit_price: 0 });
+                    this.updatePartsTable();
+                },
+                updatePart(index, field, value) {
+                    if (this.currentCase.repair_parts && this.currentCase.repair_parts[index]) {
+                        this.currentCase.repair_parts[index][field] = field === 'quantity' || field === 'unit_price' ? parseFloat(value) || 0 : value;
+                        this.updatePartsTable();
+                    }
+                },
+                removePart(index) {
+                    if (this.currentCase.repair_parts) {
+                        this.currentCase.repair_parts.splice(index, 1);
+                        this.updatePartsTable();
+                    }
+                },
+                updatePartsTable() {
+                    const tbody = document.getElementById('parts-table-body');
+                    const totalEl = document.getElementById('parts-total');
+                    if (!tbody || !totalEl) return;
+                    
+                    tbody.innerHTML = this.currentCase.repair_parts.map((part, index) => `
+                        <tr class="border-t border-slate-200">
+                            <td class="px-4 py-2"><input type="text" value="${escapeHtml(part.name || '')}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(${index}, 'name', this.value)"></td>
+                            <td class="px-4 py-2"><input type="number" value="${part.quantity || 1}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(${index}, 'quantity', this.value)"></td>
+                            <td class="px-4 py-2"><input type="number" step="0.01" value="${part.unit_price || 0}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updatePart(${index}, 'unit_price', this.value)">₾</td>
+                            <td class="px-4 py-2 font-semibold text-slate-700">${((part.quantity || 1) * (part.unit_price || 0)).toFixed(2)}₾</td>
+                            <td class="px-4 py-2"><button onclick="removePart(${index})" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                        </tr>
+                    `).join('');
+                    
+                    const total = this.currentCase.repair_parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
+                    totalEl.textContent = total.toFixed(2) + '₾';
+                    lucide.createIcons();
+                },
+                addLabor() {
+                    if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
+                    this.currentCase.repair_labor.push({ description: '', hours: 0, hourly_rate: 0 });
+                    this.updateLaborTable();
+                },
+                updateLabor(index, field, value) {
+                    if (this.currentCase.repair_labor && this.currentCase.repair_labor[index]) {
+                        this.currentCase.repair_labor[index][field] = field === 'hours' || field === 'hourly_rate' ? parseFloat(value) || 0 : value;
+                        this.updateLaborTable();
+                    }
+                },
+                removeLabor(index) {
+                    if (this.currentCase.repair_labor) {
+                        this.currentCase.repair_labor.splice(index, 1);
+                        this.updateLaborTable();
+                    }
+                },
+                updateLaborTable() {
+                    const tbody = document.getElementById('labor-table-body');
+                    const totalEl = document.getElementById('labor-total');
+                    if (!tbody || !totalEl) return;
+                    
+                    tbody.innerHTML = this.currentCase.repair_labor.map((labor, index) => `
+                        <tr class="border-t border-slate-200">
+                            <td class="px-4 py-2"><input type="text" value="${escapeHtml(labor.description || '')}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(${index}, 'description', this.value)"></td>
+                            <td class="px-4 py-2"><input type="number" step="0.5" value="${labor.hours || 0}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(${index}, 'hours', this.value)"></td>
+                            <td class="px-4 py-2"><input type="number" step="0.01" value="${labor.hourly_rate || 0}" class="w-full px-2 py-1 border border-slate-200 rounded text-sm" onchange="updateLabor(${index}, 'hourly_rate', this.value)">₾</td>
+                            <td class="px-4 py-2 font-semibold text-slate-700">${((labor.hours || 0) * (labor.hourly_rate || 0)).toFixed(2)}₾</td>
+                            <td class="px-4 py-2"><button onclick="removeLabor(${index})" class="text-red-600 hover:text-red-800 text-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                        </tr>
+                    `).join('');
+                    
+                    const total = this.currentCase.repair_labor.reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                    totalEl.textContent = total.toFixed(2) + '₾';
+                    lucide.createIcons();
+                },
+                addActivity() {
+                    const action = prompt('Enter activity action:');
+                    if (!action) return;
+                    const details = prompt('Enter activity details:');
+                    if (!this.currentCase.repair_activity_log) this.currentCase.repair_activity_log = [];
+                    this.currentCase.repair_activity_log.push({
+                        action: action,
+                        details: details || '',
+                        user: '<?php echo addslashes($current_user_name); ?>',
+                        timestamp: new Date().toISOString()
+                    });
+                    this.updateActivityLog();
+                },
+                updateActivityLog() {
+                    const container = document.getElementById('activity-log');
+                    if (!container) return;
+                    container.innerHTML = this.currentCase.repair_activity_log.slice().reverse().map(activity => `
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-800 font-medium">${escapeHtml(activity.action || '')}</p>
+                                    <p class="text-xs text-slate-600 mt-1">${escapeHtml(activity.details || '')}</p>
+                                </div>
+                                <div class="text-right text-xs text-slate-500">
+                                    <div>${escapeHtml(activity.user || '')}</div>
+                                    <div>${activity.timestamp ? new Date(activity.timestamp).toLocaleString() : ''}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
                 },
                 async requestParts() {
                     if (!this.partsRequest.description.trim()) {
@@ -868,6 +1099,20 @@ try {
                 } catch (error) { showToast("Error", "Failed to save review.", "error"); }
             });
         });
+
+        // Global functions for repair management
+        window.updatePart = function(index, field, value) {
+            window.caseEditor.updatePart(index, field, value);
+        };
+        window.removePart = function(index) {
+            window.caseEditor.removePart(index);
+        };
+        window.updateLabor = function(index, field, value) {
+            window.caseEditor.updateLabor(index, field, value);
+        };
+        window.removeLabor = function(index) {
+            window.caseEditor.removeLabor(index);
+        };
     </script>
 </body>
 </html>

@@ -345,7 +345,10 @@ try {
                 'assigned_mechanic' => 'assigned_mechanic',
                 'repair_start_date' => 'repair_start_date',
                 'repair_end_date' => 'repair_end_date',
-                'repair_notes' => 'repair_notes'
+                'repair_notes' => 'repair_notes',
+                'repair_parts' => 'repair_parts',
+                'repair_labor' => 'repair_labor',
+                'repair_activity_log' => 'repair_activity_log'
             ];
 
             $update_fields = [];

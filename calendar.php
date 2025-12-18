@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 try {
     $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $stmt = $pdo->query("SELECT id, plate, name, due_date, status, service_date, amount, phone, franchise, user_response, reschedule_date, reschedule_comment, created_at, repair_status, assigned_mechanic, repair_start_date, repair_end_date, repair_notes FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
+    $stmt = $pdo->query("SELECT id, plate, name, due_date, status, service_date, amount, phone, franchise, user_response, reschedule_date, reschedule_comment, created_at, repair_status, assigned_mechanic, repair_start_date, repair_end_date, repair_notes, repair_parts, repair_labor, repair_activity_log FROM transfers WHERE due_date IS NOT NULL ORDER BY due_date ASC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Database error: ' . $e->getMessage());
@@ -251,7 +251,10 @@ try {
                                                 assignedMechanic: '<?php echo addslashes($c['assigned_mechanic'] ?? ''); ?>',
                                                 repairStartDate: '<?php echo addslashes($c['repair_start_date'] ?? ''); ?>',
                                                 repairEndDate: '<?php echo addslashes($c['repair_end_date'] ?? ''); ?>',
-                                                repairNotes: '<?php echo addslashes($c['repair_notes'] ?? ''); ?>'
+                                                repairNotes: '<?php echo addslashes($c['repair_notes'] ?? ''); ?>',
+                                                repairParts: '<?php echo addslashes(json_encode($c['repair_parts'] ?? [])); ?>',
+                                                repairLabor: '<?php echo addslashes(json_encode($c['repair_labor'] ?? [])); ?>',
+                                                repairActivityLog: '<?php echo addslashes(json_encode($c['repair_activity_log'] ?? [])); ?>'
                                             }
                                         },
                                         <?php endforeach; ?>
