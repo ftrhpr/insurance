@@ -255,6 +255,11 @@ try {
                                     <h3 class="text-lg font-semibold text-slate-800">Parts & Labor</h3>
                                     <div class="flex items-center gap-2">
                                         <button type="button" @click="showInvoice()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Invoice</button>
+                                        <label class="inline-flex items-center text-sm rounded bg-slate-50 px-2 py-1 border border-slate-200">
+                                            <input id="selectAllItems" type="checkbox" class="mr-2" onchange="window.caseEditor.selectAllItems(this.checked)">Select All
+                                        </label>
+                                        <button type="button" @click="createCollectionFromSelected()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm">Create Parts Collection from Selected</button>
+                                        <button type="button" @click="exportSelectedCSV()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export Selected CSV</button>
                                         <button @click="addPart()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
                                             <i data-lucide="plus" class="w-4 h-4"></i> Add Part
                                         </button>
@@ -1079,7 +1084,10 @@ try {
                             html += `
                                 <div class="part-item bg-white/40 rounded-lg p-3 border border-white/30">
                                     <div class="grid grid-cols-12 gap-x-3 items-start">
-                                        <div class="col-span-8">
+                                        <div class="col-span-1 flex items-start mt-2">
+                                            <input type="checkbox" class="select-item" data-type="part" data-index="${index}" id="select-part-${index}">
+                                        </div>
+                                        <div class="col-span-7">
                                             <div class="flex items-center gap-2 mb-1">
                                                 <div class="drag-handle" draggable="true" ondragstart="window.caseEditor.dragStartPart(event, ${index})" title="Drag to reorder"><i data-lucide="move" class="w-4 h-4"></i></div>
                                                 <div class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100">Part</div>
@@ -1121,7 +1129,10 @@ try {
                             html += `
                                 <div class="labor-item bg-white/40 rounded-lg p-3 border border-white/30">
                                     <div class="grid grid-cols-12 gap-x-3 items-end">
-                                        <div class="col-span-8">
+                                        <div class="col-span-1 flex items-start mt-2">
+                                            <input type="checkbox" class="select-item" data-type="labor" data-index="${idx}" id="select-lab-${idx}">
+                                        </div>
+                                        <div class="col-span-7">
                                             <div class="flex items-center gap-2 mb-1">
                                                 <div class="drag-handle" draggable="true" ondragstart="window.caseEditor.dragStartLab(event, ${idx})" title="Drag to reorder"><i data-lucide="move" class="w-4 h-4"></i></div>
                                                 <div class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100">Labor</div>
@@ -1239,6 +1250,11 @@ try {
                         });
 
                         container.innerHTML = html;
+                        // Uncheck selectAll when list rebuilds
+                        const selectAll = document.getElementById('selectAllItems'); if (selectAll) selectAll.checked = false;
+
+                    // Ensure any selected checkboxes are in sync (not strictly required but helpful)
+                    document.querySelectorAll('.select-item').forEach(cb=>{ if(cb) cb.checked = false; });
                     } catch (err) {
                         console.error('Failed rendering collections:', err);
                         container.innerHTML = '<div class="text-sm text-red-600">Failed to load collections.</div>';
@@ -1275,6 +1291,56 @@ try {
                     this.updatePartsList();
                     showToast('Added', `${name} added.`, 'success');
                 },
+
+                // Selection helpers
+                selectAllItems(check) { document.querySelectorAll('.select-item').forEach(cb => cb.checked = !!check); },
+                getSelectedItems() {
+                    const parts = [];
+                    const labor = [];
+                    document.querySelectorAll('.select-item:checked').forEach(cb => {
+                        const type = cb.dataset.type;
+                        const idx = parseInt(cb.dataset.index, 10);
+                        if (type === 'part' && this.currentCase.repair_parts && this.currentCase.repair_parts[idx]) {
+                            parts.push({ ...this.currentCase.repair_parts[idx] });
+                        }
+                        if (type === 'labor' && this.currentCase.repair_labor && this.currentCase.repair_labor[idx]) {
+                            labor.push({ ...this.currentCase.repair_labor[idx] });
+                        }
+                    });
+                    return { parts, labor };
+                },
+
+                async createCollectionFromSelected() {
+                    const sel = this.getSelectedItems();
+                    if (!sel.parts || sel.parts.length === 0) return showToast('No parts selected', 'Select parts to create a collection.', 'info');
+                    const items = sel.parts.map(p => ({ name: p.name, quantity: p.quantity || 1, price: p.unit_price || 0 }));
+                    try {
+                        const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: items, description: this.collectionNote }) });
+                        const result = await resp.json();
+                        if (result.success) { showToast('Collection Created', 'Selected parts saved to new collection.', 'success'); if (typeof this.loadCollections === 'function') this.loadCollections(); } else { showToast('Error', result.error || 'Failed to create collection.', 'error'); }
+                    } catch (e) { showToast('Error', 'Failed to create collection.', 'error'); }
+                },
+
+                exportSelectedCSV() {
+                    const sel = this.getSelectedItems();
+                    const rows = [];
+                    if ((sel.parts || []).length > 0) {
+                        rows.push(['Parts']);
+                        rows.push(['Name','SKU','Supplier','Qty','Unit Price','Total','Status','Notes']);
+                        sel.parts.forEach(p => rows.push([p.name||'', p.sku||'', p.supplier||'', p.quantity||'', p.unit_price||'', ((p.quantity||0)*(p.unit_price||0)).toFixed(2), p.status||'', p.notes||'']));
+                    }
+                    if ((sel.labor || []).length > 0) {
+                        rows.push([]);
+                        rows.push(['Labor']);
+                        rows.push(['Description','Hours','Rate','Total','Status','Notes']);
+                        sel.labor.forEach(l => rows.push([l.description||'', l.hours||'', l.hourly_rate||'', ((l.hours||0)*(l.hourly_rate||0)).toFixed(2), l.status||'', l.notes||'']));
+                    }
+                    if (rows.length === 0) return showToast('No items selected', 'Select parts or labor to export.', 'info');
+                    const csv = rows.map(r => r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-selected.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                },
+
 
 
                 addActivity() {
