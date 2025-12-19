@@ -87,7 +87,6 @@ try {
     <title><?php echo __('case.title', 'Edit Case'); ?> #<?php echo $case_id; ?> - OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
@@ -256,9 +255,6 @@ try {
                                     <h3 class="text-lg font-semibold text-slate-800">Parts & Labor</h3>
                                     <div class="flex items-center gap-2">
                                         <button type="button" @click="showInvoice()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Invoice</button>
-                                        <button type="button" onclick="window.caseEditor.exportAllCSV()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export CSV</button>
-                                        <button type="button" onclick="window.caseEditor.exportAllXLS()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLS</button>
-                                        <button type="button" onclick="window.caseEditor.exportAllXLSX()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLSX</button>
                                         <button @click="addPart()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
                                             <i data-lucide="plus" class="w-4 h-4"></i> Add Part
                                         </button>
@@ -277,15 +273,9 @@ try {
                                         </button>
                                     </div>
 
-                                    <div class="flex items-center gap-2">
-                                        <input type="file" id="partsCsvInput" accept=".csv" class="text-sm">
-                                        <button type="button" id="importPartsCsvBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded text-sm">Import Parts CSV</button>
-                                    </div>
 
-                                    <div class="flex items-center gap-2">
-                                        <input type="file" id="laborCsvInput" accept=".csv" class="text-sm">
-                                        <button type="button" id="importLaborCsvBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded text-sm">Import Labor CSV</button>
-                                    </div>
+
+
 
                                     <div id="repairPdfStatus" class="text-sm text-slate-600 ml-auto"></div>
                                 </div>
@@ -343,9 +333,7 @@ try {
                                 <div class="flex items-start justify-between mb-3">
                                     <h3 class="text-lg font-semibold text-slate-800">Repair Cost Summary</h3>
                                     <div class="flex items-center gap-2">
-                                        <button onclick="window.caseEditor.exportAllCSV()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export CSV</button>
-                                        <button onclick="window.caseEditor.exportAllXLS()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLS</button>
-                                        <button onclick="window.caseEditor.exportAllXLSX()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLSX</button>
+
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1057,138 +1045,6 @@ try {
                     l.status = order[Math.min(order.length-1, i+1)];
                     this.updateLaborList();
                 },
-                // Export helpers
-                exportPartsCSV() {
-                    if (!this.currentCase.repair_parts || this.currentCase.repair_parts.length === 0) return showToast('No parts', 'Nothing to export.', 'info');
-                    const rows = [['Name','SKU','Supplier','Qty','Unit Price','Total','Status','Notes']];
-                    this.currentCase.repair_parts.forEach(p => rows.push([p.name||'', p.sku||'', p.supplier||'', p.quantity||'', p.unit_price||'', ((p.quantity||0)*(p.unit_price||0)).toFixed(2), p.status||'Pending', p.notes||'']));
-                    const csv = rows.map(r => r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-parts.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                exportPartsXLS() {
-                    // Simple Excel-compatible HTML table
-                    if (!this.currentCase.repair_parts || this.currentCase.repair_parts.length === 0) return showToast('No parts', 'Nothing to export.', 'info');
-                    let html = '<table><tr><th>Name</th><th>SKU</th><th>Supplier</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Status</th><th>Notes</th></tr>';
-                    this.currentCase.repair_parts.forEach(p => html += `<tr><td>${escapeHtml(p.name||'')}</td><td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.supplier||'')}</td><td>${p.quantity||''}</td><td>${p.unit_price||''}</td><td>${((p.quantity||0)*(p.unit_price||0)).toFixed(2)}</td><td>${escapeHtml(p.status||'')}</td><td>${escapeHtml(p.notes||'')}</td></tr>`);
-                    html += '</table>';
-                    const blob = new Blob([`<html><body>${html}</body></html>`], { type: 'application/vnd.ms-excel' });
-                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-parts.xls`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                exportLaborCSV() {
-                    if (!this.currentCase.repair_labor || this.currentCase.repair_labor.length === 0) return showToast('No labor', 'Nothing to export.', 'info');
-                    const rows = [['Description','Hours','Rate','Total','Status','Notes']];
-                    this.currentCase.repair_labor.forEach(l => rows.push([l.description||'', l.hours||'', l.hourly_rate||'', ((l.hours||0)*(l.hourly_rate||0)).toFixed(2), l.status||'Pending', l.notes||'']));
-                    const csv = rows.map(r => r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-labor.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                exportLaborXLS() {
-                    if (!this.currentCase.repair_labor || this.currentCase.repair_labor.length === 0) return showToast('No labor', 'Nothing to export.', 'info');
-                    let html = '<table><tr><th>Description</th><th>Hours</th><th>Rate</th><th>Total</th><th>Status</th><th>Notes</th></tr>';
-                    this.currentCase.repair_labor.forEach(l => html += `<tr><td>${escapeHtml(l.description||'')}</td><td>${l.hours||''}</td><td>${l.hourly_rate||''}</td><td>${((l.hours||0)*(l.hourly_rate||0)).toFixed(2)}</td><td>${escapeHtml(l.status||'')}</td><td>${escapeHtml(l.notes||'')}</td></tr>`);
-                    html += '</table>';
-                    const blob = new Blob([`<html><body>${html}</body></html>`], { type: 'application/vnd.ms-excel' });
-                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-labor.xls`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                exportAllCSV() {
-                    // Combine both into one CSV with section headers (includes receipt/completion fields)
-                    const rows = [['Parts']]; rows.push(['Name','SKU','Supplier','Qty','Unit Price','Total','Status','Notes','Received By','Received At']);
-                    this.currentCase.repair_parts.forEach(p => rows.push([p.name||'', p.sku||'', p.supplier||'', p.quantity||'', p.unit_price||'', ((p.quantity||0)*(p.unit_price||0)).toFixed(2), p.status||'Pending', p.notes||'', p.received_by||'', p.received_at||'']));
-                    rows.push([]); rows.push(['Labor']); rows.push(['Description','Hours','Rate','Total','Status','Notes','Completed By','Completed At']);
-                    this.currentCase.repair_labor.forEach(l => rows.push([l.description||'', l.hours||'', l.hourly_rate||'', ((l.hours||0)*(l.hourly_rate||0)).toFixed(2), l.status||'Pending', l.notes||'', l.completed_by||'', l.completed_at||'']));
-                    const csv = rows.map(r => r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-parts-labor.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                exportAllXLS() {
-                    // Legacy HTML-based XLS export (kept for compatibility)
-                    let html = '<h2>Parts</h2><table><tr><th>Name</th><th>SKU</th><th>Supplier</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Status</th><th>Notes</th><th>Received By</th><th>Received At</th></tr>';
-                    this.currentCase.repair_parts.forEach(p => html += `<tr><td>${escapeHtml(p.name||'')}</td><td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.supplier||'')}</td><td>${p.quantity||''}</td><td>${p.unit_price||''}</td><td>${((p.quantity||0)*(p.unit_price||0)).toFixed(2)}</td><td>${escapeHtml(p.status||'')}</td><td>${escapeHtml(p.notes||'')}</td><td>${escapeHtml(p.received_by||'')}</td><td>${escapeHtml(p.received_at||'')}</td></tr>`);
-                    html += '</table><h2>Labor</h2><table><tr><th>Description</th><th>Hours</th><th>Rate</th><th>Total</th><th>Status</th><th>Notes</th><th>Completed By</th><th>Completed At</th></tr>';
-                    this.currentCase.repair_labor.forEach(l => html += `<tr><td>${escapeHtml(l.description||'')}</td><td>${l.hours||''}</td><td>${l.hourly_rate||''}</td><td>${((l.hours||0)*(l.hourly_rate||0)).toFixed(2)}</td><td>${escapeHtml(l.status||'')}</td><td>${escapeHtml(l.notes||'')}</td><td>${escapeHtml(l.completed_by||'')}</td><td>${escapeHtml(l.completed_at||'')}</td></tr>`);
-                    html += '</table>';
-                    const blob = new Blob([`<html><body>${html}</body></html>`], { type: 'application/vnd.ms-excel' });
-                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-parts-labor.xls`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                // Proper XLSX export using SheetJS (if available)
-                exportPartsXLSX() {
-                    if (typeof XLSX === 'undefined') return this.exportPartsXLS();
-                    const ws = XLSX.utils.json_to_sheet(this.currentCase.repair_parts.map(p=>({ Name: p.name||'', SKU: p.sku||'', Supplier: p.supplier||'', Qty: p.quantity||0, UnitPrice: p.unit_price||0, Total: ((p.quantity||0)*(p.unit_price||0)).toFixed(2), Status: p.status||'Pending', Notes: p.notes||'', ReceivedBy: p.received_by||'', ReceivedAt: p.received_at||'' })));
-                    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Parts');
-                    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-                    const blob = new Blob([wbout], {type: 'application/octet-stream'});
-                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-parts.xlsx`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                exportLaborXLSX() {
-                    if (typeof XLSX === 'undefined') return this.exportLaborXLS();
-                    const ws = XLSX.utils.json_to_sheet(this.currentCase.repair_labor.map(l=>({ Description: l.description||'', Hours: l.hours||0, Rate: l.hourly_rate||0, Total: ((l.hours||0)*(l.hourly_rate||0)).toFixed(2), Status: l.status||'Pending', Notes: l.notes||'', CompletedBy: l.completed_by||'', CompletedAt: l.completed_at||'' })));
-                    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Labor');
-                    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-                    const blob = new Blob([wbout], {type: 'application/octet-stream'});
-                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-labor.xlsx`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                exportAllXLSX() {
-                    if (typeof XLSX === 'undefined') return this.exportAllXLS();
-                    // create combined workbook
-                    const wb = XLSX.utils.book_new();
-                    const wsParts = XLSX.utils.json_to_sheet(this.currentCase.repair_parts.map(p=>({ Name: p.name||'', SKU: p.sku||'', Supplier: p.supplier||'', Qty: p.quantity||0, UnitPrice: p.unit_price||0, Total: ((p.quantity||0)*(p.unit_price||0)).toFixed(2), Status: p.status||'Pending', Notes: p.notes||'', ReceivedBy: p.received_by||'', ReceivedAt: p.received_at||'' })));
-                    const wsLab = XLSX.utils.json_to_sheet(this.currentCase.repair_labor.map(l=>({ Description: l.description||'', Hours: l.hours||0, Rate: l.hourly_rate||0, Total: ((l.hours||0)*(l.hourly_rate||0)).toFixed(2), Status: l.status||'Pending', Notes: l.notes||'', CompletedBy: l.completed_by||'', CompletedAt: l.completed_at||'' })));
-                    XLSX.utils.book_append_sheet(wb, wsParts, 'Parts'); XLSX.utils.book_append_sheet(wb, wsLab, 'Labor');
-                    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'}); const blob = new Blob([wbout], {type: 'application/octet-stream'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-parts-labor.xlsx`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                },
-                // CSV parsing helper (handles quoted fields)
-                parseCSV(text) {
-                    const rows = [];
-                    const lines = text.split(/\r?\n/);
-                    for (let i=0;i<lines.length;i++) {
-                        const line = lines[i].trim(); if (!line) continue;
-                        const fields = [];
-                        let cur = '', inQuotes = false;
-                        for (let j=0;j<line.length;j++) {
-                            const ch = line[j];
-                            if (ch === '"') { if (inQuotes && line[j+1] === '"') { cur += '"'; j++; } else { inQuotes = !inQuotes; } }
-                            else if (ch === ',' && !inQuotes) { fields.push(cur); cur = ''; }
-                            else { cur += ch; }
-                        }
-                        fields.push(cur);
-                        rows.push(fields);
-                    }
-                    return rows;
-                },
-                importPartsCSVFromText(text) {
-                    const rows = this.parseCSV(text);
-                    const header = rows.shift().map(h => h.toLowerCase());
-                    rows.forEach(r => {
-                        const obj = {};
-                        header.forEach((h,i) => { obj[h] = r[i] ?? ''; });
-                        const name = obj['name'] || obj['part'] || '';
-                        if (!name) return;
-                        const qty = parseFloat(obj['qty'] || obj['quantity'] || '1') || 1;
-                        const price = parseFloat(obj['unit price'] || obj['price'] || '0') || 0;
-                        const status = obj['status'] || 'Pending';
-                        this.currentCase.repair_parts.push({ name, sku: obj['sku']||'', supplier: obj['supplier']||'', quantity: qty, unit_price: price, status: status, notes: obj['notes']||'', received_by: obj['received by']||'', received_at: obj['received at']||'' });
-                    });
-                    this.updatePartsList();
-                    showToast('CSV Imported', 'Parts imported from CSV.', 'success');
-                },
-                importLaborCSVFromText(text) {
-                    const rows = this.parseCSV(text);
-                    const header = rows.shift().map(h => h.toLowerCase());
-                    rows.forEach(r => {
-                        const obj = {};
-                        header.forEach((h,i) => { obj[h] = r[i] ?? ''; });
-                        const desc = obj['description'] || obj['service'] || '';
-                        if (!desc) return;
-                        const hours = parseFloat(obj['hours'] || '0') || 0;
-                        const rate = parseFloat(obj['rate'] || obj['hourly rate'] || '0') || 0;
-                        const status = obj['status'] || 'Pending';
-                        this.currentCase.repair_labor.push({ description: desc, hours, hourly_rate: rate, status, notes: obj['notes']||'', completed_by: obj['completed by']||'', completed_at: obj['completed at']||'' });
-                    });
-                    this.updateLaborList();
-                    showToast('CSV Imported', 'Labor imported from CSV.', 'success');
-                },
                 // Drag enter / leave visuals
                 dragEnterPart(ev, idx) { const el = document.querySelectorAll('.part-item')[idx]; if(el) el.classList.add('drag-over'); },
                 dragLeavePart(ev, idx) { const el = document.querySelectorAll('.part-item')[idx]; if(el) el.classList.remove('drag-over'); },
@@ -1615,27 +1471,7 @@ try {
                         }
                     });
 
-                    // CSV import handlers (parts)
-                    const partsCsvInput = document.getElementById('partsCsvInput');
-                    const importPartsBtn = document.getElementById('importPartsCsvBtn');
-                    if (importPartsBtn && partsCsvInput) {
-                        importPartsBtn.addEventListener('click', async () => {
-                            if (!partsCsvInput.files.length) return showToast('No file', 'Select a CSV to import.', 'error');
-                            const text = await partsCsvInput.files[0].text();
-                            this.importPartsCSVFromText(text);
-                        });
-                    }
 
-                    // CSV import handlers (labor) - labor inputs exist in DOM
-                    const laborCsvInput = document.getElementById('laborCsvInput');
-                    const importLaborBtn = document.getElementById('importLaborCsvBtn');
-                    if (importLaborBtn && laborCsvInput) {
-                        importLaborBtn.addEventListener('click', async () => {
-                            if (!laborCsvInput.files.length) return showToast('No file', 'Select a CSV to import.', 'error');
-                            const text = await laborCsvInput.files[0].text();
-                            this.importLaborCSVFromText(text);
-                        });
-                    }
                 },
                 async requestParts() {
                     if (!this.partsRequest.description.trim()) {
