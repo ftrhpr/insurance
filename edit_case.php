@@ -87,7 +87,50 @@ try {
     <title><?php echo __('case.title', 'Edit Case'); ?> #<?php echo $case_id; ?> - OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        // Placeholder caseEditor function - will be overridden by full implementation
+        function caseEditor() {
+            return {
+                currentCase: { ...initialCaseData },
+                collections: [],
+                openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback', 'repair'],
+                partsRequest: { description: '', supplier: '', collection_type: 'local' },
+                editingReview: false,
+                activeTab: 'quick',
+                repairTab: 'overview',
+                searchQuery: '',
+                filterType: 'all'
+            };
+        }
+    </script>
+    <script>
+        // Define caseEditor function early for Alpine.js
+        function caseEditor() {
+            return {
+                currentCase: { ...initialCaseData },
+                collections: [],
+                openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback', 'repair'],
+                partsRequest: { description: '', supplier: '', collection_type: 'local' },
+                editingReview: false,
+                activeTab: 'quick',
+                repairTab: 'overview',
+                searchQuery: '',
+                filterType: 'all',
+                isSectionOpen(section) {
+                    return this.openSections && Array.isArray(this.openSections) ? this.openSections.includes(section) : false;
+                },
+                toggleSection(section) {
+                    const index = this.openSections.indexOf(section);
+                    if (index === -1) {
+                        this.openSections.push(section);
+                    } else {
+                        this.openSections.splice(index, 1);
+                    }
+                    localStorage.setItem('openSections', JSON.stringify(this.openSections));
+                }
+            };
+        }
+    </script>
 
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
@@ -3274,5 +3317,6 @@ try {
             window.caseEditor.removeLabor(index);
         };
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
