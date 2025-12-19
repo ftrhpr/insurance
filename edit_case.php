@@ -87,6 +87,7 @@ try {
     <title><?php echo __('case.title', 'Edit Case'); ?> #<?php echo $case_id; ?> - OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
@@ -165,9 +166,9 @@ try {
                 <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('details')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.details', 'Case Details'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': isSectionOpen('details')}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" x-bind:class="openSections ? (openSections.includes('details') ? 'rotate-180' : '') : ''"></i>
                     </button>
-                    <div x-show="isSectionOpen('details')" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections && openSections.includes('details')" x-cloak x-transition class="px-5 pb-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 border-t border-slate-200 pt-6">
                             <!-- Form Fields -->
                             <div>
@@ -222,11 +223,11 @@ try {
                                 <span id="repair-status-badge" class="w-2 h-2 rounded-full bg-slate-400"></span>
                                 <span id="repair-status-text"><?php echo __('case.not_started', 'Not Started'); ?></span>
                             </div>
-                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': isSectionOpen('repair')}"></i>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" x-bind:class="openSections ? (openSections.includes('repair') ? 'rotate-180' : '') : ''"></i>
                         </div>
                     </button>
 
-                    <div x-show="isSectionOpen('repair')" x-cloak x-transition class="border-t border-slate-200">
+                    <div x-show="openSections && openSections.includes('repair')" x-cloak x-transition class="border-t border-slate-200">
                         <!-- Repair Progress Overview -->
                         <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50/30 border-b border-slate-200">
                             <div class="flex items-center justify-between mb-3">
@@ -538,9 +539,9 @@ try {
                  <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('communication')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.communication', 'Communication'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': isSectionOpen('communication')}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" x-bind:class="openSections ? (openSections.includes('communication') ? 'rotate-180' : '') : ''"></i>
                     </button>
-                    <div x-show="isSectionOpen('communication')" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections && openSections.includes('communication')" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6 space-y-5">
                             <div class="flex items-center justify-center">
                                  <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
@@ -577,9 +578,9 @@ try {
                 <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('feedback')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.customer_feedback', 'Customer Feedback'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': isSectionOpen('feedback')}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" x-bind:class="openSections ? (openSections.includes('feedback') ? 'rotate-180' : '') : ''"></i>
                     </button>
-                    <div x-show="isSectionOpen('feedback')" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections && openSections.includes('feedback')" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6">
                              <div class="flex justify-end mb-4 -mt-2">
                                 <button @click="editingReview = !editingReview" id="btn-edit-review" class="text-sm font-semibold text-blue-600 hover:underline">
@@ -3273,6 +3274,5 @@ try {
             window.caseEditor.removeLabor(index);
         };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
