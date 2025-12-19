@@ -1153,7 +1153,7 @@ try {
                         });
                     }
 
-                    container.innerHTML = html || '<div class="text-sm text-slate-500">No parts or labor added yet.</div>';
+                    container.innerHTML = html || '<div class="text-sm text-slate-500">No parts or labor added yet. <button onclick="window.caseEditor.addPart()" class="ml-2 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">Add Part</button> <button onclick="window.caseEditor.addLabor()" class="ml-2 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">Add Labor</button> <button onclick="(document.getElementById(\'collectionsList\') && document.getElementById(\'collectionsList\').scrollIntoView({behavior:'smooth'}))" class="ml-2 text-xs border border-slate-200 text-slate-700 px-2 py-1 rounded">Show Collections</button></div>';
 
                     // Setup autocomplete for new inputs
                     container.querySelectorAll('.part-name').forEach(inp => setupAutocomplete(inp, 'part'));
