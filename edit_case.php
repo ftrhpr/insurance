@@ -142,6 +142,7 @@ try {
                 bulkDuplicateItems() {},
                 bulkMoveToCollection() {},
                 bulkRequestPartsCollection() {},
+                createCollectionRequestFromSelected() {},
                 calculateTotalCost() { return 0; },
                 addPart() {},
                 addLabor() {},
@@ -465,6 +466,10 @@ try {
                                             <div class="flex items-center gap-2">
                                                 <button @click="selectAllItems()" class="px-3 py-2 text-sm bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
                                                     Select All
+                                                </button>
+                                                <button @click="createCollectionRequestFromSelected()" id="collection-request-btn" class="px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden">
+                                                    <i data-lucide="package" class="w-4 h-4 inline mr-1"></i>
+                                                    Create Collection Request
                                                 </button>
                                                 <button @click="bulkActions()" id="bulk-actions-btn" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors hidden">
                                                     Bulk Actions
@@ -1366,6 +1371,11 @@ try {
                     container.innerHTML = html;
                     lucide.createIcons();
                     this.updateItemsCostSummary();
+                    
+                    // Add event listeners to checkboxes for updating visuals
+                    document.querySelectorAll('#items-container .select-item').forEach(cb => {
+                        cb.addEventListener('change', () => this.updateSelectVisuals());
+                    });
                 },
 
                 renderItemCard(item) {
@@ -2216,8 +2226,10 @@ try {
                 updateSelectVisuals() {
                     const checkboxes = document.querySelectorAll('#items-container .select-item');
                     const checkedCount = document.querySelectorAll('#items-container .select-item:checked').length;
+                    const partsCheckedCount = document.querySelectorAll('#items-container .select-item[data-type="part"]:checked').length;
                     const selectAllBtn = document.getElementById('select-all-btn');
                     const bulkActions = document.getElementById('bulk-actions');
+                    const collectionRequestBtn = document.getElementById('collection-request-btn');
 
                     if (selectAllBtn) {
                         const allChecked = checkedCount === checkboxes.length && checkboxes.length > 0;
@@ -2229,6 +2241,10 @@ try {
 
                     if (bulkActions) {
                         bulkActions.classList.toggle('hidden', checkedCount === 0);
+                    }
+
+                    if (collectionRequestBtn) {
+                        collectionRequestBtn.classList.toggle('hidden', partsCheckedCount === 0);
                     }
                 },
 
@@ -2328,6 +2344,43 @@ try {
                             if (descField) descField.focus();
                         }, 500);
                     }
+                    
+                    showToast('Parts Request Form Ready', 'Please fill in supplier details and submit the request.', 'success');
+                },
+
+                createCollectionRequestFromSelected() {
+                    const selected = this.getSelectedItems();
+                    if (selected.parts.length === 0) {
+                        showToast('No parts selected', 'Please select at least one part to create a collection request.', 'error');
+                        return;
+                    }
+
+                    // Create a description from selected parts only
+                    const partsList = selected.parts.map(part => `${part.name} (Qty: ${part.quantity})`).join(', ');
+                    
+                    const description = `Parts Collection Request: ${partsList}`;
+                    
+                    // Pre-fill the parts request form
+                    this.partsRequest.description = description;
+                    this.partsRequest.collection_type = 'local';
+                    
+                    // Switch to the parts tab and expand the parts request section
+                    this.tab = 'parts';
+                    this.openSections = [...this.openSections, 'parts'];
+                    localStorage.setItem('openSections', JSON.stringify(this.openSections));
+                    
+                    // Scroll to the parts request section
+                    setTimeout(() => {
+                        const partsSection = document.querySelector('[data-section="parts"]');
+                        if (partsSection) {
+                            partsSection.scrollIntoView({ behavior: 'smooth' });
+                            // Focus on the description field
+                            setTimeout(() => {
+                                const descField = document.querySelector('textarea[x-model="partsRequest.description"]');
+                                if (descField) descField.focus();
+                            }, 500);
+                        }
+                    }, 100);
                     
                     showToast('Parts Request Form Ready', 'Please fill in supplier details and submit the request.', 'success');
                 },
