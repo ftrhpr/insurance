@@ -97,6 +97,11 @@ try {
         [x-cloak] { display: none !important; }
         .step-complete .step-line { background-color: #2563eb; }
         .step-complete .step-icon { background-color: #2563eb; color: white; }
+        /* Selection visuals */
+        .selected-row { background: rgba(59,130,246,0.06); border-left: 4px solid rgba(59,130,246,0.3); }
+        .bulk-actions { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,0.9); padding: 8px; border-bottom: 1px solid #e6e6e6; display:flex; gap:8px; align-items:center; }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index: 60; }
+        .modal { background: white; border-radius: 8px; padding: 16px; width: 480px; max-width: calc(100% - 32px); box-shadow: 0 10px 25px rgba(2,6,23,0.15); }
         .step-current .step-icon { background-color: #2563eb; color: white; border-color: #2563eb; }
         .step-incomplete .step-icon { background-color: white; color: #6b7280; border-color: #d1d5db; }
     </style>
@@ -269,6 +274,14 @@ try {
                                     </div>
                                 </div>
 
+                                <!-- Bulk actions (hidden until selection) -->
+                                <div id="bulkActions" class="bulk-actions hidden">
+                                    <div id="bulkSelectedCount" class="text-sm text-slate-700">0 selected</div>
+                                    <button id="bulkCreateCollectionBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Create Parts Collection</button>
+                                    <button id="bulkExportBtn" class="bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded text-sm">Export Selected CSV</button>
+                                    <button id="bulkDeselectBtn" class="text-sm text-slate-600 px-2 py-1 rounded border border-slate-200">Deselect All</button>
+                                </div>
+
                                 <!-- Import controls -->
                                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center gap-3">
                                     <div class="flex items-center gap-2">
@@ -295,6 +308,24 @@ try {
                                 <!-- Combined items list -->
                                 <div id="itemsList" class="space-y-3">
                                     <!-- Parts and Labor entries will render here together -->
+                                </div>
+
+                                <!-- Modal: Create collection from selected -->
+                                <div id="collectionModal" class="hidden" aria-hidden="true">
+                                    <div class="modal-backdrop" onclick="(function(e){ if(e.target===this){ document.getElementById('collectionModal').classList.add('hidden'); } }).call(this,event)">
+                                        <div class="modal" onclick="event.stopPropagation();">
+                                            <h3 class="text-lg font-semibold">Create Parts Collection</h3>
+                                            <p class="text-sm text-slate-600 mt-2">You are creating a parts collection from the selected items. Review and confirm.</p>
+                                            <div class="mt-3">
+                                                <label class="text-sm text-slate-600">Description</label>
+                                                <textarea id="collectionModalDesc" class="w-full mt-2 p-2 border rounded" rows="3" placeholder="Optional note for the collection"></textarea>
+                                            </div>
+                                            <div class="mt-4 flex justify-end gap-2">
+                                                <button id="collectionModalCancel" class="px-3 py-1 rounded border">Cancel</button>
+                                                <button id="collectionModalConfirm" class="px-3 py-1 rounded bg-green-600 text-white">Create Collection</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
@@ -1340,6 +1371,55 @@ try {
                     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-selected.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
                 },
+
+                // New: update select visuals and bulk toolbar
+                updateSelectVisuals() {
+                    const selectedCount = document.querySelectorAll('.select-item:checked').length;
+                    const bulk = document.getElementById('bulkActions');
+                    const cnt = document.getElementById('bulkSelectedCount');
+                    if (cnt) cnt.textContent = `${selectedCount} selected`;
+                    if (bulk) bulk.classList.toggle('hidden', selectedCount === 0);
+                    // Toggle row class
+                    document.querySelectorAll('.select-item').forEach(cb => {
+                        const row = cb.closest('.part-item') || cb.closest('.labor-item');
+                        if (!row) return; row.classList.toggle('selected-row', !!cb.checked);
+                    });
+                },
+
+                // Open modal to confirm collection creation
+                openCreateCollectionModal() {
+                    const sel = this.getSelectedItems();
+                    if (!sel.parts || sel.parts.length === 0) return showToast('No parts selected', 'Select parts to create a collection.', 'info');
+                    const modal = document.getElementById('collectionModal');
+                    if (!modal) return this.createCollectionFromSelectedConfirmed(); // fallback
+                    document.getElementById('collectionModalDesc').value = this.collectionNote || '';
+                    modal.classList.remove('hidden');
+                },
+
+                // Confirmed action: send selected parts to create collection
+                async createCollectionFromSelectedConfirmed() {
+                    const sel = this.getSelectedItems();
+                    const items = (sel.parts || []).map(p => ({ name: p.name, quantity: p.quantity || 1, price: p.unit_price || 0 }));
+                    if (items.length === 0) return showToast('No parts selected', 'Select parts to create a collection.', 'info');
+                    try {
+                        const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: items, description: document.getElementById('collectionModalDesc')?.value || this.collectionNote }) });
+                        const result = await resp.json();
+                        if (result.success) { showToast('Collection Created', 'Selected parts saved to new collection.', 'success'); if (typeof this.loadCollections === 'function') this.loadCollections(); }
+                        else { showToast('Error', result.error || 'Failed to create collection.', 'error'); }
+                    } catch (e) { showToast('Error', 'Failed to create collection.', 'error'); }
+                    // close modal
+                    const modal = document.getElementById('collectionModal'); if (modal) modal.classList.add('hidden');
+                },
+
+                deselectAll() { document.querySelectorAll('.select-item').forEach(cb => cb.checked = false); this.updateSelectVisuals(); },
+
+                // Keyboard shortcuts
+                initSelectionShortcuts() {
+                    document.addEventListener('keydown', (e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') { e.preventDefault(); this.selectAllItems(true); this.updateSelectVisuals(); }
+                        if (e.key === 'Escape') { this.deselectAll(); }
+                    });
+                }
 
 
 
