@@ -932,7 +932,7 @@ try {
                     lucide.createIcons();
                     // re-render combined list
                     if (typeof this.updateItemsList === 'function') this.updateItemsList();
-                },"}】
+                },
                 incrementQty(index) {
                     if (!this.currentCase.repair_parts || !this.currentCase.repair_parts[index]) return;
                     this.currentCase.repair_parts[index].quantity = (parseFloat(this.currentCase.repair_parts[index].quantity) || 0) + 1;
