@@ -241,92 +241,72 @@ try {
                                 <textarea x-model="currentCase.repair_notes" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none resize-vertical"></textarea>
                             </div>
                         </div>
-                        <!-- Tabs for Parts, Labor, Activity -->
+                        <!-- Items & Activity -->
                         <div class="mt-6 border-t border-slate-200 pt-6">
                             <div class="flex items-center justify-center mb-4">
                                 <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-                                    <button @click="repairTab = 'parts'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'parts'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Parts</button>
-                                    <button @click="repairTab = 'labor'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'labor'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Labor</button>
+                                    <button @click="repairTab = 'items'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'items'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Items</button>
                                     <button @click="repairTab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'activity'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Activity History</button>
                                 </div>
                             </div>
-                            <!-- Parts Tab -->
-                            <div x-show="repairTab === 'parts'" x-cloak class="space-y-4">
+
+                            <!-- Combined Items View -->
+                            <div x-show="repairTab === 'items'" x-cloak class="space-y-4">
                                 <div class="flex items-center justify-between">
-                                    <h3 class="text-lg font-semibold text-slate-800">Parts Used</h3>
+                                    <h3 class="text-lg font-semibold text-slate-800">Parts & Labor</h3>
                                     <div class="flex items-center gap-2">
-                                        <input id="markupInput" type="number" min="0" step="0.1" x-model.number="markupPercentage" placeholder="Markup %" class="w-24 px-2 py-1 rounded border border-slate-200 text-sm">
-                                        <button @click="applyMarkup()" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1 rounded text-sm">Apply Markup</button>
-                                        <button type="button" @click="exportPartsCSV()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export CSV</button>
-                                        <button type="button" @click="exportPartsXLS()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLS</button>
-                                        <button type="button" @click="exportPartsXLSX()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLSX</button>
-                                        <button id="savePartsCollectionBtn" type="button" @click="savePartsCollection()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
-                                            <i data-lucide="save" class="w-4 h-4"></i> Save as Collection
-                                        </button>
-                                        <button type="button" @click="bulkMarkOrdered()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-2 py-1 rounded text-sm">Mark All Ordered</button>
+                                        <button type="button" @click="showInvoice()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Invoice</button>
+                                        <button type="button" onclick="window.caseEditor.exportAllCSV()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export CSV</button>
+                                        <button type="button" onclick="window.caseEditor.exportAllXLS()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLS</button>
+                                        <button type="button" onclick="window.caseEditor.exportAllXLSX()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLSX</button>
                                         <button @click="addPart()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
                                             <i data-lucide="plus" class="w-4 h-4"></i> Add Part
                                         </button>
-                                    </div>
-                                </div>
-                                <!-- PDF Upload Section -->
-                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                    <div class="flex items-center gap-2 mb-3">
-                                        <h4 class="text-sm font-semibold text-slate-700">Import from Repair Invoice</h4>
-                                        <div class="group relative">
-                                            <i data-lucide="info" class="w-4 h-4 text-slate-400 cursor-help"></i>
-                                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
-                                                Upload a PDF invoice to automatically extract parts and labor
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <input type="file" id="repairPdfInput" accept=".pdf" class="text-sm">
-                                        <button type="button" id="parseRepairPdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded-lg text-sm flex items-center gap-1 disabled:opacity-50" disabled>
-                                            <i data-lucide="file-text" class="w-4 h-4"></i> Parse PDF
-                                        </button>
-                                        <div class="flex items-center gap-2 ml-4">
-                                            <input type="file" id="partsCsvInput" accept=".csv" class="text-sm">
-                                            <button type="button" id="importPartsCsvBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded text-sm">Import CSV</button>
-                                        </div>
-                                    </div>
-                                    <div id="repairPdfStatus" class="text-sm text-slate-600 mt-2"></div>
-                                    <div id="repairParsedPreview" class="mt-3"></div>
-                                </div>
-                                <div id="partsList" class="space-y-3">
-                                    <!-- Parts will be added here -->
-                                </div>
-                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                    <div class="flex items-center justify-between">
-                                        <div class="text-sm text-slate-600">Notes for Collection:</div>
-                                        <input id="collectionNote" class="w-2/3 px-2 py-1 rounded border border-slate-200 text-sm" placeholder="Optional note to include with parts collection" x-model="collectionNote">
-                                    </div>
-                                    <div class="text-right font-semibold text-slate-800 mt-3">Total Parts Cost: <span id="parts-total">0.00₾</span></div>
-                                </div>
-                            </div>
-                            <!-- Labor Tab -->
-                            <div x-show="repairTab === 'labor'" x-cloak class="space-y-4">
-                                <div class="flex justify-between items-center">
-                                    <h3 class="text-lg font-semibold text-slate-800">Labor Hours</h3>
-                                    <div class="flex items-center gap-2">
-                                        <input type="file" id="laborCsvInput" accept=".csv" class="text-sm">
-                                        <button type="button" id="importLaborCsvBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded text-sm">Import CSV</button>
-                                        <button type="button" @click="exportLaborCSV()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export CSV</button>
-                                        <button type="button" @click="exportLaborXLS()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLS</button>
-                                        <button type="button" @click="exportLaborXLSX()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export XLSX</button>
                                         <button @click="addLabor()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
                                             <i data-lucide="plus" class="w-4 h-4"></i> Add Labor
                                         </button>
                                     </div>
                                 </div>
-                                <div id="laborList" class="space-y-3">
-                                    <!-- Labor will be added here -->
+
+                                <!-- Import controls -->
+                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <input type="file" id="repairPdfInput" accept=".pdf" class="text-sm">
+                                        <button type="button" id="parseRepairPdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded-lg text-sm flex items-center gap-1 disabled:opacity-50" disabled>
+                                            <i data-lucide="file-text" class="w-4 h-4"></i> Parse PDF
+                                        </button>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <input type="file" id="partsCsvInput" accept=".csv" class="text-sm">
+                                        <button type="button" id="importPartsCsvBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded text-sm">Import Parts CSV</button>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <input type="file" id="laborCsvInput" accept=".csv" class="text-sm">
+                                        <button type="button" id="importLaborCsvBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded text-sm">Import Labor CSV</button>
+                                    </div>
+
+                                    <div id="repairPdfStatus" class="text-sm text-slate-600 ml-auto"></div>
                                 </div>
+
+                                <div id="repairParsedPreview" class="mt-3"></div>
+
+                                <!-- Combined items list -->
+                                <div id="itemsList" class="space-y-3">
+                                    <!-- Parts and Labor entries will render here together -->
+                                </div>
+
                                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                    <div class="text-right font-semibold text-slate-800">Total Labor Cost: <span id="labor-total">0.00₾</span></div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="text-sm text-slate-600">Notes for Collection:</div>
+                                        <input id="collectionNote" class="w-2/3 px-2 py-1 rounded border border-slate-200 text-sm" placeholder="Optional note to include with parts collection" x-model="collectionNote">
+                                    </div>
+                                    <div class="text-right font-semibold text-slate-800 mt-3">Parts Cost: <span id="parts-total">0.00₾</span> &nbsp; | &nbsp; Labor Cost: <span id="labor-total">0.00₾</span></div>
                                 </div>
                             </div>
-                            <!-- Activity History Tab -->
+
+                            <!-- Activity History Tab (unchanged) -->
                             <div x-show="repairTab === 'activity'" x-cloak class="space-y-4">
                                 <div class="flex justify-between items-center">
                                     <h3 class="text-lg font-semibold text-slate-800">Repair Activity History</h3>
@@ -659,7 +639,7 @@ try {
                 partsRequest: { description: '', supplier: '', collection_type: 'local' },
                 editingReview: false,
                 activeTab: 'quick',
-                repairTab: 'parts',
+                repairTab: 'items',
                 lastRemovedPart: null,
                 lastRemovedTimer: null,
                 markupPercentage: 0,
@@ -914,94 +894,17 @@ try {
                     this.updatePartsList();
                 },
                 updatePartsList() {
-                    const container = document.getElementById('partsList');
+                    // Update parts total and ensure combined list refresh
                     const totalEl = document.getElementById('parts-total');
-                    if (!container || !totalEl) return;
-                    
-                    container.innerHTML = this.currentCase.repair_parts.map((part, index) => `
-                        <div ondragenter="window.caseEditor.dragEnterPart(event, ${index})" ondragleave="window.caseEditor.dragLeavePart(event, ${index})" ondragover="event.preventDefault()" ondrop="window.caseEditor.dropPart(event, ${index})" class="part-item bg-white/40 rounded-lg p-3 border border-white/30">
-                            <div class="grid grid-cols-12 gap-x-3 items-start">
-                                <div class="col-span-7">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <div class="flex items-center gap-2">
-                                            <div class="drag-handle" draggable="true" ondragstart="window.caseEditor.dragStartPart(event, ${index})" title="Drag to reorder"><i data-lucide="move" class="w-4 h-4"></i></div>
-                                            <label class="block text-xs font-semibold text-gray-800">Part Name</label>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs font-medium rounded-full px-2 py-1" style="background:${part.ordered ? '#dcfce7' : '#f1f5f9'}; color:${part.ordered ? '#15803d' : '#475569'}">${part.ordered ? 'Ordered' : 'Pending'}</span>
-                                        </div>
-                                    </div>
-                                    <div class="relative">
-                                        <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" placeholder="Enter name..." autocomplete="off" value="${escapeHtml(part.name || '')}" onchange="updatePart(${index}, 'name', this.value)">
-                                        <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
-                                    </div>
-                                    <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
-                                        <div>SKU: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.sku || '')}" onchange="updatePart(${index}, 'sku', this.value)"></div>
-                                        <div>Supplier: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.supplier || '')}" onchange="updatePart(${index}, 'supplier', this.value)"></div>
-                                        <button class="ml-2 text-xs text-slate-600" type="button" onclick="(function(i){ const notesEl = document.getElementById('part-notes-'+i); notesEl.classList.toggle('hidden'); })( ${index} )">Notes</button>
-                                    </div>
-                                    <textarea id="part-notes-${index}" class="mt-2 hidden w-full px-2 py-1 text-sm border rounded" placeholder="Optional note..." onchange="updatePart(${index}, 'notes', this.value)">${escapeHtml(part.notes || '')}</textarea>
-                                </div>
-                                    <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
-                                        <div>SKU: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.sku || '')}" onchange="updatePart(${index}, 'sku', this.value)"></div>
-                                        <div>Supplier: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.supplier || '')}" onchange="updatePart(${index}, 'supplier', this.value)"></div>
-                                        <button class="ml-2 text-xs text-slate-600" type="button" onclick="(function(i){ const notesEl = document.getElementById('part-notes-'+i); notesEl.classList.toggle('hidden'); })( ${index} )">Notes</button>
-                                    </div>
-                                    <textarea id="part-notes-${index}" class="mt-2 hidden w-full px-2 py-1 text-sm border rounded" placeholder="Optional note..." onchange="updatePart(${index}, 'notes', this.value)">${escapeHtml(part.notes || '')}</textarea>
-                                </div>
-                                    <div class="relative">
-                                        <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" placeholder="Enter name..." autocomplete="off" value="${escapeHtml(part.name || '')}" onchange="updatePart(${index}, 'name', this.value)">
-                                        <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
-                                    </div>
-                                    <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
-                                        <div>SKU: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.sku || '')}" onchange="updatePart(${index}, 'sku', this.value)"></div>
-                                        <div>Supplier: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.supplier || '')}" onchange="updatePart(${index}, 'supplier', this.value)"></div>
-                                        <button class="ml-2 text-xs text-slate-600" type="button" onclick="(function(i){ const notesEl = document.getElementById('part-notes-'+i); notesEl.classList.toggle('hidden'); })( ${index} )">Notes</button>
-                                    </div>
-                                    <textarea id="part-notes-${index}" class="mt-2 hidden w-full px-2 py-1 text-sm border rounded" placeholder="Optional note..." onchange="updatePart(${index}, 'notes', this.value)">${escapeHtml(part.notes || '')}</textarea>
-                                </div>
-
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Qty</label>
-                                    <div class="flex items-center gap-2">
-                                        <button type="button" onclick="window.caseEditor.decrementQty(${index})" class="px-2 py-1 border rounded">-</button>
-                                        <input type="number" class="part-quantity block w-16 rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-2 py-1 text-sm text-center" value="${part.quantity || 1}" min="1" onchange="updatePart(${index}, 'quantity', this.value)">
-                                        <button type="button" onclick="window.caseEditor.incrementQty(${index})" class="px-2 py-1 border rounded">+</button>
-                                    </div>
-                                </div>
-
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Unit Price</label>
-                                    <input type="number" class="part-price block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${part.unit_price || 0}" step="0.01" min="0" onchange="updatePart(${index}, 'unit_price', this.value)">
-                                    <div class="text-xs text-slate-500 mt-1">Total: ${( (part.quantity || 1) * (part.unit_price || 0) ).toFixed(2)}₾</div>
-                                </div>
-
-                                <div class="col-span-1 flex flex-col items-end gap-2">
-                                    <select onchange="updatePart(${index}, 'status', this.value)" class="text-sm px-2 py-1 rounded border">
-                                        <option value="Pending" ${part.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                        <option value="Ordered" ${part.status === 'Ordered' ? 'selected' : ''}>Ordered</option>
-                                        <option value="Received" ${part.status === 'Received' ? 'selected' : ''}>Received</option>
-                                        <option value="Billed" ${part.status === 'Billed' ? 'selected' : ''}>Billed</option>
-                                    </select>
-                                    <button type="button" onclick="window.caseEditor.nextStatusPart(${index})" class="px-2 py-1 border rounded text-xs">Next</button>
-                                    ${part.status === 'Received' && !part.received_at ? `<button type="button" onclick="window.caseEditor.confirmReceipt(${index})" class="px-2 py-1 bg-emerald-600 text-white rounded text-xs">Confirm</button>` : ''}
-                                    ${part.received_at ? `<div class="text-xs text-slate-500">Received by ${escapeHtml(part.received_by||'')}<br>${new Date(part.received_at).toLocaleString()}</div><button onclick="window.caseEditor.editReceipt(${index})" class="text-xs text-slate-600">Edit</button>` : ''}
-                                    <button type="button" onclick="if(confirm('Remove this part?')) window.caseEditor.removePart(${index})" class="px-2 py-1 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                    
-                    // Setup autocomplete for each part
-                    this.currentCase.repair_parts.forEach((_, index) => {
-                        const input = container.querySelectorAll('.part-name')[index];
-                        if (input) setupAutocomplete(input, 'part');
-                    });
-                    
-                    const total = this.currentCase.repair_parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    totalEl.textContent = total.toFixed(2) + '₾';
+                    if (totalEl) {
+                        const total = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
+                        totalEl.textContent = total.toFixed(2) + '₾';
+                    }
+                    // keep icons and summary updated
                     lucide.createIcons();
                     this.updateRepairSummary();
+                    // Re-render combined items list
+                    if (typeof this.updateItemsList === 'function') this.updateItemsList();
                 }, 
                 addLabor(description = '', hours = 0, hourly_rate = 0) {
                     if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
@@ -1021,54 +924,15 @@ try {
                     }
                 },
                 updateLaborList() {
-                    const container = document.getElementById('laborList');
                     const totalEl = document.getElementById('labor-total');
-                    if (!container || !totalEl) return;
-                    
-                    container.innerHTML = this.currentCase.repair_labor.map((labor, index) => `
-                        <div class="labor-item bg-white/40 rounded-lg p-3 border border-white/30">
-                            <div class="grid grid-cols-12 gap-x-3 items-end">
-                                <div class="col-span-7">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Service Name</label>
-                                    <div class="relative">
-                                        <input type="text" class="labor-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" placeholder="Enter name..." autocomplete="off" value="${escapeHtml(labor.description || '')}" onchange="updateLabor(${index}, 'description', this.value)">
-                                        <div class="autocomplete-results absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden shadow-lg max-h-48 overflow-y-auto"></div>
-                                    </div>
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Hours</label>
-                                    <input type="number" class="labor-hours block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm text-center" value="${labor.hours || 0}" step="0.5" onchange="updateLabor(${index}, 'hours', this.value)">
-                                </div>
-                                <div class="col-span-2">
-                                    <label class="block text-xs font-semibold text-gray-800 mb-1">Rate</label>
-                                    <input type="number" class="labor-rate block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${labor.hourly_rate || 0}" step="0.01" min="0" onchange="updateLabor(${index}, 'hourly_rate', this.value)">
-                                </div>
-                                <div class="col-span-1 flex flex-col items-end gap-2">
-                                    <select onchange="updateLabor(${index}, 'status', this.value)" class="text-sm px-2 py-1 rounded border">
-                                        <option value="Pending" ${labor.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                        <option value="In Progress" ${labor.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                        <option value="Completed" ${labor.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                                        <option value="Billed" ${labor.status === 'Billed' ? 'selected' : ''}>Billed</option>
-                                    </select>
-                                    <button type="button" onclick="window.caseEditor.nextStatusLab(${index})" class="px-2 py-1 border rounded text-xs">Next</button>
-                                    ${labor.status === 'Completed' && !labor.completed_at ? `<button type="button" onclick="window.caseEditor.confirmComplete(${index})" class="px-2 py-1 bg-emerald-600 text-white rounded text-xs">Confirm</button>` : ''}
-                                    ${labor.completed_at ? `<div class="text-xs text-slate-500">Completed by ${escapeHtml(labor.completed_by||'')}<br>${new Date(labor.completed_at).toLocaleString()}</div><button onclick="window.caseEditor.editComplete(${index})" class="text-xs text-slate-600">Edit</button>` : ''}
-                                    <button type="button" onclick="if(confirm('Remove this labor entry?')) removeLabor(${index})" class="px-2 py-1 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                    
-                    // Setup autocomplete for each labor
-                    this.currentCase.repair_labor.forEach((_, index) => {
-                        const input = container.querySelectorAll('.labor-name')[index];
-                        if (input) setupAutocomplete(input, 'labor');
-                    });
-                    
-                    const total = this.currentCase.repair_labor.reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
-                    totalEl.textContent = total.toFixed(2) + '₾';
+                    if (totalEl) {
+                        const total = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                        totalEl.textContent = total.toFixed(2) + '₾';
+                    }
                     lucide.createIcons();
-                },
+                    // re-render combined list
+                    if (typeof this.updateItemsList === 'function') this.updateItemsList();
+                },"}】
                 incrementQty(index) {
                     if (!this.currentCase.repair_parts || !this.currentCase.repair_parts[index]) return;
                     this.currentCase.repair_parts[index].quantity = (parseFloat(this.currentCase.repair_parts[index].quantity) || 0) + 1;
@@ -1326,14 +1190,138 @@ try {
                 confirmComplete(index) { const name = prompt('Completed by (name):'); if (!name) return; const l = this.currentCase.repair_labor[index]; if (!l) return; l.completed_by = name; l.completed_at = new Date().toISOString(); l.status = 'Completed'; this.updateLaborList(); showToast('Labor Marked Completed', `Completed by ${name}`, 'success'); },
                 editComplete(index) { const l = this.currentCase.repair_labor[index]; if (!l) return; const name = prompt('Completed by (name):', l.completed_by || ''); if (name === null) return; l.completed_by = name; this.updateLaborList(); showToast('Completion Updated', '', 'success'); },
                 updateRepairSummary() {
-                    const partsTotal = this.currentCase.repair_parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = this.currentCase.repair_labor.reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                    const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
                     const grandTotal = partsTotal + laborTotal;
                     
                     document.getElementById('summary-parts-total').textContent = partsTotal.toFixed(2) + '₾';
                     document.getElementById('summary-labor-total').textContent = laborTotal.toFixed(2) + '₾';
                     document.getElementById('summary-grand-total').textContent = grandTotal.toFixed(2) + '₾';
                 },
+
+                // Render combined items (parts + labor) into a single view
+                updateItemsList() {
+                    const container = document.getElementById('itemsList');
+                    if (!container) return;
+                    const parts = this.currentCase.repair_parts || [];
+                    const labor = this.currentCase.repair_labor || [];
+                    let html = '';
+
+                    if (parts.length > 0) {
+                        html += `<div class="text-sm font-semibold text-slate-700">Parts (${parts.length})</div>`;
+                        parts.forEach((part, index) => {
+                            html += `
+                                <div class="part-item bg-white/40 rounded-lg p-3 border border-white/30">
+                                    <div class="grid grid-cols-12 gap-x-3 items-start">
+                                        <div class="col-span-8">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <div class="drag-handle" draggable="true" ondragstart="window.caseEditor.dragStartPart(event, ${index})" title="Drag to reorder"><i data-lucide="move" class="w-4 h-4"></i></div>
+                                                <div class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100">Part</div>
+                                                <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${escapeHtml(part.name||'')}" onchange="updatePart(${index}, 'name', this.value)">
+                                            </div>
+                                            <div class="flex items-center gap-3 text-xs text-slate-500">
+                                                <div>SKU: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.sku||'')}" onchange="updatePart(${index}, 'sku', this.value)"></div>
+                                                <div>Supplier: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.supplier||'')}" onchange="updatePart(${index}, 'supplier', this.value)"></div>
+                                            </div>
+                                            <textarea class="mt-2 w-full px-2 py-1 text-sm border rounded" placeholder="Optional note..." onchange="updatePart(${index}, 'notes', this.value)">${escapeHtml(part.notes||'')}</textarea>
+                                        </div>
+                                        <div class="col-span-2 text-center">
+                                            <label class="text-xs">Qty</label>
+                                            <input type="number" class="block w-20 mt-1 text-center rounded border" value="${part.quantity||1}" min="1" onchange="updatePart(${index}, 'quantity', this.value)">
+                                        </div>
+                                        <div class="col-span-1 text-center">
+                                            <label class="text-xs">Unit</label>
+                                            <input type="number" class="block w-24 mt-1 text-center rounded border" value="${part.unit_price||0}" step="0.01" onchange="updatePart(${index}, 'unit_price', this.value)">
+                                            <div class="text-xs mt-2">${(((part.quantity||1)*(part.unit_price||0))).toFixed(2)}₾</div>
+                                        </div>
+                                        <div class="col-span-1 flex flex-col items-end gap-2">
+                                            <select onchange="updatePart(${index}, 'status', this.value)" class="text-sm px-2 py-1 rounded border">
+                                                <option value="Pending" ${part.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                                <option value="Ordered" ${part.status === 'Ordered' ? 'selected' : ''}>Ordered</option>
+                                                <option value="Received" ${part.status === 'Received' ? 'selected' : ''}>Received</option>
+                                                <option value="Billed" ${part.status === 'Billed' ? 'selected' : ''}>Billed</option>
+                                            </select>
+                                            <button class="px-2 py-1 border rounded text-xs" onclick="window.caseEditor.nextStatusPart(${index})">Next</button>
+                                            <button class="px-2 py-1 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center" onclick="if(confirm('Remove this part?')) window.caseEditor.removePart(${index})"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+
+                    if (labor.length > 0) {
+                        html += `<div class="text-sm font-semibold text-slate-700 mt-3">Labor (${labor.length})</div>`;
+                        labor.forEach((l, idx) => {
+                            html += `
+                                <div class="labor-item bg-white/40 rounded-lg p-3 border border-white/30">
+                                    <div class="grid grid-cols-12 gap-x-3 items-end">
+                                        <div class="col-span-8">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <div class="drag-handle" draggable="true" ondragstart="window.caseEditor.dragStartLab(event, ${idx})" title="Drag to reorder"><i data-lucide="move" class="w-4 h-4"></i></div>
+                                                <div class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100">Labor</div>
+                                                <input type="text" class="labor-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${escapeHtml(l.description||'')}" onchange="updateLabor(${idx}, 'description', this.value)">
+                                            </div>
+                                            <textarea class="mt-2 w-full px-2 py-1 text-sm border rounded" placeholder="Notes" onchange="updateLabor(${idx}, 'notes', this.value)">${escapeHtml(l.notes||'')}</textarea>
+                                        </div>
+                                        <div class="col-span-2 text-center">
+                                            <label class="text-xs">Hours</label>
+                                            <input type="number" class="block w-20 mt-1 text-center rounded border" value="${l.hours||0}" step="0.5" onchange="updateLabor(${idx}, 'hours', this.value)">
+                                        </div>
+                                        <div class="col-span-1 text-center">
+                                            <label class="text-xs">Rate</label>
+                                            <input type="number" class="block w-24 mt-1 text-center rounded border" value="${l.hourly_rate||0}" step="0.01" onchange="updateLabor(${idx}, 'hourly_rate', this.value)">
+                                            <div class="text-xs mt-2">${(((l.hours||0)*(l.hourly_rate||0))).toFixed(2)}₾</div>
+                                        </div>
+                                        <div class="col-span-1 flex flex-col items-end gap-2">
+                                            <select onchange="updateLabor(${idx}, 'status', this.value)" class="text-sm px-2 py-1 rounded border">
+                                                <option value="Pending" ${l.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                                <option value="In Progress" ${l.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                                <option value="Completed" ${l.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                                <option value="Billed" ${l.status === 'Billed' ? 'selected' : ''}>Billed</option>
+                                            </select>
+                                            <button class="px-2 py-1 border rounded text-xs" onclick="window.caseEditor.nextStatusLab(${idx})">Next</button>
+                                            <button class="px-2 py-1 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center" onclick="if(confirm('Remove this labor entry?')) window.caseEditor.removeLabor(${idx})"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+
+                    container.innerHTML = html || '<div class="text-sm text-slate-500">No parts or labor added yet.</div>';
+
+                    // Setup autocomplete for new inputs
+                    container.querySelectorAll('.part-name').forEach(inp => setupAutocomplete(inp, 'part'));
+                    container.querySelectorAll('.labor-name').forEach(inp => setupAutocomplete(inp, 'labor'));
+
+                    // Recalculate totals and icons
+                    this.updateRepairSummary();
+                    lucide.createIcons();
+                },
+
+                showInvoice() {
+                    const parts = this.currentCase.repair_parts || [];
+                    const labor = this.currentCase.repair_labor || [];
+                    const partsTotal = parts.reduce((s,p)=>s+((p.quantity||1)*(p.unit_price||0)),0);
+                    const laborTotal = labor.reduce((s,l)=>s+((l.hours||0)*(l.hourly_rate||0)),0);
+                    const grand = partsTotal + laborTotal;
+
+                    const caseInfo = this.currentCase || {};
+                    let rows = '';
+                    parts.forEach(p => rows += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>${(p.unit_price||0).toFixed(2)}₾</td><td>${(((p.quantity||1)*(p.unit_price||0))).toFixed(2)}₾</td></tr>`);
+                    labor.forEach(l => rows += `<tr><td>${escapeHtml(l.description||'')}</td><td>${l.hours||0}</td><td>${(l.hourly_rate||0).toFixed(2)}₾</td><td>${(((l.hours||0)*(l.hourly_rate||0))).toFixed(2)}₾</td></tr>`);
+
+                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice - Case ${CASE_ID}</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7f7}</style></head><body>
+                        <h2>Invoice - Case #${CASE_ID}</h2>
+                        <div><strong>Customer:</strong> ${escapeHtml(caseInfo.name||'')} &nbsp; <strong>Plate:</strong> ${escapeHtml(caseInfo.plate||'')}</div>
+                        <table class="mt-4"><thead><tr><th>Description</th><th>Qty/Hours</th><th>Unit</th><th>Total</th></tr></thead><tbody>${rows}</tbody>
+                        <tfoot><tr><th colspan="3">Parts Total</th><th>${partsTotal.toFixed(2)}₾</th></tr><tr><th colspan="3">Labor Total</th><th>${laborTotal.toFixed(2)}₾</th></tr><tr><th colspan="3">Grand Total</th><th>${grand.toFixed(2)}₾</th></tr></tfoot></table>
+                        <div style="margin-top:20px"><button onclick="window.print()">Print</button></div>
+                    </body></html>`;
+
+                    const win = window.open('', '_blank');
+                    win.document.write(html); win.document.close(); win.focus();
+                },
+
                 addActivity() {
                     const action = prompt('Enter activity action:');
                     if (!action) return;
