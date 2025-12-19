@@ -2348,7 +2348,7 @@ try {
                     showToast('Parts Request Form Ready', 'Please fill in supplier details and submit the request.', 'success');
                 },
 
-                createCollectionRequestFromSelected() {
+                async createCollectionRequestFromSelected() {
                     const selected = this.getSelectedItems();
                     if (selected.parts.length === 0) {
                         showToast('No parts selected', 'Please select at least one part to create a collection request.', 'error');
@@ -2357,30 +2357,46 @@ try {
 
                     // Create a description from selected parts only
                     const partsList = selected.parts.map(part => `${part.name} (Qty: ${part.quantity})`).join(', ');
-                    
                     const description = `Parts Collection Request: ${partsList}`;
-                    
-                    // Pre-fill the parts request form
-                    this.partsRequest.description = description;
-                    this.partsRequest.collection_type = 'local';
-                    
-                    // Switch to the parts tab and expand the parts request section
-                    this.tab = 'parts';
-                    this.openSections = [...this.openSections, 'parts'];
-                    localStorage.setItem('openSections', JSON.stringify(this.openSections));
-                    
-                    // Scroll to the parts request section
-                    setTimeout(() => {
-                        const partsSection = document.querySelector('[data-section="parts"]');
-                        if (partsSection) {
-                            partsSection.scrollIntoView({ behavior: 'smooth' });
-                            // Focus on the description field
-                            setTimeout(() => {
-                                const descField = document.querySelector('textarea[x-model="partsRequest.description"]');
-                                if (descField) descField.focus();
-                            }, 500);
-                        }
-                    }, 100);
+
+                    try {
+                        // Create the parts collection directly via API
+                        const apiPartsList = selected.parts.map(part => ({
+                            name: part.name,
+                            quantity: part.quantity || 1,
+                            price: part.unit_price || 0,
+                            sku: part.sku || null,
+                            supplier: part.supplier || null
+                        }));
+                        
+                        const response = await fetch(`${API_URL}?action=create_parts_collection`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                transfer_id: CASE_ID,
+                                parts_list: apiPartsList,
+                                assigned_manager_id: null,
+                                description: description,
+                                supplier: null, // No supplier required
+                                collection_type: 'local'
+                            })
+                        });
+                        
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        const result = await response.json();
+                        
+                        showToast("Parts Request Created", `Collection request created for ${selected.parts.length} selected part(s).`, "success");
+                        
+                        // Clear selection
+                        document.querySelectorAll('#items-container .select-item:checked').forEach(cb => {
+                            cb.checked = false;
+                        });
+                        this.updateSelectVisuals();
+                        
+                    } catch (error) {
+                        showToast("Error", "Failed to create parts collection request.", "error");
+                        console.error('Parts collection creation error:', error);
+                    }
                 },
 
                 // Modal management
