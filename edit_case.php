@@ -1419,7 +1419,7 @@ try {
                         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') { e.preventDefault(); this.selectAllItems(true); this.updateSelectVisuals(); }
                         if (e.key === 'Escape') { this.deselectAll(); }
                     });
-                }
+                },
 
 
 
