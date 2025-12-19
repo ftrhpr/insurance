@@ -862,11 +862,11 @@ try {
                     loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions');
                     loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions');
 
-                    // Initialize new features
-                    this.initSearchAndFilter();
-                    this.loadCollections();
-                    this.updateOverviewStats();
-                    this.renderTimeline();
+                    // Initialize new features (only call methods that exist)
+                    if (typeof this.initSearchAndFilter === 'function') this.initSearchAndFilter();
+                    if (typeof this.loadCollections === 'function') this.loadCollections();
+                    if (typeof this.updateOverviewStats === 'function') this.updateOverviewStats();
+                    if (typeof this.renderTimeline === 'function') this.renderTimeline();
 
                     // Auto-fill phone if plate exists in Vehicle DB
                     const plateEl = document.getElementById('input-plate');
@@ -1786,14 +1786,6 @@ try {
                         showToast("Error", "Failed to save changes.", "error");
                     }
                 },
-                toggleSection(section) {
-                    if (this.openSections.includes(section)) {
-                        this.openSections = this.openSections.filter(s => s !== section);
-                    } else {
-                        this.openSections.push(section);
-                    }
-                    localStorage.setItem('openSections', JSON.stringify(this.openSections));
-                },
                 addPart(name = '', quantity = 1, unit_price = 0) {
                     if (!this.currentCase.repair_parts) this.currentCase.repair_parts = [];
                     this.currentCase.repair_parts.push({ name, quantity, unit_price, ordered: false, sku: '', supplier: '', notes: '' });
@@ -2510,26 +2502,6 @@ try {
                     alert(details); // Simple alert for now, could be enhanced with a modal
                 },
 
-                // Search and filter functionality
-                initSearchAndFilter() {
-                    const searchInput = document.getElementById('items-search');
-                    const filterSelect = document.getElementById('items-filter');
-
-                    if (searchInput) {
-                        searchInput.addEventListener('input', () => {
-                            this.searchQuery = searchInput.value.toLowerCase();
-                            this.renderItemsList();
-                        });
-                    }
-
-                    if (filterSelect) {
-                        filterSelect.addEventListener('change', () => {
-                            this.filterType = filterSelect.value;
-                            this.renderItemsList();
-                        });
-                    }
-                },
-
                 // Repair progress tracking
                 updateRepairProgress() {
                     // Update progress bar and status indicators
@@ -2803,58 +2775,6 @@ try {
                         default:
                             showToast('Cancelled', 'info');
                     }
-                }
-
-                renderTimeline() {
-                    const container = document.getElementById('timeline-container');
-                    if (!container) return;
-
-                    const activities = this.currentCase.repair_activity_log || [];
-                    
-                    if (activities.length === 0) {
-                        container.innerHTML = `
-                            <div class="text-center py-8 text-gray-500">
-                                <i data-lucide="calendar" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
-                                <p>No activities recorded yet</p>
-                            </div>
-                        `;
-                        lucide.createIcons();
-                        return;
-                    }
-
-                    // Sort by timestamp descending (most recent first)
-                    const sortedActivities = activities.slice().sort((a, b) => 
-                        new Date(b.timestamp) - new Date(a.timestamp)
-                    );
-
-                    let html = '<div class="space-y-4">';
-                    sortedActivities.forEach(activity => {
-                        const date = new Date(activity.timestamp);
-                        html += `
-                            <div class="flex gap-4">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                    <div class="w-px h-full bg-gray-200 mt-2"></div>
-                                </div>
-                                <div class="flex-1 pb-4">
-                                    <div class="bg-white border border-gray-200 rounded-lg p-4">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <h4 class="font-medium text-gray-900">${escapeHtml(activity.action || 'Activity')}</h4>
-                                            <span class="text-sm text-gray-500">${date.toLocaleDateString()}</span>
-                                        </div>
-                                        ${activity.details ? `<p class="text-sm text-gray-600 mb-2">${escapeHtml(activity.details)}</p>` : ''}
-                                        <div class="text-xs text-gray-500">
-                                            by ${escapeHtml(activity.user || 'System')} at ${date.toLocaleTimeString()}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-
-                    container.innerHTML = html;
-                    lucide.createIcons();
                 },
 
                 addTimelineEvent(action, details = '') {
@@ -2971,25 +2891,6 @@ try {
                     this.updateOverviewStats();
                     this.saveRepairData();
                 },
-
-                // Overview stats
-                updateOverviewStats() {
-                    const partsCount = (this.currentCase.repair_parts || []).length;
-                    const laborHours = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + (labor.hours || 0), 0);
-                    const activitiesCount = (this.currentCase.repair_activity_log || []).length;
-                    const totalCost = this.calculateTotalCost();
-
-                    // Update overview cards
-                    const partsEl = document.getElementById('overview-parts-count');
-                    const laborEl = document.getElementById('overview-labor-hours');
-                    const activitiesEl = document.getElementById('overview-activities-count');
-                    const costEl = document.getElementById('overview-total-cost');
-
-                    if (partsEl) partsEl.textContent = partsCount;
-                    if (laborEl) laborEl.textContent = `${laborHours}h`;
-                    if (activitiesEl) activitiesEl.textContent = activitiesCount;
-                    if (costEl) costEl.textContent = `₾${totalCost.toFixed(2)}`;
-                }
 
                 // Open modal to confirm collection creation
                 openCreateCollectionModal() {
