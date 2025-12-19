@@ -1209,35 +1209,40 @@ try {
                         return;
                     }
 
-                    let html = '';
-                    this.collections.forEach((c, ci) => {
-                        let parts = [];
-                        try { parts = JSON.parse(c.parts_list || '[]'); } catch (e) { parts = []; }
-                        html += `
-                            <div class="bg-white p-3 rounded-lg border">
-                                <div class="flex items-start justify-between">
-                                    <div>
-                                        <div class="text-sm font-semibold">Collection #${c.id} <span class="text-xs text-slate-500">${escapeHtml(c.collection_type || '')} ${c.status ? '· ' + escapeHtml(c.status) : ''}</span></div>
-                                        <div class="text-xs text-slate-500 mt-1">${escapeHtml(c.description || '')}</div>
+                    try {
+                        let html = '';
+                        this.collections.forEach((c, ci) => {
+                            let parts = [];
+                            try { parts = JSON.parse(c.parts_list || '[]'); } catch (e) { parts = []; }
+                            html += `
+                                <div class="bg-white p-3 rounded-lg border">
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <div class="text-sm font-semibold">Collection #${c.id} <span class="text-xs text-slate-500">${escapeHtml(c.collection_type || '')} ${c.status ? '· ' + escapeHtml(c.status) : ''}</span></div>
+                                            <div class="text-xs text-slate-500 mt-1">${escapeHtml(c.description || '')}</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-sm font-semibold">${Number(c.total_cost || 0).toFixed(2)}₾</div>
+                                            <div class="text-xs text-slate-400">${escapeHtml(c.created_at || '')}</div>
+                                            <div class="mt-2"><button class="bg-blue-600 text-white px-2 py-1 rounded text-xs" onclick="window.caseEditor.addCollectionItems(${c.id})">Add all</button></div>
+                                        </div>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="text-sm font-semibold">${(c.total_cost||0).toFixed(2)}₾</div>
-                                        <div class="text-xs text-slate-400">${escapeHtml(c.created_at || '')}</div>
-                                        <div class="mt-2"><button class="bg-blue-600 text-white px-2 py-1 rounded text-xs" onclick="window.caseEditor.addCollectionItems(${c.id})">Add all</button></div>
-                                    </div>
-                                </div>
-                                <div class="mt-2 overflow-x-auto">
-                                    <table class="w-full text-sm">
-                                        <thead><tr><th class="text-left">Name</th><th>Qty</th><th>Price</th><th></th></tr></thead>
-                                        <tbody>`;
-                        (parts || []).forEach((p, pi) => {
-                            html += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>${(p.price||p.unit_price||0).toFixed(2)}₾</td><td><button class="text-xs px-2 py-1 border rounded" onclick="window.caseEditor.addCollectionItem(${c.id}, ${pi})">Add</button></td></tr>`;
+                                    <div class="mt-2 overflow-x-auto">
+                                        <table class="w-full text-sm">
+                                            <thead><tr><th class="text-left">Name</th><th>Qty</th><th>Price</th><th></th></tr></thead>
+                                            <tbody>`;
+                            (parts || []).forEach((p, pi) => {
+                                html += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>${(Number(p.price || p.unit_price || 0)).toFixed(2)}₾</td><td><button class="text-xs px-2 py-1 border rounded" onclick="window.caseEditor.addCollectionItem(${c.id}, ${pi})">Add</button></td></tr>`;
+                            });
+                            html += `</tbody></table></div>
+                                </div><div class="h-2"></div>`;
                         });
-                        html += `</tbody></table></div>
-                            </div><div class="h-2"></div>`;
-                    });
 
-                    container.innerHTML = html;
+                        container.innerHTML = html;
+                    } catch (err) {
+                        console.error('Failed rendering collections:', err);
+                        container.innerHTML = '<div class="text-sm text-red-600">Failed to load collections.</div>';
+                    }
                 },
 
                 addCollectionItems(collectionId) {
