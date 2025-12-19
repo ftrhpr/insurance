@@ -1407,49 +1407,119 @@ try {
                                         </div>`;
                                 });
 
-                                previewDiv.innerHTML = `
-                                    <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
-                                        <h4 class="font-bold mb-2 text-gray-800">Parsed Items</h4>
-                                        <div class="flex items-center border-b pb-2 mb-2">
-                                            <input id="selectAllRepairParsed" type="checkbox" class="h-4 w-4 rounded border-gray-300" checked>
-                                            <label for="selectAllRepairParsed" class="ml-3 text-sm font-medium text-gray-800">Select All</label>
-                                        </div>
-                                        <div id="repairParsedItemsChecklist" class="space-y-1 max-h-40 overflow-y-auto">
-                                            ${checklistHtml}
-                                        </div>
-                                        <button type="button" id="addRepairParsedItemsBtn" class="mt-3 btn-gradient text-white px-3 py-1 rounded-md text-sm">Add Selected Items</button>
-                                    </div>
-                                `;
+                                // Build a review table where user can edit parsed rows before saving
+                        let rowsHtml = '';
+                        data.items.forEach((item, index) => {
+                            const safe = (v) => escapeHtml(String(v || ''));
+                            const type = item.type === 'labor' ? 'labor' : 'part';
+                            rowsHtml += `
+                                <tr data-idx="${index}">
+                                    <td class="px-2"><input class="repair-parsed-checkbox" type="checkbox" checked></td>
+                                    <td class="px-2"><select class="parsed-type text-sm" onchange="(function(r){ r.querySelector('.parsed-total').textContent = ((parseFloat(r.querySelector('.parsed-qty').value||0) * parseFloat(r.querySelector('.parsed-price').value||0)).toFixed(2)+'₾');})(this.closest('tr'))"><option value="part" ${type==='part' ? 'selected' : ''}>Part</option><option value="labor" ${type==='labor' ? 'selected' : ''}>Labor</option></select></td>
+                                    <td class="px-3"><input class="parsed-name block w-full text-sm px-2 py-1 border rounded" value="${safe(item.name)}"></td>
+                                    <td class="px-2"><input type="number" min="0" step="1" class="parsed-qty text-sm w-20 px-2 py-1 border rounded" value="${escapeHtml(item.quantity || 1)}"></td>
+                                    <td class="px-2"><input type="number" min="0" step="0.01" class="parsed-price text-sm w-28 px-2 py-1 border rounded" value="${escapeHtml(item.price || 0)}"></td>
+                                    <td class="px-3 parsed-total text-sm">${((item.quantity||1)*(item.price||0)).toFixed(2)}₾</td>
+                                    <td class="px-3"><input class="parsed-notes block w-full text-sm px-2 py-1 border rounded" value="${safe(item.notes || '')}"></td>
+                                    <td class="px-2"><button type="button" class="text-xs text-slate-600 remove-parse-row">Remove</button></td>
+                                </tr>`;
+                        });
 
-                                // Add event listener for 'Select All'
-                                document.getElementById('selectAllRepairParsed').addEventListener('change', (e) => {
-                                    document.querySelectorAll('.repair-parsed-item-checkbox').forEach(checkbox => {
-                                        checkbox.checked = e.target.checked;
-                                    });
-                                });
-                                
-                                // Add event listener for 'Add Selected Items'
-                                document.getElementById('addRepairParsedItemsBtn').onclick = () => {
-                                    const selectedItems = [];
-                                    document.querySelectorAll('.repair-parsed-item-checkbox:checked').forEach(checkbox => {
-                                        selectedItems.push(JSON.parse(checkbox.dataset.item));
-                                    });
+                        previewDiv.innerHTML = `
+                            <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+                                <h4 class="font-bold mb-2 text-gray-800">Parsed Items Preview</h4>
+                                <div class="flex items-center border-b pb-2 mb-2">
+                                    <input id="selectAllRepairParsed" type="checkbox" class="h-4 w-4 rounded border-gray-300" checked>
+                                    <label for="selectAllRepairParsed" class="ml-3 text-sm font-medium text-gray-800">Select All</label>
+                                    <div class="ml-auto text-sm text-slate-500">Edit fields and click Save Selected Items</div>
+                                </div>
+                                <div class="max-h-60 overflow-y-auto">
+                                    <table class="w-full text-sm table-auto">
+                                        <thead class="bg-white sticky top-0">
+                                            <tr><th></th><th>Type</th><th>Name</th><th>Qty</th><th>Price</th><th>Total</th><th>Notes</th><th></th></tr>
+                                        </thead>
+                                        <tbody id="parsedItemsTable">${rowsHtml}</tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-3 flex items-center gap-2">
+                                    <button type="button" id="saveParsedSelectedBtn" class="btn-gradient text-white px-3 py-1 rounded-md text-sm">Save Selected Items</button>
+                                    <button type="button" id="createCollectionFromParsedBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm">Create Parts Collection from Selected</button>
+                                </div>
+                            </div>
+                        `;
 
-                                    if (selectedItems.length === 0) {
-                                        showToast('<?php echo addslashes(__('info.no_items_selected','No items selected.')); ?>', '', 'info');
-                                        return;
-                                    }
+                        // Select All behavior
+                        document.getElementById('selectAllRepairParsed').addEventListener('change', (e) => {
+                            document.querySelectorAll('.repair-parsed-checkbox').forEach(cb => cb.checked = e.target.checked);
+                        });
 
-                                    selectedItems.forEach(item => {
-                                        if (item.type === 'labor') {
-                                            this.addLabor(item.name, item.quantity, item.price);
-                                        } else {
-                                            this.addPart(item.name, item.quantity, item.price);
-                                        }
-                                    });
+                        // Row remove
+                        document.querySelectorAll('.remove-parse-row').forEach(btn => btn.addEventListener('click', (ev) => {
+                            const tr = ev.target.closest('tr'); if (!tr) return; tr.remove();
+                        }));
+
+                        // Recalculate totals when qty/price change
+                        document.querySelectorAll('.parsed-qty, .parsed-price').forEach(inp => inp.addEventListener('input', (e) => {
+                            const tr = e.target.closest('tr'); if (!tr) return; const qty = parseFloat(tr.querySelector('.parsed-qty').value||0); const price = parseFloat(tr.querySelector('.parsed-price').value||0); tr.querySelector('.parsed-total').textContent = (qty*price).toFixed(2) + '₾';
+                        }));
+
+                        // Save selected items into current case
+                        document.getElementById('saveParsedSelectedBtn').onclick = () => {
+                            const selected = [];
+                            document.querySelectorAll('#parsedItemsTable tr').forEach(tr => {
+                                const cb = tr.querySelector('.repair-parsed-checkbox'); if (!cb || !cb.checked) return;
+                                const type = tr.querySelector('.parsed-type').value;
+                                const name = tr.querySelector('.parsed-name').value.trim();
+                                const qty = parseFloat(tr.querySelector('.parsed-qty').value) || 1;
+                                const price = parseFloat(tr.querySelector('.parsed-price').value) || 0;
+                                const notes = tr.querySelector('.parsed-notes').value || '';
+                                selected.push({ type, name, qty, price, notes });
+                            });
+
+                            if (selected.length === 0) { showToast('No items selected', '', 'info'); return; }
+
+                            selected.forEach(it => {
+                                if (it.type === 'labor') {
+                                    this.addLabor(it.name, it.qty, it.price);
+                                    // attach notes
+                                    const last = this.currentCase.repair_labor.length - 1; if (last >= 0) this.currentCase.repair_labor[last].notes = it.notes;
+                                } else {
+                                    this.addPart(it.name, it.qty, it.price);
+                                    const last = this.currentCase.repair_parts.length -1; if (last >= 0) { this.currentCase.repair_parts[last].notes = it.notes; }
+                                }
+                            });
+
+                            previewDiv.innerHTML = '';
+                            statusDiv.textContent = `${selected.length} items have been added to the lists below.`;
+                            this.updatePartsList(); this.updateLaborList();
+                        };
+
+                        // Create parts collection from selected rows (only parts)
+                        document.getElementById('createCollectionFromParsedBtn').onclick = async () => {
+                            const parts = [];
+                            document.querySelectorAll('#parsedItemsTable tr').forEach(tr => {
+                                const cb = tr.querySelector('.repair-parsed-checkbox'); if (!cb || !cb.checked) return;
+                                const type = tr.querySelector('.parsed-type').value;
+                                if (type !== 'part') return;
+                                const name = tr.querySelector('.parsed-name').value.trim();
+                                const qty = parseFloat(tr.querySelector('.parsed-qty').value) || 1;
+                                const price = parseFloat(tr.querySelector('.parsed-price').value) || 0;
+                                parts.push({ name, quantity: qty, price });
+                            });
+
+                            if (parts.length === 0) { showToast('No parts selected', '', 'info'); return; }
+
+                            try {
+                                const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: parts, description: this.collectionNote }) });
+                                const result = await resp.json();
+                                if (result.success) {
+                                    showToast('Parts Collection Created', 'Collection created successfully.', 'success');
                                     previewDiv.innerHTML = '';
-                                    statusDiv.textContent = `${selectedItems.length} items have been added to the lists below.`;
-                                };
+                                } else {
+                                    showToast('Error', result.error || 'Failed to create collection.', 'error');
+                                }
+                            } catch (e) { showToast('Error', 'Failed to create collection.', 'error'); }
+                        };
 
                             } else {
                                 statusDiv.textContent = data.error || 'Could not parse any items from the PDF.';
