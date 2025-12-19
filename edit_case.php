@@ -206,184 +206,307 @@ try {
                 </div>
 
                 <!-- Collapsible Section: Repair Management -->
-                <div class="bg-white rounded-2xl border border-slate-200/80">
-                    <button @click="toggleSection('repair')" class="w-full flex items-center justify-between p-5">
-                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.repair_management', 'Repair Management'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('repair')}"></i>
-                    </button>
-                    <div x-show="openSections.includes('repair')" x-cloak x-transition class="px-5 pb-6">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 border-t border-slate-200 pt-6">
-                            <!-- Repair Status -->
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_status', 'Repair Status'); ?></label>
-                                <select x-model="currentCase.repair_status" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
-                                    <option value=""><?php echo __('case.not_started', 'Not Started'); ?></option>
-                                    <option value="Repair Started"><?php echo __('case.repair_started', 'Repair Started'); ?></option>
-                                    <option value="In Progress"><?php echo __('case.in_progress', 'In Progress'); ?></option>
-                                    <option value="Parts Waiting"><?php echo __('case.parts_waiting', 'Parts Waiting'); ?></option>
-                                    <option value="Repair Completed"><?php echo __('case.repair_completed', 'Repair Completed'); ?></option>
-                                </select>
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+                    <button @click="toggleSection('repair')" class="w-full flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                                <i data-lucide="wrench" class="w-5 h-5 text-white"></i>
                             </div>
-                            <!-- Assigned Mechanic -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.assigned_mechanic', 'Assigned Mechanic'); ?></label>
-                                <input x-model="currentCase.assigned_mechanic" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
-                            </div>
-                            <!-- Repair Start Date -->
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_start_date', 'Repair Start Date'); ?></label>
-                                <input x-model="currentCase.repair_start_date" type="datetime-local" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
-                            </div>
-                            <!-- Repair End Date -->
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_end_date', 'Repair End Date'); ?></label>
-                                <input x-model="currentCase.repair_end_date" type="datetime-local" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
-                            </div>
-                            <!-- Repair Notes -->
-                            <div class="sm:col-span-2">
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.repair_notes', 'Repair Notes'); ?></label>
-                                <textarea x-model="currentCase.repair_notes" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none resize-vertical"></textarea>
+                                <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.repair_management', 'Repair Management'); ?></h2>
+                                <p class="text-sm text-slate-600 mt-0.5">Track repair progress, manage parts & labor, monitor costs</p>
                             </div>
                         </div>
-                        <!-- Items & Activity -->
-                        <div class="mt-6 border-t border-slate-200 pt-6">
-                            <div class="flex items-center justify-center mb-4">
-                                <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-                                    <button @click="repairTab = 'items'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'items'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Items</button>
-                                    <button @click="repairTab = 'activity'" :class="{'bg-white text-blue-600 shadow-sm': repairTab === 'activity'}" class="px-4 py-1.5 text-sm font-semibold rounded-md text-slate-600">Activity History</button>
+                        <div class="flex items-center gap-3">
+                            <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-xs font-medium text-slate-700">
+                                <span id="repair-status-badge" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                                <span id="repair-status-text"><?php echo __('case.not_started', 'Not Started'); ?></span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('repair')}"></i>
+                        </div>
+                    </button>
+
+                    <div x-show="openSections.includes('repair')" x-cloak x-transition class="border-t border-slate-200">
+                        <!-- Repair Progress Overview -->
+                        <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50/30 border-b border-slate-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-semibold text-slate-800">Repair Progress</h3>
+                                <div class="flex items-center gap-2 text-sm text-slate-600">
+                                    <i data-lucide="clock" class="w-4 h-4"></i>
+                                    <span id="repair-duration">--</span>
                                 </div>
                             </div>
-
-                            <!-- Combined Items View -->
-                            <div x-show="repairTab === 'items'" x-cloak class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="text-lg font-semibold text-slate-800">Parts & Labor</h3>
-                                    <div class="flex items-center gap-2">
-                                        <button type="button" @click="showInvoice()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Invoice</button>
-                                        <label class="inline-flex items-center text-sm rounded bg-slate-50 px-2 py-1 border border-slate-200">
-                                            <input id="selectAllItems" type="checkbox" class="mr-2" onchange="window.caseEditor.selectAllItems(this.checked)">Select All
-                                        </label>
-                                        <button type="button" @click="createCollectionFromSelected()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm">Create Parts Collection from Selected</button>
-                                        <button type="button" @click="exportSelectedCSV()" class="bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded text-sm">Export Selected CSV</button>
-                                        <button @click="addPart()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
-                                            <i data-lucide="plus" class="w-4 h-4"></i> Add Part
-                                        </button>
-                                        <button @click="addLabor()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
-                                            <i data-lucide="plus" class="w-4 h-4"></i> Add Labor
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Bulk actions (hidden until selection) -->
-                                <div id="bulkActions" class="bulk-actions hidden">
-                                    <div id="bulkSelectedCount" class="text-sm text-slate-700">0 selected</div>
-                                    <button id="bulkCreateCollectionBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Create Parts Collection</button>
-                                    <button id="bulkExportBtn" class="bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded text-sm">Export Selected CSV</button>
-                                    <button id="bulkDeselectBtn" class="text-sm text-slate-600 px-2 py-1 rounded border border-slate-200">Deselect All</button>
-                                </div>
-
-                                <!-- Import controls -->
-                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center gap-3">
-                                    <div class="flex items-center gap-2">
-                                        <input type="file" id="repairPdfInput" accept=".pdf" class="text-sm">
-                                        <button type="button" id="parseRepairPdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded-lg text-sm flex items-center gap-1 disabled:opacity-50" disabled>
-                                            <i data-lucide="file-text" class="w-4 h-4"></i> Parse PDF
-                                        </button>
-                                    </div>
-
-
-
-
-
-                                    <div id="repairPdfStatus" class="text-sm text-slate-600 ml-auto"></div>
-                                </div>
-
-                                <div id="repairParsedPreview" class="mt-3"></div>
-
-                                <!-- Collections (existing parts collections for this case) -->
-                                <div id="collectionsList" class="mt-3 space-y-3">
-                                    <!-- Populated by JS: collection cards -->
-                                </div>
-
-                                <!-- Combined items list -->
-                                <div id="itemsList" class="space-y-3">
-                                    <!-- Parts and Labor entries will render here together -->
-                                </div>
-
-                                <!-- Modal: Create collection from selected -->
-                                <div id="collectionModal" class="hidden" aria-hidden="true">
-                                    <div class="modal-backdrop" onclick="(function(e){ if(e.target===this){ document.getElementById('collectionModal').classList.add('hidden'); } }).call(this,event)">
-                                        <div class="modal" onclick="event.stopPropagation();">
-                                            <h3 class="text-lg font-semibold">Create Parts Collection</h3>
-                                            <p class="text-sm text-slate-600 mt-2">You are creating a parts collection from the selected items. Review and confirm.</p>
-                                            <div class="mt-3">
-                                                <label class="text-sm text-slate-600">Description</label>
-                                                <textarea id="collectionModalDesc" class="w-full mt-2 p-2 border rounded" rows="3" placeholder="Optional note for the collection"></textarea>
-                                            </div>
-                                            <div class="mt-4 flex justify-end gap-2">
-                                                <button id="collectionModalCancel" class="px-3 py-1 rounded border">Cancel</button>
-                                                <button id="collectionModalConfirm" class="px-3 py-1 rounded bg-green-600 text-white">Create Collection</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                    <div class="flex items-center justify-between">
-                                        <div class="text-sm text-slate-600">Notes for Collection:</div>
-                                        <input id="collectionNote" class="w-2/3 px-2 py-1 rounded border border-slate-200 text-sm" placeholder="Optional note to include with parts collection" x-model="collectionNote">
-                                    </div>
-                                    <div class="text-right font-semibold text-slate-800 mt-3">Parts Cost: <span id="parts-total">0.00₾</span> &nbsp; | &nbsp; Labor Cost: <span id="labor-total">0.00₾</span></div>
-                                </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2 mb-2">
+                                <div id="repair-progress-bar" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
                             </div>
+                            <div class="flex justify-between text-xs text-slate-600">
+                                <span>Planning</span>
+                                <span>In Progress</span>
+                                <span>Completed</span>
+                            </div>
+                        </div>
 
-                            <!-- Activity History Tab (unchanged) -->
-                            <div x-show="repairTab === 'activity'" x-cloak class="space-y-4">
-                                <div class="flex justify-between items-center">
-                                    <h3 class="text-lg font-semibold text-slate-800">Repair Activity History</h3>
-                                    <button @click="addActivity()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm flex items-center gap-1">
-                                        <i data-lucide="plus" class="w-4 h-4"></i> Add Activity
+                        <div class="p-6 space-y-6">
+                            <!-- Quick Actions Bar -->
+                            <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-3">
+                                    <button @click="quickAddPart()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                        Add Part
+                                    </button>
+                                    <button @click="quickAddLabor()" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                        Add Labor
+                                    </button>
+                                    <button @click="parseInvoice()" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                                        Parse Invoice
                                     </button>
                                 </div>
-                                <div class="space-y-3 max-h-96 overflow-y-auto" id="activity-log">
-                                    <?php foreach (array_reverse($case['repair_activity_log'] ?? []) as $activity): ?>
-                                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="text-sm text-slate-800 font-medium"><?php echo htmlspecialchars($activity['action'] ?? ''); ?></p>
-                                                <p class="text-xs text-slate-600 mt-1"><?php echo htmlspecialchars($activity['details'] ?? ''); ?></p>
+                                <div class="flex items-center gap-2">
+                                    <button @click="showInvoice()" class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors">
+                                        <i data-lucide="printer" class="w-4 h-4"></i>
+                                        Invoice
+                                    </button>
+                                    <button @click="exportRepairData()" class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors">
+                                        <i data-lucide="download" class="w-4 h-4"></i>
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Main Content Tabs -->
+                            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                                <div class="flex border-b border-slate-200">
+                                    <button @click="repairTab = 'overview'" :class="{'bg-blue-50 text-blue-700 border-b-2 border-blue-500': repairTab === 'overview'}" class="flex-1 px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                                        Overview
+                                    </button>
+                                    <button @click="repairTab = 'items'" :class="{'bg-blue-50 text-blue-700 border-b-2 border-blue-500': repairTab === 'items'}" class="flex-1 px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                                        <i data-lucide="package" class="w-4 h-4"></i>
+                                        Parts & Labor
+                                        <span id="items-count" class="ml-1 px-2 py-0.5 bg-slate-200 text-slate-700 text-xs rounded-full">0</span>
+                                    </button>
+                                    <button @click="repairTab = 'timeline'" :class="{'bg-blue-50 text-blue-700 border-b-2 border-blue-500': repairTab === 'timeline'}" class="flex-1 px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                                        <i data-lucide="timeline" class="w-4 h-4"></i>
+                                        Timeline
+                                    </button>
+                                    <button @click="repairTab = 'collections'" :class="{'bg-blue-50 text-blue-700 border-b-2 border-blue-500': repairTab === 'collections'}" class="flex-1 px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                                        <i data-lucide="archive" class="w-4 h-4"></i>
+                                        Collections
+                                    </button>
+                                </div>
+
+                                <div class="p-6">
+                                    <!-- Overview Tab -->
+                                    <div x-show="repairTab === 'overview'" x-transition class="space-y-6">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <!-- Repair Status Card -->
+                                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <i data-lucide="settings" class="w-5 h-5 text-blue-600"></i>
+                                                    <span class="text-xs font-medium text-blue-700 bg-blue-200 px-2 py-1 rounded-full" id="status-indicator">Not Started</span>
+                                                </div>
+                                                <h4 class="font-semibold text-slate-800 mb-1">Repair Status</h4>
+                                                <select x-model="currentCase.repair_status" @change="updateRepairProgress()" class="w-full text-sm bg-white border border-blue-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                    <option value="">Not Started</option>
+                                                    <option value="Planning">Planning</option>
+                                                    <option value="In Progress">In Progress</option>
+                                                    <option value="Parts Waiting">Parts Waiting</option>
+                                                    <option value="Quality Check">Quality Check</option>
+                                                    <option value="Completed">Completed</option>
+                                                </select>
                                             </div>
-                                            <div class="text-right text-xs text-slate-500">
-                                                <div><?php echo htmlspecialchars($activity['user'] ?? ''); ?></div>
-                                                <div><?php echo isset($activity['timestamp']) ? date('M j, Y H:i', strtotime($activity['timestamp'])) : ''; ?></div>
+
+                                            <!-- Assigned Mechanic Card -->
+                                            <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <i data-lucide="user" class="w-5 h-5 text-green-600"></i>
+                                                    <span class="text-xs font-medium text-green-700 bg-green-200 px-2 py-1 rounded-full">Assigned</span>
+                                                </div>
+                                                <h4 class="font-semibold text-slate-800 mb-1">Mechanic</h4>
+                                                <input x-model="currentCase.assigned_mechanic" type="text" placeholder="Assign mechanic..." class="w-full text-sm bg-white border border-green-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                            </div>
+
+                                            <!-- Timeline Card -->
+                                            <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <i data-lucide="calendar" class="w-5 h-5 text-purple-600"></i>
+                                                    <span class="text-xs font-medium text-purple-700 bg-purple-200 px-2 py-1 rounded-full">Schedule</span>
+                                                </div>
+                                                <h4 class="font-semibold text-slate-800 mb-1">Start Date</h4>
+                                                <input x-model="currentCase.repair_start_date" type="datetime-local" class="w-full text-sm bg-white border border-purple-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                            </div>
+
+                                            <!-- Cost Summary Card -->
+                                            <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <i data-lucide="dollar-sign" class="w-5 h-5 text-amber-600"></i>
+                                                    <span class="text-xs font-medium text-amber-700 bg-amber-200 px-2 py-1 rounded-full">Total</span>
+                                                </div>
+                                                <h4 class="font-semibold text-slate-800 mb-1">Estimated Cost</h4>
+                                                <div class="text-lg font-bold text-amber-700" id="overview-total-cost">₾0.00</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Repair Notes -->
+                                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                            <div class="flex items-center gap-2 mb-3">
+                                                <i data-lucide="file-text" class="w-5 h-5 text-slate-600"></i>
+                                                <h4 class="font-semibold text-slate-800">Repair Notes</h4>
+                                            </div>
+                                            <textarea x-model="currentCase.repair_notes" rows="4" placeholder="Add notes about the repair process, special instructions, or observations..." class="w-full text-sm bg-white border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                                        </div>
+
+                                        <!-- Quick Stats -->
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div class="bg-white p-4 rounded-xl border border-slate-200 text-center">
+                                                <div class="text-2xl font-bold text-blue-600" id="overview-parts-count">0</div>
+                                                <div class="text-sm text-slate-600">Parts Required</div>
+                                            </div>
+                                            <div class="bg-white p-4 rounded-xl border border-slate-200 text-center">
+                                                <div class="text-2xl font-bold text-green-600" id="overview-labor-hours">0h</div>
+                                                <div class="text-sm text-slate-600">Labor Hours</div>
+                                            </div>
+                                            <div class="bg-white p-4 rounded-xl border border-slate-200 text-center">
+                                                <div class="text-2xl font-bold text-purple-600" id="overview-activities-count">0</div>
+                                                <div class="text-sm text-slate-600">Activities Logged</div>
                                             </div>
                                         </div>
                                     </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Repair Cost Summary -->
-                        <div class="mt-6 border-t border-slate-200 pt-6">
-                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-                                <div class="flex items-start justify-between mb-3">
-                                    <h3 class="text-lg font-semibold text-slate-800">Repair Cost Summary</h3>
-                                    <div class="flex items-center gap-2">
 
+                                    <!-- Parts & Labor Tab -->
+                                    <div x-show="repairTab === 'items'" x-transition class="space-y-4">
+                                        <!-- Search and Filter Bar -->
+                                        <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                            <div class="flex items-center gap-3">
+                                                <div class="relative">
+                                                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                                    <input type="text" id="items-search" placeholder="Search parts & labor..." class="pl-9 pr-4 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64">
+                                                </div>
+                                                <select id="items-filter" class="px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                    <option value="all">All Items</option>
+                                                    <option value="parts">Parts Only</option>
+                                                    <option value="labor">Labor Only</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="completed">Completed</option>
+                                                </select>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <button @click="selectAllItems()" class="px-3 py-2 text-sm bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                                                    Select All
+                                                </button>
+                                                <button @click="bulkActions()" id="bulk-actions-btn" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors hidden">
+                                                    Bulk Actions
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Items List -->
+                                        <div id="items-container" class="space-y-3 min-h-[400px]">
+                                            <!-- Items will be rendered here by JavaScript -->
+                                        </div>
+
+                                        <!-- Empty State -->
+                                        <div id="items-empty-state" class="text-center py-12">
+                                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <i data-lucide="package" class="w-8 h-8 text-slate-400"></i>
+                                            </div>
+                                            <h3 class="text-lg font-semibold text-slate-700 mb-2">No Parts or Labor Added</h3>
+                                            <p class="text-slate-600 mb-4">Start by adding parts and labor items for this repair.</p>
+                                            <div class="flex justify-center gap-3">
+                                                <button @click="quickAddPart()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                                    Add First Part
+                                                </button>
+                                                <button @click="parseInvoice()" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors">
+                                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                                    Parse Invoice
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Cost Summary -->
+                                        <div class="bg-gradient-to-r from-slate-50 to-blue-50 p-4 rounded-xl border border-slate-200">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <h4 class="font-semibold text-slate-800">Cost Breakdown</h4>
+                                                <div class="text-sm text-slate-600">Total: <span class="font-bold text-slate-800" id="items-total-cost">₾0.00</span></div>
+                                            </div>
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                                <div class="text-center">
+                                                    <div class="font-semibold text-blue-600" id="items-parts-cost">₾0.00</div>
+                                                    <div class="text-slate-600">Parts</div>
+                                                </div>
+                                                <div class="text-center">
+                                                    <div class="font-semibold text-green-600" id="items-labor-cost">₾0.00</div>
+                                                    <div class="text-slate-600">Labor</div>
+                                                </div>
+                                                <div class="text-center">
+                                                    <div class="font-semibold text-purple-600" id="items-tax-cost">₾0.00</div>
+                                                    <div class="text-slate-600">Tax</div>
+                                                </div>
+                                                <div class="text-center">
+                                                    <div class="font-bold text-slate-800" id="items-grand-total">₾0.00</div>
+                                                    <div class="text-slate-600">Grand Total</div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div class="text-center">
-                                        <div class="text-2xl font-bold text-blue-600" id="summary-parts-total">0.00₾</div>
-                                        <div class="text-sm text-slate-600">Parts Cost</div>
+
+                                    <!-- Timeline Tab -->
+                                    <div x-show="repairTab === 'timeline'" x-transition class="space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <h3 class="text-lg font-semibold text-slate-800">Repair Timeline</h3>
+                                            <button @click="addTimelineEvent()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                                Add Event
+                                            </button>
+                                        </div>
+
+                                        <div id="timeline-container" class="space-y-4">
+                                            <!-- Timeline events will be rendered here -->
+                                        </div>
+
+                                        <!-- Timeline Empty State -->
+                                        <div id="timeline-empty-state" class="text-center py-12">
+                                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <i data-lucide="timeline" class="w-8 h-8 text-slate-400"></i>
+                                            </div>
+                                            <h3 class="text-lg font-semibold text-slate-700 mb-2">No Timeline Events</h3>
+                                            <p class="text-slate-600 mb-4">Track repair progress with timeline events.</p>
+                                            <button @click="addTimelineEvent()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                                Add First Event
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="text-center">
-                                        <div class="text-2xl font-bold text-green-600" id="summary-labor-total">0.00₾</div>
-                                        <div class="text-sm text-slate-600">Labor Cost</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-3xl font-bold text-slate-800" id="summary-grand-total">0.00₾</div>
-                                        <div class="text-sm text-slate-600">Total Cost</div>
+
+                                    <!-- Collections Tab -->
+                                    <div x-show="repairTab === 'collections'" x-transition class="space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <h3 class="text-lg font-semibold text-slate-800">Parts Collections</h3>
+                                            <button @click="createNewCollection()" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                                New Collection
+                                            </button>
+                                        </div>
+
+                                        <div id="collections-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <!-- Collections will be rendered here -->
+                                        </div>
+
+                                        <!-- Collections Empty State -->
+                                        <div id="collections-empty-state" class="text-center py-12">
+                                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <i data-lucide="archive" class="w-8 h-8 text-slate-400"></i>
+                                            </div>
+                                            <h3 class="text-lg font-semibold text-slate-700 mb-2">No Parts Collections</h3>
+                                            <p class="text-slate-600 mb-4">Create collections to organize and track parts orders.</p>
+                                            <button @click="createNewCollection()" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                                Create First Collection
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -602,6 +725,41 @@ try {
         </div>
     </main>
 
+    <!-- Modals -->
+    <!-- Collections Modal -->
+    <div id="collections-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                <div class="flex items-center justify-between p-6 border-b">
+                    <h3 id="collections-modal-title" class="text-lg font-semibold text-gray-900">Parts Collections</h3>
+                    <button onclick="document.getElementById('collections-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div id="collections-modal-content" class="p-6 overflow-y-auto max-h-[60vh]">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parsed Items Modal -->
+    <div id="parsed-items-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                <div class="flex items-center justify-between p-6 border-b">
+                    <h3 class="text-lg font-semibold text-gray-900">Select Items to Add</h3>
+                    <button onclick="document.getElementById('parsed-items-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div id="parsed-items-container" class="p-6">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'api.php';
         const CASE_ID = <?php echo $case_id; ?>;
@@ -669,13 +827,18 @@ try {
                 partsRequest: { description: '', supplier: '', collection_type: 'local' },
                 editingReview: false,
                 activeTab: 'quick',
-                repairTab: 'items',
+                repairTab: 'overview',
                 lastRemovedPart: null,
                 lastRemovedTimer: null,
                 markupPercentage: 0,
                 collectionNote: '',
                 dragPartIndex: null,
                 dragLabIndex: null,
+                selectedItems: [],
+                searchQuery: '',
+                filterType: 'all',
+                timelineEvents: [],
+                parsedItems: [],
                 statuses: [
                     { id: 'New', name: 'New', icon: 'file-plus-2' },
                     { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
@@ -698,6 +861,12 @@ try {
                     // Load suggestions
                     loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions');
                     loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions');
+
+                    // Initialize new features
+                    this.initSearchAndFilter();
+                    this.loadCollections();
+                    this.updateOverviewStats();
+                    this.renderTimeline();
 
                     // Auto-fill phone if plate exists in Vehicle DB
                     const plateEl = document.getElementById('input-plate');
@@ -734,17 +903,750 @@ try {
                         setTimeout(() => lookupAndFillPhone(plateEl.value), 50);
                     }
 
-                    // Initialize repair tables
+                    // Initialize repair tables and UI
                     this.updatePartsList();
                     this.updateLaborList();
                     this.updateActivityLog();
                     this.updateRepairSummary();
+                    this.updateRepairProgress();
+                    this.updateOverviewStats();
+                    this.loadCollections();
+                    this.renderTimeline();
+                    this.renderCollections();
 
                     // Initialize PDF parsing for repair
                     this.initRepairPdfParsing();
 
-                    // Load existing parts collections for this case
-                    if (typeof this.loadCollections === 'function') this.loadCollections();
+                    // Setup search and filter listeners
+                    this.initSearchAndFilter();
+                },
+
+                // New methods for redesigned UI
+                updateRepairProgress() {
+                    const status = this.currentCase.repair_status || '';
+                    const progressBar = document.getElementById('repair-progress-bar');
+                    const statusBadge = document.getElementById('repair-status-badge');
+                    const statusText = document.getElementById('repair-status-text');
+
+                    if (!progressBar || !statusBadge || !statusText) return;
+
+                    const statusMap = {
+                        '': { progress: 0, color: 'bg-slate-400', text: 'Not Started' },
+                        'Planning': { progress: 25, color: 'bg-blue-500', text: 'Planning' },
+                        'In Progress': { progress: 50, color: 'bg-yellow-500', text: 'In Progress' },
+                        'Parts Waiting': { progress: 75, color: 'bg-orange-500', text: 'Parts Waiting' },
+                        'Quality Check': { progress: 90, color: 'bg-purple-500', text: 'Quality Check' },
+                        'Completed': { progress: 100, color: 'bg-green-500', text: 'Completed' }
+                    };
+
+                    const currentStatus = statusMap[status] || statusMap[''];
+                    progressBar.style.width = `${currentStatus.progress}%`;
+                    progressBar.className = `bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-500`;
+                    statusBadge.className = `w-2 h-2 rounded-full ${currentStatus.color.replace('bg-', 'bg-')}`;
+                    statusText.textContent = currentStatus.text;
+
+                    // Calculate duration
+                    const startDate = this.currentCase.repair_start_date;
+                    const endDate = this.currentCase.repair_end_date;
+                    const durationEl = document.getElementById('repair-duration');
+
+                    if (durationEl) {
+                        if (startDate && endDate) {
+                            const start = new Date(startDate);
+                            const end = new Date(endDate);
+                            const diffTime = Math.abs(end - start);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            durationEl.textContent = `${diffDays} days`;
+                        } else if (startDate) {
+                            const start = new Date(startDate);
+                            const now = new Date();
+                            const diffTime = Math.abs(now - start);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            durationEl.textContent = `${diffDays} days elapsed`;
+                        } else {
+                            durationEl.textContent = '--';
+                        }
+                    }
+                },
+
+                updateOverviewStats() {
+                    const partsCount = (this.currentCase.repair_parts || []).length;
+                    const laborHours = (this.currentCase.repair_labor || []).reduce((sum, l) => sum + (l.hours || 0), 0);
+                    const activitiesCount = (this.currentCase.repair_activity_log || []).length;
+                    const totalCost = this.calculateTotalCost();
+
+                    document.getElementById('overview-parts-count').textContent = partsCount;
+                    document.getElementById('overview-labor-hours').textContent = `${laborHours}h`;
+                    document.getElementById('overview-activities-count').textContent = activitiesCount;
+                    document.getElementById('overview-total-cost').textContent = `₾${totalCost.toFixed(2)}`;
+                },
+
+                calculateTotalCost() {
+                    const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                    return partsTotal + laborTotal;
+                },
+
+                quickAddPart() {
+                    const name = prompt('Enter part name:');
+                    if (!name || !name.trim()) return;
+                    const qty = parseInt(prompt('Enter quantity:', '1')) || 1;
+                    const price = parseFloat(prompt('Enter unit price:', '0')) || 0;
+                    this.addPart(name.trim(), qty, price);
+                    showToast('Part Added', `${name} added successfully.`, 'success');
+                },
+
+                quickAddLabor() {
+                    const description = prompt('Enter labor description:');
+                    if (!description || !description.trim()) return;
+                    const hours = parseFloat(prompt('Enter hours:', '0')) || 0;
+                    const rate = parseFloat(prompt('Enter hourly rate:', '0')) || 0;
+                    this.addLabor(description.trim(), hours, rate);
+                    showToast('Labor Added', `${description} added successfully.`, 'success');
+                },
+
+                parseInvoice() {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.pdf';
+                    input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            this.processInvoiceFile(file);
+                        }
+                    };
+                    input.click();
+                },
+
+                async processInvoiceFile(file) {
+                    showToast('Processing', 'Parsing invoice PDF...', 'info');
+                    const formData = new FormData();
+                    formData.append('pdf', file);
+
+                    try {
+                        const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', body: formData });
+                        const data = await response.json();
+
+                        if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+                            this.showParsedItemsModal(data.items);
+                            showToast('Success', `Found ${data.items.length} items in invoice.`, 'success');
+                        } else {
+                            showToast('No Items Found', data.error || 'Could not parse any items from the PDF.', 'warning');
+                        }
+                    } catch (error) {
+                        console.error('PDF parsing error:', error);
+                        showToast('Error', 'Failed to parse invoice PDF.', 'error');
+                    }
+                },
+
+                showParsedItemsModal(items) {
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                    modal.innerHTML = `
+                        <div class="bg-white rounded-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+                            <div class="p-6 border-b border-slate-200">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-semibold text-slate-800">Parsed Invoice Items</h3>
+                                    <button onclick="this.closest('.fixed').remove()" class="text-slate-400 hover:text-slate-600">
+                                        <i data-lucide="x" class="w-6 h-6"></i>
+                                    </button>
+                                </div>
+                                <p class="text-sm text-slate-600 mt-1">Review and select items to add to your repair.</p>
+                            </div>
+                            <div class="p-6 overflow-y-auto max-h-96">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left"><input type="checkbox" id="select-all-parsed" class="rounded"></th>
+                                            <th class="px-3 py-2 text-left">Type</th>
+                                            <th class="px-3 py-2 text-left">Name</th>
+                                            <th class="px-3 py-2 text-left">Qty</th>
+                                            <th class="px-3 py-2 text-left">Price</th>
+                                            <th class="px-3 py-2 text-left">Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="parsed-items-table">
+                                        ${items.map((item, index) => `
+                                            <tr class="border-t border-slate-100">
+                                                <td class="px-3 py-2"><input type="checkbox" class="parsed-item-checkbox" data-index="${index}" checked></td>
+                                                <td class="px-3 py-2">
+                                                    <select class="parsed-type text-sm border rounded px-2 py-1" data-index="${index}">
+                                                        <option value="part" ${item.type === 'part' ? 'selected' : ''}>Part</option>
+                                                        <option value="labor" ${item.type === 'labor' ? 'selected' : ''}>Labor</option>
+                                                    </select>
+                                                </td>
+                                                <td class="px-3 py-2"><input type="text" class="parsed-name w-full border rounded px-2 py-1 text-sm" value="${escapeHtml(item.name || '')}" data-index="${index}"></td>
+                                                <td class="px-3 py-2"><input type="number" class="parsed-qty w-20 border rounded px-2 py-1 text-sm" value="${item.quantity || 1}" min="1" data-index="${index}"></td>
+                                                <td class="px-3 py-2"><input type="number" class="parsed-price w-24 border rounded px-2 py-1 text-sm" value="${item.price || 0}" step="0.01" data-index="${index}"></td>
+                                                <td class="px-3 py-2"><input type="text" class="parsed-notes w-full border rounded px-2 py-1 text-sm" value="${escapeHtml(item.notes || '')}" data-index="${index}"></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="p-6 border-t border-slate-200 flex justify-end gap-3">
+                                <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
+                                    Cancel
+                                </button>
+                                <button onclick="window.caseEditor.addSelectedParsedItems(${JSON.stringify(items).replace(/"/g, '&quot;')})" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    Add Selected Items
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    lucide.createIcons();
+
+                    // Select all functionality
+                    document.getElementById('select-all-parsed').addEventListener('change', (e) => {
+                        document.querySelectorAll('.parsed-item-checkbox').forEach(cb => cb.checked = e.target.checked);
+                    });
+                },
+
+                addSelectedParsedItems(originalItems) {
+                    const selectedIndices = Array.from(document.querySelectorAll('.parsed-item-checkbox:checked')).map(cb => parseInt(cb.dataset.index));
+                    let addedCount = 0;
+
+                    selectedIndices.forEach(index => {
+                        const item = originalItems[index];
+                        if (!item) return;
+
+                        const type = document.querySelector(`.parsed-type[data-index="${index}"]`).value;
+                        const name = document.querySelector(`.parsed-name[data-index="${index}"]`).value.trim();
+                        const qty = parseFloat(document.querySelector(`.parsed-qty[data-index="${index}"]`).value) || 1;
+                        const price = parseFloat(document.querySelector(`.parsed-price[data-index="${index}"]`).value) || 0;
+                        const notes = document.querySelector(`.parsed-notes[data-index="${index}"]`).value;
+
+                        if (type === 'labor') {
+                            this.addLabor(name, qty, price);
+                            if (notes && this.currentCase.repair_labor.length > 0) {
+                                this.currentCase.repair_labor[this.currentCase.repair_labor.length - 1].notes = notes;
+                            }
+                        } else {
+                            this.addPart(name, qty, price);
+                            if (notes && this.currentCase.repair_parts.length > 0) {
+                                this.currentCase.repair_parts[this.currentCase.repair_parts.length - 1].notes = notes;
+                            }
+                        }
+                        addedCount++;
+                    });
+
+                    this.updatePartsList();
+                    this.updateLaborList();
+                    this.updateOverviewStats();
+                    document.querySelector('.fixed')?.remove();
+                    showToast('Items Added', `${addedCount} items added to repair.`, 'success');
+                },
+
+                exportRepairData() {
+                    const data = {
+                        case: {
+                            id: CASE_ID,
+                            customer: this.currentCase.name,
+                            plate: this.currentCase.plate,
+                            status: this.currentCase.repair_status,
+                            startDate: this.currentCase.repair_start_date,
+                            endDate: this.currentCase.repair_end_date,
+                            mechanic: this.currentCase.assigned_mechanic,
+                            notes: this.currentCase.repair_notes
+                        },
+                        parts: this.currentCase.repair_parts || [],
+                        labor: this.currentCase.repair_labor || [],
+                        activities: this.currentCase.repair_activity_log || [],
+                        totalCost: this.calculateTotalCost()
+                    };
+
+                    const json = JSON.stringify(data, null, 2);
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `repair-case-${CASE_ID}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    showToast('Export Complete', 'Repair data exported successfully.', 'success');
+                },
+
+                initSearchAndFilter() {
+                    const searchInput = document.getElementById('items-search');
+                    const filterSelect = document.getElementById('items-filter');
+
+                    if (searchInput) {
+                        searchInput.addEventListener('input', () => {
+                            this.searchQuery = searchInput.value.toLowerCase();
+                            this.renderItemsList();
+                        });
+                    }
+
+                    if (filterSelect) {
+                        filterSelect.addEventListener('change', () => {
+                            this.filterType = filterSelect.value;
+                            this.renderItemsList();
+                        });
+                    }
+                },
+
+                renderItemsList() {
+                    const container = document.getElementById('items-container');
+                    const emptyState = document.getElementById('items-empty-state');
+                    const countBadge = document.getElementById('items-count');
+
+                    if (!container) return;
+
+                    const parts = this.currentCase.repair_parts || [];
+                    const labor = this.currentCase.repair_labor || [];
+                    let allItems = [];
+
+                    // Convert to unified format
+                    parts.forEach((item, index) => {
+                        allItems.push({
+                            ...item,
+                            type: 'part',
+                            originalIndex: index,
+                            displayName: item.name || 'Unnamed Part',
+                            searchableText: `${item.name || ''} ${item.sku || ''} ${item.supplier || ''} ${item.notes || ''}`.toLowerCase()
+                        });
+                    });
+
+                    labor.forEach((item, index) => {
+                        allItems.push({
+                            ...item,
+                            type: 'labor',
+                            originalIndex: index,
+                            displayName: item.description || 'Unnamed Labor',
+                            searchableText: `${item.description || ''} ${item.notes || ''}`.toLowerCase()
+                        });
+                    });
+
+                    // Apply search filter
+                    if (this.searchQuery) {
+                        allItems = allItems.filter(item => item.searchableText.includes(this.searchQuery));
+                    }
+
+                    // Apply type filter
+                    if (this.filterType !== 'all') {
+                        if (this.filterType === 'parts') {
+                            allItems = allItems.filter(item => item.type === 'part');
+                        } else if (this.filterType === 'labor') {
+                            allItems = allItems.filter(item => item.type === 'labor');
+                        } else if (this.filterType === 'pending') {
+                            allItems = allItems.filter(item => (item.status || 'Pending') === 'Pending');
+                        } else if (this.filterType === 'completed') {
+                            allItems = allItems.filter(item => (item.status || 'Pending') === 'Completed' || (item.status || 'Pending') === 'Billed');
+                        }
+                    }
+
+                    // Update count badge
+                    if (countBadge) {
+                        countBadge.textContent = allItems.length;
+                    }
+
+                    // Show empty state if no items
+                    if (allItems.length === 0) {
+                        container.innerHTML = '';
+                        if (emptyState) emptyState.classList.remove('hidden');
+                        return;
+                    }
+
+                    if (emptyState) emptyState.classList.add('hidden');
+
+                    // Group by type
+                    const partsItems = allItems.filter(item => item.type === 'part');
+                    const laborItems = allItems.filter(item => item.type === 'labor');
+
+                    let html = '';
+
+                    if (partsItems.length > 0) {
+                        html += `<div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="package" class="w-5 h-5 text-blue-600"></i>
+                                <h4 class="font-semibold text-slate-800">Parts (${partsItems.length})</h4>
+                            </div>
+                            <div class="space-y-3">
+                                ${partsItems.map(item => this.renderItemCard(item)).join('')}
+                            </div>
+                        </div>`;
+                    }
+
+                    if (laborItems.length > 0) {
+                        html += `<div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="user-plus" class="w-5 h-5 text-green-600"></i>
+                                <h4 class="font-semibold text-slate-800">Labor (${laborItems.length})</h4>
+                            </div>
+                            <div class="space-y-3">
+                                ${laborItems.map(item => this.renderItemCard(item)).join('')}
+                            </div>
+                        </div>`;
+                    }
+
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                    this.updateItemsCostSummary();
+                },
+
+                renderItemCard(item) {
+                    const isPart = item.type === 'part';
+                    const statusColors = {
+                        'Pending': 'bg-yellow-100 text-yellow-800',
+                        'Ordered': 'bg-blue-100 text-blue-800',
+                        'Received': 'bg-purple-100 text-purple-800',
+                        'In Progress': 'bg-orange-100 text-orange-800',
+                        'Completed': 'bg-green-100 text-green-800',
+                        'Billed': 'bg-slate-100 text-slate-800'
+                    };
+
+                    const statusColor = statusColors[item.status || 'Pending'] || 'bg-slate-100 text-slate-800';
+
+                    if (isPart) {
+                        return `
+                            <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" class="select-item w-4 h-4 text-blue-600 rounded" data-type="part" data-index="${item.originalIndex}">
+                                        <div>
+                                            <h5 class="font-medium text-slate-800">${escapeHtml(item.displayName)}</h5>
+                                            ${item.sku ? `<p class="text-sm text-slate-600">SKU: ${escapeHtml(item.sku)}</p>` : ''}
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor}">${item.status || 'Pending'}</span>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-slate-600">Qty:</span>
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.quantity || 1}" min="1" onchange="updatePart(${item.originalIndex}, 'quantity', this.value)">
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">Unit Price:</span>
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.unit_price || 0}" step="0.01" onchange="updatePart(${item.originalIndex}, 'unit_price', this.value)">
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">Total:</span>
+                                        <div class="mt-1 font-semibold text-slate-800">₾${((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}</div>
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button onclick="window.caseEditor.removePart(${item.originalIndex})" class="w-full px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                                ${item.notes ? `<div class="mt-3 p-2 bg-slate-50 rounded text-sm text-slate-700">${escapeHtml(item.notes)}</div>` : ''}
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" class="select-item w-4 h-4 text-green-600 rounded" data-type="labor" data-index="${item.originalIndex}">
+                                        <div>
+                                            <h5 class="font-medium text-slate-800">${escapeHtml(item.displayName)}</h5>
+                                            ${item.completed_by ? `<p class="text-sm text-slate-600">Completed by: ${escapeHtml(item.completed_by)}</p>` : ''}
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor}">${item.status || 'Pending'}</span>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-slate-600">Hours:</span>
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.hours || 0}" step="0.5" onchange="updateLabor(${item.originalIndex}, 'hours', this.value)">
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">Rate:</span>
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.hourly_rate || 0}" step="0.01" onchange="updateLabor(${item.originalIndex}, 'hourly_rate', this.value)">
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">Total:</span>
+                                        <div class="mt-1 font-semibold text-slate-800">₾${((item.hours || 0) * (item.hourly_rate || 0)).toFixed(2)}</div>
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button onclick="window.caseEditor.removeLabor(${item.originalIndex})" class="w-full px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                                ${item.notes ? `<div class="mt-3 p-2 bg-slate-50 rounded text-sm text-slate-700">${escapeHtml(item.notes)}</div>` : ''}
+                            </div>
+                        `;
+                    }
+                },
+
+                updateItemsCostSummary() {
+                    const totalCost = this.calculateTotalCost();
+                    const partsCost = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
+                    const laborCost = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+
+                    document.getElementById('items-total-cost').textContent = `₾${totalCost.toFixed(2)}`;
+                    document.getElementById('items-parts-cost').textContent = `₾${partsCost.toFixed(2)}`;
+                    document.getElementById('items-labor-cost').textContent = `₾${laborCost.toFixed(2)}`;
+                    document.getElementById('items-grand-total').textContent = `₾${totalCost.toFixed(2)}`;
+                },
+
+                renderTimeline() {
+                    const container = document.getElementById('timeline-container');
+                    const emptyState = document.getElementById('timeline-empty-state');
+
+                    if (!container) return;
+
+                    // Combine activities and status changes into timeline
+                    let events = [];
+
+                    // Add status changes
+                    const statusChanges = [
+                        { status: 'New', timestamp: this.currentCase.created_at, type: 'status' },
+                        { status: this.currentCase.repair_status, timestamp: this.currentCase.repair_start_date, type: 'status' }
+                    ].filter(e => e.timestamp);
+
+                    // Add activities
+                    const activities = (this.currentCase.repair_activity_log || []).map(activity => ({
+                        ...activity,
+                        type: 'activity',
+                        timestamp: activity.timestamp
+                    }));
+
+                    events = [...statusChanges, ...activities].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                    if (events.length === 0) {
+                        container.innerHTML = '';
+                        if (emptyState) emptyState.classList.remove('hidden');
+                        return;
+                    }
+
+                    if (emptyState) emptyState.classList.add('hidden');
+
+                    const html = events.map(event => {
+                        if (event.type === 'status') {
+                            return `
+                                <div class="flex gap-4">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                        <div class="w-px h-16 bg-slate-300"></div>
+                                    </div>
+                                    <div class="pb-8">
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i data-lucide="settings" class="w-4 h-4 text-blue-600"></i>
+                                                <span class="font-medium text-blue-800">Status Changed</span>
+                                            </div>
+                                            <p class="text-sm text-slate-700">Repair status set to: <strong>${event.status || 'Not Started'}</strong></p>
+                                            <p class="text-xs text-slate-500 mt-2">${new Date(event.timestamp).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            return `
+                                <div class="flex gap-4">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                        <div class="w-px h-16 bg-slate-300"></div>
+                                    </div>
+                                    <div class="pb-8">
+                                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i data-lucide="activity" class="w-4 h-4 text-green-600"></i>
+                                                <span class="font-medium text-green-800">${escapeHtml(event.action || 'Activity')}</span>
+                                            </div>
+                                            ${event.details ? `<p class="text-sm text-slate-700 mb-2">${escapeHtml(event.details)}</p>` : ''}
+                                            <div class="flex items-center justify-between text-xs text-slate-500">
+                                                <span>By ${escapeHtml(event.user || 'Unknown')}</span>
+                                                <span>${new Date(event.timestamp).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }).join('');
+
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                },
+
+                addTimelineEvent() {
+                    const action = prompt('Enter activity action:');
+                    if (!action || !action.trim()) return;
+
+                    const details = prompt('Enter activity details (optional):') || '';
+
+                    const event = {
+                        action: action.trim(),
+                        details: details.trim(),
+                        user: '<?php echo addslashes($current_user_name); ?>',
+                        timestamp: new Date().toISOString(),
+                        type: 'activity'
+                    };
+
+                    if (!this.currentCase.repair_activity_log) this.currentCase.repair_activity_log = [];
+                    this.currentCase.repair_activity_log.push(event);
+
+                    this.renderTimeline();
+                    this.updateOverviewStats();
+                    showToast('Activity Added', 'Timeline event added successfully.', 'success');
+                },
+
+                renderCollections() {
+                    const container = document.getElementById('collections-container');
+                    const emptyState = document.getElementById('collections-empty-state');
+
+                    if (!container) return;
+
+                    if (!this.collections || this.collections.length === 0) {
+                        container.innerHTML = '';
+                        if (emptyState) emptyState.classList.remove('hidden');
+                        return;
+                    }
+
+                    if (emptyState) emptyState.classList.add('hidden');
+
+                    const html = this.collections.map(collection => {
+                        let parts = [];
+                        try { parts = JSON.parse(collection.parts_list || '[]'); } catch (e) { parts = []; }
+                        const totalCost = Number(collection.total_cost || 0);
+
+                        return `
+                            <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold text-slate-800">Collection #${collection.id}</h4>
+                                        <p class="text-sm text-slate-600">${escapeHtml(collection.description || 'No description')}</p>
+                                        <p class="text-xs text-slate-500 mt-1">${new Date(collection.created_at).toLocaleDateString()}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-slate-800">₾${totalCost.toFixed(2)}</div>
+                                        <div class="text-sm text-slate-600">${parts.length} items</div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="window.caseEditor.addCollectionItems(${collection.id})" class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
+                                        Add All Items
+                                    </button>
+                                    <button onclick="window.caseEditor.viewCollectionDetails(${collection.id})" class="px-3 py-2 border border-slate-300 text-slate-700 text-sm rounded hover:bg-slate-50 transition-colors">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    container.innerHTML = html;
+                },
+
+                createNewCollection() {
+                    const description = prompt('Enter collection description:');
+                    if (!description || !description.trim()) return;
+
+                    const selectedItems = this.getSelectedItems();
+                    if (selectedItems.parts.length === 0) {
+                        showToast('No Parts Selected', 'Please select parts to create a collection.', 'warning');
+                        return;
+                    }
+
+                    // Create collection from selected parts
+                    const partsList = selectedItems.parts.map(part => ({
+                        name: part.name,
+                        quantity: part.quantity || 1,
+                        price: part.unit_price || 0
+                    }));
+
+                    this.savePartsCollectionFromItems(partsList, description.trim());
+                },
+
+                async savePartsCollectionFromItems(partsList, description) {
+                    try {
+                        const response = await fetch(`${API_URL}?action=create_parts_collection`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                transfer_id: CASE_ID,
+                                parts_list: partsList,
+                                description: description,
+                                collection_type: 'manual'
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast('Collection Created', 'Parts collection created successfully.', 'success');
+                            this.loadCollections();
+                        } else {
+                            showToast('Error', result.error || 'Failed to create collection.', 'error');
+                        }
+                    } catch (e) {
+                        showToast('Error', 'Failed to create collection.', 'error');
+                    }
+                },
+
+                viewCollectionDetails(collectionId) {
+                    const collection = this.collections.find(c => c.id == collectionId);
+                    if (!collection) return;
+
+                    let parts = [];
+                    try { parts = JSON.parse(collection.parts_list || '[]'); } catch (e) { parts = []; }
+
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                    modal.innerHTML = `
+                        <div class="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+                            <div class="p-6 border-b border-slate-200">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-semibold text-slate-800">Collection #${collection.id}</h3>
+                                    <button onclick="this.closest('.fixed').remove()" class="text-slate-400 hover:text-slate-600">
+                                        <i data-lucide="x" class="w-6 h-6"></i>
+                                    </button>
+                                </div>
+                                <p class="text-sm text-slate-600 mt-1">${escapeHtml(collection.description || 'No description')}</p>
+                            </div>
+                            <div class="p-6 overflow-y-auto max-h-96">
+                                <div class="space-y-3">
+                                    ${parts.map(part => `
+                                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                            <div>
+                                                <div class="font-medium text-slate-800">${escapeHtml(part.name || 'Unnamed')}</div>
+                                                <div class="text-sm text-slate-600">Qty: ${part.quantity || 1}</div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-semibold text-slate-800">₾${(Number(part.price || 0)).toFixed(2)}</div>
+                                                <div class="text-sm text-slate-600">₾${((part.quantity || 1) * (part.price || 0)).toFixed(2)}</div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="mt-4 pt-4 border-t border-slate-200">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-semibold text-slate-800">Total Cost:</span>
+                                        <span class="text-lg font-bold text-slate-800">₾${Number(collection.total_cost || 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-6 border-t border-slate-200 flex justify-end">
+                                <button onclick="window.caseEditor.addCollectionItems(${collection.id}); this.closest('.fixed').remove()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    Add All Items to Repair
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    lucide.createIcons();
+                },
+
+                // Update existing methods to work with new UI
+                updatePartsList() {
+                    this.updateRepairSummary();
+                    this.updateOverviewStats();
+                    this.renderItemsList();
+                    this.renderTimeline();
+                    lucide.createIcons();
+                },
+
+                updateLaborList() {
+                    this.updateRepairSummary();
+                    this.updateOverviewStats();
+                    this.renderItemsList();
+                    this.renderTimeline();
+                    lucide.createIcons();
                 },
                 isSectionOpen(section) {
                     return this.openSections.includes(section);
@@ -1103,107 +2005,7 @@ try {
 
                 // Render combined items (parts + labor) into a single view
                 updateItemsList() {
-                    const container = document.getElementById('itemsList');
-                    if (!container) return;
-                    const parts = this.currentCase.repair_parts || [];
-                    const labor = this.currentCase.repair_labor || [];
-                    let html = '';
-
-                    if (parts.length > 0) {
-                        html += `<div class="text-sm font-semibold text-slate-700">Parts (${parts.length})</div>`;
-                        parts.forEach((part, index) => {
-                            html += `
-                                <div class="part-item bg-white/40 rounded-lg p-3 border border-white/30">
-                                    <div class="grid grid-cols-12 gap-x-3 items-start">
-                                        <div class="col-span-1 flex items-start mt-2">
-                                            <input type="checkbox" class="select-item" data-type="part" data-index="${index}" id="select-part-${index}">
-                                        </div>
-                                        <div class="col-span-7">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <div class="drag-handle" draggable="true" ondragstart="window.caseEditor.dragStartPart(event, ${index})" title="Drag to reorder"><i data-lucide="move" class="w-4 h-4"></i></div>
-                                                <div class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100">Part</div>
-                                                <input type="text" class="part-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${escapeHtml(part.name||'')}" onchange="updatePart(${index}, 'name', this.value)">
-                                            </div>
-                                            <div class="flex items-center gap-3 text-xs text-slate-500">
-                                                <div>SKU: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.sku||'')}" onchange="updatePart(${index}, 'sku', this.value)"></div>
-                                                <div>Supplier: <input class="inline-block ml-1 px-1 py-0.5 rounded border border-gray-200 text-xs" value="${escapeHtml(part.supplier||'')}" onchange="updatePart(${index}, 'supplier', this.value)"></div>
-                                            </div>
-                                            <textarea class="mt-2 w-full px-2 py-1 text-sm border rounded" placeholder="Optional note..." onchange="updatePart(${index}, 'notes', this.value)">${escapeHtml(part.notes||'')}</textarea>
-                                        </div>
-                                        <div class="col-span-2 text-center">
-                                            <label class="text-xs">Qty</label>
-                                            <input type="number" class="block w-20 mt-1 text-center rounded border" value="${part.quantity||1}" min="1" onchange="updatePart(${index}, 'quantity', this.value)">
-                                        </div>
-                                        <div class="col-span-1 text-center">
-                                            <label class="text-xs">Unit</label>
-                                            <input type="number" class="block w-24 mt-1 text-center rounded border" value="${part.unit_price||0}" step="0.01" onchange="updatePart(${index}, 'unit_price', this.value)">
-                                            <div class="text-xs mt-2">${(((part.quantity||1)*(part.unit_price||0))).toFixed(2)}₾</div>
-                                        </div>
-                                        <div class="col-span-1 flex flex-col items-end gap-2">
-                                            <select onchange="updatePart(${index}, 'status', this.value)" class="text-sm px-2 py-1 rounded border">
-                                                <option value="Pending" ${part.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                                <option value="Ordered" ${part.status === 'Ordered' ? 'selected' : ''}>Ordered</option>
-                                                <option value="Received" ${part.status === 'Received' ? 'selected' : ''}>Received</option>
-                                                <option value="Billed" ${part.status === 'Billed' ? 'selected' : ''}>Billed</option>
-                                            </select>
-                                            <button class="px-2 py-1 border rounded text-xs" onclick="window.caseEditor.nextStatusPart(${index})">Next</button>
-                                            <button class="px-2 py-1 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center" onclick="if(confirm('Remove this part?')) window.caseEditor.removePart(${index})"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        });
-                    }
-
-                    if (labor.length > 0) {
-                        html += `<div class="text-sm font-semibold text-slate-700 mt-3">Labor (${labor.length})</div>`;
-                        labor.forEach((l, idx) => {
-                            html += `
-                                <div class="labor-item bg-white/40 rounded-lg p-3 border border-white/30">
-                                    <div class="grid grid-cols-12 gap-x-3 items-end">
-                                        <div class="col-span-1 flex items-start mt-2">
-                                            <input type="checkbox" class="select-item" data-type="labor" data-index="${idx}" id="select-lab-${idx}">
-                                        </div>
-                                        <div class="col-span-7">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <div class="drag-handle" draggable="true" ondragstart="window.caseEditor.dragStartLab(event, ${idx})" title="Drag to reorder"><i data-lucide="move" class="w-4 h-4"></i></div>
-                                                <div class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100">Labor</div>
-                                                <input type="text" class="labor-name block w-full rounded-lg border-2 border-gray-200 bg-white/80 shadow-sm input-focus px-3 py-2 text-sm" value="${escapeHtml(l.description||'')}" onchange="updateLabor(${idx}, 'description', this.value)">
-                                            </div>
-                                            <textarea class="mt-2 w-full px-2 py-1 text-sm border rounded" placeholder="Notes" onchange="updateLabor(${idx}, 'notes', this.value)">${escapeHtml(l.notes||'')}</textarea>
-                                        </div>
-                                        <div class="col-span-2 text-center">
-                                            <label class="text-xs">Hours</label>
-                                            <input type="number" class="block w-20 mt-1 text-center rounded border" value="${l.hours||0}" step="0.5" onchange="updateLabor(${idx}, 'hours', this.value)">
-                                        </div>
-                                        <div class="col-span-1 text-center">
-                                            <label class="text-xs">Rate</label>
-                                            <input type="number" class="block w-24 mt-1 text-center rounded border" value="${l.hourly_rate||0}" step="0.01" onchange="updateLabor(${idx}, 'hourly_rate', this.value)">
-                                            <div class="text-xs mt-2">${(((l.hours||0)*(l.hourly_rate||0))).toFixed(2)}₾</div>
-                                        </div>
-                                        <div class="col-span-1 flex flex-col items-end gap-2">
-                                            <select onchange="updateLabor(${idx}, 'status', this.value)" class="text-sm px-2 py-1 rounded border">
-                                                <option value="Pending" ${l.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                                <option value="In Progress" ${l.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                                <option value="Completed" ${l.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                                                <option value="Billed" ${l.status === 'Billed' ? 'selected' : ''}>Billed</option>
-                                            </select>
-                                            <button class="px-2 py-1 border rounded text-xs" onclick="window.caseEditor.nextStatusLab(${idx})">Next</button>
-                                            <button class="px-2 py-1 border-2 border-red-300 rounded-lg text-red-600 hover:bg-red-50 w-full flex justify-center" onclick="if(confirm('Remove this labor entry?')) window.caseEditor.removeLabor(${idx})"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        });
-                    }
-
-                    container.innerHTML = html || '<div class="text-sm text-slate-500">No parts or labor added yet. <button onclick="window.caseEditor.addPart()" class="ml-2 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">Add Part</button> <button onclick="window.caseEditor.addLabor()" class="ml-2 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">Add Labor</button> <button onclick="(document.getElementById(\'collectionsList\') && document.getElementById(\'collectionsList\').scrollIntoView({behavior:\"smooth\"}))" class="ml-2 text-xs border border-slate-200 text-slate-700 px-2 py-1 rounded">Show Collections</button></div>';
-
-                    // Setup autocomplete for new inputs
-                    container.querySelectorAll('.part-name').forEach(inp => setupAutocomplete(inp, 'part'));
-                    container.querySelectorAll('.labor-name').forEach(inp => setupAutocomplete(inp, 'labor'));
-
-                    // Recalculate totals and icons
-                    this.updateRepairSummary();
-                    lucide.createIcons();
+                    this.renderItemsList();
                 },
 
                 showInvoice() {
@@ -1244,52 +2046,7 @@ try {
                         this.collections = [];
                     }
 
-                    const container = document.getElementById('collectionsList');
-                    if (!container) return;
-                    if (!this.collections || this.collections.length === 0) {
-                        container.innerHTML = '<div class="text-sm text-slate-500">No collections found for this case.</div>';
-                        return;
-                    }
-
-                    try {
-                        let html = '';
-                        this.collections.forEach((c, ci) => {
-                            let parts = [];
-                            try { parts = JSON.parse(c.parts_list || '[]'); } catch (e) { parts = []; }
-                            html += `
-                                <div class="bg-white p-3 rounded-lg border">
-                                    <div class="flex items-start justify-between">
-                                        <div>
-                                            <div class="text-sm font-semibold">Collection #${c.id} <span class="text-xs text-slate-500">${escapeHtml(c.collection_type || '')} ${c.status ? '· ' + escapeHtml(c.status) : ''}</span></div>
-                                            <div class="text-xs text-slate-500 mt-1">${escapeHtml(c.description || '')}</div>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-sm font-semibold">${Number(c.total_cost || 0).toFixed(2)}₾</div>
-                                            <div class="text-xs text-slate-400">${escapeHtml(c.created_at || '')}</div>
-                                            <div class="mt-2"><button class="bg-blue-600 text-white px-2 py-1 rounded text-xs" onclick="window.caseEditor.addCollectionItems(${c.id})">Add all</button></div>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2 overflow-x-auto">
-                                        <table class="w-full text-sm">
-                                            <thead><tr><th class="text-left">Name</th><th>Qty</th><th>Price</th><th></th></tr></thead>
-                                            <tbody>`;
-                            (parts || []).forEach((p, pi) => {
-                                html += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>${(Number(p.price || p.unit_price || 0)).toFixed(2)}₾</td><td><button class="text-xs px-2 py-1 border rounded" onclick="window.caseEditor.addCollectionItem(${c.id}, ${pi})">Add</button></td></tr>`;
-                            });
-                            html += `</tbody></table></div>
-                                </div><div class="h-2"></div>`;
-                        });
-
-                        container.innerHTML = html;
-                        // Uncheck selectAll when list rebuilds
-                        const selectAll = document.getElementById('selectAllItems'); if (selectAll) selectAll.checked = false;
-
-                    // Ensure any selected checkboxes are in sync (not strictly required but helpful)
-                    document.querySelectorAll('.select-item').forEach(cb=>{ if(cb) cb.checked = false; });
-                    } catch (err) {
-                        console.error('Failed rendering collections:', err);
-                        container.innerHTML = '<div class="text-sm text-red-600">Failed to load collections.</div>';
-                    }
+                    this.renderCollections();
                 },
 
                 addCollectionItems(collectionId) {
@@ -1324,11 +2081,17 @@ try {
                 },
 
                 // Selection helpers
-                selectAllItems(check) { document.querySelectorAll('.select-item').forEach(cb => cb.checked = !!check); },
+                selectAllItems() {
+                    const checkboxes = document.querySelectorAll('#items-container .select-item');
+                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                    checkboxes.forEach(cb => cb.checked = !allChecked);
+                    this.updateSelectVisuals();
+                },
+
                 getSelectedItems() {
                     const parts = [];
                     const labor = [];
-                    document.querySelectorAll('.select-item:checked').forEach(cb => {
+                    document.querySelectorAll('#items-container .select-item:checked').forEach(cb => {
                         const type = cb.dataset.type;
                         const idx = parseInt(cb.dataset.index, 10);
                         if (type === 'part' && this.currentCase.repair_parts && this.currentCase.repair_parts[idx]) {
@@ -1374,17 +2137,859 @@ try {
 
                 // New: update select visuals and bulk toolbar
                 updateSelectVisuals() {
-                    const selectedCount = document.querySelectorAll('.select-item:checked').length;
-                    const bulk = document.getElementById('bulkActions');
-                    const cnt = document.getElementById('bulkSelectedCount');
-                    if (cnt) cnt.textContent = `${selectedCount} selected`;
-                    if (bulk) bulk.classList.toggle('hidden', selectedCount === 0);
-                    // Toggle row class
-                    document.querySelectorAll('.select-item').forEach(cb => {
-                        const row = cb.closest('.part-item') || cb.closest('.labor-item');
-                        if (!row) return; row.classList.toggle('selected-row', !!cb.checked);
-                    });
+                    const checkboxes = document.querySelectorAll('#items-container .select-item');
+                    const checkedCount = document.querySelectorAll('#items-container .select-item:checked').length;
+                    const selectAllBtn = document.getElementById('select-all-btn');
+                    const bulkActions = document.getElementById('bulk-actions');
+
+                    if (selectAllBtn) {
+                        const allChecked = checkedCount === checkboxes.length && checkboxes.length > 0;
+                        const someChecked = checkedCount > 0;
+                        selectAllBtn.innerHTML = allChecked ? '<i data-lucide="check-square"></i> Deselect All' : '<i data-lucide="square"></i> Select All';
+                        selectAllBtn.classList.toggle('text-blue-600', someChecked);
+                        lucide.createIcons();
+                    }
+
+                    if (bulkActions) {
+                        bulkActions.classList.toggle('hidden', checkedCount === 0);
+                    }
                 },
+
+                // Bulk operations
+                bulkDeleteItems() {
+                    const selected = this.getSelectedItems();
+                    if (selected.parts.length === 0 && selected.labor.length === 0) {
+                        showToast('No items selected', 'error');
+                        return;
+                    }
+
+                    if (!confirm(`Delete ${selected.parts.length + selected.labor.length} selected items?`)) return;
+
+                    // Remove parts
+                    selected.parts.forEach(item => {
+                        const idx = this.currentCase.repair_parts.findIndex(p => p.id === item.id);
+                        if (idx !== -1) this.currentCase.repair_parts.splice(idx, 1);
+                    });
+
+                    // Remove labor
+                    selected.labor.forEach(item => {
+                        const idx = this.currentCase.repair_labor.findIndex(l => l.id === item.id);
+                        if (idx !== -1) this.currentCase.repair_labor.splice(idx, 1);
+                    });
+
+                    this.saveRepairData();
+                    this.renderItemsList();
+                    this.updateOverviewStats();
+                    showToast('Items deleted successfully');
+                },
+
+                bulkDuplicateItems() {
+                    const selected = this.getSelectedItems();
+                    if (selected.parts.length === 0 && selected.labor.length === 0) {
+                        showToast('No items selected', 'error');
+                        return;
+                    }
+
+                    // Duplicate parts
+                    selected.parts.forEach(item => {
+                        const newItem = { ...item, id: Date.now() + Math.random() };
+                        this.currentCase.repair_parts.push(newItem);
+                    });
+
+                    // Duplicate labor
+                    selected.labor.forEach(item => {
+                        const newItem = { ...item, id: Date.now() + Math.random() };
+                        this.currentCase.repair_labor.push(newItem);
+                    });
+
+                    this.saveRepairData();
+                    this.renderItemsList();
+                    this.updateOverviewStats();
+                    showToast('Items duplicated successfully');
+                },
+
+                bulkMoveToCollection() {
+                    const selected = this.getSelectedItems();
+                    if (selected.parts.length === 0 && selected.labor.length === 0) {
+                        showToast('No items selected', 'error');
+                        return;
+                    }
+
+                    // Open collections modal and pre-select items
+                    this.selectedItems = selected;
+                    this.showCollectionsModal('move');
+                },
+
+                // Modal management
+                showCollectionsModal(mode = 'view') {
+                    const modal = document.getElementById('collections-modal');
+                    if (!modal) return;
+
+                    // Set modal title and content based on mode
+                    const title = mode === 'move' ? 'Move Items to Collection' : 'Parts Collections';
+                    document.getElementById('collections-modal-title').textContent = title;
+
+                    // Render collections list
+                    this.renderCollectionsModal(mode);
+
+                    modal.classList.remove('hidden');
+                },
+
+                renderCollectionsModal(mode) {
+                    const container = document.getElementById('collections-modal-content');
+                    if (!container) return;
+
+                    if (this.collections.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8">
+                                <i data-lucide="package" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
+                                <p class="text-gray-500">No collections found</p>
+                                <button onclick="caseEditor.createNewCollection()" class="mt-4 btn-gradient text-white px-4 py-2 rounded-lg">
+                                    Create New Collection
+                                </button>
+                            </div>
+                        `;
+                        lucide.createIcons();
+                        return;
+                    }
+
+                    let html = '<div class="space-y-3">';
+                    this.collections.forEach(collection => {
+                        const parts = JSON.parse(collection.parts_list || '[]');
+                        html += `
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium text-gray-900">${escapeHtml(collection.description || 'Unnamed Collection')}</h4>
+                                        <p class="text-sm text-gray-500">${parts.length} parts • Created ${new Date(collection.created_at).toLocaleDateString()}</p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        ${mode === 'move' ? 
+                                            `<button onclick="caseEditor.moveItemsToCollection(${collection.id})" class="btn-gradient text-white px-3 py-1 rounded text-sm">
+                                                Move Here
+                                            </button>` : 
+                                            `<button onclick="caseEditor.viewCollectionDetails(${collection.id})" class="text-blue-600 hover:text-blue-800 text-sm">
+                                                View
+                                            </button>`
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                },
+
+                moveItemsToCollection(collectionId) {
+                    if (!this.selectedItems) return;
+
+                    // Add selected items to the collection
+                    const collection = this.collections.find(c => c.id == collectionId);
+                    if (!collection) return;
+
+                    let parts = JSON.parse(collection.parts_list || '[]');
+
+                    // Add selected parts
+                    this.selectedItems.parts.forEach(item => {
+                        parts.push({
+                            name: item.name,
+                            quantity: item.quantity || 1,
+                            price: item.unit_price || 0
+                        });
+                    });
+
+                    // Update collection
+                    collection.parts_list = JSON.stringify(parts);
+
+                    // Save to server
+                    this.saveCollectionUpdate(collection);
+
+                    // Close modal
+                    document.getElementById('collections-modal').classList.add('hidden');
+                    showToast('Items moved to collection');
+                },
+
+                async saveCollectionUpdate(collection) {
+                    try {
+                        const response = await fetch('api.php?action=update_parts_collection', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                id: collection.id,
+                                parts_list: collection.parts_list,
+                                description: collection.description
+                            })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            this.loadCollections();
+                        }
+                    } catch (e) {
+                        console.error('Failed to update collection:', e);
+                    }
+                },
+
+                showParsedItemsModal(items) {
+                    const modal = document.getElementById('parsed-items-modal');
+                    if (!modal) return;
+
+                    // Render parsed items for selection
+                    this.renderParsedItemsModal(items);
+                    modal.classList.remove('hidden');
+                },
+
+                renderParsedItemsModal(items) {
+                    const container = document.getElementById('parsed-items-container');
+                    if (!container) return;
+
+                    let html = `
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-medium">Select Items to Add</h3>
+                                <button onclick="caseEditor.selectAllParsedItems()" class="text-blue-600 hover:text-blue-800 text-sm">
+                                    Select All
+                                </button>
+                            </div>
+                    `;
+
+                    items.forEach((item, index) => {
+                        html += `
+                            <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                                <input type="checkbox" id="parsed-item-${index}" class="parsed-item-checkbox h-4 w-4 text-blue-600 rounded" data-index="${index}">
+                                <label for="parsed-item-${index}" class="ml-3 flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <span class="font-medium">${escapeHtml(item.name || item.description || 'Unknown Item')}</span>
+                                            <span class="text-sm text-gray-500 ml-2">[${item.type || 'part'}]</span>
+                                        </div>
+                                        <div class="text-sm text-gray-600">
+                                            Qty: ${item.quantity || 1} • ₾${(item.price || 0).toFixed(2)}
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                        <div class="flex justify-end gap-3 pt-4">
+                            <button onclick="document.getElementById('parsed-items-modal').classList.add('hidden')" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button onclick="caseEditor.addSelectedParsedItems()" class="btn-gradient text-white px-4 py-2 rounded-lg">
+                                Add Selected Items
+                            </button>
+                        </div>
+                    </div>
+                    `;
+
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                },
+
+                selectAllParsedItems() {
+                    const checkboxes = document.querySelectorAll('.parsed-item-checkbox');
+                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                    checkboxes.forEach(cb => cb.checked = !allChecked);
+                },
+
+                addSelectedParsedItems() {
+                    const selectedIndices = [];
+                    document.querySelectorAll('.parsed-item-checkbox:checked').forEach(cb => {
+                        selectedIndices.push(parseInt(cb.dataset.index));
+                    });
+
+                    if (selectedIndices.length === 0) {
+                        showToast('No items selected', 'error');
+                        return;
+                    }
+
+                    // Add selected items to repair data
+                    selectedIndices.forEach(index => {
+                        const item = this.parsedItems[index];
+                        if (!item) return;
+
+                        if (item.type === 'labor') {
+                            this.addLabor(item.name || item.description, item.quantity || 1, item.price || 0);
+                        } else {
+                            this.addPart(item.name || item.description, item.quantity || 1, item.price || 0);
+                        }
+                    });
+
+                    this.saveRepairData();
+                    this.renderItemsList();
+                    this.updateOverviewStats();
+
+                    // Close modal
+                    document.getElementById('parsed-items-modal').classList.add('hidden');
+                    showToast(`${selectedIndices.length} items added successfully`);
+                },
+
+                exportRepairData() {
+                    const data = {
+                        case: this.currentCase,
+                        parts: this.currentCase.repair_parts || [],
+                        labor: this.currentCase.repair_labor || [],
+                        timeline: this.currentCase.repair_activity_log || [],
+                        exported_at: new Date().toISOString()
+                    };
+
+                    const json = JSON.stringify(data, null, 2);
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `repair-case-${CASE_ID}-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    showToast('Repair data exported');
+                },
+
+                // Collection management
+                createNewCollection() {
+                    const name = prompt('Enter collection name:');
+                    if (!name) return;
+
+                    // Create from current repair items
+                    const parts = (this.currentCase.repair_parts || []).map(p => ({
+                        name: p.name,
+                        quantity: p.quantity || 1,
+                        price: p.unit_price || 0
+                    }));
+
+                    if (parts.length === 0) {
+                        showToast('No parts to create collection from', 'error');
+                        return;
+                    }
+
+                    this.savePartsCollectionFromItems(parts, name);
+                },
+
+                async savePartsCollectionFromItems(parts, description) {
+                    try {
+                        const response = await fetch(`${API_URL}?action=create_parts_collection`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                transfer_id: CASE_ID,
+                                parts_list: parts,
+                                description: description,
+                                collection_type: 'local'
+                            })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast('Collection Created', 'Parts collection created successfully.', 'success');
+                            this.loadCollections();
+                        } else {
+                            showToast('Error', result.error || 'Failed to create collection.', 'error');
+                        }
+                    } catch (e) {
+                        showToast('Error', 'Failed to create collection.', 'error');
+                    }
+                },
+
+                viewCollectionDetails(collectionId) {
+                    const collection = this.collections.find(c => c.id == collectionId);
+                    if (!collection) return;
+
+                    // Show collection details modal
+                    const parts = JSON.parse(collection.parts_list || '[]');
+                    let details = `Collection: ${collection.description}\n\nParts:\n`;
+                    parts.forEach((part, index) => {
+                        details += `${index + 1}. ${part.name} (Qty: ${part.quantity}, ₾${part.price})\n`;
+                    });
+
+                    alert(details); // Simple alert for now, could be enhanced with a modal
+                },
+
+                // Search and filter functionality
+                initSearchAndFilter() {
+                    const searchInput = document.getElementById('items-search');
+                    const filterSelect = document.getElementById('items-filter');
+
+                    if (searchInput) {
+                        searchInput.addEventListener('input', () => {
+                            this.searchQuery = searchInput.value.toLowerCase();
+                            this.renderItemsList();
+                        });
+                    }
+
+                    if (filterSelect) {
+                        filterSelect.addEventListener('change', () => {
+                            this.filterType = filterSelect.value;
+                            this.renderItemsList();
+                        });
+                    }
+                },
+
+                // Repair progress tracking
+                updateRepairProgress() {
+                    // Update progress bar and status indicators
+                    const status = this.currentCase.repair_status || '';
+                    const statusIndicator = document.getElementById('status-indicator');
+                    
+                    if (statusIndicator) {
+                        const statusLabels = {
+                            '': 'Not Started',
+                            'Planning': 'Planning',
+                            'In Progress': 'In Progress', 
+                            'Parts Waiting': 'Parts Waiting',
+                            'Quality Check': 'Quality Check',
+                            'Completed': 'Completed'
+                        };
+                        statusIndicator.textContent = statusLabels[status] || 'Not Started';
+                    }
+
+                    // Update progress bar if it exists
+                    const progressBar = document.getElementById('repair-progress-bar');
+                    if (progressBar) {
+                        const progressValues = {
+                            '': 0,
+                            'Planning': 20,
+                            'In Progress': 50,
+                            'Parts Waiting': 70,
+                            'Quality Check': 90,
+                            'Completed': 100
+                        };
+                        progressBar.style.width = `${progressValues[status] || 0}%`;
+                    }
+
+                    this.saveRepairData();
+                },
+
+                // Cost calculations
+                calculateTotalCost() {
+                    const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => 
+                        sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => 
+                        sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                    return partsTotal + laborTotal;
+                },
+
+                // Quick add methods
+                quickAddPart(name = '', quantity = 1, price = 0) {
+                    if (!name.trim()) {
+                        name = prompt('Enter part name:');
+                        if (!name) return;
+                    }
+                    this.addPart(name, quantity, price);
+                    this.renderItemsList();
+                    this.updateOverviewStats();
+                },
+
+                quickAddLabor(description = '', hours = 1, rate = 0) {
+                    if (!description.trim()) {
+                        description = prompt('Enter labor description:');
+                        if (!description) return;
+                    }
+                    this.addLabor(description, hours, rate);
+                    this.renderItemsList();
+                    this.updateOverviewStats();
+                },
+
+                // PDF parsing methods
+                parseInvoice() {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.pdf';
+                    input.onchange = (e) => this.processInvoiceFile(e.target.files[0]);
+                    input.click();
+                },
+
+                async processInvoiceFile(file) {
+                    if (!file) return;
+
+                    const formData = new FormData();
+                    formData.append('pdf', file);
+
+                    try {
+                        showToast('Processing PDF...', 'info');
+                        const response = await fetch('api.php?action=parse_invoice_pdf', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        if (data.success && data.items && data.items.length > 0) {
+                            this.parsedItems = data.items;
+                            this.showParsedItemsModal(data.items);
+                            showToast(`Found ${data.items.length} items`, 'Select which items to add');
+                        } else {
+                            showToast('No items found', 'Could not parse any items from the PDF', 'error');
+                        }
+                    } catch (error) {
+                        console.error('PDF parsing error:', error);
+                        showToast('Parsing failed', 'Error processing PDF file', 'error');
+                    }
+                },
+
+                // Render methods
+                renderItemsList() {
+                    const container = document.getElementById('items-container');
+                    if (!container) return;
+
+                    const allItems = [];
+                    
+                    // Add parts
+                    (this.currentCase.repair_parts || []).forEach((part, index) => {
+                        allItems.push({
+                            type: 'part',
+                            index: index,
+                            data: part,
+                            name: part.name || '',
+                            cost: (part.quantity || 1) * (part.unit_price || 0)
+                        });
+                    });
+
+                    // Add labor
+                    (this.currentCase.repair_labor || []).forEach((labor, index) => {
+                        allItems.push({
+                            type: 'labor',
+                            index: index,
+                            data: labor,
+                            name: labor.description || '',
+                            cost: (labor.hours || 0) * (labor.hourly_rate || 0)
+                        });
+                    });
+
+                    // Filter items
+                    let filteredItems = allItems;
+                    if (this.searchQuery) {
+                        filteredItems = allItems.filter(item => 
+                            item.name.toLowerCase().includes(this.searchQuery) ||
+                            (item.data.notes || '').toLowerCase().includes(this.searchQuery)
+                        );
+                    }
+
+                    if (this.filterType !== 'all') {
+                        if (this.filterType === 'parts') {
+                            filteredItems = filteredItems.filter(item => item.type === 'part');
+                        } else if (this.filterType === 'labor') {
+                            filteredItems = filteredItems.filter(item => item.type === 'labor');
+                        } else if (this.filterType === 'pending') {
+                            filteredItems = filteredItems.filter(item => !item.data.status || item.data.status === 'Pending');
+                        } else if (this.filterType === 'completed') {
+                            filteredItems = filteredItems.filter(item => item.data.status === 'Completed' || item.data.status === 'Billed');
+                        }
+                    }
+
+                    // Render items
+                    let html = '';
+                    if (filteredItems.length === 0) {
+                        html = `
+                            <div class="text-center py-8 text-gray-500">
+                                <i data-lucide="package" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+                                <p>No items found</p>
+                            </div>
+                        `;
+                    } else {
+                        filteredItems.forEach(item => {
+                            html += this.renderItemCard(item);
+                        });
+                    }
+
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                    this.updateItemsCostSummary();
+                },
+
+                renderItemCard(item) {
+                    const { type, index, data } = item;
+                    const isPart = type === 'part';
+                    const statusColors = {
+                        'Pending': 'bg-yellow-100 text-yellow-800',
+                        'Ordered': 'bg-blue-100 text-blue-800',
+                        'Received': 'bg-green-100 text-green-800',
+                        'Completed': 'bg-green-100 text-green-800',
+                        'Billed': 'bg-purple-100 text-purple-800'
+                    };
+
+                    const statusClass = statusColors[data.status || 'Pending'] || 'bg-gray-100 text-gray-800';
+
+                    return `
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" class="select-item mt-1 h-4 w-4 text-blue-600 rounded" 
+                                       data-type="${type}" data-index="${index}">
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <i data-lucide="${isPart ? 'settings' : 'wrench'}" class="w-4 h-4 text-gray-500"></i>
+                                            <span class="font-medium text-gray-900 truncate">${escapeHtml(data.name || data.description || 'Unnamed')}</span>
+                                        </div>
+                                        <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
+                                            ${data.status || 'Pending'}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                                        ${isPart ? `
+                                            <div>Qty: ${data.quantity || 1}</div>
+                                            <div>Price: ₾${(data.unit_price || 0).toFixed(2)}</div>
+                                        ` : `
+                                            <div>Hours: ${data.hours || 0}</div>
+                                            <div>Rate: ₾${(data.hourly_rate || 0).toFixed(2)}</div>
+                                        `}
+                                    </div>
+                                    
+                                    ${data.notes ? `<p class="text-sm text-gray-500 mb-3">${escapeHtml(data.notes)}</p>` : ''}
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <div class="text-lg font-semibold text-gray-900">
+                                            ₾${item.cost.toFixed(2)}
+                                        </div>
+                                        <div class="flex gap-1">
+                                            <button onclick="caseEditor.editItem('${type}', ${index})" 
+                                                    class="p-1 text-gray-400 hover:text-blue-600">
+                                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                            </button>
+                                            <button onclick="caseEditor.removeItem('${type}', ${index})" 
+                                                    class="p-1 text-gray-400 hover:text-red-600">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                },
+
+                updateItemsCostSummary() {
+                    const partsCount = (this.currentCase.repair_parts || []).length;
+                    const laborCount = (this.currentCase.repair_labor || []).length;
+                    const totalCost = this.calculateTotalCost();
+
+                    // Update summary displays
+                    const partsEl = document.getElementById('overview-parts-count');
+                    const laborEl = document.getElementById('overview-labor-hours');
+                    const costEl = document.getElementById('overview-total-cost');
+
+                    if (partsEl) partsEl.textContent = partsCount;
+                    if (laborEl) laborEl.textContent = `${laborCount}h`;
+                    if (costEl) costEl.textContent = `₾${totalCost.toFixed(2)}`;
+                },
+
+                // Bulk actions menu
+                bulkActions() {
+                    const selected = this.getSelectedItems();
+                    if (selected.parts.length === 0 && selected.labor.length === 0) {
+                        showToast('No items selected', 'error');
+                        return;
+                    }
+
+                    // Simple action menu - could be enhanced with a proper dropdown
+                    const action = prompt(`Selected ${selected.parts.length + selected.labor.length} items. Choose action:\n1. Delete\n2. Duplicate\n3. Move to Collection\n\nEnter 1, 2, or 3:`);
+                    
+                    switch(action) {
+                        case '1':
+                            this.bulkDeleteItems();
+                            break;
+                        case '2':
+                            this.bulkDuplicateItems();
+                            break;
+                        case '3':
+                            this.bulkMoveToCollection();
+                            break;
+                        default:
+                            showToast('Cancelled', 'info');
+                    }
+                }
+
+                renderTimeline() {
+                    const container = document.getElementById('timeline-container');
+                    if (!container) return;
+
+                    const activities = this.currentCase.repair_activity_log || [];
+                    
+                    if (activities.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8 text-gray-500">
+                                <i data-lucide="calendar" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+                                <p>No activities recorded yet</p>
+                            </div>
+                        `;
+                        lucide.createIcons();
+                        return;
+                    }
+
+                    // Sort by timestamp descending (most recent first)
+                    const sortedActivities = activities.slice().sort((a, b) => 
+                        new Date(b.timestamp) - new Date(a.timestamp)
+                    );
+
+                    let html = '<div class="space-y-4">';
+                    sortedActivities.forEach(activity => {
+                        const date = new Date(activity.timestamp);
+                        html += `
+                            <div class="flex gap-4">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                    <div class="w-px h-full bg-gray-200 mt-2"></div>
+                                </div>
+                                <div class="flex-1 pb-4">
+                                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="font-medium text-gray-900">${escapeHtml(activity.action || 'Activity')}</h4>
+                                            <span class="text-sm text-gray-500">${date.toLocaleDateString()}</span>
+                                        </div>
+                                        ${activity.details ? `<p class="text-sm text-gray-600 mb-2">${escapeHtml(activity.details)}</p>` : ''}
+                                        <div class="text-xs text-gray-500">
+                                            by ${escapeHtml(activity.user || 'System')} at ${date.toLocaleTimeString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                },
+
+                addTimelineEvent(action, details = '') {
+                    if (!action) {
+                        action = prompt('Enter activity action:');
+                        if (!action) return;
+                    }
+                    if (!details) {
+                        details = prompt('Enter activity details:') || '';
+                    }
+
+                    if (!this.currentCase.repair_activity_log) {
+                        this.currentCase.repair_activity_log = [];
+                    }
+
+                    this.currentCase.repair_activity_log.push({
+                        action: action,
+                        details: details,
+                        user: '<?php echo addslashes($current_user_name); ?>',
+                        timestamp: new Date().toISOString()
+                    });
+
+                    this.saveRepairData();
+                    this.renderTimeline();
+                },
+
+                renderCollections() {
+                    const container = document.getElementById('collections-container');
+                    if (!container) return;
+
+                    if (this.collections.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8">
+                                <i data-lucide="package" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
+                                <p class="text-gray-500">No collections found</p>
+                                <button onclick="caseEditor.createNewCollection()" class="mt-4 btn-gradient text-white px-4 py-2 rounded-lg">
+                                    Create New Collection
+                                </button>
+                            </div>
+                        `;
+                        lucide.createIcons();
+                        return;
+                    }
+
+                    let html = '<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">';
+                    this.collections.forEach(collection => {
+                        const parts = JSON.parse(collection.parts_list || '[]');
+                        const totalValue = parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.price || 0)), 0);
+                        
+                        html += `
+                            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-medium text-gray-900 truncate">${escapeHtml(collection.description || 'Unnamed Collection')}</h4>
+                                    <span class="text-sm text-gray-500">${parts.length} items</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3">
+                                    Total value: ₾${totalValue.toFixed(2)}
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="caseEditor.addCollectionItems(${collection.id})" 
+                                            class="flex-1 text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
+                                        Add to Case
+                                    </button>
+                                    <button onclick="caseEditor.viewCollectionDetails(${collection.id})" 
+                                            class="text-sm text-gray-600 hover:text-gray-800 px-2 py-1">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+
+                    container.innerHTML = html;
+                    lucide.createIcons();
+                },
+
+                // Item management
+                editItem(type, index) {
+                    const item = type === 'part' ? 
+                        this.currentCase.repair_parts[index] : 
+                        this.currentCase.repair_labor[index];
+                    
+                    if (!item) return;
+
+                    // Simple edit modal - could be enhanced
+                    const newName = prompt(`Edit ${type} name:`, item.name || item.description || '');
+                    if (newName === null) return;
+
+                    if (type === 'part') {
+                        item.name = newName;
+                        this.updatePartsList();
+                    } else {
+                        item.description = newName;
+                        this.updateLaborList();
+                    }
+
+                    this.renderItemsList();
+                    this.saveRepairData();
+                },
+
+                removeItem(type, index) {
+                    if (!confirm(`Remove this ${type}?`)) return;
+
+                    if (type === 'part') {
+                        this.currentCase.repair_parts.splice(index, 1);
+                        this.updatePartsList();
+                    } else {
+                        this.currentCase.repair_labor.splice(index, 1);
+                        this.updateLaborList();
+                    }
+
+                    this.renderItemsList();
+                    this.updateOverviewStats();
+                    this.saveRepairData();
+                },
+
+                // Overview stats
+                updateOverviewStats() {
+                    const partsCount = (this.currentCase.repair_parts || []).length;
+                    const laborHours = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + (labor.hours || 0), 0);
+                    const activitiesCount = (this.currentCase.repair_activity_log || []).length;
+                    const totalCost = this.calculateTotalCost();
+
+                    // Update overview cards
+                    const partsEl = document.getElementById('overview-parts-count');
+                    const laborEl = document.getElementById('overview-labor-hours');
+                    const activitiesEl = document.getElementById('overview-activities-count');
+                    const costEl = document.getElementById('overview-total-cost');
+
+                    if (partsEl) partsEl.textContent = partsCount;
+                    if (laborEl) laborEl.textContent = `${laborHours}h`;
+                    if (activitiesEl) activitiesEl.textContent = activitiesCount;
+                    if (costEl) costEl.textContent = `₾${totalCost.toFixed(2)}`;
+                }
 
                 // Open modal to confirm collection creation
                 openCreateCollectionModal() {
@@ -1656,6 +3261,63 @@ try {
                         this.partsRequest = { description: '', supplier: '', collection_type: 'local' };
                     } catch (error) {
                         showToast("Error", "Failed to create parts request.", "error");
+                    }
+                },
+
+                // Bulk actions menu
+                bulkActions() {
+                    const selected = this.getSelectedItems();
+                    if (selected.parts.length === 0 && selected.labor.length === 0) {
+                        showToast('No items selected', 'error');
+                        return;
+                    }
+
+                    // Simple action menu - could be enhanced with a proper dropdown
+                    const action = prompt(`Selected ${selected.parts.length + selected.labor.length} items. Choose action:\n1. Delete\n2. Duplicate\n3. Move to Collection\n\nEnter 1, 2, or 3:`);
+                    
+                    switch(action) {
+                        case '1':
+                            this.bulkDeleteItems();
+                            break;
+                        case '2':
+                            this.bulkDuplicateItems();
+                            break;
+                        case '3':
+                            this.bulkMoveToCollection();
+                            break;
+                        default:
+                            showToast('Cancelled', 'info');
+                    }
+                },
+
+                // Data persistence
+                async saveRepairData() {
+                    try {
+                        const response = await fetch('api.php?action=update_transfer&id=' + CASE_ID, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                id: CASE_ID,
+                                repair_parts: this.currentCase.repair_parts || [],
+                                repair_labor: this.currentCase.repair_labor || [],
+                                repair_activity_log: this.currentCase.repair_activity_log || [],
+                                repair_status: this.currentCase.repair_status || '',
+                                repair_notes: this.currentCase.repair_notes || '',
+                                assigned_mechanic: this.currentCase.assigned_mechanic || '',
+                                repair_start_date: this.currentCase.repair_start_date || null
+                            })
+                        });
+                        
+                        if (!response.ok) throw new Error('Save failed');
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast('Data saved successfully');
+                        } else {
+                            showToast('Save failed', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Save error:', error);
+                        showToast('Save failed', 'error');
                     }
                 }
             }
