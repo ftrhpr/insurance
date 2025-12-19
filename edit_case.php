@@ -138,6 +138,10 @@ try {
                 updateOverviewStats() {},
                 initSearchAndFilter() {},
                 loadCollections() {},
+                bulkDeleteItems() {},
+                bulkDuplicateItems() {},
+                bulkMoveToCollection() {},
+                bulkRequestPartsCollection() {},
                 calculateTotalCost() { return 0; },
                 addPart() {},
                 addLabor() {},
@@ -2293,6 +2297,41 @@ try {
                     this.showCollectionsModal('move');
                 },
 
+                bulkRequestPartsCollection() {
+                    const selected = this.getSelectedItems();
+                    if (selected.parts.length === 0 && selected.labor.length === 0) {
+                        showToast('No items selected', 'error');
+                        return;
+                    }
+
+                    // Create a description from selected items
+                    const partsList = selected.parts.map(part => `${part.name} (Qty: ${part.quantity})`).join(', ');
+                    const laborList = selected.labor.map(labor => `${labor.description} (${labor.hours}h)`).join(', ');
+                    
+                    const description = `Parts Collection Request for: ${partsList}${laborList ? `, Labor: ${laborList}` : ''}`;
+                    
+                    // Pre-fill the parts request form
+                    this.partsRequest.description = description;
+                    this.partsRequest.collection_type = 'local';
+                    
+                    // Scroll to the parts request section and expand it
+                    this.openSections = [...this.openSections, 'parts'];
+                    localStorage.setItem('openSections', JSON.stringify(this.openSections));
+                    
+                    // Scroll to the parts request section
+                    const partsSection = document.querySelector('[data-section="parts"]');
+                    if (partsSection) {
+                        partsSection.scrollIntoView({ behavior: 'smooth' });
+                        // Focus on the description field
+                        setTimeout(() => {
+                            const descField = document.querySelector('textarea[x-model="partsRequest.description"]');
+                            if (descField) descField.focus();
+                        }, 500);
+                    }
+                    
+                    showToast('Parts Request Form Ready', 'Please fill in supplier details and submit the request.', 'success');
+                },
+
                 // Modal management
                 showCollectionsModal(mode = 'view') {
                     const modal = document.getElementById('collections-modal');
@@ -2665,7 +2704,7 @@ try {
                     }
 
                     // Simple action menu - could be enhanced with a proper dropdown
-                    const action = prompt(`Selected ${selected.parts.length + selected.labor.length} items. Choose action:\n1. Delete\n2. Duplicate\n3. Move to Collection\n\nEnter 1, 2, or 3:`);
+                    const action = prompt(`Selected ${selected.parts.length + selected.labor.length} items. Choose action:\n1. Delete\n2. Duplicate\n3. Move to Collection\n4. Request Parts Collection\n\nEnter 1, 2, 3, or 4:`);
                     
                     switch(action) {
                         case '1':
@@ -2676,6 +2715,9 @@ try {
                             break;
                         case '3':
                             this.bulkMoveToCollection();
+                            break;
+                        case '4':
+                            this.bulkRequestPartsCollection();
                             break;
                         default:
                             showToast('Cancelled', 'info');
@@ -3079,7 +3121,7 @@ try {
                     }
 
                     // Simple action menu - could be enhanced with a proper dropdown
-                    const action = prompt(`Selected ${selected.parts.length + selected.labor.length} items. Choose action:\n1. Delete\n2. Duplicate\n3. Move to Collection\n\nEnter 1, 2, or 3:`);
+                    const action = prompt(`Selected ${selected.parts.length + selected.labor.length} items. Choose action:\n1. Delete\n2. Duplicate\n3. Move to Collection\n4. Request Parts Collection\n\nEnter 1, 2, 3, or 4:`);
                     
                     switch(action) {
                         case '1':
@@ -3090,6 +3132,9 @@ try {
                             break;
                         case '3':
                             this.bulkMoveToCollection();
+                            break;
+                        case '4':
+                            this.bulkRequestPartsCollection();
                             break;
                         default:
                             showToast('Cancelled', 'info');
