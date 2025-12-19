@@ -148,6 +148,8 @@ try {
         .modal { background: white; border-radius: 8px; padding: 16px; width: 480px; max-width: calc(100% - 32px); box-shadow: 0 10px 25px rgba(2,6,23,0.15); }
         .step-current .step-icon { background-color: #2563eb; color: white; border-color: #2563eb; }
         .step-incomplete .step-icon { background-color: white; color: #6b7280; border-color: #d1d5db; }
+        .btn-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #d946ef 100%); transition: all 0.3s; }
+        .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3); }
     </style>
 </head>
 
@@ -799,6 +801,14 @@ try {
                 </div>
                 <div id="parsed-items-container" class="p-6">
                     <!-- Content will be populated by JavaScript -->
+                </div>
+                <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+                    <button onclick="document.getElementById('parsed-items-modal').classList.add('hidden')" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="caseEditor.addSelectedParsedItems()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        Add Selected Items
+                    </button>
                 </div>
             </div>
         </div>
@@ -2418,14 +2428,6 @@ try {
                     });
 
                     html += `
-                        <div class="flex justify-end gap-3 pt-4">
-                            <button onclick="document.getElementById('parsed-items-modal').classList.add('hidden')" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                                Cancel
-                            </button>
-                            <button onclick="caseEditor.addSelectedParsedItems()" class="btn-gradient text-white px-4 py-2 rounded-lg">
-                                Add Selected Items
-                            </button>
-                        </div>
                     </div>
                     `;
 
