@@ -165,9 +165,9 @@ try {
                 <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('details')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.details', 'Case Details'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('details')}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections && openSections.includes('details')}"></i>
                     </button>
-                    <div x-show="openSections.includes('details')" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections && openSections.includes('details')" x-cloak x-transition class="px-5 pb-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 border-t border-slate-200 pt-6">
                             <!-- Form Fields -->
                             <div>
@@ -222,11 +222,11 @@ try {
                                 <span id="repair-status-badge" class="w-2 h-2 rounded-full bg-slate-400"></span>
                                 <span id="repair-status-text"><?php echo __('case.not_started', 'Not Started'); ?></span>
                             </div>
-                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('repair')}"></i>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections && openSections.includes('repair')}"></i>
                         </div>
                     </button>
 
-                    <div x-show="openSections.includes('repair')" x-cloak x-transition class="border-t border-slate-200">
+                    <div x-show="openSections && openSections.includes('repair')" x-cloak x-transition class="border-t border-slate-200">
                         <!-- Repair Progress Overview -->
                         <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50/30 border-b border-slate-200">
                             <div class="flex items-center justify-between mb-3">
@@ -288,7 +288,7 @@ try {
                                         <span id="items-count" class="ml-1 px-2 py-0.5 bg-slate-200 text-slate-700 text-xs rounded-full">0</span>
                                     </button>
                                     <button @click="repairTab = 'timeline'" :class="{'bg-blue-50 text-blue-700 border-b-2 border-blue-500': repairTab === 'timeline'}" class="flex-1 px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
-                                        <i data-lucide="timeline" class="w-4 h-4"></i>
+                                        <i data-lucide="clock" class="w-4 h-4"></i>
                                         Timeline
                                     </button>
                                     <button @click="repairTab = 'collections'" :class="{'bg-blue-50 text-blue-700 border-b-2 border-blue-500': repairTab === 'collections'}" class="flex-1 px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
@@ -470,7 +470,7 @@ try {
                                         <!-- Timeline Empty State -->
                                         <div id="timeline-empty-state" class="text-center py-12">
                                             <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                <i data-lucide="timeline" class="w-8 h-8 text-slate-400"></i>
+                                                <i data-lucide="clock" class="w-8 h-8 text-slate-400"></i>
                                             </div>
                                             <h3 class="text-lg font-semibold text-slate-700 mb-2">No Timeline Events</h3>
                                             <p class="text-slate-600 mb-4">Track repair progress with timeline events.</p>
@@ -538,9 +538,9 @@ try {
                  <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('communication')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.communication', 'Communication'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('communication')}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections && openSections.includes('communication')}"></i>
                     </button>
-                    <div x-show="openSections.includes('communication')" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections && openSections.includes('communication')" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6 space-y-5">
                             <div class="flex items-center justify-center">
                                  <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
@@ -577,9 +577,9 @@ try {
                 <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('feedback')" class="w-full flex items-center justify-between p-5">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.customer_feedback', 'Customer Feedback'); ?></h2>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections.includes('feedback')}"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': openSections && openSections.includes('feedback')}"></i>
                     </button>
-                    <div x-show="openSections.includes('feedback')" x-cloak x-transition class="px-5 pb-6">
+                    <div x-show="openSections && openSections.includes('feedback')" x-cloak x-transition class="px-5 pb-6">
                         <div class="border-t border-slate-200 pt-6">
                              <div class="flex justify-end mb-4 -mt-2">
                                 <button @click="editingReview = !editingReview" id="btn-edit-review" class="text-sm font-semibold text-blue-600 hover:underline">
@@ -855,7 +855,27 @@ try {
                 },
                 init() {
                     window.caseEditor = this;
-                    this.$nextTick(() => initializeIcons());
+                    this.$nextTick(() => {
+                        initializeIcons();
+                        
+                        // Initialize repair tables and UI after DOM is ready
+                        this.updatePartsList();
+                        this.updateLaborList();
+                        this.updateActivityLog();
+                        this.updateRepairSummary();
+                        this.updateRepairProgress();
+                        this.updateOverviewStats();
+                        this.loadCollections();
+                        this.renderTimeline();
+                        this.renderCollections();
+
+                        // Initialize PDF parsing for repair
+                        this.initRepairPdfParsing();
+
+                        // Setup search and filter listeners
+                        this.initSearchAndFilter();
+                    });
+
                     document.getElementById('sms-template-selector')?.addEventListener('change', this.updateSmsPreview.bind(this));
 
                     // Load suggestions
@@ -902,23 +922,6 @@ try {
                     if (plateEl && plateEl.value) {
                         setTimeout(() => lookupAndFillPhone(plateEl.value), 50);
                     }
-
-                    // Initialize repair tables and UI
-                    this.updatePartsList();
-                    this.updateLaborList();
-                    this.updateActivityLog();
-                    this.updateRepairSummary();
-                    this.updateRepairProgress();
-                    this.updateOverviewStats();
-                    this.loadCollections();
-                    this.renderTimeline();
-                    this.renderCollections();
-
-                    // Initialize PDF parsing for repair
-                    this.initRepairPdfParsing();
-
-                    // Setup search and filter listeners
-                    this.initSearchAndFilter();
                 },
 
                 // New methods for redesigned UI
@@ -1990,9 +1993,13 @@ try {
                     const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
                     const grandTotal = partsTotal + laborTotal;
                     
-                    document.getElementById('summary-parts-total').textContent = partsTotal.toFixed(2) + '₾';
-                    document.getElementById('summary-labor-total').textContent = laborTotal.toFixed(2) + '₾';
-                    document.getElementById('summary-grand-total').textContent = grandTotal.toFixed(2) + '₾';
+                    const partsEl = document.getElementById('summary-parts-total');
+                    const laborEl = document.getElementById('summary-labor-total');
+                    const grandEl = document.getElementById('summary-grand-total');
+                    
+                    if (partsEl) partsEl.textContent = partsTotal.toFixed(2) + '₾';
+                    if (laborEl) laborEl.textContent = laborTotal.toFixed(2) + '₾';
+                    if (grandEl) grandEl.textContent = grandTotal.toFixed(2) + '₾';
                 },
 
                 // Render combined items (parts + labor) into a single view
@@ -2358,7 +2365,7 @@ try {
                                             <span class="text-sm text-gray-500 ml-2">[${item.type || 'part'}]</span>
                                         </div>
                                         <div class="text-sm text-gray-600">
-                                            Qty: ${item.quantity || 1} • ₾${(item.price || 0).toFixed(2)}
+                                            Qty: ${item.quantity || 1} • ₾${(parseFloat(item.price) || 0).toFixed(2)}
                                         </div>
                                     </div>
                                 </label>
@@ -2502,41 +2509,6 @@ try {
                     alert(details); // Simple alert for now, could be enhanced with a modal
                 },
 
-                // Repair progress tracking
-                updateRepairProgress() {
-                    // Update progress bar and status indicators
-                    const status = this.currentCase.repair_status || '';
-                    const statusIndicator = document.getElementById('status-indicator');
-                    
-                    if (statusIndicator) {
-                        const statusLabels = {
-                            '': 'Not Started',
-                            'Planning': 'Planning',
-                            'In Progress': 'In Progress', 
-                            'Parts Waiting': 'Parts Waiting',
-                            'Quality Check': 'Quality Check',
-                            'Completed': 'Completed'
-                        };
-                        statusIndicator.textContent = statusLabels[status] || 'Not Started';
-                    }
-
-                    // Update progress bar if it exists
-                    const progressBar = document.getElementById('repair-progress-bar');
-                    if (progressBar) {
-                        const progressValues = {
-                            '': 0,
-                            'Planning': 20,
-                            'In Progress': 50,
-                            'Parts Waiting': 70,
-                            'Quality Check': 90,
-                            'Completed': 100
-                        };
-                        progressBar.style.width = `${progressValues[status] || 0}%`;
-                    }
-
-                    this.saveRepairData();
-                },
-
                 // Cost calculations
                 calculateTotalCost() {
                     const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => 
@@ -2601,76 +2573,6 @@ try {
                         console.error('PDF parsing error:', error);
                         showToast('Parsing failed', 'Error processing PDF file', 'error');
                     }
-                },
-
-                // Render methods
-                renderItemsList() {
-                    const container = document.getElementById('items-container');
-                    if (!container) return;
-
-                    const allItems = [];
-                    
-                    // Add parts
-                    (this.currentCase.repair_parts || []).forEach((part, index) => {
-                        allItems.push({
-                            type: 'part',
-                            index: index,
-                            data: part,
-                            name: part.name || '',
-                            cost: (part.quantity || 1) * (part.unit_price || 0)
-                        });
-                    });
-
-                    // Add labor
-                    (this.currentCase.repair_labor || []).forEach((labor, index) => {
-                        allItems.push({
-                            type: 'labor',
-                            index: index,
-                            data: labor,
-                            name: labor.description || '',
-                            cost: (labor.hours || 0) * (labor.hourly_rate || 0)
-                        });
-                    });
-
-                    // Filter items
-                    let filteredItems = allItems;
-                    if (this.searchQuery) {
-                        filteredItems = allItems.filter(item => 
-                            item.name.toLowerCase().includes(this.searchQuery) ||
-                            (item.data.notes || '').toLowerCase().includes(this.searchQuery)
-                        );
-                    }
-
-                    if (this.filterType !== 'all') {
-                        if (this.filterType === 'parts') {
-                            filteredItems = filteredItems.filter(item => item.type === 'part');
-                        } else if (this.filterType === 'labor') {
-                            filteredItems = filteredItems.filter(item => item.type === 'labor');
-                        } else if (this.filterType === 'pending') {
-                            filteredItems = filteredItems.filter(item => !item.data.status || item.data.status === 'Pending');
-                        } else if (this.filterType === 'completed') {
-                            filteredItems = filteredItems.filter(item => item.data.status === 'Completed' || item.data.status === 'Billed');
-                        }
-                    }
-
-                    // Render items
-                    let html = '';
-                    if (filteredItems.length === 0) {
-                        html = `
-                            <div class="text-center py-8 text-gray-500">
-                                <i data-lucide="package" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
-                                <p>No items found</p>
-                            </div>
-                        `;
-                    } else {
-                        filteredItems.forEach(item => {
-                            html += this.renderItemCard(item);
-                        });
-                    }
-
-                    container.innerHTML = html;
-                    lucide.createIcons();
-                    this.updateItemsCostSummary();
                 },
 
                 renderItemCard(item) {
@@ -3014,7 +2916,7 @@ try {
                                     <td class="px-3"><input class="parsed-name block w-full text-sm px-2 py-1 border rounded" value="${safe(item.name)}"></td>
                                     <td class="px-2"><input type="number" min="0" step="1" class="parsed-qty text-sm w-20 px-2 py-1 border rounded" value="${escapeHtml(item.quantity || 1)}"></td>
                                     <td class="px-2"><input type="number" min="0" step="0.01" class="parsed-price text-sm w-28 px-2 py-1 border rounded" value="${escapeHtml(item.price || 0)}"></td>
-                                    <td class="px-3 parsed-total text-sm">${((item.quantity||1)*(item.price||0)).toFixed(2)}₾</td>
+                                    <td class="px-3 parsed-total text-sm">${((item.quantity||1)*(parseFloat(item.price)||0)).toFixed(2)}₾</td>
                                     <td class="px-3"><input class="parsed-notes block w-full text-sm px-2 py-1 border rounded" value="${safe(item.notes || '')}"></td>
                                     <td class="px-2"><button type="button" class="text-xs text-slate-600 remove-parse-row">Remove</button></td>
                                 </tr>`;
