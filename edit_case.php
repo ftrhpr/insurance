@@ -2575,69 +2575,6 @@ try {
                     }
                 },
 
-                renderItemCard(item) {
-                    const { type, index, data } = item;
-                    const isPart = type === 'part';
-                    const statusColors = {
-                        'Pending': 'bg-yellow-100 text-yellow-800',
-                        'Ordered': 'bg-blue-100 text-blue-800',
-                        'Received': 'bg-green-100 text-green-800',
-                        'Completed': 'bg-green-100 text-green-800',
-                        'Billed': 'bg-purple-100 text-purple-800'
-                    };
-
-                    const statusClass = statusColors[data.status || 'Pending'] || 'bg-gray-100 text-gray-800';
-
-                    return `
-                        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div class="flex items-start gap-3">
-                                <input type="checkbox" class="select-item mt-1 h-4 w-4 text-blue-600 rounded" 
-                                       data-type="${type}" data-index="${index}">
-                                
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center gap-2">
-                                            <i data-lucide="${isPart ? 'settings' : 'wrench'}" class="w-4 h-4 text-gray-500"></i>
-                                            <span class="font-medium text-gray-900 truncate">${escapeHtml(data.name || data.description || 'Unnamed')}</span>
-                                        </div>
-                                        <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
-                                            ${data.status || 'Pending'}
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
-                                        ${isPart ? `
-                                            <div>Qty: ${data.quantity || 1}</div>
-                                            <div>Price: ₾${(data.unit_price || 0).toFixed(2)}</div>
-                                        ` : `
-                                            <div>Hours: ${data.hours || 0}</div>
-                                            <div>Rate: ₾${(data.hourly_rate || 0).toFixed(2)}</div>
-                                        `}
-                                    </div>
-                                    
-                                    ${data.notes ? `<p class="text-sm text-gray-500 mb-3">${escapeHtml(data.notes)}</p>` : ''}
-                                    
-                                    <div class="flex items-center justify-between">
-                                        <div class="text-lg font-semibold text-gray-900">
-                                            ₾${item.cost.toFixed(2)}
-                                        </div>
-                                        <div class="flex gap-1">
-                                            <button onclick="caseEditor.editItem('${type}', ${index})" 
-                                                    class="p-1 text-gray-400 hover:text-blue-600">
-                                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                            </button>
-                                            <button onclick="caseEditor.removeItem('${type}', ${index})" 
-                                                    class="p-1 text-gray-400 hover:text-red-600">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                },
-
                 updateItemsCostSummary() {
                     const partsCount = (this.currentCase.repair_parts || []).length;
                     const laborCount = (this.currentCase.repair_labor || []).length;
@@ -3336,6 +3273,6 @@ try {
             window.caseEditor.removeLabor(index);
         };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
