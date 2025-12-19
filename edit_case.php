@@ -292,6 +292,11 @@ try {
 
                                 <div id="repairParsedPreview" class="mt-3"></div>
 
+                                <!-- Collections (existing parts collections for this case) -->
+                                <div id="collectionsList" class="mt-3 space-y-3">
+                                    <!-- Populated by JS: collection cards -->
+                                </div>
+
                                 <!-- Combined items list -->
                                 <div id="itemsList" class="space-y-3">
                                     <!-- Parts and Labor entries will render here together -->
@@ -635,6 +640,7 @@ try {
         function caseEditor() {
             return {
                 currentCase: { ...initialCaseData },
+                collections: [],
                 openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback', 'repair'],
                 partsRequest: { description: '', supplier: '', collection_type: 'local' },
                 editingReview: false,
@@ -712,6 +718,9 @@ try {
 
                     // Initialize PDF parsing for repair
                     this.initRepairPdfParsing();
+
+                    // Load existing parts collections for this case
+                    if (typeof this.loadCollections === 'function') this.loadCollections();
                 },
                 isSectionOpen(section) {
                     return this.openSections.includes(section);
@@ -985,6 +994,7 @@ try {
                         const result = await response.json();
                         if (result.success) {
                             showToast('Collection Saved', 'Parts collection created successfully.', 'success');
+                            if (typeof this.loadCollections === 'function') this.loadCollections();
                         } else {
                             showToast('Error', result.error || 'Failed to create collection.', 'error');
                         }
@@ -1322,6 +1332,90 @@ try {
                     win.document.write(html); win.document.close(); win.focus();
                 },
 
+                // Collections: load, render, import
+                async loadCollections() {
+                    try {
+                        const resp = await fetch(`api.php?action=get_parts_collections&transfer_id=${CASE_ID}`);
+                        const data = await resp.json();
+                        if (data.success) {
+                            this.collections = data.collections || [];
+                        } else {
+                            this.collections = [];
+                        }
+                    } catch (e) {
+                        this.collections = [];
+                    }
+
+                    const container = document.getElementById('collectionsList');
+                    if (!container) return;
+                    if (!this.collections || this.collections.length === 0) {
+                        container.innerHTML = '<div class="text-sm text-slate-500">No collections found for this case.</div>';
+                        return;
+                    }
+
+                    let html = '';
+                    this.collections.forEach((c, ci) => {
+                        let parts = [];
+                        try { parts = JSON.parse(c.parts_list || '[]'); } catch (e) { parts = []; }
+                        html += `
+                            <div class="bg-white p-3 rounded-lg border">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <div class="text-sm font-semibold">Collection #${c.id} <span class="text-xs text-slate-500">${escapeHtml(c.collection_type || '')} ${c.status ? '· ' + escapeHtml(c.status) : ''}</span></div>
+                                        <div class="text-xs text-slate-500 mt-1">${escapeHtml(c.description || '')}</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-sm font-semibold">${(c.total_cost||0).toFixed(2)}₾</div>
+                                        <div class="text-xs text-slate-400">${escapeHtml(c.created_at || '')}</div>
+                                        <div class="mt-2"><button class="bg-blue-600 text-white px-2 py-1 rounded text-xs" onclick="window.caseEditor.addCollectionItems(${c.id})">Add all</button></div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead><tr><th class="text-left">Name</th><th>Qty</th><th>Price</th><th></th></tr></thead>
+                                        <tbody>`;
+                        (parts || []).forEach((p, pi) => {
+                            html += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>${(p.price||p.unit_price||0).toFixed(2)}₾</td><td><button class="text-xs px-2 py-1 border rounded" onclick="window.caseEditor.addCollectionItem(${c.id}, ${pi})">Add</button></td></tr>`;
+                        });
+                        html += `</tbody></table></div>
+                            </div><div class="h-2"></div>`;
+                    });
+
+                    container.innerHTML = html;
+                },
+
+                addCollectionItems(collectionId) {
+                    const c = (this.collections || []).find(x => Number(x.id) === Number(collectionId));
+                    if (!c) return showToast('Not found', 'Collection not found', 'error');
+                    let parts = [];
+                    try { parts = JSON.parse(c.parts_list || '[]'); } catch (e) { parts = []; }
+                    let added = 0;
+                    parts.forEach(p => {
+                        const name = p.name || p.description || '';
+                        const qty = parseFloat(p.quantity) || 1;
+                        const price = parseFloat(p.price || p.unit_price) || 0;
+                        this.addPart(name, qty, price);
+                        added++;
+                    });
+                    if (added) { this.updatePartsList(); showToast('Added', `${added} parts added from collection.`, 'success'); }
+                },
+
+                addCollectionItem(collectionId, index) {
+                    const c = (this.collections || []).find(x => Number(x.id) === Number(collectionId));
+                    if (!c) return showToast('Not found', 'Collection not found', 'error');
+                    let parts = [];
+                    try { parts = JSON.parse(c.parts_list || '[]'); } catch (e) { parts = []; }
+                    const p = parts[index];
+                    if (!p) return;
+                    const name = p.name || p.description || '';
+                    const qty = parseFloat(p.quantity) || 1;
+                    const price = parseFloat(p.price || p.unit_price) || 0;
+                    this.addPart(name, qty, price);
+                    this.updatePartsList();
+                    showToast('Added', `${name} added.`, 'success');
+                },
+
+
                 addActivity() {
                     const action = prompt('Enter activity action:');
                     if (!action) return;
@@ -1503,6 +1597,7 @@ try {
                                 if (result.success) {
                                     showToast('Parts Collection Created', 'Collection created successfully.', 'success');
                                     previewDiv.innerHTML = '';
+                                    if (typeof window.caseEditor?.loadCollections === 'function') window.caseEditor.loadCollections();
                                 } else {
                                     showToast('Error', result.error || 'Failed to create collection.', 'error');
                                 }
