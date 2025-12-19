@@ -127,7 +127,27 @@ try {
                         this.openSections.splice(index, 1);
                     }
                     localStorage.setItem('openSections', JSON.stringify(this.openSections));
-                }
+                },
+                // Placeholder methods that will be overridden
+                showParsedItemsModal() {},
+                renderParsedItemsModal() {},
+                addSelectedParsedItems() {},
+                selectAllParsedItems() {},
+                renderItemsList() {},
+                renderTimeline() {},
+                updateOverviewStats() {},
+                initSearchAndFilter() {},
+                loadCollections() {},
+                calculateTotalCost() { return 0; },
+                addPart() {},
+                addLabor() {},
+                removePart() {},
+                removeLabor() {},
+                updatePart() {},
+                updateLabor() {},
+                updateRepairProgress() {},
+                saveRepairData() {},
+                exportRepairData() {}
             };
         }
     </script>
@@ -3319,6 +3339,6 @@ try {
             window.caseEditor.removeLabor(index);
         };
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
