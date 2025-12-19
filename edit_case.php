@@ -2381,8 +2381,6 @@ try {
                             }, 500);
                         }
                     }, 100);
-                    
-                    showToast('Parts Request Form Ready', 'Please fill in supplier details and submit the request.', 'success');
                 },
 
                 // Modal management
