@@ -63,7 +63,7 @@
                     <i data-lucide="calendar-check" class="w-8 h-8"></i>
                 </div>
                 <h1 id="header-title" class="text-2xl font-bold mb-1">სერვისის დაგეგმვა</h1>
-                <p class="opacity-90 text-sm">OTOMOTORS Service Center</p>
+                <p class="opacity-90 text-sm">OTOMOTORS</p>
             </div>
         </div>
 
@@ -77,7 +77,7 @@
                         <span id="plate" class="font-bold text-gray-700">---</span>
                     </div>
                     <small class="text-gray-500">
-                        Order ID: <span id="order-id" class="font-bold">#0</span>
+                        შეკვეთის #: <span id="order-id" class="font-bold">#0</span>
                     </small>
                 </div>
             </div>
@@ -91,7 +91,7 @@
                         <div id="date-day" class="text-3xl font-bold text-sky-600">--</div>
                     </div>
                     <div>
-                        <small class="block text-xs uppercase font-bold text-sky-600 mb-1">Scheduled Time</small>
+                        <small class="block text-xs uppercase font-bold text-sky-600 mb-1">მოყვანის დრო</small>
                         <div id="date-time" class="text-2xl font-bold text-gray-800">--:--</div>
                     </div>
                 </div>
@@ -100,10 +100,10 @@
                 <div id="action-area" class="space-y-3">
                     <button onclick="submitResponse('Confirmed')" class="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-4 rounded-xl font-bold hover:from-sky-600 hover:to-sky-700 transition-all flex items-center justify-center gap-2">
                         <i data-lucide="check-circle" class="w-5 h-5"></i>
-                        <span>Confirm & Accept</span>
+                        <span>თანახმა ვარ</span>
                     </button>
                     <button onclick="openRescheduleModal()" class="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-50 transition-all">
-                        Request Another Time
+                        სხვა დროის შეთავაზება
                     </button>
                 </div>
 
@@ -112,24 +112,24 @@
                     <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="check" class="w-10 h-10 text-green-500"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">Response Recorded</h3>
-                    <p class="text-gray-500">Thank you for letting us know.</p>
+                    <h3 class="text-xl font-bold mb-2">ინფორმაცია გაგზავნილია</h3>
+                    <p class="text-gray-500">მადლობა, თქვენი ვიზიტის დრო შენახულია.</p>
                     
                     <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <small class="block text-xs uppercase font-bold text-gray-500 mb-1">Current Status</small>
+                        <small class="block text-xs uppercase font-bold text-gray-500 mb-1">მიმდინარე სტატუსი</small>
                         <p id="response-status" class="font-bold text-gray-800"></p>
                     </div>
 
                     <!-- Location Button & Map (Shows only if Confirmed) -->
                     <div id="location-box" class="hidden mt-4 pt-4 border-t border-gray-200">
-                        <p class="text-gray-500 mb-3">See you soon! Get directions here:</p>
+                        <p class="text-gray-500 mb-3">ჩვენი კოორდინატები:</p>
                         <!-- Embedded Map -->
                         <div class="aspect-video mb-3 rounded-xl overflow-hidden border border-gray-200">
                             <iframe class="w-full h-full" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?q=OTOMOTORS+Tbilisi&t=&z=15&ie=UTF8&iwloc=&output=embed"></iframe>
                         </div>
                         <a href="https://maps.app.goo.gl/4im27hK1oo1v65H2A" target="_blank" class="w-full inline-flex items-center justify-center gap-2 border-2 border-sky-500 text-sky-600 py-3 px-4 rounded-xl font-bold hover:bg-sky-50 transition-all">
                             <i data-lucide="map-pin" class="w-5 h-5"></i>
-                            Open in Google Maps App
+                            Google Maps-ში გახსნა
                         </a>
                     </div>
                 </div>
@@ -172,9 +172,9 @@
 
         <!-- Footer -->
         <div class="bg-gray-50 text-center py-4 border-t border-gray-200">
-            <a href="tel:+995511144486" class="inline-flex items-center gap-2 text-sky-600 font-bold hover:text-sky-700 transition-colors">
+            <a href="https://api.whatsapp.com/send?phone=995511144486" class="inline-flex items-center gap-2 text-sky-600 font-bold hover:text-sky-700 transition-colors">
                 <i data-lucide="phone" class="w-5 h-5"></i>
-                Call Support
+                მენეჯერთან დაკავშირება
             </a>
         </div>
     </div>
@@ -185,8 +185,8 @@
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-start justify-between">
                     <div>
-                        <h5 class="text-lg font-bold">Request Reschedule</h5>
-                        <p class="text-gray-500 text-sm mt-1">Tell us your preferred date and time</p>
+                        <h5 class="text-lg font-bold">სხვა დროის შეთავაზება</h5>
+                        <p class="text-gray-500 text-sm mt-1">მიუთითეთ სასურველი დრო</p>
                     </div>
                     <button onclick="closeRescheduleModal()" class="text-gray-400 hover:text-gray-600">
                         <i data-lucide="x" class="w-5 h-5"></i>
@@ -195,17 +195,17 @@
             </div>
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="reschedule-date" class="block font-bold text-gray-700 mb-2">Preferred Date & Time</label>
+                    <label for="reschedule-date" class="block font-bold text-gray-700 mb-2">სასურველი დრო</label>
                     <input id="reschedule-date" type="datetime-local" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-sky-500 focus:outline-none">
                 </div>
                 <div>
-                    <label for="reschedule-comment" class="block font-bold text-gray-700 mb-2">Additional Comments (Optional)</label>
+                    <label for="reschedule-comment" class="block font-bold text-gray-700 mb-2">კომენტარი</label>
                     <textarea id="reschedule-comment" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-sky-500 focus:outline-none" rows="4" placeholder="Let us know any specific requirements or reasons for rescheduling..."></textarea>
                 </div>
             </div>
             <div class="p-6 border-t border-gray-200 flex gap-3">
-                <button onclick="closeRescheduleModal()" class="flex-1 bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-50">Cancel</button>
-                <button onclick="submitReschedule()" class="flex-1 bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-4 rounded-xl font-bold hover:from-sky-600 hover:to-sky-700">Submit Request</button>
+                <button onclick="closeRescheduleModal()" class="flex-1 bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-50">გაუქმება</button>
+                <button onclick="submitReschedule()" class="flex-1 bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-4 rounded-xl font-bold hover:from-sky-600 hover:to-sky-700">გაგზავნა</button>
             </div>
         </div>
     </div>
