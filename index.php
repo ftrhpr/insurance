@@ -373,10 +373,38 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <?php echo __('dashboard.new_requests', 'New Requests'); ?> <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
                         </h2>
                         <div class="flex items-center gap-2">
-                            <button id="bulk-schedule-new" onclick="window.bulkScheduleNew()" title="Set schedule for all New cases (Jan 5, 2026 10:00)" class="px-3 py-2 btn-primary text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-95">
+                            <button id="bulk-schedule-new" onclick="window.openBulkScheduleModal()" title="Set schedule date for first 10 New cases" class="px-3 py-2 btn-primary text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-95">
                                 <i data-lucide="calendar" class="w-4 h-4 inline-block mr-2"></i>
-                                Schedule All New (Jan 5, 10:00)
+                                Schedule First 10 New
                             </button>
+                        </div>
+
+                        <!-- Bulk Schedule Modal -->
+                        <div id="bulk-schedule-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
+                            <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" onclick="window.closeBulkScheduleModal()"></div>
+                            <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
+                                <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-bold">Schedule first 10 New cases</h3>
+                                        <button onclick="window.closeBulkScheduleModal()" class="text-slate-500 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="text-sm font-semibold text-slate-700 mb-1 block">Preferred Date & Time</label>
+                                            <input id="bulk-service-date" type="datetime-local" class="w-full px-4 py-2 border border-slate-200 rounded-lg" value="2026-01-05T10:00">
+                                        </div>
+                                        <div>
+                                            <label class="text-sm font-semibold text-slate-700 mb-1 block">Number of cases</label>
+                                            <input id="bulk-service-limit" type="number" min="1" max="100" value="10" class="w-32 px-4 py-2 border border-slate-200 rounded-lg" readonly>
+                                            <div class="text-xs text-slate-400 mt-1">This will schedule the first <strong>10</strong> cases with status <em>New</em>.</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 flex justify-end gap-2">
+                                        <button onclick="window.closeBulkScheduleModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-sm">Cancel</button>
+                                        <button id="bulk-schedule-confirm-btn" onclick="window.bulkScheduleNewFirst10()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm">Schedule First 10</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -2522,30 +2550,51 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             } catch(e) { console.error(e); showToast("SMS Failed", "error"); }
         };
 
-        window.bulkScheduleNew = async () => {
-            const newCountEl = document.getElementById('new-count');
-            const countText = newCountEl ? newCountEl.innerText.replace(/[()]/g,'') : '0';
-            const count = parseInt(countText) || 0;
-            if (count === 0) return showToast("No new cases to schedule", "info");
-            if (!confirm(`Schedule all ${count} new cases for Jan 5, 2026 10:00? This will set status to 'Scheduled' and send notifications.`)) return;
-            const btn = document.getElementById('bulk-schedule-new');
-            if (btn) { btn.disabled = true; btn.classList.add('opacity-70','pointer-events-none'); }
+        window.openBulkScheduleModal = () => {
+            const modal = document.getElementById('bulk-schedule-modal');
+            if (!modal) return;
+            const input = document.getElementById('bulk-service-date');
+            if (input) input.value = '2026-01-05T10:00';
+            modal.classList.remove('hidden');
+        };
+
+        window.closeBulkScheduleModal = () => {
+            const modal = document.getElementById('bulk-schedule-modal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+        };
+
+        window.bulkScheduleNewFirst10 = async () => {
+            const btn = document.getElementById('bulk-schedule-confirm-btn');
+            const input = document.getElementById('bulk-service-date');
+            const limitEl = document.getElementById('bulk-service-limit');
+            if (!input || !limitEl) return showToast('Missing modal elements', 'error');
+            const raw = input.value;
+            if (!raw) return showToast('Please select date and time', 'error');
+            // Convert to server format YYYY-MM-DD HH:mm:ss
+            const serviceDate = raw.replace('T', ' ') + ':00';
+            const limit = parseInt(limitEl.value) || 10;
+
+            if (!confirm(`Schedule first ${limit} New cases for ${raw.replace('T',' ')}?`)) return;
+
+            if (btn) { btn.disabled = true; btn.classList.add('opacity-60','pointer-events-none'); }
             try {
-                const payload = { service_date: '2026-01-05 10:00:00' };
-                const res = await fetchAPI('bulk_schedule_new', 'POST', payload);
+                const res = await fetchAPI('bulk_schedule_new', 'POST', { service_date: serviceDate, limit: limit });
                 if (res && res.success) {
-                    showToast(`${res.count} cases scheduled`, "success");
+                    showToast(`${res.count} cases scheduled`, 'success');
                     loadData();
+                    window.closeBulkScheduleModal();
                 } else {
-                    showToast(res.message || "Failed to schedule cases", "error");
+                    showToast(res.message || 'Failed to schedule cases', 'error');
                 }
             } catch (e) {
                 console.error(e);
-                showToast("Failed to schedule cases", "error");
+                showToast('Failed to schedule cases', 'error');
             } finally {
-                if (btn) { btn.disabled = false; btn.classList.remove('opacity-70','pointer-events-none'); }
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-60','pointer-events-none'); }
             }
         };
+
 
         window.viewInvoice = (id) => {
             const t = transfers.find(i => i.id == id);

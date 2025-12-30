@@ -478,9 +478,17 @@ try {
         $serviceDate = $data['service_date'] ?? '2026-01-05 10:00:00';
         $formattedDate = date('M d, Y H:i', strtotime($serviceDate));
 
-        // Fetch all New transfers
-        $stmt = $pdo->prepare("SELECT id, name, plate, phone FROM transfers WHERE status = 'New'");
-        $stmt->execute();
+        // Fetch New transfers (limited to first N if requested)
+        $limit = intval($data['limit'] ?? 0);
+        if ($limit > 0) {
+            // Order by oldest first (created_at)
+            $query = "SELECT id, name, plate, phone FROM transfers WHERE status = 'New' ORDER BY created_at ASC LIMIT " . $limit;
+            $stmt = $pdo->prepare($query);
+            $stmt->execute();
+        } else {
+            $stmt = $pdo->prepare("SELECT id, name, plate, phone FROM transfers WHERE status = 'New'");
+            $stmt->execute();
+        }
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (empty($rows)) {
             jsonResponse(['success' => true, 'count' => 0, 'ids' => []]);
