@@ -467,6 +467,74 @@ try {
         }
     }
 
+    // --- BULK SCHEDULE NEW CASES ---
+    if ($action === 'bulk_schedule_new' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['success' => false, 'message' => 'Permission denied']);
+        }
+
+        $data = getJsonInput();
+        $serviceDate = $data['service_date'] ?? '2026-01-05 10:00:00';
+        $formattedDate = date('M d, Y H:i', strtotime($serviceDate));
+
+        // Fetch all New transfers
+        $stmt = $pdo->prepare("SELECT id, name, plate, phone FROM transfers WHERE status = 'New'");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) {
+            jsonResponse(['success' => true, 'count' => 0, 'ids' => []]);
+        }
+
+        $pdo->beginTransaction();
+        $scheduledIds = [];
+        try {
+            // Load schedule template
+            $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'schedule' AND is_active = 1");
+            $stmt->execute();
+            $template = $stmt->fetchColumn();
+            if (!$template) {
+                $template = "Hello {name}, your service is scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link}";
+            }
+
+            $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+
+            foreach ($rows as $r) {
+                $pdo->prepare("UPDATE transfers SET status = 'Scheduled', service_date = ?, user_response = 'Pending' WHERE id = ?")
+                    ->execute([$serviceDate, $r['id']]);
+
+                // send SMS
+                $link = "https://portal.otoexpress.ge/public_view.php?id=" . intval($r['id']);
+                $smsText = str_replace(['{name}', '{plate}', '{date}', '{link}'], [$r['name'], $r['plate'], $formattedDate, $link], $template);
+                $to = preg_replace('/\D+/', '', $r['phone']);
+                if ($to) {
+                    @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText));
+                }
+
+                // append system log
+                $log_message = "Auto-scheduled for $formattedDate and notification sent.";
+                $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?")
+                    ->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'message' => $log_message]), $r['id']]);
+
+                $scheduledIds[] = $r['id'];
+            }
+
+            $pdo->commit();
+
+            // Notify managers via FCM
+            $title = "Bulk Schedule Completed";
+            $body = count($scheduledIds) . " cases scheduled for $formattedDate";
+            sendFCM_V1($pdo, $service_account_file, $title, $body);
+
+            jsonResponse(['success' => true, 'count' => count($scheduledIds), 'ids' => $scheduledIds]);
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            error_log("bulk_schedule_new failed: " . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['success' => false, 'message' => 'Internal server error']);
+        }
+    }
+
     // --- DECLINE RESCHEDULE REQUEST ---
     if ($action === 'decline_reschedule' && $method === 'POST') {
         $id = intval($_GET['id'] ?? 0);

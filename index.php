@@ -372,6 +372,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </span>
                             <?php echo __('dashboard.new_requests', 'New Requests'); ?> <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
                         </h2>
+                        <div class="flex items-center gap-2">
+                            <button id="bulk-schedule-new" onclick="window.bulkScheduleNew()" title="Set schedule for all New cases (Jan 5, 2026 10:00)" class="px-3 py-2 btn-primary text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-95">
+                                <i data-lucide="calendar" class="w-4 h-4 inline-block mr-2"></i>
+                                Schedule All New (Jan 5, 10:00)
+                            </button>
+                        </div>
                     </div>
                     
                     <div id="new-cases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -2514,6 +2520,31 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
                 showToast("SMS Sent", "success");
             } catch(e) { console.error(e); showToast("SMS Failed", "error"); }
+        };
+
+        window.bulkScheduleNew = async () => {
+            const newCountEl = document.getElementById('new-count');
+            const countText = newCountEl ? newCountEl.innerText.replace(/[()]/g,'') : '0';
+            const count = parseInt(countText) || 0;
+            if (count === 0) return showToast("No new cases to schedule", "info");
+            if (!confirm(`Schedule all ${count} new cases for Jan 5, 2026 10:00? This will set status to 'Scheduled' and send notifications.`)) return;
+            const btn = document.getElementById('bulk-schedule-new');
+            if (btn) { btn.disabled = true; btn.classList.add('opacity-70','pointer-events-none'); }
+            try {
+                const payload = { service_date: '2026-01-05 10:00:00' };
+                const res = await fetchAPI('bulk_schedule_new', 'POST', payload);
+                if (res && res.success) {
+                    showToast(`${res.count} cases scheduled`, "success");
+                    loadData();
+                } else {
+                    showToast(res.message || "Failed to schedule cases", "error");
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Failed to schedule cases", "error");
+            } finally {
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-70','pointer-events-none'); }
+            }
         };
 
         window.viewInvoice = (id) => {
