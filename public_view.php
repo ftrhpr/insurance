@@ -62,7 +62,7 @@
                 <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm" id="header-icon-container">
                     <i data-lucide="calendar-check" class="w-8 h-8"></i>
                 </div>
-                <h1 id="header-title" class="text-2xl font-bold mb-1">Service Appointment</h1>
+                <h1 id="header-title" class="text-2xl font-bold mb-1">სერვისის დაგეგმვა</h1>
                 <p class="opacity-90 text-sm">OTOMOTORS Service Center</p>
             </div>
         </div>
