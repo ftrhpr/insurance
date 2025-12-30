@@ -200,7 +200,7 @@
                 </div>
                 <div>
                     <label for="reschedule-comment" class="block font-bold text-gray-700 mb-2">კომენტარი</label>
-                    <textarea id="reschedule-comment" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-sky-500 focus:outline-none" rows="4" placeholder="Let us know any specific requirements or reasons for rescheduling..."></textarea>
+                    <textarea id="reschedule-comment" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-sky-500 focus:outline-none" rows="4" placeholder="მოგვწერეთ ნებისმიერი დეტალი, რომელიც გინდათ, რომ გავითვალისწინოთ"></textarea>
                 </div>
             </div>
             <div class="p-6 border-t border-gray-200 flex gap-3">
