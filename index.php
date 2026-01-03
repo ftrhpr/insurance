@@ -373,9 +373,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <?php echo __('dashboard.new_requests', 'New Requests'); ?> <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
                         </h2>
                         <div class="flex items-center gap-2">
-                            <button id="bulk-schedule-new" onclick="window.openBulkScheduleModal()" title="Set schedule date for first 10 New cases" class="px-3 py-2 btn-primary text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-95">
+                            <button id="bulk-schedule-new" onclick="window.openBulkScheduleModal()" title="Set schedule date for first N New cases" class="px-3 py-2 btn-primary text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-95">
                                 <i data-lucide="calendar" class="w-4 h-4 inline-block mr-2"></i>
-                                Schedule First 10 New
+                                Schedule New Cases...
                             </button>
                         </div>
 
@@ -385,7 +385,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
                                 <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
                                     <div class="flex items-center justify-between mb-4">
-                                        <h3 class="text-lg font-bold">Schedule first 10 New cases</h3>
+                                        <h3 class="text-lg font-bold">Bulk Schedule New Cases</h3>
                                         <button onclick="window.closeBulkScheduleModal()" class="text-slate-500 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
                                     </div>
                                     <div class="space-y-4">
@@ -395,13 +395,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         </div>
                                         <div>
                                             <label class="text-sm font-semibold text-slate-700 mb-1 block">Number of cases</label>
-                                            <input id="bulk-service-limit" type="number" min="1" max="100" value="10" class="w-32 px-4 py-2 border border-slate-200 rounded-lg" readonly>
-                                            <div class="text-xs text-slate-400 mt-1">This will schedule the first <strong>10</strong> cases with status <em>New</em>.</div>
+                                            <input id="bulk-service-limit" type="number" min="1" max="100" value="10" class="w-32 px-4 py-2 border border-slate-200 rounded-lg" oninput="window.updateBulkScheduleDescription()">
+                                            <div id="bulk-schedule-description" class="text-xs text-slate-400 mt-1">This will schedule the first <strong>10</strong> cases with status <em>New</em>.</div>
                                         </div>
                                     </div>
                                     <div class="mt-6 flex justify-end gap-2">
                                         <button onclick="window.closeBulkScheduleModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-sm">Cancel</button>
-                                        <button id="bulk-schedule-confirm-btn" onclick="window.bulkScheduleNewFirst10()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm">Schedule First 10</button>
+                                        <button id="bulk-schedule-confirm-btn" onclick="window.bulkScheduleNewCases()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm">Schedule First 10</button>
                                     </div>
                                 </div>
                             </div>
@@ -2553,9 +2553,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.openBulkScheduleModal = () => {
             const modal = document.getElementById('bulk-schedule-modal');
             if (!modal) return;
-            const input = document.getElementById('bulk-service-date');
-            if (input) input.value = '2026-01-05T10:00';
+            const dateInput = document.getElementById('bulk-service-date');
+            const limitInput = document.getElementById('bulk-service-limit');
+            if (dateInput) dateInput.value = '2026-01-05T10:00';
+            if (limitInput) limitInput.value = '10';
             modal.classList.remove('hidden');
+            window.updateBulkScheduleDescription();
         };
 
         window.closeBulkScheduleModal = () => {
@@ -2564,7 +2567,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             modal.classList.add('hidden');
         };
 
-        window.bulkScheduleNewFirst10 = async () => {
+        window.updateBulkScheduleDescription = () => {
+            const limitEl = document.getElementById('bulk-service-limit');
+            const descEl = document.getElementById('bulk-schedule-description');
+            const btn = document.getElementById('bulk-schedule-confirm-btn');
+            if (!limitEl || !descEl || !btn) return;
+            const limit = parseInt(limitEl.value) || 0;
+            descEl.innerHTML = `This will schedule the <strong>${limit}</strong> oldest 'New' cases.`;
+            btn.textContent = `Schedule ${limit} Cases`;
+        };
+
+        window.bulkScheduleNewCases = async () => {
             const btn = document.getElementById('bulk-schedule-confirm-btn');
             const input = document.getElementById('bulk-service-date');
             const limitEl = document.getElementById('bulk-service-limit');
@@ -2573,9 +2586,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (!raw) return showToast('Please select date and time', 'error');
             // Convert to server format YYYY-MM-DD HH:mm:ss
             const serviceDate = raw.replace('T', ' ') + ':00';
-            const limit = parseInt(limitEl.value) || 10;
+            const limit = parseInt(limitEl.value) || 0;
 
-            if (!confirm(`Schedule first ${limit} New cases for ${raw.replace('T',' ')}?`)) return;
+            if (limit <= 0) return showToast('Please set number of cases to schedule (min 1).', 'error');
+
+            if (!confirm(`Schedule ${limit} 'New' cases for ${raw.replace('T',' ')}?`)) return;
 
             if (btn) { btn.disabled = true; btn.classList.add('opacity-60','pointer-events-none'); }
             try {
