@@ -422,7 +422,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 <section>
                     <div class="flex items-center justify-between mb-4 px-1">
                         <h2 class="text-xl font-bold text-slate-800"><?php echo __('dashboard.processing_queue', 'Processing Queue'); ?></h2>
-                        <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
+                        <div class="flex items-center gap-2">
+                            <button id="resend-schedule-sms" onclick="window.resendScheduleSMS()" title="Resend schedule SMS to all unconfirmed scheduled cases" class="px-3 py-2 text-sm font-bold bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-xl transition-all shadow-sm">
+                                <i data-lucide="send" class="w-4 h-4 inline-block mr-2"></i>
+                                Resend Schedule SMS
+                            </button>
+                            <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
+                        </div>
                     </div>
 
                     <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
@@ -2623,6 +2629,37 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
         };
 
+        window.resendScheduleSMS = async () => {
+            const btn = document.getElementById('resend-schedule-sms');
+            if (!btn) return;
+            
+            // Count unconfirmed scheduled cases
+            const unconfirmed = transfers.filter(t => t.status === 'Scheduled' && t.user_response !== 'Confirmed');
+            if (unconfirmed.length === 0) {
+                showToast('No unconfirmed scheduled cases', 'info');
+                return;
+            }
+
+            if (!confirm(`Resend schedule SMS to ${unconfirmed.length} unconfirmed case(s)?`)) return;
+
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'pointer-events-none');
+            try {
+                const res = await fetchAPI('resend_schedule_sms', 'POST', {});
+                if (res && res.success) {
+                    showToast(`SMS sent to ${res.count} case(s)`, 'success');
+                    loadData();
+                } else {
+                    showToast(res.message || 'Failed to resend SMS', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Failed to resend SMS', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'pointer-events-none');
+            }
+        };
 
         window.viewInvoice = (id) => {
             const t = transfers.find(i => i.id == id);

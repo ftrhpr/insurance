@@ -557,6 +557,65 @@ try {
         }
     }
 
+    // --- RESEND SCHEDULE SMS TO UNCONFIRMED SCHEDULED CASES ---
+    if ($action === 'resend_schedule_sms' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['success' => false, 'message' => 'Permission denied']);
+        }
+
+        // Find all Scheduled cases that are NOT Confirmed
+        $stmt = $pdo->prepare("SELECT id, name, plate, phone, service_date FROM transfers WHERE status = 'Scheduled' AND user_response != 'Confirmed' AND phone IS NOT NULL AND phone != ''");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($rows)) {
+            jsonResponse(['success' => true, 'count' => 0, 'message' => 'No unconfirmed scheduled cases found']);
+        }
+
+        try {
+            // Load schedule template
+            $stmt = $pdo->prepare("SELECT content FROM sms_templates WHERE slug = 'schedule' AND is_active = 1");
+            $stmt->execute();
+            $template = $stmt->fetchColumn();
+            if (!$template) {
+                $template = "Hello {name}, your service is scheduled for {date}. Ref: {plate}. Confirm or reschedule: {link}";
+            }
+
+            $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+            $sentCount = 0;
+
+            foreach ($rows as $r) {
+                if (empty($r['service_date'])) continue;
+
+                $formattedDate = date('M d, Y H:i', strtotime($r['service_date']));
+                $link = "https://portal.otoexpress.ge/public_view.php?id=" . intval($r['id']);
+                $smsText = str_replace(
+                    ['{name}', '{plate}', '{date}', '{link}'],
+                    [$r['name'], $r['plate'], $formattedDate, $link],
+                    $template
+                );
+
+                $to = preg_replace('/\D+/', '', $r['phone']);
+                if ($to) {
+                    @file_get_contents("https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText));
+                    $sentCount++;
+                }
+            }
+
+            // Send FCM notification to managers
+            $title = "Bulk SMS Resend Completed";
+            $body = "$sentCount schedule SMS(s) resent to unconfirmed cases";
+            sendFCM_V1($pdo, $service_account_file, $title, $body);
+
+            jsonResponse(['success' => true, 'count' => $sentCount]);
+        } catch (Exception $e) {
+            error_log("resend_schedule_sms failed: " . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['success' => false, 'message' => 'Internal server error']);
+        }
+    }
+
     // --- DECLINE RESCHEDULE REQUEST ---
     if ($action === 'decline_reschedule' && $method === 'POST') {
         $id = intval($_GET['id'] ?? 0);
