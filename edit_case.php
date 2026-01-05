@@ -611,6 +611,25 @@ try {
                     </div>
                 </div>
                 
+                <!-- Manual Appointment Confirmation -->
+                <?php if ($case['status'] === 'Scheduled' && $case['user_response'] !== 'Confirmed'): ?>
+                <div class="bg-blue-50/80 border-2 border-blue-200 rounded-2xl p-5">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="check-circle-2" class="w-8 h-8 text-blue-600 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <h3 class="text-lg font-bold text-blue-900"><?php echo __('case.confirm_appointment', 'Manual Appointment Confirmation'); ?></h3>
+                            <p class="text-slate-600 mt-2"><?php echo __('case.confirm_appointment_desc', 'If the customer confirmed via phone or other means, manually mark this appointment as confirmed.'); ?></p>
+                            <div class="flex gap-2 mt-4">
+                                <button onclick="manuallyConfirmAppointment()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded-md text-sm flex items-center gap-2">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                    <?php echo __('case.confirm', 'Confirm Appointment'); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- Reschedule Request -->
                 <?php if ($case['user_response'] === 'Reschedule Requested' && !empty($case['rescheduleDate'])): ?>
                 <div class="bg-yellow-50/80 border-2 border-yellow-200 rounded-2xl p-5">
@@ -3345,6 +3364,23 @@ try {
                 showToast("Request Declined", "Reschedule request removed.", "info");
                 setTimeout(() => window.location.reload(), 1000);
             } catch (e) { showToast("Error", "Failed to decline request.", "error"); }
+        }
+
+        async function manuallyConfirmAppointment() {
+            if (initialCaseData.status !== 'Scheduled') {
+                showToast("Error", "Only Scheduled appointments can be confirmed.", "error");
+                return;
+            }
+            if (initialCaseData.user_response === 'Confirmed') {
+                showToast("Already Confirmed", "This appointment is already confirmed.", "info");
+                return;
+            }
+            if (!confirm('Manually confirm this appointment for ' + initialCaseData.name + '?')) return;
+            try {
+                await fetchAPI(`confirm_appointment&id=${CASE_ID}`, 'POST', { user_response: 'Confirmed' });
+                showToast("Appointment Confirmed", initialCaseData.name + " has confirmed their appointment.", "success");
+                setTimeout(() => window.location.reload(), 1000);
+            } catch (e) { showToast("Error", "Failed to confirm appointment.", "error"); }
         }
 
         async function addNote() {

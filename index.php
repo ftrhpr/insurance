@@ -2138,6 +2138,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 if (rescheduleSection) rescheduleSection.classList.add('hidden');
             }
 
+            // Display manual confirmation section for scheduled but unconfirmed cases
+            const confirmSection = document.getElementById('modal-confirm-section');
+            if (t.status === 'Scheduled' && t.userResponse !== 'Confirmed') {
+                if (confirmSection) confirmSection.classList.remove('hidden');
+            } else {
+                if (confirmSection) confirmSection.classList.add('hidden');
+            }
+
             const editModalEl = document.getElementById('edit-modal');
             if (editModalEl) editModalEl.classList.remove('hidden');
             lucide.createIcons();
@@ -2507,6 +2515,41 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             } catch(e) {
                 console.error('Decline reschedule error:', e);
                 showToast("Error", "Failed to decline request", "error");
+            }
+        };
+
+        window.manuallyConfirmAppointment = async () => {
+            const t = transfers.find(i => i.id == window.currentEditingId);
+            if (!t) return;
+            if (t.status !== 'Scheduled') {
+                showToast('Cannot Confirm', 'Only Scheduled appointments can be confirmed', 'error');
+                return;
+            }
+            if (t.userResponse === 'Confirmed') {
+                showToast('Already Confirmed', 'This appointment is already confirmed', 'info');
+                return;
+            }
+
+            if (!confirm(`Manually confirm appointment for ${t.name}?`)) return;
+
+            const btn = document.getElementById('modal-confirm-btn');
+            if (btn) { btn.disabled = true; btn.classList.add('opacity-60','pointer-events-none'); }
+            
+            try {
+                const res = await fetchAPI(`confirm_appointment&id=${window.currentEditingId}`, 'POST', { user_response: 'Confirmed' });
+                if (res && res.success) {
+                    t.userResponse = 'Confirmed';
+                    showToast('Appointment Confirmed', `${t.name} has confirmed their appointment`, 'success');
+                    window.closeModal();
+                    loadData();
+                } else {
+                    showToast('Failed to confirm', res?.message || 'Unknown error', 'error');
+                }
+            } catch (e) {
+                console.error('Manual confirm error:', e);
+                showToast('Error', 'Failed to confirm appointment', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-60','pointer-events-none'); }
             }
         };
 

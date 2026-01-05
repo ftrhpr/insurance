@@ -631,6 +631,41 @@ try {
         }
     }
 
+    if ($action === 'confirm_appointment' && $method === 'POST') {
+        $id = intval($_GET['id'] ?? 0);
+        $data = getJsonInput();
+
+        if ($id > 0) {
+            try {
+                // Update user_response to Confirmed
+                $pdo->prepare("UPDATE transfers SET user_response = 'Confirmed' WHERE id = ?")
+                    ->execute([$id]);
+
+                // Log the action
+                $stmt = $pdo->prepare("SELECT internalNotes FROM transfers WHERE id = ?");
+                $stmt->execute([$id]);
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                $notes = json_decode($result['internalNotes'] ?? '[]', true);
+                $notes[] = [
+                    'text' => 'Appointment manually confirmed by manager',
+                    'authorName' => 'System',
+                    'timestamp' => (new DateTime())->format('Y-m-d H:i:s')
+                ];
+                
+                $pdo->prepare("UPDATE transfers SET internalNotes = ? WHERE id = ?")
+                    ->execute([json_encode($notes), $id]);
+
+                jsonResponse(['status' => 'success', 'success' => true, 'message' => 'Appointment confirmed']);
+            } catch (Exception $e) {
+                error_log("confirm_appointment error: " . $e->getMessage());
+                http_response_code(500);
+                jsonResponse(['status' => 'error', 'success' => false, 'message' => 'Database error']);
+            }
+        } else {
+            jsonResponse(['status' => 'error', 'success' => false, 'message' => 'Invalid ID']);
+        }
+    }
+
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
