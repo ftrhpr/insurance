@@ -272,6 +272,28 @@ try {
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.franchise', 'Franchise'); ?> (₾)</label>
                                 <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
+                            
+                            <!-- Link Status -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.link_status', 'Public Link Status'); ?></label>
+                                <div class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                                    <?php if (!empty($case['link_opened_at'])): ?>
+                                        <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-sm font-medium">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                            <?php echo __('case.link_viewed', 'Viewed'); ?>
+                                        </span>
+                                        <span class="text-sm text-slate-600">
+                                            <?php echo date('M j, Y g:i A', strtotime($case['link_opened_at'])); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-full text-sm font-medium">
+                                            <i data-lucide="eye-off" class="w-4 h-4"></i>
+                                            <?php echo __('case.link_not_viewed', 'Not viewed yet'); ?>
+                                        </span>
+                                        <span class="text-xs text-slate-400"><?php echo __('case.link_not_viewed_desc', 'Customer has not opened the public link'); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

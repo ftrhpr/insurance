@@ -303,6 +303,10 @@ function initialize_default_translations() {
         'case.danger_zone' => 'Danger Zone',
         'case.permanent_action' => 'This action is permanent and cannot be undone.',
         'case.delete_case' => 'Delete This Case',
+        'case.link_status' => 'Public Link Status',
+        'case.link_viewed' => 'Viewed',
+        'case.link_not_viewed' => 'Not viewed yet',
+        'case.link_not_viewed_desc' => 'Customer has not opened the public link',
 
         // Templates page
         'templates.title' => 'Manage SMS Templates',
@@ -446,6 +450,10 @@ function initialize_default_translations() {
         'case.danger_zone' => 'სახطრობე ზონა',
         'case.permanent_action' => 'ეს მოქმედება იქნება მუდმივი და მისი უკუშემობა შეუძლებელი იქნება.',
         'case.delete_case' => 'ამ დეტალის წაშლა',
+        'case.link_status' => 'საჯარო ბმულის სტატუსი',
+        'case.link_viewed' => 'ნანახია',
+        'case.link_not_viewed' => 'ჯერ არ ნახულა',
+        'case.link_not_viewed_desc' => 'კლიენტს საჯარო ბმული ჯერ არ გაუხსნია',
 
         // SMS Templates
         'sms.registered' => "გამარჯობა {name}, გადახდა მიღებულია. მიმართ: {plate}. მოგესალმებით OTOMOTORS სერვისში.",

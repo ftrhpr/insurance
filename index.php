@@ -1717,6 +1717,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     // USER RESPONSE LOGIC
                     let replyBadge = `<span class="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="help-circle" class="w-3 h-3"></i> Not Responded</span>`;
                     
+                    // Link opened indicator
+                    let linkOpenedBadge = '';
+                    if (t.linkOpenedAt) {
+                        const openedDate = new Date(t.linkOpenedAt.replace(' ', 'T'));
+                        const openedStr = openedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        linkOpenedBadge = `<span class="bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1 w-fit" title="Link opened: ${openedStr}"><i data-lucide="eye" class="w-3 h-3"></i> Viewed</span>`;
+                    } else {
+                        linkOpenedBadge = `<span class="bg-slate-50 text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1 w-fit"><i data-lucide="eye-off" class="w-3 h-3"></i> Not viewed</span>`;
+                    }
+                    
                     if (t.user_response === 'Confirmed') {
                         replyBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit"><i data-lucide="check" class="w-3 h-3"></i> Confirmed</span>`;
                     } else if (t.user_response === 'Reschedule Requested') {
@@ -1866,7 +1876,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 ${dueDateDisplay}
                             </td>
                             <td class="px-5 py-4">
-                                ${replyBadge}
+                                <div class="flex flex-col gap-1">
+                                    ${replyBadge}
+                                    ${linkOpenedBadge}
+                                </div>
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-end gap-1">

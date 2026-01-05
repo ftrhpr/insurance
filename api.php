@@ -170,6 +170,20 @@ try {
             jsonResponse(['error' => 'Invalid ID parameter']);
         }
         
+        // Ensure link_opened_at column exists
+        try {
+            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = 'link_opened_at'");
+            $checkStmt->execute([DB_NAME]);
+            if ($checkStmt->fetchColumn() == 0) {
+                $pdo->exec("ALTER TABLE transfers ADD COLUMN `link_opened_at` DATETIME DEFAULT NULL");
+            }
+        } catch (Exception $e) {
+            // Column might already exist
+        }
+        
+        // Record link open (only first time)
+        $pdo->prepare("UPDATE transfers SET link_opened_at = COALESCE(link_opened_at, NOW()) WHERE id = ? AND link_opened_at IS NULL")->execute([$id]);
+        
         // Fetch status and review data
         $stmt = $pdo->prepare("SELECT id, name, plate, status, service_date as serviceDate, user_response as userResponse, review_stars as reviewStars, review_comment as reviewComment FROM transfers WHERE id = ?");
         $stmt->execute([$id]);
@@ -572,6 +586,7 @@ try {
                 'repair_parts' => "TEXT DEFAULT NULL",
                 'repair_labor' => "TEXT DEFAULT NULL",
                 'repair_activity_log' => "TEXT DEFAULT NULL",
+                'link_opened_at' => "DATETIME DEFAULT NULL",
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -585,7 +600,7 @@ try {
         }
 
         // Includes review columns and reschedule data, now includes completed transfers for processing queue
-        $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment, link_opened_at as linkOpenedAt FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
