@@ -497,6 +497,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </div>
                         </div>
                     </div>
+
+                    <!-- Pagination -->
+                    <div id="processing-pagination-container" class="hidden mt-4">
+                        <div class="flex items-center justify-between bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-sm text-slate-600" id="processing-page-info">
+                                Showing <span id="processing-showing-start">0</span>-<span id="processing-showing-end">0</span> of <span id="processing-total">0</span>
+                            </div>
+                            <div class="flex gap-2" id="processing-pagination">
+                                <!-- Pagination buttons populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
                 </section>
             </div>
 
@@ -898,6 +910,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.currentEditingId = null;
         let parsedImportData = [];
         const currentUser = { uid: "manager", name: "Manager" }; 
+        
+        // Pagination variables
+        const processingPerPage = 10;
+        let currentProcessingPage = 1; 
 
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
@@ -1636,7 +1652,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             lucide.createIcons();
         };
 
-        function renderTable() {
+        function renderTable(page = 1) {
+            currentProcessingPage = page;
+            
             const searchInputEl = document.getElementById('search-input');
             const statusFilterEl = document.getElementById('status-filter');
             const replyFilterEl = document.getElementById('reply-filter');
@@ -1650,7 +1668,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             newContainer.innerHTML = ''; activeContainer.innerHTML = '';
             
             let newCount = 0;
-            let activeCount = 0;
+            let activeTransfers = [];
 
             transfers.forEach(t => {
                 // 1. Text Search Filter
@@ -1703,7 +1721,29 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </div>
                         </div>`;
                 } else {
-                    activeCount++;
+                    // Collect active transfers for pagination
+                    activeTransfers.push({ transfer: t, dateStr, linkedVehicle, displayPhone });
+                }
+            });
+
+            // Calculate pagination for active transfers
+            const totalActive = activeTransfers.length;
+            const totalPages = Math.ceil(totalActive / processingPerPage);
+            
+            // Adjust page if out of range
+            if (currentProcessingPage > totalPages && totalPages > 0) {
+                currentProcessingPage = totalPages;
+            }
+            if (currentProcessingPage < 1) {
+                currentProcessingPage = 1;
+            }
+
+            const startIndex = (currentProcessingPage - 1) * processingPerPage;
+            const endIndex = Math.min(startIndex + processingPerPage, totalActive);
+            const pageTransfers = activeTransfers.slice(startIndex, endIndex);
+
+            // Render paginated active transfers
+            pageTransfers.forEach(({ transfer: t, dateStr, linkedVehicle, displayPhone }) => {
                     
                     const statusColors = {
                         'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -1903,19 +1943,121 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </div>
                             </td>
                         </tr>`;
-                }
             });
 
             const newCountEl = document.getElementById('new-count');
             const recordCountEl = document.getElementById('record-count');
             const newCasesEmptyEl = document.getElementById('new-cases-empty');
             const emptyStateEl = document.getElementById('empty-state');
+            const paginationContainerEl = document.getElementById('processing-pagination-container');
             
             if (newCountEl) newCountEl.innerText = `${newCount}`;
-            if (recordCountEl) recordCountEl.innerText = `${activeCount} active`;
+            if (recordCountEl) recordCountEl.innerText = `${totalActive} active`;
             if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
-            if (emptyStateEl) emptyStateEl.classList.toggle('hidden', activeCount > 0);
+            if (emptyStateEl) emptyStateEl.classList.toggle('hidden', totalActive > 0);
+            
+            // Update pagination info and show/hide pagination
+            if (totalActive > 0) {
+                const pageInfoEl = document.getElementById('processing-page-info');
+                const showingStartEl = document.getElementById('processing-showing-start');
+                const showingEndEl = document.getElementById('processing-showing-end');
+                const totalEl = document.getElementById('processing-total');
+                
+                if (pageInfoEl) pageInfoEl.classList.remove('hidden');
+                if (showingStartEl) showingStartEl.textContent = startIndex + 1;
+                if (showingEndEl) showingEndEl.textContent = endIndex;
+                if (totalEl) totalEl.textContent = totalActive;
+                
+                if (paginationContainerEl) {
+                    if (totalPages > 1) {
+                        paginationContainerEl.classList.remove('hidden');
+                    } else {
+                        paginationContainerEl.classList.add('hidden');
+                    }
+                }
+            } else {
+                if (paginationContainerEl) paginationContainerEl.classList.add('hidden');
+            }
+            
+            // Render pagination buttons
+            renderProcessingPagination(totalPages);
+            
             lucide.createIcons();
+        }
+
+        function renderProcessingPagination(totalPages) {
+            const container = document.getElementById('processing-pagination');
+            if (!container) return;
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            // Previous button
+            html += `
+                <button onclick="renderTable(${currentProcessingPage - 1})" 
+                    class="px-3 py-1.5 rounded-lg border transition-all ${
+                        currentProcessingPage === 1 
+                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }" 
+                    ${currentProcessingPage === 1 ? 'disabled' : ''}>
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+            `;
+
+            // Page numbers (show max 5 pages)
+            let startPage = Math.max(1, currentProcessingPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            if (startPage > 1) {
+                html += `<button onclick="renderTable(1)" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">1</button>`;
+                if (startPage > 2) {
+                    html += `<span class="px-2 text-slate-400">...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <button onclick="renderTable(${i})" 
+                        class="px-3 py-1.5 rounded-lg border transition-all ${
+                            i === currentProcessingPage 
+                                ? 'bg-blue-600 text-white border-blue-600' 
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                        }">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<span class="px-2 text-slate-400">...</span>`;
+                }
+                html += `<button onclick="renderTable(${totalPages})" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">${totalPages}</button>`;
+            }
+
+            // Next button
+            html += `
+                <button onclick="renderTable(${currentProcessingPage + 1})" 
+                    class="px-3 py-1.5 rounded-lg border transition-all ${
+                        currentProcessingPage === totalPages 
+                            ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }" 
+                    ${currentProcessingPage === totalPages ? 'disabled' : ''}>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            `;
+
+            container.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
         }
 
         window.openEditModal = (id) => {
@@ -2961,9 +3103,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         const replyFilterEl = document.getElementById('reply-filter');
         const newNoteInputEl = document.getElementById('new-note-input');
         
-        if (searchInputEl) searchInputEl.addEventListener('input', renderTable);
-        if (statusFilterEl) statusFilterEl.addEventListener('change', renderTable);
-        if (replyFilterEl) replyFilterEl.addEventListener('change', renderTable);
+        if (searchInputEl) searchInputEl.addEventListener('input', () => {
+            currentProcessingPage = 1;
+            renderTable(1);
+        });
+        if (statusFilterEl) statusFilterEl.addEventListener('change', () => {
+            currentProcessingPage = 1;
+            renderTable(1);
+        });
+        if (replyFilterEl) replyFilterEl.addEventListener('change', () => {
+            currentProcessingPage = 1;
+            renderTable(1);
+        });
         if (newNoteInputEl) newNoteInputEl.addEventListener('keypress', (e) => { if(e.key === 'Enter') window.addNote(); });
         window.insertSample = (t) => {
             const importTextEl = document.getElementById('import-text');
