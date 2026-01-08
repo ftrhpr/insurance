@@ -61,11 +61,8 @@ try {
     
     $stmt = $pdo->prepare($sql);
     
-    // Prepare system logs - keep clear, only store Firebase ID if needed
-    $systemLogsData = [
-        'firebase_id' => $data['firebaseId'] ?? null,
-    ];
-    $systemLogsJson = json_encode($systemLogsData, JSON_UNESCAPED_UNICODE);
+    // Prepare system logs - keep empty/null
+    $systemLogsJson = null;
     
     // Prepare parts JSON if exists
     $partsJson = null;
@@ -92,7 +89,7 @@ try {
         ':serviceDate' => $serviceDate,               // Service date (datetime)
         ':service_date' => $serviceDate,              // Service date (datetime) - duplicate column
         ':repair_status' => 'Processing',             // Default repair status - Processing stage
-        ':user_response' => 'Pending',                // Default user response
+        ':user_response' => 'Processing',             // Default user response - Processing
         ':operatorComment' => 'Created from mobile app - Firebase ID: ' . ($data['firebaseId'] ?? 'N/A'),
         ':systemLogs' => $systemLogsJson
     ]);
