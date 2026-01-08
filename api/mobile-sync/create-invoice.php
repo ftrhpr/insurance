@@ -74,7 +74,7 @@ try {
     }
     
     // Prepare services/labors JSON from the services array
-    // Transform from: [{"description":"test","hours":1,"hourly_rate":25,"billable":true,"notes":""}]
+    // App sends: [{"serviceName":"Plastic Restoration","price":75,"count":1}]
     // Convert to database format expected by portal
     $servicesJson = null;
     if (isset($data['services']) && !empty($data['services'])) {
@@ -82,16 +82,17 @@ try {
         error_log("Raw services received: " . json_encode($services));
         // Transform field names to match portal expectations
         $transformedServices = array_map(function($service) {
-            $description = !empty($service['description']) ? $service['description'] : 'Unnamed Labor';
-            $rate = !empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0);
+            // Map app field names to expected format
+            $serviceName = !empty($service['serviceName']) ? $service['serviceName'] : (!empty($service['description']) ? $service['description'] : 'Unnamed Labor');
+            $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
             
             return [
-                'name' => $description,
-                'description' => $description,
+                'name' => $serviceName,
+                'description' => $serviceName,
                 'hours' => !empty($service['hours']) ? $service['hours'] : 1,
-                'rate' => $rate,
-                'hourly_rate' => $rate,
-                'price' => $rate,
+                'rate' => $servicePrice,
+                'hourly_rate' => $servicePrice,
+                'price' => $servicePrice,
                 'billable' => isset($service['billable']) ? $service['billable'] : true,
                 'notes' => !empty($service['notes']) ? $service['notes'] : '',
             ];
