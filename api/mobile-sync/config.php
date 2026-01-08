@@ -60,9 +60,38 @@ function getDBConnection() {
 
 // Verify API key
 function verifyAPIKey() {
-    $headers = getallheaders();
-    $apiKey = isset($headers['X-API-Key']) ? $headers['X-API-Key'] : 
-              (isset($headers['x-api-key']) ? $headers['x-api-key'] : '');
+    // Try multiple methods to get the API key header
+    $apiKey = '';
+    
+    // Method 1: getallheaders() - works on Apache
+    if (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        $apiKey = isset($headers['X-API-Key']) ? $headers['X-API-Key'] : 
+                  (isset($headers['x-api-key']) ? $headers['x-api-key'] : 
+                  (isset($headers['X-Api-Key']) ? $headers['X-Api-Key'] : ''));
+    }
+    
+    // Method 2: $_SERVER - works on nginx and most servers
+    if (empty($apiKey)) {
+        $apiKey = isset($_SERVER['HTTP_X_API_KEY']) ? $_SERVER['HTTP_X_API_KEY'] : '';
+    }
+    
+    // Method 3: apache_request_headers() - alternative for Apache
+    if (empty($apiKey) && function_exists('apache_request_headers')) {
+        $headers = apache_request_headers();
+        $apiKey = isset($headers['X-API-Key']) ? $headers['X-API-Key'] : 
+                  (isset($headers['x-api-key']) ? $headers['x-api-key'] : '');
+    }
+    
+    // Debug: Log what we received (remove in production)
+    error_log("Received API Key: " . substr($apiKey, 0, 10) . "...");
+    error_log("Expected API Key: " . substr(API_KEY, 0, 10) . "...");
+    
+    if (empty($apiKey)) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized: No API key provided']);
+        exit();
+    }
     
     if ($apiKey !== API_KEY) {
         http_response_code(401);
