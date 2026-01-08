@@ -39,6 +39,8 @@ try {
         status,
         parts,
         serviceDate,
+        service_date,
+        repair_status,
         user_response,
         operatorComment,
         systemLogs
@@ -50,6 +52,8 @@ try {
         :status,
         :parts,
         :serviceDate,
+        :service_date,
+        :repair_status,
         :user_response,
         :operatorComment,
         :systemLogs
@@ -74,10 +78,12 @@ try {
         $partsJson = json_encode($data['parts'], JSON_UNESCAPED_UNICODE);
     }
     
-    // Convert serviceDate to MySQL datetime format
+    // Set service dates (both serviceDate and service_date columns)
     $serviceDate = date('Y-m-d H:i:s');
     if (isset($data['serviceDate'])) {
         $serviceDate = date('Y-m-d H:i:s', strtotime($data['serviceDate']));
+    } elseif (isset($data['createdAt'])) {
+        $serviceDate = date('Y-m-d H:i:s', strtotime($data['createdAt']));
     }
     
     // Bind parameters
@@ -88,7 +94,9 @@ try {
         ':amount' => $data['totalPrice'] ?? 0,        // totalPrice -> amount
         ':status' => $data['status'] ?? 'New',        // Default status
         ':parts' => $partsJson,                       // parts JSON
-        ':serviceDate' => $serviceDate,
+        ':serviceDate' => $serviceDate,               // Service date (datetime)
+        ':service_date' => $serviceDate,              // Service date (datetime) - duplicate column
+        ':repair_status' => 'New',                    // Default repair status - New stage
         ':user_response' => 'Pending',                // Default user response
         ':operatorComment' => 'Created from mobile app - Firebase ID: ' . ($data['firebaseId'] ?? 'N/A'),
         ':systemLogs' => json_encode($systemLogs, JSON_UNESCAPED_UNICODE)
@@ -97,12 +105,14 @@ try {
     $insertId = $pdo->lastInsertId();
     
     // Log success
-    error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A'));
+    error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", repair_status: New, serviceDate: $serviceDate");
     
     sendResponse(true, [
         'id' => $insertId,
         'message' => 'Invoice synced successfully',
-        'firebase_id' => $data['firebaseId'] ?? null
+        'firebase_id' => $data['firebaseId'] ?? null,
+        'repair_status' => 'New',
+        'service_date' => $serviceDate
     ]);
     
 } catch (PDOException $e) {
