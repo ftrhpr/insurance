@@ -84,11 +84,11 @@ try {
         ':name' => $data['customerName'] ?? 'N/A',    // customerName -> name
         ':phone' => $data['customerPhone'] ?? '',     // customerPhone -> phone
         ':amount' => $data['totalPrice'] ?? 0,        // totalPrice -> amount
-        ':status' => $data['status'] ?? 'Processing', // Default status
+        ':status' => 'Processing',                    // Default status - Processing
         ':parts' => $partsJson,                       // parts JSON
         ':serviceDate' => $serviceDate,               // Service date (datetime)
         ':service_date' => $serviceDate,              // Service date (datetime) - duplicate column
-        ':repair_status' => 'Processing',             // Default repair status - Processing stage
+        ':repair_status' => null,                     // Leave repair_status NULL
         ':user_response' => 'Processing',             // Default user response - Processing
         ':operatorComment' => 'Created from mobile app - Firebase ID: ' . ($data['firebaseId'] ?? 'N/A'),
         ':systemLogs' => $systemLogsJson
@@ -97,13 +97,13 @@ try {
     $insertId = $pdo->lastInsertId();
     
     // Log success
-    error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", repair_status: Processing, serviceDate: $serviceDate");
+    error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", status: Processing, serviceDate: $serviceDate");
     
     sendResponse(true, [
         'id' => $insertId,
         'message' => 'Invoice synced successfully',
         'firebase_id' => $data['firebaseId'] ?? null,
-        'repair_status' => 'Processing',
+        'status' => 'Processing',
         'service_date' => $serviceDate
     ]);
     
