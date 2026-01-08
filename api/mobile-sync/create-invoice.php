@@ -75,9 +75,25 @@ try {
     
     // Prepare services/labors JSON from the services array
     // Transform from: [{"description":"test","hours":1,"hourly_rate":25,"billable":true,"notes":""}]
+    // Convert to database format expected by portal
     $servicesJson = null;
     if (isset($data['services']) && !empty($data['services'])) {
-        $servicesJson = json_encode($data['services'], JSON_UNESCAPED_UNICODE);
+        $services = $data['services'];
+        // Transform field names to match portal expectations
+        $transformedServices = array_map(function($service) {
+            return [
+                'name' => $service['description'] ?? 'Unnamed Labor',  // Use description as name
+                'description' => $service['description'] ?? '',         // Also keep as description
+                'hours' => $service['hours'] ?? 1,
+                'rate' => $service['hourly_rate'] ?? 0,                // Use rate instead of hourly_rate
+                'hourly_rate' => $service['hourly_rate'] ?? 0,         // Keep both for compatibility
+                'price' => $service['hourly_rate'] ?? 0,               // Add price field
+                'billable' => $service['billable'] ?? true,
+                'notes' => $service['notes'] ?? '',
+            ];
+        }, $services);
+        $servicesJson = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
+        error_log("Services transformed: " . $servicesJson);
     }
     
     // Set service dates (both serviceDate and service_date columns)
@@ -109,7 +125,12 @@ try {
     
     // Log success with services info
     $servicesCount = $servicesJson ? count(json_decode($servicesJson, true)) : 0;
-    error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", Services: $servicesCount, Parts: " . ($partsJson ? 'included' : 'none') . ", status: Processing, serviceDate: $serviceDate");
+    if ($servicesJson) {
+        $servicesData = json_decode($servicesJson, true);
+        error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", Services: $servicesCount, Data: " . json_encode($servicesData));
+    } else {
+        error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", Services: 0");
+    }
     
     sendResponse(true, [
         'id' => $insertId,
