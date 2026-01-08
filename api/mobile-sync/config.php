@@ -56,9 +56,16 @@ function verifyAPIKey() {
     // Try multiple methods to get the API key header
     $apiKey = '';
     
+    // Debug: Log all headers and _SERVER vars
+    error_log("=== API Key Debug ===");
+    error_log("All _SERVER HTTP headers: " . json_encode(array_filter($_SERVER, function($key) {
+        return strpos($key, 'HTTP_') === 0;
+    }, ARRAY_FILTER_USE_KEY)));
+    
     // Method 1: getallheaders() - works on Apache
     if (function_exists('getallheaders')) {
         $headers = getallheaders();
+        error_log("getallheaders: " . json_encode($headers));
         $apiKey = isset($headers['X-API-Key']) ? $headers['X-API-Key'] : 
                   (isset($headers['x-api-key']) ? $headers['x-api-key'] : 
                   (isset($headers['X-Api-Key']) ? $headers['X-Api-Key'] : ''));
@@ -76,13 +83,14 @@ function verifyAPIKey() {
                   (isset($headers['x-api-key']) ? $headers['x-api-key'] : '');
     }
     
-    // Debug: Log what we received (remove in production)
-    error_log("Received API Key: " . substr($apiKey, 0, 10) . "...");
+    // Debug: Log what we received
+    error_log("Received API Key: " . ($apiKey ? substr($apiKey, 0, 10) . "..." : "EMPTY"));
     error_log("Expected API Key: " . substr(API_KEY, 0, 10) . "...");
+    error_log("===================");
     
     if (empty($apiKey)) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Unauthorized: No API key provided']);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized: No API key provided', 'debug' => 'Check server error logs for header details']);
         exit();
     }
     
