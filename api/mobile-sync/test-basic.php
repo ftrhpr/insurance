@@ -2,8 +2,8 @@
 define('API_ACCESS', true);
 require_once 'config.php';
 
-// Verify API key
-verifyAPIKey();
+// This endpoint does NOT require API key - for basic connectivity testing only
+// Remove or disable this in production!
 
 try {
     $pdo = getDBConnection();
@@ -19,7 +19,9 @@ try {
     $columnsStmt = $pdo->query("DESCRIBE transfers");
     $columns = $columnsStmt->fetchAll();
     
-    sendResponse(true, [
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
         'message' => '✅ API is working!',
         'database_connected' => true,
         'database_name' => $dbInfo['db_name'],
@@ -29,9 +31,13 @@ try {
         'php_version' => phpversion(),
         'table_columns' => count($columns),
         'columns_list' => array_column($columns, 'Field')
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
-    sendResponse(false, null, 'Connection test failed: ' . $e->getMessage(), 500);
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Connection test failed: ' . $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE);
 }
 ?>
