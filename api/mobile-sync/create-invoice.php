@@ -61,16 +61,11 @@ try {
     
     $stmt = $pdo->prepare($sql);
     
-    // Prepare system logs with Firebase metadata
-    $systemLogs = [
+    // Prepare system logs - keep clear, only store Firebase ID if needed
+    $systemLogsData = [
         'firebase_id' => $data['firebaseId'] ?? null,
-        'synced_from_mobile' => true,
-        'photos_count' => $data['photosCount'] ?? 0,
-        'parts_count' => $data['partsCount'] ?? 0,
-        'services' => $data['services'] ?? [],
-        'created_at' => $data['createdAt'] ?? date('Y-m-d H:i:s'),
-        'sync_timestamp' => date('Y-m-d H:i:s')
     ];
+    $systemLogsJson = json_encode($systemLogsData, JSON_UNESCAPED_UNICODE);
     
     // Prepare parts JSON if exists
     $partsJson = null;
@@ -99,7 +94,7 @@ try {
         ':repair_status' => 'Processing',             // Default repair status - Processing stage
         ':user_response' => 'Pending',                // Default user response
         ':operatorComment' => 'Created from mobile app - Firebase ID: ' . ($data['firebaseId'] ?? 'N/A'),
-        ':systemLogs' => json_encode($systemLogs, JSON_UNESCAPED_UNICODE)
+        ':systemLogs' => $systemLogsJson
     ]);
     
     $insertId = $pdo->lastInsertId();
