@@ -79,17 +79,21 @@ try {
     $servicesJson = null;
     if (isset($data['services']) && !empty($data['services'])) {
         $services = $data['services'];
+        error_log("Raw services received: " . json_encode($services));
         // Transform field names to match portal expectations
         $transformedServices = array_map(function($service) {
+            $description = !empty($service['description']) ? $service['description'] : 'Unnamed Labor';
+            $rate = !empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0);
+            
             return [
-                'name' => $service['description'] ?? 'Unnamed Labor',  // Use description as name
-                'description' => $service['description'] ?? '',         // Also keep as description
-                'hours' => $service['hours'] ?? 1,
-                'rate' => $service['hourly_rate'] ?? 0,                // Use rate instead of hourly_rate
-                'hourly_rate' => $service['hourly_rate'] ?? 0,         // Keep both for compatibility
-                'price' => $service['hourly_rate'] ?? 0,               // Add price field
-                'billable' => $service['billable'] ?? true,
-                'notes' => $service['notes'] ?? '',
+                'name' => $description,
+                'description' => $description,
+                'hours' => !empty($service['hours']) ? $service['hours'] : 1,
+                'rate' => $rate,
+                'hourly_rate' => $rate,
+                'price' => $rate,
+                'billable' => isset($service['billable']) ? $service['billable'] : true,
+                'notes' => !empty($service['notes']) ? $service['notes'] : '',
             ];
         }, $services);
         $servicesJson = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
