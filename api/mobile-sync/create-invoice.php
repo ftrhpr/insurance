@@ -31,6 +31,7 @@ try {
     $pdo = getDBConnection();
     
     // Prepare INSERT query - Mapped to your actual database structure
+    // Note: services/labors are stored as JSON in repair_labor column
     $sql = "INSERT INTO transfers (
         plate,
         name,
@@ -38,6 +39,7 @@ try {
         amount,
         status,
         parts,
+        repair_labor,
         serviceDate,
         service_date,
         repair_status,
@@ -51,6 +53,7 @@ try {
         :amount,
         :status,
         :parts,
+        :repair_labor,
         :serviceDate,
         :service_date,
         :repair_status,
@@ -70,6 +73,13 @@ try {
         $partsJson = json_encode($data['parts'], JSON_UNESCAPED_UNICODE);
     }
     
+    // Prepare services/labors JSON from the services array
+    // Transform from: [{"description":"test","hours":1,"hourly_rate":25,"billable":true,"notes":""}]
+    $servicesJson = null;
+    if (isset($data['services']) && !empty($data['services'])) {
+        $servicesJson = json_encode($data['services'], JSON_UNESCAPED_UNICODE);
+    }
+    
     // Set service dates (both serviceDate and service_date columns)
     $serviceDate = date('Y-m-d H:i:s');
     if (isset($data['serviceDate'])) {
@@ -85,7 +95,8 @@ try {
         ':phone' => $data['customerPhone'] ?? '',     // customerPhone -> phone
         ':amount' => $data['totalPrice'] ?? 0,        // totalPrice -> amount
         ':status' => 'Processing',                    // Default status - Processing
-        ':parts' => $partsJson,                       // parts JSON
+        ':parts' => $partsJson,                       // parts JSON (damage tags)
+        ':repair_labor' => $servicesJson,             // repair_labor JSON (services with hours and hourly_rate)
         ':serviceDate' => $serviceDate,               // Service date (datetime)
         ':service_date' => $serviceDate,              // Service date (datetime) - duplicate column
         ':repair_status' => null,                     // Leave repair_status NULL
@@ -96,15 +107,18 @@ try {
     
     $insertId = $pdo->lastInsertId();
     
-    // Log success
-    error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", status: Processing, serviceDate: $serviceDate");
+    // Log success with services info
+    $servicesCount = $servicesJson ? count(json_decode($servicesJson, true)) : 0;
+    error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", Services: $servicesCount, Parts: " . ($partsJson ? 'included' : 'none') . ", status: Processing, serviceDate: $serviceDate");
     
     sendResponse(true, [
         'id' => $insertId,
         'message' => 'Invoice synced successfully',
         'firebase_id' => $data['firebaseId'] ?? null,
         'status' => 'Processing',
-        'service_date' => $serviceDate
+        'service_date' => $serviceDate,
+        'services_count' => $servicesCount,
+        'services_synced' => $servicesJson ? json_decode($servicesJson, true) : []
     ]);
     
 } catch (PDOException $e) {
