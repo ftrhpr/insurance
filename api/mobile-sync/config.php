@@ -1,9 +1,3 @@
-
-
-
-
-
-
 <?php
 // Prevent direct access
 if (!defined('API_ACCESS')) {
@@ -16,7 +10,6 @@ define('DB_NAME', 'otoexpre_userdb');
 define('DB_USER', 'otoexpre_userdb');
 define('DB_PASS', 'p52DSsthB}=0AeZ#');
 define('DB_CHARSET', 'utf8mb4');
-
 
 // API Security Key (generate a random string)
 define('API_KEY', 'm3RZpQRAKCv8X9JtY2hpbGxAZXhhbXBsZS5jb20=');
