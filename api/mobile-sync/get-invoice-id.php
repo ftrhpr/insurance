@@ -1,7 +1,7 @@
 <?php
 /**
- * Get Invoice API Endpoint
- * Fetches invoice details from cPanel database by ID or Firebase ID
+ * Get Invoice ID and Data API Endpoint
+ * Fetches invoice ID and optionally full invoice data from cPanel database
  * Used for syncing updates from cPanel back to mobile app
  */
 
@@ -18,11 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 try {
     // Get parameters
-    $invoiceId = $_GET['invoiceId'] ?? null;
-    $firebaseId = $_GET['firebaseId'] ?? null;
+    $firebaseId = isset($_GET['firebaseId']) ? $_GET['firebaseId'] : null;
+    $invoiceId = isset($_GET['invoiceId']) ? $_GET['invoiceId'] : null;
+    $fullData = isset($_GET['fullData']) ? ($_GET['fullData'] === 'true' || $_GET['fullData'] === '1') : false;
     
-    if (!$invoiceId && !$firebaseId) {
-        sendResponse(false, null, 'Missing required parameter: invoiceId or firebaseId', 400);
+    if (!$firebaseId && !$invoiceId) {
+        sendResponse(false, null, 'Missing required parameter: firebaseId or invoiceId', 400);
     }
     
     // Get database connection
@@ -30,14 +31,18 @@ try {
     
     // Build query based on provided parameter
     if ($invoiceId) {
+        // Direct lookup by cPanel invoice ID
         $sql = "SELECT * FROM transfers WHERE id = :id LIMIT 1";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $invoiceId]);
     } else {
-        // Search in operatorComment for Firebase ID
-        $sql = "SELECT * FROM transfers WHERE operatorComment LIKE :firebaseId LIMIT 1";
+        // Search for invoice by firebase ID stored in operatorComment or systemLogs
+        $sql = "SELECT * FROM transfers 
+                WHERE operatorComment LIKE :firebaseId 
+                OR systemLogs LIKE :firebaseId 
+                LIMIT 1";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':firebaseId' => '%' . $firebaseId . '%']);
+        $stmt->execute([':firebaseId' => "%$firebaseId%"]);
     }
     
     $invoice = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -46,7 +51,18 @@ try {
         sendResponse(false, null, 'Invoice not found', 404);
     }
     
-    // Parse JSON fields
+    error_log("Found cPanel invoice ID: " . $invoice['id'] . " for request");
+    
+    // If fullData is not requested, return just the ID (backward compatible)
+    if (!$fullData) {
+        sendResponse(true, [
+            'cpanelInvoiceId' => $invoice['id'],
+            'firebaseId' => $firebaseId,
+        ]);
+        exit;
+    }
+    
+    // Parse JSON fields for full data response
     $repairLabor = [];
     if (!empty($invoice['repair_labor'])) {
         $repairLabor = json_decode($invoice['repair_labor'], true) ?? [];
@@ -82,7 +98,7 @@ try {
         'updatedAt' => $invoice['updatedAt'] ?? null,
     ];
     
-    error_log("Invoice fetched successfully. ID: " . $invoice['id']);
+    error_log("Invoice full data fetched successfully. ID: " . $invoice['id']);
     
     sendResponse(true, $responseData);
     
