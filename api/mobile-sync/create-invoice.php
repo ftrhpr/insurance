@@ -74,22 +74,26 @@ try {
     }
     
     // Prepare services/labors JSON from the services array
-    // App sends: [{"serviceName":"Plastic Restoration","price":75,"count":1}]
-    // Convert to database format expected by portal
+    // App sends: [{"serviceName":"Plastic Restoration","serviceNameKa":"პლასტმასის აღდგენა","price":75,"count":1}]
+    // Convert to database format expected by portal - prefer Georgian names
     $servicesJson = null;
     if (isset($data['services']) && !empty($data['services'])) {
         $services = $data['services'];
         error_log("Raw services received: " . json_encode($services));
-        // Transform field names to match portal expectations
+        // Transform field names to match portal expectations - prefer Georgian (nameKa) names
         $transformedServices = array_map(function($service) {
-            // Map app field names to expected format
-            $serviceName = !empty($service['serviceName']) ? $service['serviceName'] : (!empty($service['description']) ? $service['description'] : 'Unnamed Labor');
+            // Prefer Georgian name, fallback to English, then description
+            $serviceName = !empty($service['serviceNameKa']) ? $service['serviceNameKa'] : 
+                          (!empty($service['nameKa']) ? $service['nameKa'] : 
+                          (!empty($service['serviceName']) ? $service['serviceName'] : 
+                          (!empty($service['name']) ? $service['name'] : 
+                          (!empty($service['description']) ? $service['description'] : 'Unnamed Labor'))));
             $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
             
             return [
                 'name' => $serviceName,
                 'description' => $serviceName,
-                'hours' => !empty($service['hours']) ? $service['hours'] : 1,
+                'hours' => !empty($service['hours']) ? $service['hours'] : (!empty($service['count']) ? $service['count'] : 1),
                 'rate' => $servicePrice,
                 'hourly_rate' => $servicePrice,
                 'price' => $servicePrice,

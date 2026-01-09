@@ -64,7 +64,12 @@ try {
                     // Transform services to match portal format (same as create-invoice.php)
                     if ($dbField === 'repair_labor') {
                         $transformedServices = array_map(function($service) {
-                            $serviceName = !empty($service['serviceName']) ? $service['serviceName'] : (!empty($service['description']) ? $service['description'] : (!empty($service['name']) ? $service['name'] : 'Unnamed Labor'));
+                            // Prefer Georgian name, fallback to English, then description
+                            $serviceName = !empty($service['serviceNameKa']) ? $service['serviceNameKa'] : 
+                                          (!empty($service['nameKa']) ? $service['nameKa'] : 
+                                          (!empty($service['serviceName']) ? $service['serviceName'] : 
+                                          (!empty($service['name']) ? $service['name'] : 
+                                          (!empty($service['description']) ? $service['description'] : 'Unnamed Labor'))));
                             $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
                             
                             return [
