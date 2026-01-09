@@ -61,7 +61,28 @@ try {
             // Handle JSON fields
             if (in_array($dbField, ['repair_labor', 'parts'])) {
                 if (is_array($value)) {
-                    $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+                    // Transform services to match portal format (same as create-invoice.php)
+                    if ($dbField === 'repair_labor') {
+                        $transformedServices = array_map(function($service) {
+                            $serviceName = !empty($service['serviceName']) ? $service['serviceName'] : (!empty($service['description']) ? $service['description'] : (!empty($service['name']) ? $service['name'] : 'Unnamed Labor'));
+                            $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
+                            
+                            return [
+                                'name' => $serviceName,
+                                'description' => $serviceName,
+                                'hours' => !empty($service['hours']) ? $service['hours'] : (!empty($service['count']) ? $service['count'] : 1),
+                                'rate' => $servicePrice,
+                                'hourly_rate' => $servicePrice,
+                                'price' => $servicePrice,
+                                'billable' => isset($service['billable']) ? $service['billable'] : true,
+                                'notes' => !empty($service['notes']) ? $service['notes'] : '',
+                            ];
+                        }, $value);
+                        $value = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
+                        error_log("Services transformed for update: " . $value);
+                    } else {
+                        $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+                    }
                 }
             }
             
