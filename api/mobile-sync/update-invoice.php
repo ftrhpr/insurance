@@ -104,12 +104,14 @@ try {
     // Build and execute UPDATE query
     $sql = "UPDATE transfers SET " . implode(", ", $updateFields) . " WHERE id = :id";
     error_log("Update query: $sql with params: " . json_encode($bindParams));
-    
+
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute($bindParams);
-    
-    if (!$result || $stmt->rowCount() === 0) {
-        sendResponse(false, null, 'Failed to update invoice', 500);
+
+    // Check if query executed successfully (not if rows were changed)
+    // rowCount() can be 0 if values didn't change, which is still a successful update
+    if (!$result) {
+        sendResponse(false, null, 'Failed to execute update query', 500);
     }
     
     // Fetch updated invoice data to return
