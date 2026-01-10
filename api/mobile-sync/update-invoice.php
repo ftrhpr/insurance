@@ -115,6 +115,23 @@ try {
                         }, $value);
                         $value = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
                         error_log("Services transformed for update: " . $value);
+                    } elseif ($dbField === 'case_images') {
+                        // Normalize images - extract URLs from various formats
+                        $imageUrls = [];
+                        foreach ($value as $img) {
+                            if (is_string($img)) {
+                                // Already a URL string
+                                $imageUrls[] = $img;
+                            } elseif (is_array($img)) {
+                                // Object with URL property - try common field names
+                                $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
+                                if ($url) {
+                                    $imageUrls[] = $url;
+                                }
+                            }
+                        }
+                        $value = json_encode($imageUrls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                        error_log("Images transformed for update: " . count($imageUrls) . " URLs extracted");
                     } else {
                         $value = json_encode($value, JSON_UNESCAPED_UNICODE);
                     }

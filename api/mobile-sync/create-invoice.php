@@ -145,8 +145,25 @@ try {
     $imageFields = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
     foreach ($imageFields as $field) {
         if (isset($data[$field]) && is_array($data[$field]) && !empty($data[$field])) {
-            $imagesJson = json_encode($data[$field], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            error_log("Images found in field '$field': " . count($data[$field]) . " images");
+            // Normalize images - extract URLs from various formats
+            $imageUrls = [];
+            foreach ($data[$field] as $img) {
+                if (is_string($img)) {
+                    // Already a URL string
+                    $imageUrls[] = $img;
+                } elseif (is_array($img)) {
+                    // Object with URL property - try common field names
+                    $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
+                    if ($url) {
+                        $imageUrls[] = $url;
+                    }
+                }
+            }
+            
+            if (!empty($imageUrls)) {
+                $imagesJson = json_encode($imageUrls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                error_log("Images found in field '$field': " . count($imageUrls) . " images extracted");
+            }
             break;
         }
     }
