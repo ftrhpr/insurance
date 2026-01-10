@@ -38,7 +38,9 @@ try {
         sendResponse(false, null, 'Invoice not found', 404);
     }
     
-    // Delete the invoice
+    // Delete the invoice only - customer details are preserved
+    // This only removes the invoice from the 'transfers' table
+    // Customer information is stored separately and will not be affected
     $sql = "DELETE FROM transfers WHERE id = :id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':id' => $invoiceId]);
