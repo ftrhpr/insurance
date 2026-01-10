@@ -665,6 +665,53 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </div>
                     </div>
 
+                    <!-- Vehicle Make & Model -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Vehicle Make -->
+                        <div>
+                            <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="factory" class="w-4 h-4 text-blue-600"></i>
+                                Vehicle Make
+                            </label>
+                            <select id="manual-vehicle-make" onchange="updateModelOptions('manual')" class="w-full appearance-none px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-blue-400 focus:ring-4 focus:ring-blue-400/20 outline-none cursor-pointer">
+                                <option value="">Select Make</option>
+                                <option value="Toyota">Toyota</option>
+                                <option value="Mercedes-Benz">Mercedes-Benz</option>
+                                <option value="BMW">BMW</option>
+                                <option value="Hyundai">Hyundai</option>
+                                <option value="Nissan">Nissan</option>
+                                <option value="Lexus">Lexus</option>
+                                <option value="Honda">Honda</option>
+                                <option value="Volkswagen">Volkswagen</option>
+                                <option value="Audi">Audi</option>
+                                <option value="Subaru">Subaru</option>
+                                <option value="Kia">Kia</option>
+                                <option value="Ford">Ford</option>
+                                <option value="Chevrolet">Chevrolet</option>
+                                <option value="Mazda">Mazda</option>
+                                <option value="Mitsubishi">Mitsubishi</option>
+                                <option value="Porsche">Porsche</option>
+                                <option value="Land Rover">Land Rover</option>
+                                <option value="Jeep">Jeep</option>
+                                <option value="Volvo">Volvo</option>
+                                <option value="Opel">Opel</option>
+                                <option value="Peugeot">Peugeot</option>
+                                <option value="Renault">Renault</option>
+                                <option value="Suzuki">Suzuki</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Vehicle Model -->
+                        <div>
+                            <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="car" class="w-4 h-4 text-blue-600"></i>
+                                Vehicle Model
+                            </label>
+                            <input id="manual-vehicle-model" type="text" placeholder="e.g. Camry, E-Class" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-blue-400 focus:ring-4 focus:ring-blue-400/20 outline-none">
+                        </div>
+                    </div>
+
                     <!-- Status -->
                     <div>
                         <label class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
@@ -1033,6 +1080,43 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         // Poll for updates every 10 seconds
         setInterval(loadData, 10000);
+
+        // Helper function for model suggestions based on make (used in manual create form)
+        function updateModelOptions(prefix) {
+            const makeEl = document.getElementById(prefix + '-vehicle-make');
+            const modelEl = document.getElementById(prefix + '-vehicle-model');
+            if (!makeEl || !modelEl) return;
+            
+            // Set placeholder based on selected make
+            const modelSuggestions = {
+                'Toyota': 'e.g. Camry, Corolla, RAV4, Land Cruiser, Prius',
+                'Mercedes-Benz': 'e.g. E-Class, S-Class, C-Class, GLE, GLC',
+                'BMW': 'e.g. 3 Series, 5 Series, X5, X3, 7 Series',
+                'Hyundai': 'e.g. Sonata, Tucson, Santa Fe, Elantra, i30',
+                'Nissan': 'e.g. Altima, Qashqai, X-Trail, Patrol, Maxima',
+                'Lexus': 'e.g. RX, ES, GX, LX, IS',
+                'Honda': 'e.g. Accord, Civic, CR-V, HR-V, Pilot',
+                'Volkswagen': 'e.g. Golf, Passat, Tiguan, Touareg, Jetta',
+                'Audi': 'e.g. A4, A6, Q5, Q7, A3',
+                'Subaru': 'e.g. Outback, Forester, Impreza, XV, Legacy',
+                'Kia': 'e.g. Sportage, Optima, Sorento, Ceed, Rio',
+                'Ford': 'e.g. Focus, Mustang, Explorer, F-150, Escape',
+                'Chevrolet': 'e.g. Camaro, Malibu, Tahoe, Equinox, Cruze',
+                'Mazda': 'e.g. Mazda3, Mazda6, CX-5, CX-9, MX-5',
+                'Mitsubishi': 'e.g. Outlander, Pajero, Eclipse Cross, Lancer, ASX',
+                'Porsche': 'e.g. Cayenne, Panamera, 911, Macan, Taycan',
+                'Land Rover': 'e.g. Range Rover, Discovery, Defender, Evoque, Velar',
+                'Jeep': 'e.g. Grand Cherokee, Wrangler, Cherokee, Compass, Renegade',
+                'Volvo': 'e.g. XC90, XC60, S60, V60, XC40',
+                'Opel': 'e.g. Astra, Insignia, Corsa, Mokka, Grandland',
+                'Peugeot': 'e.g. 308, 508, 3008, 5008, 208',
+                'Renault': 'e.g. Megane, Clio, Kadjar, Captur, Duster',
+                'Suzuki': 'e.g. Vitara, Swift, Jimny, SX4, Ignis'
+            };
+            
+            const make = makeEl.value;
+            modelEl.placeholder = modelSuggestions[make] || 'e.g. Camry, E-Class';
+        }
 
         // Premium Toast Notifications
         function showToast(title, message = '', type = 'success', duration = 4000) {
@@ -2354,6 +2438,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const franchiseEl = document.getElementById('manual-franchise');
             const statusEl = document.getElementById('manual-status');
             const notesEl = document.getElementById('manual-notes');
+            const vehicleMakeEl = document.getElementById('manual-vehicle-make');
+            const vehicleModelEl = document.getElementById('manual-vehicle-model');
             
             const plate = plateEl ? plateEl.value.trim() : '';
             const name = nameEl ? nameEl.value.trim() : '';
@@ -2362,6 +2448,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const franchise = franchiseEl ? (parseFloat(franchiseEl.value) || 0) : 0;
             const status = statusEl ? statusEl.value : 'New';
             const notes = notesEl ? notesEl.value.trim() : '';
+            const vehicleMake = vehicleMakeEl ? vehicleMakeEl.value.trim() : '';
+            const vehicleModel = vehicleModelEl ? vehicleModelEl.value.trim() : '';
 
             // Validation
             if (!plate) {
@@ -2400,6 +2488,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 amount: amount,
                 franchise: franchise,
                 status: status,
+                vehicleMake: vehicleMake,
+                vehicleModel: vehicleModel,
                 internalNotes: notes ? [{ note: notes, timestamp: new Date().toISOString(), user: '<?php echo $current_user_name; ?>' }] : [],
                 systemLogs: [{ 
                     message: `Order manually created by <?php echo $current_user_name; ?>`, 

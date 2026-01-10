@@ -273,6 +273,44 @@ try {
                                 <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             
+                            <!-- Vehicle Make -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.vehicle_make', 'Vehicle Make'); ?></label>
+                                <select id="input-vehicle-make" onchange="updateModelOptions('edit')" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                                    <option value="">Select Make</option>
+                                    <option value="Toyota" <?php echo ($case['vehicle_make'] ?? '') === 'Toyota' ? 'selected' : ''; ?>>Toyota</option>
+                                    <option value="Mercedes-Benz" <?php echo ($case['vehicle_make'] ?? '') === 'Mercedes-Benz' ? 'selected' : ''; ?>>Mercedes-Benz</option>
+                                    <option value="BMW" <?php echo ($case['vehicle_make'] ?? '') === 'BMW' ? 'selected' : ''; ?>>BMW</option>
+                                    <option value="Hyundai" <?php echo ($case['vehicle_make'] ?? '') === 'Hyundai' ? 'selected' : ''; ?>>Hyundai</option>
+                                    <option value="Nissan" <?php echo ($case['vehicle_make'] ?? '') === 'Nissan' ? 'selected' : ''; ?>>Nissan</option>
+                                    <option value="Lexus" <?php echo ($case['vehicle_make'] ?? '') === 'Lexus' ? 'selected' : ''; ?>>Lexus</option>
+                                    <option value="Honda" <?php echo ($case['vehicle_make'] ?? '') === 'Honda' ? 'selected' : ''; ?>>Honda</option>
+                                    <option value="Volkswagen" <?php echo ($case['vehicle_make'] ?? '') === 'Volkswagen' ? 'selected' : ''; ?>>Volkswagen</option>
+                                    <option value="Audi" <?php echo ($case['vehicle_make'] ?? '') === 'Audi' ? 'selected' : ''; ?>>Audi</option>
+                                    <option value="Subaru" <?php echo ($case['vehicle_make'] ?? '') === 'Subaru' ? 'selected' : ''; ?>>Subaru</option>
+                                    <option value="Kia" <?php echo ($case['vehicle_make'] ?? '') === 'Kia' ? 'selected' : ''; ?>>Kia</option>
+                                    <option value="Ford" <?php echo ($case['vehicle_make'] ?? '') === 'Ford' ? 'selected' : ''; ?>>Ford</option>
+                                    <option value="Chevrolet" <?php echo ($case['vehicle_make'] ?? '') === 'Chevrolet' ? 'selected' : ''; ?>>Chevrolet</option>
+                                    <option value="Mazda" <?php echo ($case['vehicle_make'] ?? '') === 'Mazda' ? 'selected' : ''; ?>>Mazda</option>
+                                    <option value="Mitsubishi" <?php echo ($case['vehicle_make'] ?? '') === 'Mitsubishi' ? 'selected' : ''; ?>>Mitsubishi</option>
+                                    <option value="Porsche" <?php echo ($case['vehicle_make'] ?? '') === 'Porsche' ? 'selected' : ''; ?>>Porsche</option>
+                                    <option value="Land Rover" <?php echo ($case['vehicle_make'] ?? '') === 'Land Rover' ? 'selected' : ''; ?>>Land Rover</option>
+                                    <option value="Jeep" <?php echo ($case['vehicle_make'] ?? '') === 'Jeep' ? 'selected' : ''; ?>>Jeep</option>
+                                    <option value="Volvo" <?php echo ($case['vehicle_make'] ?? '') === 'Volvo' ? 'selected' : ''; ?>>Volvo</option>
+                                    <option value="Opel" <?php echo ($case['vehicle_make'] ?? '') === 'Opel' ? 'selected' : ''; ?>>Opel</option>
+                                    <option value="Peugeot" <?php echo ($case['vehicle_make'] ?? '') === 'Peugeot' ? 'selected' : ''; ?>>Peugeot</option>
+                                    <option value="Renault" <?php echo ($case['vehicle_make'] ?? '') === 'Renault' ? 'selected' : ''; ?>>Renault</option>
+                                    <option value="Suzuki" <?php echo ($case['vehicle_make'] ?? '') === 'Suzuki' ? 'selected' : ''; ?>>Suzuki</option>
+                                    <option value="Other" <?php echo ($case['vehicle_make'] ?? '') === 'Other' ? 'selected' : ''; ?>>Other</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Vehicle Model -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.vehicle_model', 'Vehicle Model'); ?></label>
+                                <input id="input-vehicle-model" type="text" value="<?php echo htmlspecialchars($case['vehicle_model'] ?? ''); ?>" placeholder="e.g. Camry, E-Class" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                            </div>
+                            
                             <!-- Link Status -->
                             <div class="sm:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.link_status', 'Public Link Status'); ?></label>
@@ -1855,6 +1893,8 @@ try {
                         serviceDate: serviceDate || null,
                         dueDate: dueDate || null,
                         franchise: document.getElementById('input-franchise').value || 0,
+                        vehicleMake: document.getElementById('input-vehicle-make')?.value.trim() || null,
+                        vehicleModel: document.getElementById('input-vehicle-model')?.value.trim() || null,
                         user_response: this.currentCase.user_response || null,
                         internalNotes: this.currentCase.internalNotes || [],
                         repair_status: this.currentCase.repair_status || null,
@@ -3280,6 +3320,43 @@ try {
                     }
                 }
             }
+        }
+        
+        // Helper function for model suggestions based on make
+        function updateModelOptions(prefix) {
+            const makeEl = document.getElementById(prefix + '-vehicle-make');
+            const modelEl = document.getElementById(prefix + '-vehicle-model');
+            if (!makeEl || !modelEl) return;
+            
+            // Set placeholder based on selected make
+            const modelSuggestions = {
+                'Toyota': 'e.g. Camry, Corolla, RAV4, Land Cruiser, Prius',
+                'Mercedes-Benz': 'e.g. E-Class, S-Class, C-Class, GLE, GLC',
+                'BMW': 'e.g. 3 Series, 5 Series, X5, X3, 7 Series',
+                'Hyundai': 'e.g. Sonata, Tucson, Santa Fe, Elantra, i30',
+                'Nissan': 'e.g. Altima, Qashqai, X-Trail, Patrol, Maxima',
+                'Lexus': 'e.g. RX, ES, GX, LX, IS',
+                'Honda': 'e.g. Accord, Civic, CR-V, HR-V, Pilot',
+                'Volkswagen': 'e.g. Golf, Passat, Tiguan, Touareg, Jetta',
+                'Audi': 'e.g. A4, A6, Q5, Q7, A3',
+                'Subaru': 'e.g. Outback, Forester, Impreza, XV, Legacy',
+                'Kia': 'e.g. Sportage, Optima, Sorento, Ceed, Rio',
+                'Ford': 'e.g. Focus, Mustang, Explorer, F-150, Escape',
+                'Chevrolet': 'e.g. Camaro, Malibu, Tahoe, Equinox, Cruze',
+                'Mazda': 'e.g. Mazda3, Mazda6, CX-5, CX-9, MX-5',
+                'Mitsubishi': 'e.g. Outlander, Pajero, Eclipse Cross, Lancer, ASX',
+                'Porsche': 'e.g. Cayenne, Panamera, 911, Macan, Taycan',
+                'Land Rover': 'e.g. Range Rover, Discovery, Defender, Evoque, Velar',
+                'Jeep': 'e.g. Grand Cherokee, Wrangler, Cherokee, Compass, Renegade',
+                'Volvo': 'e.g. XC90, XC60, S60, V60, XC40',
+                'Opel': 'e.g. Astra, Insignia, Corsa, Mokka, Grandland',
+                'Peugeot': 'e.g. 308, 508, 3008, 5008, 208',
+                'Renault': 'e.g. Megane, Clio, Kadjar, Captur, Duster',
+                'Suzuki': 'e.g. Vitara, Swift, Jimny, SX4, Ignis'
+            };
+            
+            const make = makeEl.value;
+            modelEl.placeholder = modelSuggestions[make] || 'Enter vehicle model';
         }
         
         function showToast(title, message = '', type = 'success', duration = 4000) {
