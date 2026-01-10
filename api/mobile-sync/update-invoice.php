@@ -46,6 +46,7 @@ try {
         'customerName' => 'name',
         'customerPhone' => 'phone',
         'carModel' => 'plate',
+        'plate' => 'plate',
         'totalPrice' => 'amount',
         'status' => 'status',
         'repair_status' => 'repair_status',

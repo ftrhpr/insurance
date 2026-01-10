@@ -115,7 +115,7 @@ try {
     
     // Bind parameters
     $stmt->execute([
-        ':plate' => $data['carModel'] ?? 'Unknown',  // carModel -> plate
+        ':plate' => $data['plate'] ?? $data['carModel'] ?? 'Unknown',  // plate -> plate (prefer plate, fallback to carModel)
         ':name' => $data['customerName'] ?? 'N/A',    // customerName -> name
         ':phone' => $data['customerPhone'] ?? '',     // customerPhone -> phone
         ':amount' => $data['totalPrice'] ?? 0,        // totalPrice -> amount
