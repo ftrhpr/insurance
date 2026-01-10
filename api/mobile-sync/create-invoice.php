@@ -34,6 +34,8 @@ try {
     // Note: services/labors are stored as JSON in repair_labor column
     $sql = "INSERT INTO transfers (
         plate,
+        vehicle_make,
+        vehicle_model,
         name,
         phone,
         amount,
@@ -48,6 +50,8 @@ try {
         systemLogs
     ) VALUES (
         :plate,
+        :vehicle_make,
+        :vehicle_model,
         :name,
         :phone,
         :amount,
@@ -123,6 +127,8 @@ try {
     // Bind parameters
     $stmt->execute([
         ':plate' => $data['plate'] ?? $data['carModel'] ?? 'Unknown',  // plate -> plate (prefer plate, fallback to carModel)
+        ':vehicle_make' => $data['vehicleMake'] ?? '',  // Vehicle make (e.g., Toyota, BMW)
+        ':vehicle_model' => $data['vehicleModel'] ?? '', // Vehicle model (e.g., Camry, X5)
         ':name' => $data['customerName'] ?? 'N/A',    // customerName -> name
         ':phone' => $data['customerPhone'] ?? '',     // customerPhone -> phone
         ':amount' => $data['totalPrice'] ?? 0,        // totalPrice -> amount

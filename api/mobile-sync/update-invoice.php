@@ -47,6 +47,8 @@ try {
         'customerPhone' => 'phone',
         'carModel' => 'plate',
         'plate' => 'plate',
+        'vehicleMake' => 'vehicle_make',
+        'vehicleModel' => 'vehicle_model',
         'totalPrice' => 'amount',
         'status' => 'status',
         'repair_status' => 'repair_status',
