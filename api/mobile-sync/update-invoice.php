@@ -56,8 +56,11 @@ try {
         'parts' => 'parts',
     ];
     
+    // Debug: Log received vehicle data
+    error_log("Received data - vehicleMake: " . ($data['vehicleMake'] ?? 'NULL') . ", vehicleModel: " . ($data['vehicleModel'] ?? 'NULL') . ", carMake: " . ($data['carMake'] ?? 'NULL') . ", carModel: " . ($data['carModel'] ?? 'NULL'));
+    
     foreach ($fieldMapping as $appField => $dbField) {
-        if (isset($data[$appField]) && $data[$appField] !== null) {
+        if (isset($data[$appField]) && $data[$appField] !== null && $data[$appField] !== '') {
             $value = $data[$appField];
             
             // Handle JSON fields
