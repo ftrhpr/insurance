@@ -37,7 +37,7 @@ try {
 
 // Fetch case data
 $stmt = $pdo->prepare("
-    SELECT t.*, v.ownerName as vehicle_owner, v.model as vehicle_model
+    SELECT t.*, v.ownerName as vehicle_owner
     FROM transfers t
     LEFT JOIN vehicles v ON t.plate = v.plate
     WHERE t.id = ?
