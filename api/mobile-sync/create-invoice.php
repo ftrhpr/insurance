@@ -25,7 +25,7 @@ try {
     error_log("Full data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     
     // Check for various possible image field names from mobile app
-    $possibleImageFields = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    $possibleImageFields = ['imageURL', 'images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
     foreach ($possibleImageFields as $field) {
         if (isset($data[$field])) {
             error_log("Found images in field '$field': " . json_encode($data[$field]));
@@ -142,7 +142,7 @@ try {
     // Handle images array (Firebase Storage URLs)
     // Check multiple possible field names from mobile app
     $imagesJson = null;
-    $imageFields = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    $imageFields = ['imageURL', 'images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
     foreach ($imageFields as $field) {
         if (isset($data[$field]) && is_array($data[$field]) && !empty($data[$field])) {
             // Normalize images - extract URLs from various formats

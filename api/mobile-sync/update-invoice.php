@@ -54,6 +54,7 @@ try {
         'user_response' => 'user_response',
         'services' => 'repair_labor',
         'parts' => 'parts',
+        'imageURL' => 'case_images',
         'images' => 'case_images',
         'photos' => 'case_images',
         'imageUrls' => 'case_images',
@@ -70,7 +71,7 @@ try {
     error_log("Received data - vehicleMake: " . ($data['vehicleMake'] ?? 'NULL') . ", vehicleModel: " . ($data['vehicleModel'] ?? 'NULL'));
     
     // Check for image fields
-    $imageFieldsToCheck = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    $imageFieldsToCheck = ['imageURL', 'images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
     foreach ($imageFieldsToCheck as $imgField) {
         if (isset($data[$imgField])) {
             error_log("Found images in '$imgField': " . (is_array($data[$imgField]) ? count($data[$imgField]) . " items" : gettype($data[$imgField])));
