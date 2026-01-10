@@ -23,7 +23,7 @@ date_default_timezone_set('Asia/Tbilisi'); // Georgia timezone
 
 // CORS headers for React Native
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key');
 header('Content-Type: application/json; charset=UTF-8');
 
