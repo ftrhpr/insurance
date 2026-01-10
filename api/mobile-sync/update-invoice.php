@@ -54,6 +54,7 @@ try {
         'user_response' => 'user_response',
         'services' => 'repair_labor',
         'parts' => 'parts',
+        'images' => 'case_images',
     ];
     
     // Debug: Log received vehicle data
@@ -64,7 +65,7 @@ try {
             $value = $data[$appField];
             
             // Handle JSON fields
-            if (in_array($dbField, ['repair_labor', 'parts'])) {
+            if (in_array($dbField, ['repair_labor', 'parts', 'case_images'])) {
                 if (is_array($value)) {
                     // Transform services to match portal format (same as create-invoice.php)
                     if ($dbField === 'repair_labor') {

@@ -42,6 +42,7 @@ try {
         status,
         parts,
         repair_labor,
+        case_images,
         serviceDate,
         service_date,
         repair_status,
@@ -58,6 +59,7 @@ try {
         :status,
         :parts,
         :repair_labor,
+        :case_images,
         :serviceDate,
         :service_date,
         :repair_status,
@@ -124,6 +126,13 @@ try {
         $serviceDate = date('Y-m-d H:i:s', strtotime($data['createdAt']));
     }
     
+    // Handle images array (Firebase Storage URLs)
+    $imagesJson = null;
+    if (isset($data['images']) && is_array($data['images']) && !empty($data['images'])) {
+        $imagesJson = json_encode($data['images'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        error_log("Images received: " . count($data['images']) . " images");
+    }
+    
     // Bind parameters
     $stmt->execute([
         ':plate' => $data['plate'] ?? 'N/A',          // License plate number only
@@ -135,6 +144,7 @@ try {
         ':status' => 'Processing',                    // Default status - Processing
         ':parts' => $partsJson,                       // parts JSON (damage tags)
         ':repair_labor' => $servicesJson,             // repair_labor JSON (services with hours and hourly_rate)
+        ':case_images' => $imagesJson,                // case_images JSON (Firebase Storage URLs)
         ':serviceDate' => $serviceDate,               // Service date (datetime)
         ':service_date' => $serviceDate,              // Service date (datetime) - duplicate column
         ':repair_status' => null,                     // Leave repair_status NULL

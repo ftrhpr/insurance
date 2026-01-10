@@ -355,6 +355,7 @@ try {
                 'repair_activity_log' => "TEXT DEFAULT NULL",
                 'vehicle_make' => "VARCHAR(100) DEFAULT NULL",
                 'vehicle_model' => "VARCHAR(100) DEFAULT NULL",
+                'case_images' => "TEXT DEFAULT NULL",
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -384,6 +385,7 @@ try {
                 'reviewComment' => 'review_comment',
                 'vehicleMake' => 'vehicle_make',
                 'vehicleModel' => 'vehicle_model',
+                'caseImages' => 'case_images',
                 'repair_status' => 'repair_status',
                 'assigned_mechanic' => 'assigned_mechanic',
                 'repair_start_date' => 'repair_start_date',

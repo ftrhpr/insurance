@@ -336,6 +336,93 @@ try {
                     </div>
                 </div>
 
+                <!-- Collapsible Section: Case Photos -->
+                <?php
+                $caseImages = [];
+                if (!empty($case['case_images'])) {
+                    $decoded = json_decode($case['case_images'], true);
+                    if (is_array($decoded)) {
+                        $caseImages = $decoded;
+                    }
+                }
+                ?>
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+                    <button @click="toggleSection('photos')" class="w-full flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                                <i data-lucide="camera" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.photos', 'Case Photos'); ?></h2>
+                                <p class="text-sm text-slate-600 mt-0.5">Vehicle damage photos from mobile app</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <?php if (count($caseImages) > 0): ?>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                                <?php echo count($caseImages); ?> <?php echo count($caseImages) === 1 ? 'photo' : 'photos'; ?>
+                            </span>
+                            <?php else: ?>
+                            <span class="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-medium">
+                                No photos
+                            </span>
+                            <?php endif; ?>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': isSectionOpen('photos')}"></i>
+                        </div>
+                    </button>
+
+                    <div x-show="isSectionOpen('photos')" x-cloak x-transition class="border-t border-slate-200">
+                        <div class="p-6">
+                            <?php if (count($caseImages) > 0): ?>
+                            <!-- Image Gallery Grid -->
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="photo-gallery">
+                                <?php foreach ($caseImages as $index => $imageUrl): ?>
+                                <div class="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer" onclick="openImageModal('<?php echo htmlspecialchars($imageUrl, ENT_QUOTES); ?>', <?php echo $index; ?>)">
+                                    <img src="<?php echo htmlspecialchars($imageUrl); ?>" 
+                                         alt="Case photo <?php echo $index + 1; ?>" 
+                                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23e2e8f0%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%2394a3b8%22 font-size=%2212%22>No Image</text></svg>';">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                                            <span class="text-white text-sm font-medium">Photo <?php echo $index + 1; ?></span>
+                                            <div class="flex gap-2">
+                                                <a href="<?php echo htmlspecialchars($imageUrl); ?>" target="_blank" class="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors" onclick="event.stopPropagation()">
+                                                    <i data-lucide="external-link" class="w-4 h-4 text-white"></i>
+                                                </a>
+                                                <a href="<?php echo htmlspecialchars($imageUrl); ?>" download class="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors" onclick="event.stopPropagation()">
+                                                    <i data-lucide="download" class="w-4 h-4 text-white"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            
+                            <!-- Download All Button -->
+                            <div class="mt-4 flex justify-end">
+                                <button onclick="downloadAllImages()" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    Download All Photos
+                                </button>
+                            </div>
+                            <?php else: ?>
+                            <!-- Empty State -->
+                            <div class="text-center py-12">
+                                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i data-lucide="image-off" class="w-8 h-8 text-slate-400"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-slate-700 mb-2">No Photos Uploaded</h3>
+                                <p class="text-sm text-slate-500 max-w-sm mx-auto">
+                                    Photos will appear here when uploaded from the mobile app during vehicle inspection.
+                                </p>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Collapsible Section: Repair Management -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm">
                     <button @click="toggleSection('repair')" class="w-full flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors">
@@ -3383,6 +3470,70 @@ try {
             }, duration);
         }
 
+        // ============ IMAGE GALLERY FUNCTIONS ============
+        const caseImages = <?php echo json_encode($caseImages); ?>;
+        let currentImageIndex = 0;
+        
+        function openImageModal(imageUrl, index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('image-modal');
+            const img = document.getElementById('modal-image');
+            const counter = document.getElementById('image-counter');
+            
+            if (modal && img) {
+                img.src = imageUrl;
+                counter.textContent = `${index + 1} / ${caseImages.length}`;
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        function navigateImage(direction) {
+            currentImageIndex = (currentImageIndex + direction + caseImages.length) % caseImages.length;
+            const img = document.getElementById('modal-image');
+            const counter = document.getElementById('image-counter');
+            
+            if (img && caseImages[currentImageIndex]) {
+                img.src = caseImages[currentImageIndex];
+                counter.textContent = `${currentImageIndex + 1} / ${caseImages.length}`;
+            }
+        }
+        
+        function downloadAllImages() {
+            if (caseImages.length === 0) {
+                showToast('No images to download', '', 'error');
+                return;
+            }
+            
+            showToast('Starting download...', 'Opening images in new tabs', 'info');
+            
+            // Open each image in a new tab for download
+            caseImages.forEach((url, index) => {
+                setTimeout(() => {
+                    window.open(url, '_blank');
+                }, index * 500);
+            });
+        }
+        
+        // Keyboard navigation for image modal
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('image-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                if (e.key === 'Escape') closeImageModal();
+                if (e.key === 'ArrowLeft') navigateImage(-1);
+                if (e.key === 'ArrowRight') navigateImage(1);
+            }
+        });
+        // ============ END IMAGE GALLERY FUNCTIONS ============
+
         function initializeIcons() { if (window.lucide) { lucide.createIcons(); } }
         async function fetchAPI(endpoint, method = 'GET', data = null) {
             const config = { method };
@@ -3586,6 +3737,39 @@ try {
             window.caseEditor.removeLabor(index);
         };
     </script>
+    
+    <!-- Image Lightbox Modal -->
+    <div id="image-modal" class="hidden fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center" onclick="if(event.target === this) closeImageModal()">
+        <!-- Close Button -->
+        <button onclick="closeImageModal()" class="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10">
+            <i data-lucide="x" class="w-6 h-6 text-white"></i>
+        </button>
+        
+        <!-- Image Counter -->
+        <div id="image-counter" class="absolute top-4 left-4 px-4 py-2 bg-white/10 rounded-full text-white text-sm font-medium">
+            1 / 1
+        </div>
+        
+        <!-- Navigation Arrows -->
+        <button onclick="navigateImage(-1)" class="absolute left-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10">
+            <i data-lucide="chevron-left" class="w-8 h-8 text-white"></i>
+        </button>
+        <button onclick="navigateImage(1)" class="absolute right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10">
+            <i data-lucide="chevron-right" class="w-8 h-8 text-white"></i>
+        </button>
+        
+        <!-- Image Container -->
+        <div class="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+            <img id="modal-image" src="" alt="Case photo" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl">
+        </div>
+        
+        <!-- Download Button -->
+        <a id="modal-download" href="" download class="absolute bottom-4 right-4 inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm font-medium transition-colors">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            Download
+        </a>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
