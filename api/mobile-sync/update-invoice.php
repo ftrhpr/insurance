@@ -119,15 +119,24 @@ try {
                     } elseif ($dbField === 'case_images') {
                         // Normalize images - extract URLs from various formats
                         $imageUrls = [];
-                        foreach ($value as $img) {
-                            if (is_string($img)) {
-                                // Already a URL string
-                                $imageUrls[] = $img;
-                            } elseif (is_array($img)) {
-                                // Object with URL property - try common field names
-                                $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
-                                if ($url) {
-                                    $imageUrls[] = $url;
+                        
+                        // Handle single URL string
+                        if (is_string($value)) {
+                            $imageUrls[] = $value;
+                            error_log("Single image URL found for update");
+                        }
+                        // Handle array of URLs or objects
+                        elseif (is_array($value)) {
+                            foreach ($value as $img) {
+                                if (is_string($img)) {
+                                    // Already a URL string
+                                    $imageUrls[] = $img;
+                                } elseif (is_array($img)) {
+                                    // Object with URL property - try common field names
+                                    $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
+                                    if ($url) {
+                                        $imageUrls[] = $url;
+                                    }
                                 }
                             }
                         }

@@ -139,23 +139,31 @@ try {
         $serviceDate = date('Y-m-d H:i:s', strtotime($data['createdAt']));
     }
     
-    // Handle images array (Firebase Storage URLs)
+    // Handle images (Firebase Storage URLs)
     // Check multiple possible field names from mobile app
     $imagesJson = null;
     $imageFields = ['imageURL', 'images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
     foreach ($imageFields as $field) {
-        if (isset($data[$field]) && is_array($data[$field]) && !empty($data[$field])) {
-            // Normalize images - extract URLs from various formats
+        if (isset($data[$field]) && !empty($data[$field])) {
             $imageUrls = [];
-            foreach ($data[$field] as $img) {
-                if (is_string($img)) {
-                    // Already a URL string
-                    $imageUrls[] = $img;
-                } elseif (is_array($img)) {
-                    // Object with URL property - try common field names
-                    $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
-                    if ($url) {
-                        $imageUrls[] = $url;
+            
+            // Handle single URL string
+            if (is_string($data[$field])) {
+                $imageUrls[] = $data[$field];
+                error_log("Single image URL found in field '$field'");
+            }
+            // Handle array of URLs or objects
+            elseif (is_array($data[$field])) {
+                foreach ($data[$field] as $img) {
+                    if (is_string($img)) {
+                        // Already a URL string
+                        $imageUrls[] = $img;
+                    } elseif (is_array($img)) {
+                        // Object with URL property - try common field names
+                        $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
+                        if ($url) {
+                            $imageUrls[] = $url;
+                        }
                     }
                 }
             }
@@ -163,6 +171,7 @@ try {
             if (!empty($imageUrls)) {
                 $imagesJson = json_encode($imageUrls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 error_log("Images found in field '$field': " . count($imageUrls) . " images extracted");
+                error_log("Image URLs: " . $imagesJson);
             }
             break;
         }
