@@ -82,23 +82,30 @@ try {
         error_log("Raw services received: " . json_encode($services));
         // Transform field names to match portal expectations - prefer Georgian (nameKa) names
         $transformedServices = array_map(function($service) {
-            // Prefer Georgian name, fallback to English, then description
-            $serviceName = !empty($service['serviceNameKa']) ? $service['serviceNameKa'] : 
-                          (!empty($service['nameKa']) ? $service['nameKa'] : 
-                          (!empty($service['serviceName']) ? $service['serviceName'] : 
-                          (!empty($service['name']) ? $service['name'] : 
-                          (!empty($service['description']) ? $service['description'] : 'Unnamed Labor'))));
+            // Prefer Georgian name, fallback to English
+            $serviceName = !empty($service['serviceNameKa']) ? $service['serviceNameKa'] :
+                          (!empty($service['nameKa']) ? $service['nameKa'] :
+                          (!empty($service['serviceName']) ? $service['serviceName'] :
+                          (!empty($service['name']) ? $service['name'] : 'Unnamed Labor')));
             $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
-            
+
+            // Preserve service description as notes if available
+            $serviceDescription = !empty($service['description']) ? $service['description'] : '';
+            $serviceNotes = !empty($service['notes']) ? $service['notes'] : '';
+            // Combine description and notes if both exist
+            $combinedNotes = $serviceDescription && $serviceNotes
+                ? "$serviceDescription | $serviceNotes"
+                : ($serviceDescription ?: $serviceNotes);
+
             return [
                 'name' => $serviceName,
-                'description' => $serviceName,
+                'description' => $serviceDescription,
                 'hours' => !empty($service['hours']) ? $service['hours'] : (!empty($service['count']) ? $service['count'] : 1),
                 'rate' => $servicePrice,
                 'hourly_rate' => $servicePrice,
                 'price' => $servicePrice,
                 'billable' => isset($service['billable']) ? $service['billable'] : true,
-                'notes' => !empty($service['notes']) ? $service['notes'] : '',
+                'notes' => $combinedNotes,
             ];
         }, $services);
         $servicesJson = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
