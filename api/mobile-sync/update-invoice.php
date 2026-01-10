@@ -55,10 +55,27 @@ try {
         'services' => 'repair_labor',
         'parts' => 'parts',
         'images' => 'case_images',
+        'photos' => 'case_images',
+        'imageUrls' => 'case_images',
+        'photoUrls' => 'case_images',
+        'caseImages' => 'case_images',
+        'vehicleImages' => 'case_images',
+        'damageImages' => 'case_images',
+        'attachments' => 'case_images',
     ];
     
-    // Debug: Log received vehicle data
-    error_log("Received data - vehicleMake: " . ($data['vehicleMake'] ?? 'NULL') . ", vehicleModel: " . ($data['vehicleModel'] ?? 'NULL') . ", carMake: " . ($data['carMake'] ?? 'NULL') . ", carModel: " . ($data['carModel'] ?? 'NULL'));
+    // Debug: Log all received data keys and image fields
+    error_log("=== UPDATE INVOICE - DATA RECEIVED ===");
+    error_log("All keys: " . implode(', ', array_keys($data)));
+    error_log("Received data - vehicleMake: " . ($data['vehicleMake'] ?? 'NULL') . ", vehicleModel: " . ($data['vehicleModel'] ?? 'NULL'));
+    
+    // Check for image fields
+    $imageFieldsToCheck = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    foreach ($imageFieldsToCheck as $imgField) {
+        if (isset($data[$imgField])) {
+            error_log("Found images in '$imgField': " . (is_array($data[$imgField]) ? count($data[$imgField]) . " items" : gettype($data[$imgField])));
+        }
+    }
     
     foreach ($fieldMapping as $appField => $dbField) {
         if (isset($data[$appField]) && $data[$appField] !== null && $data[$appField] !== '') {

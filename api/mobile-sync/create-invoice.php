@@ -19,6 +19,19 @@ try {
         sendResponse(false, null, 'Invalid JSON data', 400);
     }
     
+    // Debug: Log all received data to check image field names
+    error_log("=== CREATE INVOICE - FULL DATA RECEIVED ===");
+    error_log("All keys: " . implode(', ', array_keys($data)));
+    error_log("Full data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    
+    // Check for various possible image field names from mobile app
+    $possibleImageFields = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    foreach ($possibleImageFields as $field) {
+        if (isset($data[$field])) {
+            error_log("Found images in field '$field': " . json_encode($data[$field]));
+        }
+    }
+    
     // Validate required fields
     $requiredFields = ['customerPhone', 'totalPrice']; // Minimum required
     foreach ($requiredFields as $field) {
@@ -127,10 +140,15 @@ try {
     }
     
     // Handle images array (Firebase Storage URLs)
+    // Check multiple possible field names from mobile app
     $imagesJson = null;
-    if (isset($data['images']) && is_array($data['images']) && !empty($data['images'])) {
-        $imagesJson = json_encode($data['images'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        error_log("Images received: " . count($data['images']) . " images");
+    $imageFields = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    foreach ($imageFields as $field) {
+        if (isset($data[$field]) && is_array($data[$field]) && !empty($data[$field])) {
+            $imagesJson = json_encode($data[$field], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            error_log("Images found in field '$field': " . count($data[$field]) . " images");
+            break;
+        }
     }
     
     // Bind parameters
