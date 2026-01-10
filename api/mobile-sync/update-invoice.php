@@ -45,7 +45,6 @@ try {
     $fieldMapping = [
         'customerName' => 'name',
         'customerPhone' => 'phone',
-        'carModel' => 'plate',
         'plate' => 'plate',
         'vehicleMake' => 'vehicle_make',
         'vehicleModel' => 'vehicle_model',

@@ -126,7 +126,7 @@ try {
     
     // Bind parameters
     $stmt->execute([
-        ':plate' => $data['plate'] ?? $data['carModel'] ?? 'Unknown',  // plate -> plate (prefer plate, fallback to carModel)
+        ':plate' => $data['plate'] ?? 'N/A',          // License plate number only
         ':vehicle_make' => $data['vehicleMake'] ?? '',  // Vehicle make (e.g., Toyota, BMW)
         ':vehicle_model' => $data['vehicleModel'] ?? '', // Vehicle model (e.g., Camry, X5)
         ':name' => $data['customerName'] ?? 'N/A',    // customerName -> name
