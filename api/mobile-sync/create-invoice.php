@@ -25,7 +25,7 @@ try {
     error_log("Full data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     
     // Check for various possible image field names from mobile app
-    $possibleImageFields = ['imageURL', 'images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    $possibleImageFields = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
     foreach ($possibleImageFields as $field) {
         if (isset($data[$field])) {
             error_log("Found images in field '$field': " . json_encode($data[$field]));
@@ -139,39 +139,70 @@ try {
         $serviceDate = date('Y-m-d H:i:s', strtotime($data['createdAt']));
     }
     
-    // Handle images (Firebase Storage URLs)
+    // Handle images array with tagging information (Firebase Storage URLs + service tags)
     // Check multiple possible field names from mobile app
     $imagesJson = null;
-    $imageFields = ['imageURL', 'images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    $imageTagsJson = null;  // New: Store tagging information separately
+    $imageFields = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
     foreach ($imageFields as $field) {
-        if (isset($data[$field]) && !empty($data[$field])) {
+        if (isset($data[$field]) && is_array($data[$field]) && !empty($data[$field])) {
+            // Process enriched photos with tagging information
             $imageUrls = [];
+            $imageTags = [];  // New: Store tags for each photo
             
-            // Handle single URL string
-            if (is_string($data[$field])) {
-                $imageUrls[] = $data[$field];
-                error_log("Single image URL found in field '$field'");
-            }
-            // Handle array of URLs or objects
-            elseif (is_array($data[$field])) {
-                foreach ($data[$field] as $img) {
-                    if (is_string($img)) {
-                        // Already a URL string
-                        $imageUrls[] = $img;
-                    } elseif (is_array($img)) {
-                        // Object with URL property - try common field names
-                        $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
-                        if ($url) {
-                            $imageUrls[] = $url;
-                        }
+            foreach ($data[$field] as $img) {
+                $url = null;
+                $tags = [];
+                $label = null;
+                
+                if (is_string($img)) {
+                    // Simple URL string
+                    $url = $img;
+                } elseif (is_array($img)) {
+                    // Enriched photo object with tags
+                    // Extract URL from various field names
+                    $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
+                    $label = $img['label'] ?? null;
+                    
+                    // New: Extract tagging information if present
+                    if (isset($img['tags']) && is_array($img['tags'])) {
+                        $tags = array_map(function($tag) {
+                            return [
+                                'serviceName' => $tag['serviceName'] ?? 'Unknown',
+                                'servicePrice' => floatval($tag['servicePrice'] ?? 0),
+                                'x' => intval($tag['x'] ?? 0),
+                                'y' => intval($tag['y'] ?? 0),
+                                'xPercent' => floatval($tag['xPercent'] ?? 0),
+                                'yPercent' => floatval($tag['yPercent'] ?? 0),
+                            ];
+                        }, $img['tags']);
+                        
+                        error_log("Photo tagged services found: " . count($tags) . " services, label: " . ($label ?: 'N/A'));
                     }
+                }
+                
+                if ($url) {
+                    $imageUrls[] = $url;
+                    $imageTags[] = [
+                        'url' => $url,
+                        'label' => $label,
+                        'tags' => $tags,
+                        'tagCount' => count($tags),
+                    ];
                 }
             }
             
             if (!empty($imageUrls)) {
+                // Store image URLs in case_images
                 $imagesJson = json_encode($imageUrls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                
+                // New: Store complete tagging information
+                if (!empty($imageTags)) {
+                    $imageTagsJson = json_encode($imageTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    error_log("Stored photo tags for " . count($imageTags) . " images with " . array_sum(array_column($imageTags, 'tagCount')) . " total tags");
+                }
+                
                 error_log("Images found in field '$field': " . count($imageUrls) . " images extracted");
-                error_log("Image URLs: " . $imagesJson);
             }
             break;
         }
@@ -194,18 +225,24 @@ try {
         ':repair_status' => null,                     // Leave repair_status NULL
         ':user_response' => 'Processing',             // Default user response - Processing
         ':operatorComment' => 'Created from mobile app - Firebase ID: ' . ($data['firebaseId'] ?? 'N/A'),
-        ':systemLogs' => $systemLogsJson
+        ':systemLogs' => $imageTagsJson ?? null      // Store photo tags with service locations
     ]);
     
     $insertId = $pdo->lastInsertId();
     
-    // Log success with services info
+    // Log success with services and photo tagging info
     $servicesCount = $servicesJson ? count(json_decode($servicesJson, true)) : 0;
+    $tagsCount = 0;
+    if ($imageTagsJson) {
+        $imageTags = json_decode($imageTagsJson, true);
+        $tagsCount = array_sum(array_map(function($img) { return $img['tagCount'] ?? 0; }, $imageTags));
+    }
+    
     if ($servicesJson) {
         $servicesData = json_decode($servicesJson, true);
-        error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", Services: $servicesCount, Data: " . json_encode($servicesData));
+        error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", Services: $servicesCount, Photo Tags: $tagsCount");
     } else {
-        error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", Services: 0");
+        error_log("Invoice synced successfully. ID: $insertId, Firebase ID: " . ($data['firebaseId'] ?? 'N/A') . ", Services: 0, Photo Tags: $tagsCount");
     }
     
     sendResponse(true, [
@@ -215,6 +252,7 @@ try {
         'status' => 'Processing',
         'service_date' => $serviceDate,
         'services_count' => $servicesCount,
+        'photo_tags_count' => $tagsCount,
         'services_synced' => $servicesJson ? json_decode($servicesJson, true) : []
     ]);
     

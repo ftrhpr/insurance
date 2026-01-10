@@ -54,7 +54,6 @@ try {
         'user_response' => 'user_response',
         'services' => 'repair_labor',
         'parts' => 'parts',
-        'imageURL' => 'case_images',
         'images' => 'case_images',
         'photos' => 'case_images',
         'imageUrls' => 'case_images',
@@ -71,7 +70,7 @@ try {
     error_log("Received data - vehicleMake: " . ($data['vehicleMake'] ?? 'NULL') . ", vehicleModel: " . ($data['vehicleModel'] ?? 'NULL'));
     
     // Check for image fields
-    $imageFieldsToCheck = ['imageURL', 'images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
+    $imageFieldsToCheck = ['images', 'photos', 'imageUrls', 'photoUrls', 'caseImages', 'vehicleImages', 'damageImages', 'attachments'];
     foreach ($imageFieldsToCheck as $imgField) {
         if (isset($data[$imgField])) {
             error_log("Found images in '$imgField': " . (is_array($data[$imgField]) ? count($data[$imgField]) . " items" : gettype($data[$imgField])));
@@ -117,31 +116,64 @@ try {
                         $value = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
                         error_log("Services transformed for update: " . $value);
                     } elseif ($dbField === 'case_images') {
-                        // Normalize images - extract URLs from various formats
+                        // Normalize images with tagging info - extract URLs and tags
                         $imageUrls = [];
+                        $imageTags = [];
                         
-                        // Handle single URL string
-                        if (is_string($value)) {
-                            $imageUrls[] = $value;
-                            error_log("Single image URL found for update");
-                        }
-                        // Handle array of URLs or objects
-                        elseif (is_array($value)) {
-                            foreach ($value as $img) {
-                                if (is_string($img)) {
-                                    // Already a URL string
-                                    $imageUrls[] = $img;
-                                } elseif (is_array($img)) {
-                                    // Object with URL property - try common field names
-                                    $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
-                                    if ($url) {
-                                        $imageUrls[] = $url;
-                                    }
+                        foreach ($value as $img) {
+                            $url = null;
+                            $tags = [];
+                            $label = null;
+                            
+                            if (is_string($img)) {
+                                // Simple URL string
+                                $url = $img;
+                            } elseif (is_array($img)) {
+                                // Enriched photo object with tags
+                                $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
+                                $label = $img['label'] ?? null;
+                                
+                                // Extract tagging information if present
+                                if (isset($img['tags']) && is_array($img['tags'])) {
+                                    $tags = array_map(function($tag) {
+                                        return [
+                                            'serviceName' => $tag['serviceName'] ?? 'Unknown',
+                                            'servicePrice' => floatval($tag['servicePrice'] ?? 0),
+                                            'x' => intval($tag['x'] ?? 0),
+                                            'y' => intval($tag['y'] ?? 0),
+                                            'xPercent' => floatval($tag['xPercent'] ?? 0),
+                                            'yPercent' => floatval($tag['yPercent'] ?? 0),
+                                        ];
+                                    }, $img['tags']);
+                                    
+                                    error_log("Photo tagged services found in update: " . count($tags) . " services");
                                 }
                             }
+                            
+                            if ($url) {
+                                $imageUrls[] = $url;
+                                $imageTags[] = [
+                                    'url' => $url,
+                                    'label' => $label,
+                                    'tags' => $tags,
+                                    'tagCount' => count($tags),
+                                ];
+                            }
                         }
+                        
                         $value = json_encode($imageUrls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                        error_log("Images transformed for update: " . count($imageUrls) . " URLs extracted");
+                        error_log("Images transformed for update: " . count($imageUrls) . " URLs with " . array_sum(array_column($imageTags, 'tagCount')) . " total tags");
+                        
+                        // If we have tags, also update systemLogs field
+                        if (!empty($imageTags)) {
+                            $imageTagsJson = json_encode($imageTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                            // Add systemLogs to update fields if not already present
+                            if (!in_array("systemLogs = :systemLogs", $updateFields)) {
+                                $updateFields[] = "systemLogs = :imageTagsData";
+                                $bindParams[":imageTagsData"] = $imageTagsJson;
+                                error_log("Will update systemLogs with " . count($imageTags) . " photo tag records");
+                            }
+                        }
                     } else {
                         $value = json_encode($value, JSON_UNESCAPED_UNICODE);
                     }
