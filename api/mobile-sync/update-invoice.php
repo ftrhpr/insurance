@@ -53,7 +53,7 @@ try {
         'repair_status' => 'repair_status',
         'user_response' => 'user_response',
         'services' => 'repair_labor',
-        'parts' => 'parts',
+        'parts' => 'repair_parts',
         'images' => 'case_images',
         'photos' => 'case_images',
         'imageUrls' => 'case_images',
@@ -82,7 +82,7 @@ try {
             $value = $data[$appField];
             
             // Handle JSON fields
-            if (in_array($dbField, ['repair_labor', 'parts', 'case_images'])) {
+            if (in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {
                 if (is_array($value)) {
                     // Transform services to match portal format (same as create-invoice.php)
                     if ($dbField === 'repair_labor') {
@@ -121,7 +121,7 @@ try {
                         }, $value);
                         $value = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
                         error_log("Services transformed for update: " . $value);
-                    } elseif ($dbField === 'parts') {
+                    } elseif ($dbField === 'repair_parts') {
                         // Transform parts to match database expectations (same as create-invoice.php)
                         $transformedParts = array_map(function($part) {
                             // Prefer Georgian name, fallback to English

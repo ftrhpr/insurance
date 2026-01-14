@@ -45,6 +45,7 @@ try {
     
     // Prepare INSERT query - Mapped to your actual database structure
     // Note: services/labors are stored as JSON in repair_labor column
+    // Note: parts are stored as JSON in repair_parts column
     $sql = "INSERT INTO transfers (
         plate,
         vehicle_make,
@@ -53,7 +54,7 @@ try {
         phone,
         amount,
         status,
-        parts,
+        repair_parts,
         repair_labor,
         case_images,
         serviceDate,
@@ -70,7 +71,7 @@ try {
         :phone,
         :amount,
         :status,
-        :parts,
+        :repair_parts,
         :repair_labor,
         :case_images,
         :serviceDate,
@@ -249,7 +250,7 @@ try {
         ':phone' => $data['customerPhone'] ?? '',     // customerPhone -> phone
         ':amount' => $data['totalPrice'] ?? 0,        // totalPrice -> amount
         ':status' => 'Processing',                    // Default status - Processing
-        ':parts' => $partsJson,                       // parts JSON (damage tags)
+        ':repair_parts' => $partsJson,                // repair_parts JSON (car parts)
         ':repair_labor' => $servicesJson,             // repair_labor JSON (services with hours and hourly_rate)
         ':case_images' => $imagesJson,                // case_images JSON (Firebase Storage URLs)
         ':serviceDate' => $serviceDate,               // Service date (datetime)
