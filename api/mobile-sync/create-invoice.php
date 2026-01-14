@@ -87,9 +87,35 @@ try {
     $systemLogsJson = null;
     
     // Prepare parts JSON if exists
+    // App sends parts array: [{"name":"Bumper","nameKa":"ბამპერი","partNumber":"OEM-123","quantity":1,"unitPrice":150,"totalPrice":150}]
     $partsJson = null;
     if (isset($data['parts']) && !empty($data['parts'])) {
-        $partsJson = json_encode($data['parts'], JSON_UNESCAPED_UNICODE);
+        $parts = $data['parts'];
+        error_log("Raw parts received: " . json_encode($parts));
+        
+        // Transform parts to match database expectations
+        $transformedParts = array_map(function($part) {
+            // Prefer Georgian name, fallback to English
+            $partName = !empty($part['nameKa']) ? $part['nameKa'] : 
+                       (!empty($part['name']) ? $part['name'] : 'Unnamed Part');
+            
+            $quantity = !empty($part['quantity']) ? intval($part['quantity']) : 1;
+            $unitPrice = !empty($part['unitPrice']) ? floatval($part['unitPrice']) : 0;
+            $totalPrice = !empty($part['totalPrice']) ? floatval($part['totalPrice']) : ($quantity * $unitPrice);
+            
+            return [
+                'name' => $partName,
+                'name_en' => !empty($part['name']) ? $part['name'] : $partName,
+                'part_number' => !empty($part['partNumber']) ? $part['partNumber'] : '',
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'total_price' => $totalPrice,
+                'notes' => !empty($part['notes']) ? $part['notes'] : '',
+            ];
+        }, $parts);
+        
+        $partsJson = json_encode($transformedParts, JSON_UNESCAPED_UNICODE);
+        error_log("Parts transformed: " . $partsJson);
     }
     
     // Prepare services/labors JSON from the services array

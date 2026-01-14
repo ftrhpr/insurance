@@ -121,6 +121,29 @@ try {
                         }, $value);
                         $value = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
                         error_log("Services transformed for update: " . $value);
+                    } elseif ($dbField === 'parts') {
+                        // Transform parts to match database expectations (same as create-invoice.php)
+                        $transformedParts = array_map(function($part) {
+                            // Prefer Georgian name, fallback to English
+                            $partName = !empty($part['nameKa']) ? $part['nameKa'] : 
+                                       (!empty($part['name']) ? $part['name'] : 'Unnamed Part');
+                            
+                            $quantity = !empty($part['quantity']) ? intval($part['quantity']) : 1;
+                            $unitPrice = !empty($part['unitPrice']) ? floatval($part['unitPrice']) : 0;
+                            $totalPrice = !empty($part['totalPrice']) ? floatval($part['totalPrice']) : ($quantity * $unitPrice);
+                            
+                            return [
+                                'name' => $partName,
+                                'name_en' => !empty($part['name']) ? $part['name'] : $partName,
+                                'part_number' => !empty($part['partNumber']) ? $part['partNumber'] : '',
+                                'quantity' => $quantity,
+                                'unit_price' => $unitPrice,
+                                'total_price' => $totalPrice,
+                                'notes' => !empty($part['notes']) ? $part['notes'] : '',
+                            ];
+                        }, $value);
+                        $value = json_encode($transformedParts, JSON_UNESCAPED_UNICODE);
+                        error_log("Parts transformed for update: " . $value);
                     } elseif ($dbField === 'case_images') {
                         // Normalize images with tagging info - extract URLs and tags
                         $imageUrls = [];
