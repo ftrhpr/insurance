@@ -1063,7 +1063,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     if(Array.isArray(newVehicles)) vehicles = newVehicles;
                 }
 
-                renderTable();
+                renderTable(currentProcessingPage);
             } catch(e) {
                 // Squelch load errors to prevent loop spam, alert user once via status
             }
