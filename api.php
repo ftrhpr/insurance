@@ -1894,8 +1894,9 @@ try {
 
             jsonResponse(['slug' => $new_slug]);
 
-        } catch (Exception $e) {
-            jsonResponse(['error' => 'Database error: ' . $e->getMessage()], 500);
+        } catch (Throwable $e) { // CATCH ALL ERRORS
+            error_log("Share Slug Error for ID $id: " . $e->getMessage()); // Log the specific error
+            jsonResponse(['error' => 'Server error while generating share link.'], 500);
         }
     }
 
