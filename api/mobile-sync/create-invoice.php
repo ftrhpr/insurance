@@ -181,6 +181,10 @@ try {
                 ? "$serviceDescription | $serviceNotes"
                 : ($serviceDescription ?: $serviceNotes);
 
+            // Get individual discount for this service
+            $serviceDiscount = isset($service['discount_percent']) ? floatval($service['discount_percent']) : 0;
+            $discountedPrice = $servicePrice * (1 - $serviceDiscount / 100);
+
             return [
                 'name' => $serviceName,
                 'description' => $serviceDescription,
@@ -188,6 +192,8 @@ try {
                 'rate' => $unitRate,
                 'hourly_rate' => $unitRate,
                 'price' => $servicePrice, // Total price (unit rate * count)
+                'discounted_price' => $discountedPrice, // Price after individual discount
+                'discount_percent' => $serviceDiscount, // Individual service discount
                 'billable' => isset($service['billable']) ? $service['billable'] : true,
                 'notes' => $combinedNotes,
             ];
