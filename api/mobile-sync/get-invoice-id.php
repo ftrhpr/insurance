@@ -84,6 +84,10 @@ try {
             'serviceName' => $labor['name'] ?? $labor['description'] ?? 'Unknown Service',
             'price' => floatval($labor['price'] ?? $labor['rate'] ?? $labor['hourly_rate'] ?? 0),
             'count' => intval($labor['hours'] ?? 1),
+            'discount_percent' => floatval($labor['discount_percent'] ?? 0),
+            'discountedPrice' => floatval($labor['discounted_price'] ?? $labor['price'] ?? 0),
+            'description' => $labor['description'] ?? '',
+            'notes' => $labor['notes'] ?? '',
         ];
     }, $repairLabor);
     
