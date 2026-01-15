@@ -80,7 +80,15 @@ try {
         }
     }
     
+    // Track which DB columns have been processed to avoid duplicates
+    $processedDbFields = [];
+    
     foreach ($fieldMapping as $appField => $dbField) {
+        // Skip if this DB column was already processed (handles multiple image field names mapping to same column)
+        if (in_array($dbField, $processedDbFields)) {
+            continue;
+        }
+        
         if (isset($data[$appField]) && $data[$appField] !== null && $data[$appField] !== '') {
             $value = $data[$appField];
             
@@ -215,14 +223,12 @@ try {
                     error_log("Images transformed for update: " . count($imageUrls) . " URLs with " . array_sum(array_column($imageTags, 'tagCount')) . " total tags");
                     
                     // If we have tags, also update systemLogs field
-                    if (!empty($imageTags)) {
+                    // Check if systemLogs is already being updated to avoid duplicate parameter
+                    if (!empty($imageTags) && !in_array("systemLogs = :imageTagsData", $updateFields)) {
                         $imageTagsJson = json_encode($imageTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                        // Add systemLogs to update fields if not already present
-                        if (!in_array("systemLogs = :systemLogs", $updateFields)) {
-                            $updateFields[] = "systemLogs = :imageTagsData";
-                            $bindParams[":imageTagsData"] = $imageTagsJson;
-                            error_log("Will update systemLogs with " . count($imageTags) . " photo tag records");
-                        }
+                        $updateFields[] = "systemLogs = :imageTagsData";
+                        $bindParams[":imageTagsData"] = $imageTagsJson;
+                        error_log("Will update systemLogs with " . count($imageTags) . " photo tag records");
                     }
                 } else {
                     $value = json_encode($value, JSON_UNESCAPED_UNICODE);
@@ -231,6 +237,7 @@ try {
             
             $updateFields[] = "$dbField = :$appField";
             $bindParams[":$appField"] = $value;
+            $processedDbFields[] = $dbField; // Track processed DB columns
         }
     }
     
