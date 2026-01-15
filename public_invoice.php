@@ -14,7 +14,25 @@ if (file_exists($configPath)) {
     require_once $configPath;
 } else {
     http_response_code(500);
-    die('<h1>Configuration error</h1>');
+    die('<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Configuration error</h1></body></html>');
+}
+
+// Get database connection
+try {
+    if (function_exists('getDBConnection')) {
+        $pdo = getDBConnection();
+    } elseif (!isset($pdo)) {
+        // Fallback - create connection directly
+        $pdo = new PDO(
+            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+            DB_USER,
+            DB_PASS,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    die('<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Database connection error</h1></body></html>');
 }
 
 $case_id = intval($_GET['id'] ?? 0);
