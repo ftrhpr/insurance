@@ -37,12 +37,17 @@ try {
         $stmt->execute([':id' => $invoiceId]);
     } else {
         // Search for invoice by firebase ID stored in operatorComment or systemLogs
+        // Use separate parameter names since PDO doesn't support reusing named params
+        $searchPattern = "%$firebaseId%";
         $sql = "SELECT * FROM transfers 
-                WHERE operatorComment LIKE :firebaseId 
-                OR systemLogs LIKE :firebaseId 
+                WHERE operatorComment LIKE :firebaseId1 
+                OR systemLogs LIKE :firebaseId2 
                 LIMIT 1";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':firebaseId' => "%$firebaseId%"]);
+        $stmt->execute([
+            ':firebaseId1' => $searchPattern,
+            ':firebaseId2' => $searchPattern
+        ]);
     }
     
     $invoice = $stmt->fetch(PDO::FETCH_ASSOC);
