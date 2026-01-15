@@ -65,7 +65,8 @@ try {
         systemLogs,
         services_discount_percent,
         parts_discount_percent,
-        global_discount_percent
+        global_discount_percent,
+        slug
     ) VALUES (
         :plate,
         :vehicle_make,
@@ -85,7 +86,8 @@ try {
         :systemLogs,
         :services_discount_percent,
         :parts_discount_percent,
-        :global_discount_percent
+        :global_discount_percent,
+        :slug
     )";
     
     $stmt = $pdo->prepare($sql);
@@ -279,6 +281,9 @@ try {
         }
     }
     
+    // Generate unique slug for public sharing
+    $slug = generateUniqueSlug($pdo, $data['customerName'] ?? 'customer', $data['plate'] ?? '');
+    
     // Bind parameters
     $stmt->execute([
         ':plate' => $data['plate'] ?? 'N/A',          // License plate number only
@@ -299,7 +304,8 @@ try {
         ':systemLogs' => $imageTagsJson ?? null,     // Store photo tags with service locations
         ':services_discount_percent' => floatval($data['services_discount_percent'] ?? 0),
         ':parts_discount_percent' => floatval($data['parts_discount_percent'] ?? 0),
-        ':global_discount_percent' => floatval($data['global_discount_percent'] ?? 0)
+        ':global_discount_percent' => floatval($data['global_discount_percent'] ?? 0),
+        ':slug' => $slug
     ]);
     
     $insertId = $pdo->lastInsertId();
@@ -336,5 +342,51 @@ try {
 } catch (Exception $e) {
     error_log("Error: " . $e->getMessage());
     sendResponse(false, null, $e->getMessage(), 500);
+}
+
+/**
+ * Generate a unique slug for public invoice sharing
+ * @param PDO $pdo Database connection
+ * @param string $customerName Customer name
+ * @param string $plate License plate
+ * @return string Unique slug
+ */
+function generateUniqueSlug($pdo, $customerName, $plate) {
+    // Clean and prepare base slug
+    $baseSlug = strtolower(trim($customerName . '-' . $plate));
+    $baseSlug = preg_replace('/[^a-z0-9\-]/', '-', $baseSlug);
+    $baseSlug = preg_replace('/-+/', '-', $baseSlug);
+    $baseSlug = trim($baseSlug, '-');
+    
+    // If base slug is empty, use a random string
+    if (empty($baseSlug)) {
+        $baseSlug = 'invoice-' . substr(md5(uniqid()), 0, 8);
+    }
+    
+    $slug = $baseSlug;
+    $counter = 1;
+    
+    // Ensure uniqueness
+    while (true) {
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM transfers WHERE slug = :slug");
+        $stmt->execute([':slug' => $slug]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($result['count'] == 0) {
+            break; // Slug is unique
+        }
+        
+        // Append counter and try again
+        $slug = $baseSlug . '-' . $counter;
+        $counter++;
+        
+        // Prevent infinite loop
+        if ($counter > 1000) {
+            $slug = $baseSlug . '-' . time() . '-' . rand(100, 999);
+            break;
+        }
+    }
+    
+    return $slug;
 }
 ?>

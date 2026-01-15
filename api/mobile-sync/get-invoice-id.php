@@ -98,6 +98,7 @@ try {
     // Build response in app format
     $responseData = [
         'cpanelId' => $invoice['id'],
+        'slug' => $invoice['slug'] ?? '',
         'customerName' => $invoice['name'] ?? '',
         'customerPhone' => $invoice['phone'] ?? '',
         'plate' => $invoice['plate'] ?? '',
