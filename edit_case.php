@@ -2082,25 +2082,17 @@ try {
                 printCase() { window.print(); },
                 
                 // Share invoice link functionality
-                async shareInvoiceLink() {
-                    let slug = this.currentCase.share_slug;
-                    if (!slug) {
-                        try {
-                            const response = await fetch(`${API_URL}?action=get_or_create_share_slug&id=${CASE_ID}`);
-                            const data = await response.json();
-                            if (data.slug) {
-                                slug = data.slug;
-                                this.currentCase.share_slug = slug; // Cache it
-                            } else {
-                                throw new Error(data.error || 'Failed to get share link.');
-                            }
-                        } catch (e) {
-                            showToast('Error', e.message, 'error');
-                            return;
-                        }
+                shareInvoiceLink() {
+                    // Generate random slug if not exists
+                    if (!this.currentCase.slug) {
+                        this.currentCase.slug = this.generateRandomSlug();
+                        // Save slug to database
+                        fetchAPI('update_transfer', 'POST', { id: CASE_ID, slug: this.currentCase.slug }).catch(err => {
+                            console.error('Failed to save slug:', err);
+                        });
                     }
-
-                    const invoiceUrl = `${window.location.origin}${window.location.pathname.replace('edit_case.php', 'public_invoice.php')}?slug=${slug}`;
+                    
+                    const invoiceUrl = `${window.location.origin}${window.location.pathname.replace('edit_case.php', 'public_invoice.php')}?slug=${this.currentCase.slug}`;
                     
                     // Create share modal
                     const modal = document.createElement('div');
@@ -2189,6 +2181,16 @@ try {
                             showToast('Link Copied', 'Invoice link copied to clipboard', 'success');
                         });
                     }
+                },
+                
+                generateRandomSlug() {
+                    // Generate a random 16-character slug using alphanumeric characters
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                    let slug = '';
+                    for (let i = 0; i < 16; i++) {
+                        slug += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    return slug;
                 },
                 
                 async saveChanges() {

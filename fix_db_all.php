@@ -43,7 +43,8 @@ try {
         'review_stars'  => "INT DEFAULT NULL",
         'review_comment'=> "TEXT DEFAULT NULL",
         'internal_notes'=> "JSON DEFAULT NULL",  // or TEXT if MariaDB version is old
-        'system_logs'   => "JSON DEFAULT NULL"   // or TEXT if MariaDB version is old
+        'system_logs'   => "JSON DEFAULT NULL",   // or TEXT if MariaDB version is old
+        'slug'          => "VARCHAR(32) UNIQUE DEFAULT NULL"
     ];
 
     foreach ($columns as $col => $def) {

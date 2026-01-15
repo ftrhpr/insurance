@@ -15,12 +15,9 @@ $service_account_file = __DIR__ . '/service-account.json';
 // --- DB CONNECTION ---
 try {
     $pdo = getDBConnection();
-} catch (Throwable $e) { // Catch all possible errors
+} catch (Exception $e) {
     http_response_code(500); 
-    // Log the detailed error to the server's error log
-    error_log("FATAL DB Connection failed: " . $e->getMessage());
-    // Send a generic, user-friendly error response
-    die(json_encode(['error' => 'Database connection failed. Please check server logs.']));
+    die(json_encode(['error' => 'DB Connection failed: ' . $e->getMessage()]));
 }
 
 $action = $_GET['action'] ?? '';
@@ -67,8 +64,7 @@ function getCurrentUserId() {
     return $_SESSION['user_id'] ?? null;
 }
 
-function jsonResponse($data, $statusCode = 200) {
-    http_response_code($statusCode);
+function jsonResponse($data) {
     echo json_encode($data);
     exit;
 }
@@ -363,7 +359,7 @@ try {
                 'parts_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
                 'services_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
                 'global_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
-                'share_slug' => "VARCHAR(16) DEFAULT NULL UNIQUE",
+                'slug' => "VARCHAR(32) UNIQUE DEFAULT NULL"
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -404,7 +400,8 @@ try {
                 'repair_activity_log' => 'repair_activity_log',
                 'parts_discount_percent' => 'parts_discount_percent',
                 'services_discount_percent' => 'services_discount_percent',
-                'global_discount_percent' => 'global_discount_percent'
+                'global_discount_percent' => 'global_discount_percent',
+                'slug' => 'slug'
             ];
 
             $update_fields = [];
@@ -1677,7 +1674,8 @@ try {
                                 'name' => $fullName,
                                 'price' => $line,
                                 'type' => 'labor',
-                                'quantity' => 1                            ];
+                                'quantity' => 1
+                            ];
                             $logContent .= "COMPLETED MULTI-LINE LABOR ITEM: '$fullName' = $line\n";
                             $multiLineBuffer = [];
                         }
@@ -1757,7 +1755,7 @@ try {
             // Filter out Georgian column headers that might be parsed as item names
             $headersToFilter = ['რაოდენობა', 'სტატუსი', 'ფასი(ლარი)', 'ფასი', 'ლარი'];
             $originalCount = count($items);
-            $items = array_filter($items, function($item) use $headersToFilter) {
+            $items = array_filter($items, function($item) use ($headersToFilter) {
                 $name = trim($item['name']);
                 foreach ($headersToFilter as $header) {
                     if (stripos($name, $header) !== false) {
@@ -1848,58 +1846,6 @@ try {
         } catch (Exception $e) {
             error_log("SMS sending exception for $to: " . $e->getMessage());
             jsonResponse(['status' => 'error', 'message' => 'Failed to send SMS - exception occurred']);
-        }
-    }
-
-    // --- GET OR CREATE SHARE SLUG ---
-    if ($action === 'get_or_create_share_slug' && $method === 'GET') {
-        $id = intval($_GET['id'] ?? 0);
-        if ($id <= 0) {
-            jsonResponse(['error' => 'Invalid ID'], 400);
-            return;
-        }
-
-        try {
-            // Defensive migration: ensure share_slug column exists
-            try {
-                if (!defined('DB_NAME')) {
-                    throw new Exception("Database name constant is not defined.");
-                }
-                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = 'share_slug'");
-                $checkStmt->execute([DB_NAME]);
-                if ($checkStmt->fetchColumn() == 0) {
-                    $pdo->exec("ALTER TABLE transfers ADD COLUMN `share_slug` VARCHAR(16) DEFAULT NULL UNIQUE");
-                }
-            } catch (Exception $migrationError) {
-                // Ignore if migration fails (e.g., permissions), proceed and let the query fail if column is truly missing
-            }
-
-            $stmt = $pdo->prepare("SELECT share_slug FROM transfers WHERE id = ?");
-            $stmt->execute([$id]);
-            $slug = $stmt->fetchColumn();
-
-            if ($slug) {
-                jsonResponse(['slug' => $slug]);
-                return;
-            }
-
-            // Generate a unique slug
-            $new_slug = null;
-            do {
-                $new_slug = bin2hex(random_bytes(6)); // 12-char hex slug
-                $check_stmt = $pdo->prepare("SELECT id FROM transfers WHERE share_slug = ?");
-                $check_stmt->execute([$new_slug]);
-            } while ($check_stmt->fetchColumn());
-
-            // Save the new slug
-            $update_stmt = $pdo->prepare("UPDATE transfers SET share_slug = ? WHERE id = ?");
-            $update_stmt->execute([$new_slug, $id]);
-
-            jsonResponse(['slug' => $new_slug]);
-
-        } catch (Throwable $e) { // CATCH ALL ERRORS
-            error_log("Share Slug Error for ID $id: " . $e->getMessage()); // Log the specific error
-            jsonResponse(['error' => 'Server error while generating share link.'], 500);
         }
     }
 
