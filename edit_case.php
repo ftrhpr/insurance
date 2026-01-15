@@ -2280,10 +2280,10 @@ try {
                     const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
                     const grandTotal = partsTotal + laborTotal;
                     
-                    const partsEl = document.getElementById('summary-parts-total');
-                    const laborEl = document.getElementById('summary-labor-total');
-                    const grandEl = document.getElementById('summary-grand-total');
-                    const subtotalEl = document.getElementById('summary-subtotal');
+                    const partsEl = document.getElementById('items-parts-cost');
+                    const laborEl = document.getElementById('items-labor-cost');
+                    const grandEl = document.getElementById('items-grand-total');
+                    const subtotalEl = document.getElementById('items-total-cost');
                     const partsCountEl = document.getElementById('parts-count-label');
                     const laborCountEl = document.getElementById('labor-count-label');
                     
