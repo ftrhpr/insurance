@@ -2103,11 +2103,14 @@ try {
                         }
                     }
 
+                    // Calculate discounted amount from parts and labor
+                    const calculatedAmount = this.calculateTotalCost();
+                    
                     const updates = {
                         id: CASE_ID,
                         name: document.getElementById('input-name').value.trim(),
                         plate: document.getElementById('input-plate').value.trim(),
-                        amount: document.getElementById('input-amount').value.trim(),
+                        amount: calculatedAmount > 0 ? calculatedAmount.toFixed(2) : document.getElementById('input-amount').value.trim(),
                         status: status,
                         phone: document.getElementById('input-phone').value.trim(),
                         serviceDate: serviceDate || null,
@@ -2194,8 +2197,9 @@ try {
                 },
                 updatePart(index, field, value) {
                     if (this.currentCase.repair_parts && this.currentCase.repair_parts[index]) {
-                        this.currentCase.repair_parts[index][field] = field === 'quantity' || field === 'unit_price' ? parseFloat(value) || 0 : value;
+                        this.currentCase.repair_parts[index][field] = (field === 'quantity' || field === 'unit_price' || field === 'discount_percent') ? parseFloat(value) || 0 : value;
                         this.updatePartsList();
+                        this.syncAmountWithTotal();
                     }
                 },
                 removePart(index) {
@@ -2228,6 +2232,8 @@ try {
                     this.updateRepairSummary();
                     // Re-render combined items list
                     if (typeof this.updateItemsList === 'function') this.updateItemsList();
+                    // Sync amount field with discounted total
+                    this.syncAmountWithTotal();
                 }, 
                 addLabor(description = '', quantity = 1, unit_rate = 0) {
                     if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
@@ -2236,8 +2242,9 @@ try {
                 },
                 updateLabor(index, field, value) {
                     if (this.currentCase.repair_labor && this.currentCase.repair_labor[index]) {
-                        this.currentCase.repair_labor[index][field] = field === 'quantity' || field === 'unit_rate' ? parseFloat(value) || 0 : value;
+                        this.currentCase.repair_labor[index][field] = (field === 'quantity' || field === 'unit_rate' || field === 'discount_percent') ? parseFloat(value) || 0 : value;
                         this.updateLaborList();
+                        this.syncAmountWithTotal();
                     }
                 },
                 removeLabor(index) {
@@ -2255,6 +2262,8 @@ try {
                     lucide.createIcons();
                     // re-render combined list
                     if (typeof this.updateItemsList === 'function') this.updateItemsList();
+                    // Sync amount field with discounted total
+                    this.syncAmountWithTotal();
                 },
                 incrementQty(index) {
                     if (!this.currentCase.repair_parts || !this.currentCase.repair_parts[index]) return;
@@ -2440,6 +2449,19 @@ try {
                 updateDiscounts() {
                     this.updateRepairSummary();
                     this.updateOverviewStats();
+                    // Sync amount field with discounted total
+                    this.syncAmountWithTotal();
+                },
+                
+                // Sync the amount input field with the calculated discounted total
+                syncAmountWithTotal() {
+                    const total = this.calculateTotalCost();
+                    if (total > 0) {
+                        const amountInput = document.getElementById('input-amount');
+                        if (amountInput) {
+                            amountInput.value = total.toFixed(2);
+                        }
+                    }
                 },
 
                 // Render combined items (parts + labor) into a single view
