@@ -359,6 +359,7 @@ try {
                 'parts_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
                 'services_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
                 'global_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
+                'share_slug' => "VARCHAR(16) DEFAULT NULL UNIQUE",
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -1672,8 +1673,7 @@ try {
                                 'name' => $fullName,
                                 'price' => $line,
                                 'type' => 'labor',
-                                'quantity' => 1
-                            ];
+                                'quantity' => 1                            ];
                             $logContent .= "COMPLETED MULTI-LINE LABOR ITEM: '$fullName' = $line\n";
                             $multiLineBuffer = [];
                         }
@@ -1753,7 +1753,7 @@ try {
             // Filter out Georgian column headers that might be parsed as item names
             $headersToFilter = ['რაოდენობა', 'სტატუსი', 'ფასი(ლარი)', 'ფასი', 'ლარი'];
             $originalCount = count($items);
-            $items = array_filter($items, function($item) use ($headersToFilter) {
+            $items = array_filter($items, function($item) use $headersToFilter) {
                 $name = trim($item['name']);
                 foreach ($headersToFilter as $header) {
                     if (stripos($name, $header) !== false) {
@@ -1844,6 +1844,43 @@ try {
         } catch (Exception $e) {
             error_log("SMS sending exception for $to: " . $e->getMessage());
             jsonResponse(['status' => 'error', 'message' => 'Failed to send SMS - exception occurred']);
+        }
+    }
+
+    // --- GET OR CREATE SHARE SLUG ---
+    if ($action === 'get_or_create_share_slug' && $method === 'GET') {
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['error' => 'Invalid ID'], 400);
+            return;
+        }
+
+        try {
+            $stmt = $pdo->prepare("SELECT share_slug FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+            $slug = $stmt->fetchColumn();
+
+            if ($slug) {
+                jsonResponse(['slug' => $slug]);
+                return;
+            }
+
+            // Generate a unique slug
+            $new_slug = null;
+            do {
+                $new_slug = bin2hex(random_bytes(6)); // 12-char hex slug
+                $check_stmt = $pdo->prepare("SELECT id FROM transfers WHERE share_slug = ?");
+                $check_stmt->execute([$new_slug]);
+            } while ($check_stmt->fetchColumn());
+
+            // Save the new slug
+            $update_stmt = $pdo->prepare("UPDATE transfers SET share_slug = ? WHERE id = ?");
+            $update_stmt->execute([$new_slug, $id]);
+
+            jsonResponse(['slug' => $new_slug]);
+
+        } catch (Exception $e) {
+            jsonResponse(['error' => 'Database error: ' . $e->getMessage()], 500);
         }
     }
 

@@ -2082,8 +2082,25 @@ try {
                 printCase() { window.print(); },
                 
                 // Share invoice link functionality
-                shareInvoiceLink() {
-                    const invoiceUrl = `${window.location.origin}${window.location.pathname.replace('edit_case.php', 'public_invoice.php')}?id=${CASE_ID}`;
+                async shareInvoiceLink() {
+                    let slug = this.currentCase.share_slug;
+                    if (!slug) {
+                        try {
+                            const response = await fetch(`${API_URL}?action=get_or_create_share_slug&id=${CASE_ID}`);
+                            const data = await response.json();
+                            if (data.slug) {
+                                slug = data.slug;
+                                this.currentCase.share_slug = slug; // Cache it
+                            } else {
+                                throw new Error(data.error || 'Failed to get share link.');
+                            }
+                        } catch (e) {
+                            showToast('Error', e.message, 'error');
+                            return;
+                        }
+                    }
+
+                    const invoiceUrl = `${window.location.origin}${window.location.pathname.replace('edit_case.php', 'public_invoice.php')}?slug=${slug}`;
                     
                     // Create share modal
                     const modal = document.createElement('div');

@@ -35,16 +35,16 @@ try {
     die('<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Database connection error</h1></body></html>');
 }
 
-$case_id = intval($_GET['id'] ?? 0);
+$slug = trim($_GET['slug'] ?? '');
 
-if ($case_id <= 0) {
+if (empty($slug)) {
     http_response_code(404);
     die('<!DOCTYPE html><html><head><title>Not Found</title></head><body><h1>Invoice not found</h1></body></html>');
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM transfers WHERE id = ?");
-    $stmt->execute([$case_id]);
+    $stmt = $pdo->prepare("SELECT * FROM transfers WHERE share_slug = ?");
+    $stmt->execute([$slug]);
     $case = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$case) {
@@ -52,6 +52,8 @@ try {
         die('<!DOCTYPE html><html><head><title>Not Found</title></head><body><h1>Invoice not found</h1></body></html>');
     }
     
+    $case_id = $case['id']; // For display purposes
+
     // Decode JSON fields safely
     $repair_parts = [];
     $repair_labor = [];
