@@ -101,24 +101,35 @@ try {
                 // Transform services to match portal format (same as create-invoice.php)
                 if ($dbField === 'repair_labor') {
                     error_log("Processing services for update - count: " . count($value));
+                    error_log("Raw services data: " . json_encode($value, JSON_UNESCAPED_UNICODE));
                     $transformedServices = array_map(function($service) {
+                        // Log incoming service data for debugging
+                        error_log("Processing service: " . json_encode($service, JSON_UNESCAPED_UNICODE));
+                        
                         // Prefer Georgian name, fallback to English, with better empty string handling
                         $serviceName = '';
                         
                         // Check each field, ensuring non-empty
                         if (!empty($service['serviceNameKa']) && trim($service['serviceNameKa']) !== '') {
                             $serviceName = trim($service['serviceNameKa']);
+                            error_log("Using serviceNameKa: " . $serviceName);
                         } elseif (!empty($service['nameKa']) && trim($service['nameKa']) !== '') {
                             $serviceName = trim($service['nameKa']);
+                            error_log("Using nameKa: " . $serviceName);
                         } elseif (!empty($service['serviceName']) && trim($service['serviceName']) !== '') {
                             $serviceName = trim($service['serviceName']);
+                            error_log("Using serviceName: " . $serviceName);
                         } elseif (!empty($service['name']) && trim($service['name']) !== '') {
                             $serviceName = trim($service['name']);
+                            error_log("Using name: " . $serviceName);
                         } elseif (!empty($service['description']) && trim($service['description']) !== '') {
                             $serviceName = trim($service['description']);
+                            error_log("Using description: " . $serviceName);
                         } else {
                             $serviceName = 'Unnamed Labor';
-                            error_log("WARNING: Service has no name field, using fallback: " . json_encode($service, JSON_UNESCAPED_UNICODE));
+                            error_log("WARNING: Service has no name field, using fallback. All fields: serviceNameKa=" . 
+                                ($service['serviceNameKa'] ?? 'NULL') . ", nameKa=" . ($service['nameKa'] ?? 'NULL') . 
+                                ", serviceName=" . ($service['serviceName'] ?? 'NULL') . ", name=" . ($service['name'] ?? 'NULL'));
                         }
                         
                         $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
