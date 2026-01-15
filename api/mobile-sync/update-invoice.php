@@ -88,130 +88,129 @@ try {
             if (in_array($dbField, ['services_discount_percent', 'parts_discount_percent', 'global_discount_percent'])) {
                 $value = floatval($value);
             }
-            // Handle JSON fields
-            else if (is_array($value) && in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {
-                    // Transform services to match portal format (same as create-invoice.php)
-                    if ($dbField === 'repair_labor') {
-                        $transformedServices = array_map(function($service) {
-                            // Prefer Georgian name, fallback to English
-                            $serviceName = !empty($service['serviceNameKa']) ? $service['serviceNameKa'] :
-                                          (!empty($service['nameKa']) ? $service['nameKa'] :
-                                          (!empty($service['serviceName']) ? $service['serviceName'] :
-                                          (!empty($service['name']) ? $service['name'] : 'Unnamed Labor')));
-                            $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
-                            
-                            // Get count/hours
-                            $serviceCount = !empty($service['hours']) ? $service['hours'] : (!empty($service['count']) ? $service['count'] : 1);
-                            
-                            // Calculate unit rate (price per item)
-                            $unitRate = $serviceCount > 0 ? ($servicePrice / $serviceCount) : $servicePrice;
-
-                            // Preserve service description as notes if available
-                            $serviceDescription = !empty($service['description']) ? $service['description'] : '';
-                            $serviceNotes = !empty($service['notes']) ? $service['notes'] : '';
-                            // Combine description and notes if both exist
-                            $combinedNotes = $serviceDescription && $serviceNotes
-                                ? "$serviceDescription | $serviceNotes"
-                                : ($serviceDescription ?: $serviceNotes);
-
-                            return [
-                                'name' => $serviceName,
-                                'description' => $serviceDescription,
-                                'hours' => $serviceCount,
-                                'rate' => $unitRate,
-                                'hourly_rate' => $unitRate,
-                                'price' => $servicePrice, // Total price (unit rate * count)
-                                'billable' => isset($service['billable']) ? $service['billable'] : true,
-                                'notes' => $combinedNotes,
-                            ];
-                        }, $value);
-                        $value = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
-                        error_log("Services transformed for update: " . $value);
-                    } elseif ($dbField === 'repair_parts') {
-                        // Transform parts to match database expectations (same as create-invoice.php)
-                        $transformedParts = array_map(function($part) {
-                            // Prefer Georgian name, fallback to English
-                            $partName = !empty($part['nameKa']) ? $part['nameKa'] : 
-                                       (!empty($part['name']) ? $part['name'] : 'Unnamed Part');
-                            
-                            $quantity = !empty($part['quantity']) ? intval($part['quantity']) : 1;
-                            $unitPrice = !empty($part['unitPrice']) ? floatval($part['unitPrice']) : 0;
-                            $totalPrice = !empty($part['totalPrice']) ? floatval($part['totalPrice']) : ($quantity * $unitPrice);
-                            
-                            return [
-                                'name' => $partName,
-                                'name_en' => !empty($part['name']) ? $part['name'] : $partName,
-                                'part_number' => !empty($part['partNumber']) ? $part['partNumber'] : '',
-                                'quantity' => $quantity,
-                                'unit_price' => $unitPrice,
-                                'total_price' => $totalPrice,
-                                'notes' => !empty($part['notes']) ? $part['notes'] : '',
-                            ];
-                        }, $value);
-                        $value = json_encode($transformedParts, JSON_UNESCAPED_UNICODE);
-                        error_log("Parts transformed for update: " . $value);
-                    } elseif ($dbField === 'case_images') {
-                        // Normalize images with tagging info - extract URLs and tags
-                        $imageUrls = [];
-                        $imageTags = [];
+            // Handle JSON fields for arrays
+            elseif (is_array($value) && in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {
+                // Transform services to match portal format (same as create-invoice.php)
+                if ($dbField === 'repair_labor') {
+                    $transformedServices = array_map(function($service) {
+                        // Prefer Georgian name, fallback to English
+                        $serviceName = !empty($service['serviceNameKa']) ? $service['serviceNameKa'] :
+                                      (!empty($service['nameKa']) ? $service['nameKa'] :
+                                      (!empty($service['serviceName']) ? $service['serviceName'] :
+                                      (!empty($service['name']) ? $service['name'] : 'Unnamed Labor')));
+                        $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
                         
-                        foreach ($value as $img) {
-                            $url = null;
-                            $tags = [];
-                            $label = null;
+                        // Get count/hours
+                        $serviceCount = !empty($service['hours']) ? $service['hours'] : (!empty($service['count']) ? $service['count'] : 1);
+                        
+                        // Calculate unit rate (price per item)
+                        $unitRate = $serviceCount > 0 ? ($servicePrice / $serviceCount) : $servicePrice;
+
+                        // Preserve service description as notes if available
+                        $serviceDescription = !empty($service['description']) ? $service['description'] : '';
+                        $serviceNotes = !empty($service['notes']) ? $service['notes'] : '';
+                        // Combine description and notes if both exist
+                        $combinedNotes = $serviceDescription && $serviceNotes
+                            ? "$serviceDescription | $serviceNotes"
+                            : ($serviceDescription ?: $serviceNotes);
+
+                        return [
+                            'name' => $serviceName,
+                            'description' => $serviceDescription,
+                            'hours' => $serviceCount,
+                            'rate' => $unitRate,
+                            'hourly_rate' => $unitRate,
+                            'price' => $servicePrice, // Total price (unit rate * count)
+                            'billable' => isset($service['billable']) ? $service['billable'] : true,
+                            'notes' => $combinedNotes,
+                        ];
+                    }, $value);
+                    $value = json_encode($transformedServices, JSON_UNESCAPED_UNICODE);
+                    error_log("Services transformed for update: " . $value);
+                } elseif ($dbField === 'repair_parts') {
+                    // Transform parts to match database expectations (same as create-invoice.php)
+                    $transformedParts = array_map(function($part) {
+                        // Prefer Georgian name, fallback to English
+                        $partName = !empty($part['nameKa']) ? $part['nameKa'] : 
+                                   (!empty($part['name']) ? $part['name'] : 'Unnamed Part');
+                        
+                        $quantity = !empty($part['quantity']) ? intval($part['quantity']) : 1;
+                        $unitPrice = !empty($part['unitPrice']) ? floatval($part['unitPrice']) : 0;
+                        $totalPrice = !empty($part['totalPrice']) ? floatval($part['totalPrice']) : ($quantity * $unitPrice);
+                        
+                        return [
+                            'name' => $partName,
+                            'name_en' => !empty($part['name']) ? $part['name'] : $partName,
+                            'part_number' => !empty($part['partNumber']) ? $part['partNumber'] : '',
+                            'quantity' => $quantity,
+                            'unit_price' => $unitPrice,
+                            'total_price' => $totalPrice,
+                            'notes' => !empty($part['notes']) ? $part['notes'] : '',
+                        ];
+                    }, $value);
+                    $value = json_encode($transformedParts, JSON_UNESCAPED_UNICODE);
+                    error_log("Parts transformed for update: " . $value);
+                } elseif ($dbField === 'case_images') {
+                    // Normalize images with tagging info - extract URLs and tags
+                    $imageUrls = [];
+                    $imageTags = [];
+                    
+                    foreach ($value as $img) {
+                        $url = null;
+                        $tags = [];
+                        $label = null;
+                        
+                        if (is_string($img)) {
+                            // Simple URL string
+                            $url = $img;
+                        } elseif (is_array($img)) {
+                            // Enriched photo object with tags
+                            $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
+                            $label = $img['label'] ?? null;
                             
-                            if (is_string($img)) {
-                                // Simple URL string
-                                $url = $img;
-                            } elseif (is_array($img)) {
-                                // Enriched photo object with tags
-                                $url = $img['downloadURL'] ?? $img['downloadUrl'] ?? $img['url'] ?? $img['uri'] ?? $img['src'] ?? null;
-                                $label = $img['label'] ?? null;
+                            // Extract tagging information if present
+                            if (isset($img['tags']) && is_array($img['tags'])) {
+                                $tags = array_map(function($tag) {
+                                    return [
+                                        'serviceName' => $tag['serviceName'] ?? 'Unknown',
+                                        'servicePrice' => floatval($tag['servicePrice'] ?? 0),
+                                        'x' => intval($tag['x'] ?? 0),
+                                        'y' => intval($tag['y'] ?? 0),
+                                        'xPercent' => floatval($tag['xPercent'] ?? 0),
+                                        'yPercent' => floatval($tag['yPercent'] ?? 0),
+                                    ];
+                                }, $img['tags']);
                                 
-                                // Extract tagging information if present
-                                if (isset($img['tags']) && is_array($img['tags'])) {
-                                    $tags = array_map(function($tag) {
-                                        return [
-                                            'serviceName' => $tag['serviceName'] ?? 'Unknown',
-                                            'servicePrice' => floatval($tag['servicePrice'] ?? 0),
-                                            'x' => intval($tag['x'] ?? 0),
-                                            'y' => intval($tag['y'] ?? 0),
-                                            'xPercent' => floatval($tag['xPercent'] ?? 0),
-                                            'yPercent' => floatval($tag['yPercent'] ?? 0),
-                                        ];
-                                    }, $img['tags']);
-                                    
-                                    error_log("Photo tagged services found in update: " . count($tags) . " services");
-                                }
-                            }
-                            
-                            if ($url) {
-                                $imageUrls[] = $url;
-                                $imageTags[] = [
-                                    'url' => $url,
-                                    'label' => $label,
-                                    'tags' => $tags,
-                                    'tagCount' => count($tags),
-                                ];
+                                error_log("Photo tagged services found in update: " . count($tags) . " services");
                             }
                         }
                         
-                        $value = json_encode($imageUrls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                        error_log("Images transformed for update: " . count($imageUrls) . " URLs with " . array_sum(array_column($imageTags, 'tagCount')) . " total tags");
-                        
-                        // If we have tags, also update systemLogs field
-                        if (!empty($imageTags)) {
-                            $imageTagsJson = json_encode($imageTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                            // Add systemLogs to update fields if not already present
-                            if (!in_array("systemLogs = :systemLogs", $updateFields)) {
-                                $updateFields[] = "systemLogs = :imageTagsData";
-                                $bindParams[":imageTagsData"] = $imageTagsJson;
-                                error_log("Will update systemLogs with " . count($imageTags) . " photo tag records");
-                            }
+                        if ($url) {
+                            $imageUrls[] = $url;
+                            $imageTags[] = [
+                                'url' => $url,
+                                'label' => $label,
+                                'tags' => $tags,
+                                'tagCount' => count($tags),
+                            ];
                         }
-                    } else {
-                        $value = json_encode($value, JSON_UNESCAPED_UNICODE);
                     }
+                    
+                    $value = json_encode($imageUrls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    error_log("Images transformed for update: " . count($imageUrls) . " URLs with " . array_sum(array_column($imageTags, 'tagCount')) . " total tags");
+                    
+                    // If we have tags, also update systemLogs field
+                    if (!empty($imageTags)) {
+                        $imageTagsJson = json_encode($imageTags, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                        // Add systemLogs to update fields if not already present
+                        if (!in_array("systemLogs = :systemLogs", $updateFields)) {
+                            $updateFields[] = "systemLogs = :imageTagsData";
+                            $bindParams[":imageTagsData"] = $imageTagsJson;
+                            error_log("Will update systemLogs with " . count($imageTags) . " photo tag records");
+                        }
+                    }
+                } else {
+                    $value = json_encode($value, JSON_UNESCAPED_UNICODE);
                 }
             }
             
