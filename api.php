@@ -64,7 +64,8 @@ function getCurrentUserId() {
     return $_SESSION['user_id'] ?? null;
 }
 
-function jsonResponse($data) {
+function jsonResponse($data, $statusCode = 200) {
+    http_response_code($statusCode);
     echo json_encode($data);
     exit;
 }
@@ -1858,6 +1859,9 @@ try {
         try {
             // Defensive migration: ensure share_slug column exists
             try {
+                if (!defined('DB_NAME')) {
+                    throw new Exception("Database name constant is not defined.");
+                }
                 $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = 'share_slug'");
                 $checkStmt->execute([DB_NAME]);
                 if ($checkStmt->fetchColumn() == 0) {
