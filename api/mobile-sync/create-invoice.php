@@ -131,14 +131,40 @@ try {
     $servicesJson = null;
     if (isset($data['services']) && !empty($data['services'])) {
         $services = $data['services'];
-        error_log("Raw services received: " . json_encode($services));
+        error_log("Raw services received: " . json_encode($services, JSON_UNESCAPED_UNICODE));
+        error_log("Number of services: " . count($services));
+        
+        // Log each service's name fields for debugging
+        foreach ($services as $idx => $svc) {
+            error_log("Service[$idx] fields - serviceName: " . ($svc['serviceName'] ?? 'NULL') . 
+                      ", serviceNameKa: " . ($svc['serviceNameKa'] ?? 'NULL') . 
+                      ", name: " . ($svc['name'] ?? 'NULL') . 
+                      ", nameKa: " . ($svc['nameKa'] ?? 'NULL'));
+        }
+        
         // Transform field names to match portal expectations - prefer Georgian (nameKa) names
         $transformedServices = array_map(function($service) {
-            // Prefer Georgian name, fallback to English
-            $serviceName = !empty($service['serviceNameKa']) ? $service['serviceNameKa'] :
-                          (!empty($service['nameKa']) ? $service['nameKa'] :
-                          (!empty($service['serviceName']) ? $service['serviceName'] :
-                          (!empty($service['name']) ? $service['name'] : 'Unnamed Labor')));
+            // Prefer Georgian name, fallback to English, with better empty string handling
+            $serviceName = '';
+            
+            // Check each field, ensuring non-empty
+            if (!empty($service['serviceNameKa']) && trim($service['serviceNameKa']) !== '') {
+                $serviceName = trim($service['serviceNameKa']);
+            } elseif (!empty($service['nameKa']) && trim($service['nameKa']) !== '') {
+                $serviceName = trim($service['nameKa']);
+            } elseif (!empty($service['serviceName']) && trim($service['serviceName']) !== '') {
+                $serviceName = trim($service['serviceName']);
+            } elseif (!empty($service['name']) && trim($service['name']) !== '') {
+                $serviceName = trim($service['name']);
+            } elseif (!empty($service['description']) && trim($service['description']) !== '') {
+                $serviceName = trim($service['description']);
+            } else {
+                $serviceName = 'Unnamed Labor';
+                error_log("WARNING: Service has no name field, using fallback: " . json_encode($service, JSON_UNESCAPED_UNICODE));
+            }
+            
+            error_log("Service name resolved to: " . $serviceName);
+            
             $servicePrice = !empty($service['price']) ? $service['price'] : (!empty($service['hourly_rate']) ? $service['hourly_rate'] : (!empty($service['rate']) ? $service['rate'] : 0));
             
             // Get count/hours
