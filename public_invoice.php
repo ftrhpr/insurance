@@ -3,14 +3,25 @@
  * Public Invoice View
  * Shareable link for customers to view their invoice details
  */
-require_once __DIR__ . '/config.php';
+error_reporting(0); // Suppress errors on production
+
+// Include config - try multiple paths
+$configPath = __DIR__ . '/config.php';
+if (!file_exists($configPath)) {
+    $configPath = dirname(__DIR__) . '/config.php';
+}
+if (file_exists($configPath)) {
+    require_once $configPath;
+} else {
+    http_response_code(500);
+    die('<h1>Configuration error</h1>');
+}
 
 $case_id = intval($_GET['id'] ?? 0);
-$token = $_GET['token'] ?? '';
 
 if ($case_id <= 0) {
     http_response_code(404);
-    die('<h1>Invoice not found</h1>');
+    die('<!DOCTYPE html><html><head><title>Not Found</title></head><body><h1>Invoice not found</h1></body></html>');
 }
 
 try {
@@ -20,21 +31,31 @@ try {
     
     if (!$case) {
         http_response_code(404);
-        die('<h1>Invoice not found</h1>');
+        die('<!DOCTYPE html><html><head><title>Not Found</title></head><body><h1>Invoice not found</h1></body></html>');
     }
     
-    // Decode JSON fields
-    $repair_parts = json_decode($case['repair_parts'] ?? '[]', true) ?: [];
-    $repair_labor = json_decode($case['repair_labor'] ?? '[]', true) ?: [];
+    // Decode JSON fields safely
+    $repair_parts = [];
+    $repair_labor = [];
     
-    // Get discount percentages
-    $parts_discount_pct = floatval($case['parts_discount_percent'] ?? 0);
-    $services_discount_pct = floatval($case['services_discount_percent'] ?? 0);
-    $global_discount_pct = floatval($case['global_discount_percent'] ?? 0);
+    if (!empty($case['repair_parts'])) {
+        $decoded = json_decode($case['repair_parts'], true);
+        if (is_array($decoded)) $repair_parts = $decoded;
+    }
+    
+    if (!empty($case['repair_labor'])) {
+        $decoded = json_decode($case['repair_labor'], true);
+        if (is_array($decoded)) $repair_labor = $decoded;
+    }
+    
+    // Get discount percentages - handle missing columns gracefully
+    $parts_discount_pct = isset($case['parts_discount_percent']) ? floatval($case['parts_discount_percent']) : 0;
+    $services_discount_pct = isset($case['services_discount_percent']) ? floatval($case['services_discount_percent']) : 0;
+    $global_discount_pct = isset($case['global_discount_percent']) ? floatval($case['global_discount_percent']) : 0;
     
 } catch (Exception $e) {
     http_response_code(500);
-    die('<h1>Error loading invoice</h1>');
+    die('<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Error loading invoice</h1></body></html>');
 }
 
 // Calculate totals with discounts
@@ -68,9 +89,9 @@ $global_discount_amount = $after_category_discounts * ($global_discount_pct / 10
 $total_discount = $parts_discount_amount + $services_discount_amount + $global_discount_amount;
 $grand_total = $after_category_discounts - $global_discount_amount;
 
-// Format date
-$invoice_date = $case['created_at'] ? date('d.m.Y', strtotime($case['created_at'])) : date('d.m.Y');
-$service_date = $case['service_date'] ? date('d.m.Y H:i', strtotime($case['service_date'])) : 'Not scheduled';
+// Format date safely
+$invoice_date = !empty($case['created_at']) ? date('d.m.Y', strtotime($case['created_at'])) : date('d.m.Y');
+$service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($case['service_date'])) : 'Not scheduled';
 ?>
 <!DOCTYPE html>
 <html lang="ka">
@@ -81,7 +102,12 @@ $service_date = $case['service_date'] ? date('d.m.Y H:i', strtotime($case['servi
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
+    <?php 
+    $fontsPath = __DIR__ . '/fonts/include_fonts.php';
+    if (file_exists($fontsPath)) {
+        include $fontsPath;
+    }
+    ?>
     <script>
         tailwind.config = {
             theme: {
