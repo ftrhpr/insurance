@@ -15,9 +15,12 @@ $service_account_file = __DIR__ . '/service-account.json';
 // --- DB CONNECTION ---
 try {
     $pdo = getDBConnection();
-} catch (Exception $e) {
+} catch (Throwable $e) { // Catch all possible errors
     http_response_code(500); 
-    die(json_encode(['error' => 'DB Connection failed: ' . $e->getMessage()]));
+    // Log the detailed error to the server's error log
+    error_log("FATAL DB Connection failed: " . $e->getMessage());
+    // Send a generic, user-friendly error response
+    die(json_encode(['error' => 'Database connection failed. Please check server logs.']));
 }
 
 $action = $_GET['action'] ?? '';
