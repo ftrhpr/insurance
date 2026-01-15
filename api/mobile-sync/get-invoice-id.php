@@ -80,8 +80,12 @@ try {
     
     // Transform repair_labor back to app format
     $services = array_map(function($labor) {
+        $laborName = $labor['name'] ?? $labor['description'] ?? 'Unknown Service';
         return [
-            'serviceName' => $labor['name'] ?? $labor['description'] ?? 'Unknown Service',
+            'serviceName' => $laborName,
+            'serviceNameKa' => $laborName, // Set both for compatibility
+            'name' => $laborName, // For PHP compatibility
+            'nameKa' => $laborName, // Backup field
             'price' => floatval($labor['price'] ?? $labor['rate'] ?? $labor['hourly_rate'] ?? 0),
             'count' => intval($labor['hours'] ?? 1),
             'discount_percent' => floatval($labor['discount_percent'] ?? 0),
