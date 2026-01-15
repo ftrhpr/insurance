@@ -60,6 +60,9 @@ try {
         die('<!DOCTYPE html><html><head><title>Not Found</title></head><body><h1>Invoice not found</h1></body></html>');
     }
     
+    // Set case_id from database if not provided via GET
+    $case_id = $case['id'];
+    
     // Decode JSON fields safely
     $repair_parts = [];
     $repair_labor = [];
