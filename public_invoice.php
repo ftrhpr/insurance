@@ -71,6 +71,13 @@ try {
     $services_discount_pct = isset($case['services_discount_percent']) ? floatval($case['services_discount_percent']) : 0;
     $global_discount_pct = isset($case['global_discount_percent']) ? floatval($case['global_discount_percent']) : 0;
     
+    // Get case images
+    $case_images = [];
+    if (!empty($case['case_images'])) {
+        $decoded = json_decode($case['case_images'], true);
+        if (is_array($decoded)) $case_images = $decoded;
+    }
+    
 } catch (Exception $e) {
     http_response_code(500);
     die('<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Error loading invoice</h1></body></html>');
@@ -306,6 +313,32 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                     <p>ინვოისის დეტალები ჯერ არ არის დამატებული</p>
                 </div>
                 <?php endif; ?>
+                
+                <?php if (count($case_images) > 0): ?>
+                <!-- Photos Section -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4 flex items-center gap-2">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                        ფოტოები (<?php echo count($case_images); ?>)
+                    </h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <?php foreach ($case_images as $index => $imageUrl): ?>
+                        <div class="relative aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-100 cursor-pointer group" onclick="openImageModal(<?php echo $index; ?>)">
+                            <img src="<?php echo htmlspecialchars($imageUrl); ?>" 
+                                 alt="ფოტო <?php echo $index + 1; ?>" 
+                                 class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-gray-400\'><i data-lucide=\'image-off\' class=\'w-8 h-8\'></i></div>';">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div class="absolute bottom-2 left-2 text-white text-xs font-medium">
+                                    ფოტო <?php echo $index + 1; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
             
             <!-- Totals Section -->
@@ -391,8 +424,67 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
         </div>
     </div>
     
+    <?php if (count($case_images) > 0): ?>
+    <!-- Image Modal -->
+    <div id="image-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 no-print" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white/80 hover:text-white p-2">
+            <i data-lucide="x" class="w-8 h-8"></i>
+        </button>
+        <button onclick="event.stopPropagation(); prevImage()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-2 bg-black/30 rounded-full">
+            <i data-lucide="chevron-left" class="w-8 h-8"></i>
+        </button>
+        <button onclick="event.stopPropagation(); nextImage()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-2 bg-black/30 rounded-full">
+            <i data-lucide="chevron-right" class="w-8 h-8"></i>
+        </button>
+        <img id="modal-image" src="" alt="Full size photo" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl" onclick="event.stopPropagation()">
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm">
+            <span id="image-counter">1 / <?php echo count($case_images); ?></span>
+        </div>
+    </div>
+    <?php endif; ?>
+    
     <script>
         lucide.createIcons();
+        
+        <?php if (count($case_images) > 0): ?>
+        const caseImages = <?php echo json_encode($case_images); ?>;
+        let currentImageIndex = 0;
+        
+        function openImageModal(index) {
+            currentImageIndex = index;
+            updateModalImage();
+            document.getElementById('image-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        
+        function updateModalImage() {
+            document.getElementById('modal-image').src = caseImages[currentImageIndex];
+            document.getElementById('image-counter').textContent = (currentImageIndex + 1) + ' / ' + caseImages.length;
+        }
+        
+        function prevImage() {
+            currentImageIndex = (currentImageIndex - 1 + caseImages.length) % caseImages.length;
+            updateModalImage();
+        }
+        
+        function nextImage() {
+            currentImageIndex = (currentImageIndex + 1) % caseImages.length;
+            updateModalImage();
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('image-modal').classList.contains('hidden')) return;
+            if (e.key === 'Escape') closeImageModal();
+            if (e.key === 'ArrowLeft') prevImage();
+            if (e.key === 'ArrowRight') nextImage();
+        });
+        <?php endif; ?>
     </script>
 </body>
 </html>
