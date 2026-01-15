@@ -432,7 +432,7 @@ try {
                             </div>
                             <div>
                                 <h2 class="text-xl font-bold text-slate-800"><?php echo __('case.repair_management', 'Repair Management'); ?></h2>
-                                <p class="text-sm text-slate-600 mt-0.5">Track repair progress, manage parts & labor, monitor costs</p>
+                                <p class="text-sm text-slate-600 mt-0.5">Track repair progress, manage parts & services, monitor costs</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -473,8 +473,8 @@ try {
                                         Add Part
                                     </button>
                                     <button @click="quickAddLabor()" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                        <i data-lucide="user-plus" class="w-4 h-4"></i>
-                                        Add Labor
+                                        <i data-lucide="wrench" class="w-4 h-4"></i>
+                                        Add Service
                                     </button>
                                     <button @click="parseInvoice()" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
@@ -502,7 +502,7 @@ try {
                                     </button>
                                     <button @click="repairTab = 'items'" :class="{'bg-blue-50 text-blue-700 border-b-2 border-blue-500': repairTab === 'items'}" class="flex-1 px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
                                         <i data-lucide="package" class="w-4 h-4"></i>
-                                        Parts & Labor
+                                        Parts & Services
                                         <span id="items-count" class="ml-1 px-2 py-0.5 bg-slate-200 text-slate-700 text-xs rounded-full">0</span>
                                     </button>
                                     <button @click="repairTab = 'timeline'" :class="{'bg-blue-50 text-blue-700 border-b-2 border-blue-500': repairTab === 'timeline'}" class="flex-1 px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
@@ -559,7 +559,7 @@ try {
                                             <!-- Cost Summary Card -->
                                             <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200">
                                                 <div class="flex items-center justify-between mb-2">
-                                                    <i data-lucide="dollar-sign" class="w-5 h-5 text-amber-600"></i>
+                                                    <i data-lucide="banknote" class="w-5 h-5 text-amber-600"></i>
                                                     <span class="text-xs font-medium text-amber-700 bg-amber-200 px-2 py-1 rounded-full">Total</span>
                                                 </div>
                                                 <h4 class="font-semibold text-slate-800 mb-1">Estimated Cost</h4>
@@ -583,8 +583,8 @@ try {
                                                 <div class="text-sm text-slate-600">Parts Required</div>
                                             </div>
                                             <div class="bg-white p-4 rounded-xl border border-slate-200 text-center">
-                                                <div class="text-2xl font-bold text-green-600" id="overview-labor-hours">0h</div>
-                                                <div class="text-sm text-slate-600">Labor Hours</div>
+                                                <div class="text-2xl font-bold text-green-600" id="overview-labor-count">0</div>
+                                                <div class="text-sm text-slate-600">Services</div>
                                             </div>
                                             <div class="bg-white p-4 rounded-xl border border-slate-200 text-center">
                                                 <div class="text-2xl font-bold text-purple-600" id="overview-activities-count">0</div>
@@ -593,19 +593,19 @@ try {
                                         </div>
                                     </div>
 
-                                    <!-- Parts & Labor Tab -->
+                                    <!-- Parts & Services Tab -->
                                     <div x-show="repairTab === 'items'" x-transition class="space-y-4">
                                         <!-- Search and Filter Bar -->
                                         <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                                             <div class="flex items-center gap-3">
                                                 <div class="relative">
                                                     <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                                                    <input type="text" id="items-search" placeholder="Search parts & labor..." class="pl-9 pr-4 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64">
+                                                    <input type="text" id="items-search" placeholder="Search parts & services..." class="pl-9 pr-4 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64">
                                                 </div>
                                                 <select id="items-filter" class="px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                     <option value="all">All Items</option>
                                                     <option value="parts">Parts Only</option>
-                                                    <option value="labor">Labor Only</option>
+                                                    <option value="labor">Services Only</option>
                                                     <option value="pending">Pending</option>
                                                     <option value="completed">Completed</option>
                                                 </select>
@@ -634,8 +634,8 @@ try {
                                             <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                                 <i data-lucide="package" class="w-8 h-8 text-slate-400"></i>
                                             </div>
-                                            <h3 class="text-lg font-semibold text-slate-700 mb-2">No Parts or Labor Added</h3>
-                                            <p class="text-slate-600 mb-4">Start by adding parts and labor items for this repair.</p>
+                                            <h3 class="text-lg font-semibold text-slate-700 mb-2">No Items Added</h3>
+                                            <p class="text-slate-600 mb-4">Start by adding parts and services for this repair.</p>
                                             <div class="flex justify-center gap-3">
                                                 <button @click="quickAddPart()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                                                     <i data-lucide="plus" class="w-4 h-4"></i>
@@ -648,28 +648,59 @@ try {
                                             </div>
                                         </div>
 
-                                        <!-- Cost Summary -->
-                                        <div class="bg-gradient-to-r from-slate-50 to-blue-50 p-4 rounded-xl border border-slate-200">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <h4 class="font-semibold text-slate-800">Cost Breakdown</h4>
-                                                <div class="text-sm text-slate-600">Total: <span class="font-bold text-slate-800" id="items-total-cost">₾0.00</span></div>
+                                        <!-- Professional Cost Breakdown Card -->
+                                        <div class="bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                                            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+                                                <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                                                    <i data-lucide="receipt" class="w-5 h-5"></i>
+                                                    Cost Breakdown
+                                                </h3>
                                             </div>
-                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                                <div class="text-center">
-                                                    <div class="font-semibold text-blue-600" id="items-parts-cost">₾0.00</div>
-                                                    <div class="text-slate-600">Parts</div>
-                                                </div>
-                                                <div class="text-center">
-                                                    <div class="font-semibold text-green-600" id="items-labor-cost">₾0.00</div>
-                                                    <div class="text-slate-600">Labor</div>
-                                                </div>
-                                                <div class="text-center">
-                                                    <div class="font-semibold text-purple-600" id="items-tax-cost">₾0.00</div>
-                                                    <div class="text-slate-600">Tax</div>
-                                                </div>
-                                                <div class="text-center">
-                                                    <div class="font-bold text-slate-800" id="items-grand-total">₾0.00</div>
-                                                    <div class="text-slate-600">Grand Total</div>
+                                            <div class="p-6">
+                                                <div class="space-y-4">
+                                                    <!-- Parts Section -->
+                                                    <div class="flex items-center justify-between py-3 border-b border-slate-100">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                                <i data-lucide="package" class="w-5 h-5 text-blue-600"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="font-medium text-slate-800">Parts</div>
+                                                                <div class="text-sm text-slate-500" id="parts-count-label">0 items</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <div class="text-lg font-bold text-blue-600" id="items-parts-cost">₾0.00</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Services Section -->
+                                                    <div class="flex items-center justify-between py-3 border-b border-slate-100">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                                                <i data-lucide="wrench" class="w-5 h-5 text-green-600"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="font-medium text-slate-800">Services</div>
+                                                                <div class="text-sm text-slate-500" id="labor-count-label">0 items</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <div class="text-lg font-bold text-green-600" id="items-labor-cost">₾0.00</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Subtotal -->
+                                                    <div class="flex items-center justify-between py-3 border-b border-slate-200">
+                                                        <div class="font-medium text-slate-600">Subtotal</div>
+                                                        <div class="text-lg font-semibold text-slate-700" id="items-total-cost">₾0.00</div>
+                                                    </div>
+                                                    
+                                                    <!-- Grand Total -->
+                                                    <div class="flex items-center justify-between py-4 bg-gradient-to-r from-indigo-50 to-purple-50 -mx-6 px-6 mt-4">
+                                                        <div class="text-lg font-bold text-slate-800">Grand Total</div>
+                                                        <div class="text-2xl font-bold text-indigo-600" id="items-grand-total">₾0.00</div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1223,19 +1254,19 @@ try {
 
                 updateOverviewStats() {
                     const partsCount = (this.currentCase.repair_parts || []).length;
-                    const laborHours = (this.currentCase.repair_labor || []).reduce((sum, l) => sum + (l.hours || 0), 0);
+                    const laborCount = (this.currentCase.repair_labor || []).length;
                     const activitiesCount = (this.currentCase.repair_activity_log || []).length;
                     const totalCost = this.calculateTotalCost();
 
                     document.getElementById('overview-parts-count').textContent = partsCount;
-                    document.getElementById('overview-labor-hours').textContent = `${laborHours}h`;
+                    document.getElementById('overview-labor-count').textContent = laborCount;
                     document.getElementById('overview-activities-count').textContent = activitiesCount;
                     document.getElementById('overview-total-cost').textContent = `₾${totalCost.toFixed(2)}`;
                 },
 
                 calculateTotalCost() {
                     const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || 0) * (labor.unit_rate || 0)), 0);
                     return partsTotal + laborTotal;
                 },
 
@@ -1249,12 +1280,12 @@ try {
                 },
 
                 quickAddLabor() {
-                    const description = prompt('Enter labor description:');
+                    const description = prompt('Enter service description:');
                     if (!description || !description.trim()) return;
-                    const hours = parseFloat(prompt('Enter hours:', '0')) || 0;
-                    const rate = parseFloat(prompt('Enter hourly rate:', '0')) || 0;
-                    this.addLabor(description.trim(), hours, rate);
-                    showToast('Labor Added', `${description} added successfully.`, 'success');
+                    const quantity = parseFloat(prompt('Enter quantity (pcs):', '1')) || 1;
+                    const rate = parseFloat(prompt('Enter unit rate (₾):', '0')) || 0;
+                    this.addLabor(description.trim(), quantity, rate);
+                    showToast('Service Added', `${description} added successfully.`, 'success');
                 },
 
                 parseInvoice() {
@@ -1526,7 +1557,7 @@ try {
                         html += `<div class="mb-6">
                             <div class="flex items-center gap-2 mb-3">
                                 <i data-lucide="user-plus" class="w-5 h-5 text-green-600"></i>
-                                <h4 class="font-semibold text-slate-800">Labor (${laborItems.length})</h4>
+                                <h4 class="font-semibold text-slate-800">Services (${laborItems.length})</h4>
                             </div>
                             <div class="space-y-3">
                                 ${laborItems.map(item => this.renderItemCard(item)).join('')}
@@ -1607,16 +1638,16 @@ try {
                                 </div>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                     <div>
-                                        <span class="text-slate-600">Hours:</span>
-                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.hours || 0}" step="0.5" onchange="updateLabor(${item.originalIndex}, 'hours', this.value)">
+                                        <span class="text-slate-600">Qty:</span>
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.quantity || 1}" step="1" min="1" onchange="updateLabor(${item.originalIndex}, 'quantity', this.value)">
                                     </div>
                                     <div>
-                                        <span class="text-slate-600">Rate:</span>
-                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.hourly_rate || 0}" step="0.01" onchange="updateLabor(${item.originalIndex}, 'hourly_rate', this.value)">
+                                        <span class="text-slate-600">Unit Rate:</span>
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.unit_rate || 0}" step="0.01" onchange="updateLabor(${item.originalIndex}, 'unit_rate', this.value)">
                                     </div>
                                     <div>
                                         <span class="text-slate-600">Total:</span>
-                                        <div class="mt-1 font-semibold text-slate-800">₾${((item.hours || 0) * (item.hourly_rate || 0)).toFixed(2)}</div>
+                                        <div class="mt-1 font-semibold text-slate-800">₾${((item.quantity || 1) * (item.unit_rate || 0)).toFixed(2)}</div>
                                     </div>
                                     <div class="flex items-end">
                                         <button onclick="window.caseEditor.removeLabor(${item.originalIndex})" class="w-full px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
@@ -1633,7 +1664,7 @@ try {
                 updateItemsCostSummary() {
                     const totalCost = this.calculateTotalCost();
                     const partsCost = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborCost = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                    const laborCost = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || 0) * (labor.unit_rate || 0)), 0);
 
                     document.getElementById('items-total-cost').textContent = `₾${totalCost.toFixed(2)}`;
                     document.getElementById('items-parts-cost').textContent = `₾${partsCost.toFixed(2)}`;
@@ -2092,14 +2123,14 @@ try {
                     // Re-render combined items list
                     if (typeof this.updateItemsList === 'function') this.updateItemsList();
                 }, 
-                addLabor(description = '', hours = 0, hourly_rate = 0) {
+                addLabor(description = '', quantity = 1, unit_rate = 0) {
                     if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
-                    this.currentCase.repair_labor.push({ description, hours, hourly_rate, billable: true, notes: '' });
+                    this.currentCase.repair_labor.push({ description, quantity, unit_rate, billable: true, notes: '' });
                     this.updateLaborList();
                 },
                 updateLabor(index, field, value) {
                     if (this.currentCase.repair_labor && this.currentCase.repair_labor[index]) {
-                        this.currentCase.repair_labor[index][field] = field === 'hours' || field === 'hourly_rate' ? parseFloat(value) || 0 : value;
+                        this.currentCase.repair_labor[index][field] = field === 'quantity' || field === 'unit_rate' ? parseFloat(value) || 0 : value;
                         this.updateLaborList();
                     }
                 },
@@ -2112,7 +2143,7 @@ try {
                 updateLaborList() {
                     const totalEl = document.getElementById('labor-total');
                     if (totalEl) {
-                        const total = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                        const total = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || 0) * (labor.unit_rate || 0)), 0);
                         totalEl.textContent = total.toFixed(2) + '₾';
                     }
                     lucide.createIcons();
@@ -2242,20 +2273,29 @@ try {
                 // Receipt / completion confirmations
                 confirmReceipt(index) { const name = prompt('Received by (name):'); if (!name) return; const p = this.currentCase.repair_parts[index]; if (!p) return; p.received_by = name; p.received_at = new Date().toISOString(); p.status = 'Received'; this.updatePartsList(); showToast('Receipt Confirmed', `Received by ${name}`, 'success'); },
                 editReceipt(index) { const p = this.currentCase.repair_parts[index]; if (!p) return; const name = prompt('Received by (name):', p.received_by || ''); if (name === null) return; p.received_by = name; this.updatePartsList(); showToast('Receipt Updated', '', 'success'); },
-                confirmComplete(index) { const name = prompt('Completed by (name):'); if (!name) return; const l = this.currentCase.repair_labor[index]; if (!l) return; l.completed_by = name; l.completed_at = new Date().toISOString(); l.status = 'Completed'; this.updateLaborList(); showToast('Labor Marked Completed', `Completed by ${name}`, 'success'); },
+                confirmComplete(index) { const name = prompt('Completed by (name):'); if (!name) return; const l = this.currentCase.repair_labor[index]; if (!l) return; l.completed_by = name; l.completed_at = new Date().toISOString(); l.status = 'Completed'; this.updateLaborList(); showToast('Service Marked Completed', `Completed by ${name}`, 'success'); },
                 editComplete(index) { const l = this.currentCase.repair_labor[index]; if (!l) return; const name = prompt('Completed by (name):', l.completed_by || ''); if (name === null) return; l.completed_by = name; this.updateLaborList(); showToast('Completion Updated', '', 'success'); },
                 updateRepairSummary() {
                     const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || 0) * (labor.unit_rate || 0)), 0);
                     const grandTotal = partsTotal + laborTotal;
                     
                     const partsEl = document.getElementById('summary-parts-total');
                     const laborEl = document.getElementById('summary-labor-total');
                     const grandEl = document.getElementById('summary-grand-total');
+                    const subtotalEl = document.getElementById('summary-subtotal');
+                    const partsCountEl = document.getElementById('parts-count-label');
+                    const laborCountEl = document.getElementById('labor-count-label');
                     
-                    if (partsEl) partsEl.textContent = partsTotal.toFixed(2) + '₾';
-                    if (laborEl) laborEl.textContent = laborTotal.toFixed(2) + '₾';
-                    if (grandEl) grandEl.textContent = grandTotal.toFixed(2) + '₾';
+                    const partsCount = (this.currentCase.repair_parts || []).length;
+                    const laborCount = (this.currentCase.repair_labor || []).length;
+                    
+                    if (partsEl) partsEl.textContent = `₾${partsTotal.toFixed(2)}`;
+                    if (laborEl) laborEl.textContent = `₾${laborTotal.toFixed(2)}`;
+                    if (grandEl) grandEl.textContent = `₾${grandTotal.toFixed(2)}`;
+                    if (subtotalEl) subtotalEl.textContent = `₾${grandTotal.toFixed(2)}`;
+                    if (partsCountEl) partsCountEl.textContent = `${partsCount} item${partsCount !== 1 ? 's' : ''}`;
+                    if (laborCountEl) laborCountEl.textContent = `${laborCount} item${laborCount !== 1 ? 's' : ''}`;
                 },
 
                 // Render combined items (parts + labor) into a single view
@@ -2267,19 +2307,19 @@ try {
                     const parts = this.currentCase.repair_parts || [];
                     const labor = this.currentCase.repair_labor || [];
                     const partsTotal = parts.reduce((s,p)=>s+((p.quantity||1)*(p.unit_price||0)),0);
-                    const laborTotal = labor.reduce((s,l)=>s+((l.hours||0)*(l.hourly_rate||0)),0);
+                    const laborTotal = labor.reduce((s,l)=>s+((l.quantity||1)*(l.unit_rate||0)),0);
                     const grand = partsTotal + laborTotal;
 
                     const caseInfo = this.currentCase || {};
                     let rows = '';
-                    parts.forEach(p => rows += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>${(p.unit_price||0).toFixed(2)}₾</td><td>${(((p.quantity||1)*(p.unit_price||0))).toFixed(2)}₾</td></tr>`);
-                    labor.forEach(l => rows += `<tr><td>${escapeHtml(l.description||'')}</td><td>${l.hours||0}</td><td>${(l.hourly_rate||0).toFixed(2)}₾</td><td>${(((l.hours||0)*(l.hourly_rate||0))).toFixed(2)}₾</td></tr>`);
+                    parts.forEach(p => rows += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>₾${(p.unit_price||0).toFixed(2)}</td><td>₾${(((p.quantity||1)*(p.unit_price||0))).toFixed(2)}</td></tr>`);
+                    labor.forEach(l => rows += `<tr><td>${escapeHtml(l.description||'')}</td><td>${l.quantity||1}</td><td>₾${(l.unit_rate||0).toFixed(2)}</td><td>₾${(((l.quantity||1)*(l.unit_rate||0))).toFixed(2)}</td></tr>`);
 
                     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice - Case ${CASE_ID}</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7f7}</style></head><body>
                         <h2>Invoice - Case #${CASE_ID}</h2>
                         <div><strong>Customer:</strong> ${escapeHtml(caseInfo.name||'')} &nbsp; <strong>Plate:</strong> ${escapeHtml(caseInfo.plate||'')}</div>
-                        <table class="mt-4"><thead><tr><th>Description</th><th>Qty/Hours</th><th>Unit</th><th>Total</th></tr></thead><tbody>${rows}</tbody>
-                        <tfoot><tr><th colspan="3">Parts Total</th><th>${partsTotal.toFixed(2)}₾</th></tr><tr><th colspan="3">Labor Total</th><th>${laborTotal.toFixed(2)}₾</th></tr><tr><th colspan="3">Grand Total</th><th>${grand.toFixed(2)}₾</th></tr></tfoot></table>
+                        <table class="mt-4"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>${rows}</tbody>
+                        <tfoot><tr><th colspan="3">Parts Total</th><th>₾${partsTotal.toFixed(2)}</th></tr><tr><th colspan="3">Services Total</th><th>₾${laborTotal.toFixed(2)}</th></tr><tr><th colspan="3">Grand Total</th><th>₾${grand.toFixed(2)}</th></tr></tfoot></table>
                         <div style="margin-top:20px"><button onclick="window.print()">Print</button></div>
                     </body></html>`;
 
@@ -2380,11 +2420,11 @@ try {
                     }
                     if ((sel.labor || []).length > 0) {
                         rows.push([]);
-                        rows.push(['Labor']);
-                        rows.push(['Description','Hours','Rate','Total','Status','Notes']);
-                        sel.labor.forEach(l => rows.push([l.description||'', l.hours||'', l.hourly_rate||'', ((l.hours||0)*(l.hourly_rate||0)).toFixed(2), l.status||'', l.notes||'']));
+                        rows.push(['Services']);
+                        rows.push(['Description','Qty','Unit Rate','Total','Status','Notes']);
+                        sel.labor.forEach(l => rows.push([l.description||'', l.quantity||1, l.unit_rate||'', ((l.quantity||1)*(l.unit_rate||0)).toFixed(2), l.status||'', l.notes||'']));
                     }
-                    if (rows.length === 0) return showToast('No items selected', 'Select parts or labor to export.', 'info');
+                    if (rows.length === 0) return showToast('No items selected', 'Select parts or services to export.', 'info');
                     const csv = rows.map(r => r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
                     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `case-${CASE_ID}-selected.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
@@ -2490,9 +2530,9 @@ try {
 
                     // Create a description from selected items
                     const partsList = selected.parts.map(part => `${part.name} (Qty: ${part.quantity})`).join(', ');
-                    const laborList = selected.labor.map(labor => `${labor.description} (${labor.hours}h)`).join(', ');
+                    const laborList = selected.labor.map(labor => `${labor.description} (Qty: ${labor.quantity})`).join(', ');
                     
-                    const description = `Parts Collection Request for: ${partsList}${laborList ? `, Labor: ${laborList}` : ''}`;
+                    const description = `Parts Collection Request for: ${partsList}${laborList ? `, Services: ${laborList}` : ''}`;
                     
                     // Pre-fill the parts request form
                     this.partsRequest.description = description;
@@ -2854,7 +2894,7 @@ try {
                     const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => 
                         sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
                     const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => 
-                        sum + ((labor.hours || 0) * (labor.hourly_rate || 0)), 0);
+                        sum + ((labor.quantity || 1) * (labor.unit_rate || 0)), 0);
                     return partsTotal + laborTotal;
                 },
 
@@ -2869,12 +2909,12 @@ try {
                     this.updateOverviewStats();
                 },
 
-                quickAddLabor(description = '', hours = 1, rate = 0) {
+                quickAddLabor(description = '', quantity = 1, rate = 0) {
                     if (!description.trim()) {
-                        description = prompt('Enter labor description:');
+                        description = prompt('Enter service description:');
                         if (!description) return;
                     }
-                    this.addLabor(description, hours, rate);
+                    this.addLabor(description, quantity, rate);
                     this.renderItemsList();
                     this.updateOverviewStats();
                 },
@@ -2922,11 +2962,11 @@ try {
 
                     // Update summary displays
                     const partsEl = document.getElementById('overview-parts-count');
-                    const laborEl = document.getElementById('overview-labor-hours');
+                    const laborEl = document.getElementById('overview-labor-count');
                     const costEl = document.getElementById('overview-total-cost');
 
                     if (partsEl) partsEl.textContent = partsCount;
-                    if (laborEl) laborEl.textContent = `${laborCount}h`;
+                    if (laborEl) laborEl.textContent = laborCount;
                     if (costEl) costEl.textContent = `₾${totalCost.toFixed(2)}`;
                 },
 
