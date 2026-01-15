@@ -1266,7 +1266,7 @@ try {
 
                 calculateTotalCost() {
                     const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || 0) * (labor.unit_rate || 0)), 0);
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
                     return partsTotal + laborTotal;
                 },
 
@@ -1639,15 +1639,15 @@ try {
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                     <div>
                                         <span class="text-slate-600">Qty:</span>
-                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.quantity || 1}" step="1" min="1" onchange="updateLabor(${item.originalIndex}, 'quantity', this.value)">
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.quantity || item.hours || 1}" step="1" min="1" onchange="updateLabor(${item.originalIndex}, 'quantity', this.value)">
                                     </div>
                                     <div>
                                         <span class="text-slate-600">Unit Rate:</span>
-                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.unit_rate || 0}" step="0.01" onchange="updateLabor(${item.originalIndex}, 'unit_rate', this.value)">
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.unit_rate || item.hourly_rate || 0}" step="0.01" onchange="updateLabor(${item.originalIndex}, 'unit_rate', this.value)">
                                     </div>
                                     <div>
                                         <span class="text-slate-600">Total:</span>
-                                        <div class="mt-1 font-semibold text-slate-800">₾${((item.quantity || 1) * (item.unit_rate || 0)).toFixed(2)}</div>
+                                        <div class="mt-1 font-semibold text-slate-800">₾${((item.quantity || item.hours || 1) * (item.unit_rate || item.hourly_rate || 0)).toFixed(2)}</div>
                                     </div>
                                     <div class="flex items-end">
                                         <button onclick="window.caseEditor.removeLabor(${item.originalIndex})" class="w-full px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
@@ -1664,7 +1664,7 @@ try {
                 updateItemsCostSummary() {
                     const totalCost = this.calculateTotalCost();
                     const partsCost = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborCost = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || 0) * (labor.unit_rate || 0)), 0);
+                    const laborCost = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
 
                     document.getElementById('items-total-cost').textContent = `₾${totalCost.toFixed(2)}`;
                     document.getElementById('items-parts-cost').textContent = `₾${partsCost.toFixed(2)}`;
@@ -2143,7 +2143,7 @@ try {
                 updateLaborList() {
                     const totalEl = document.getElementById('labor-total');
                     if (totalEl) {
-                        const total = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || 0) * (labor.unit_rate || 0)), 0);
+                        const total = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
                         totalEl.textContent = total.toFixed(2) + '₾';
                     }
                     lucide.createIcons();
@@ -2277,7 +2277,7 @@ try {
                 editComplete(index) { const l = this.currentCase.repair_labor[index]; if (!l) return; const name = prompt('Completed by (name):', l.completed_by || ''); if (name === null) return; l.completed_by = name; this.updateLaborList(); showToast('Completion Updated', '', 'success'); },
                 updateRepairSummary() {
                     const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || 0) * (labor.unit_rate || 0)), 0);
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
                     const grandTotal = partsTotal + laborTotal;
                     
                     const partsEl = document.getElementById('summary-parts-total');
@@ -2307,13 +2307,13 @@ try {
                     const parts = this.currentCase.repair_parts || [];
                     const labor = this.currentCase.repair_labor || [];
                     const partsTotal = parts.reduce((s,p)=>s+((p.quantity||1)*(p.unit_price||0)),0);
-                    const laborTotal = labor.reduce((s,l)=>s+((l.quantity||1)*(l.unit_rate||0)),0);
+                    const laborTotal = labor.reduce((s,l)=>s+((l.quantity||l.hours||1)*(l.unit_rate||l.hourly_rate||0)),0);
                     const grand = partsTotal + laborTotal;
 
                     const caseInfo = this.currentCase || {};
                     let rows = '';
                     parts.forEach(p => rows += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>₾${(p.unit_price||0).toFixed(2)}</td><td>₾${(((p.quantity||1)*(p.unit_price||0))).toFixed(2)}</td></tr>`);
-                    labor.forEach(l => rows += `<tr><td>${escapeHtml(l.description||'')}</td><td>${l.quantity||1}</td><td>₾${(l.unit_rate||0).toFixed(2)}</td><td>₾${(((l.quantity||1)*(l.unit_rate||0))).toFixed(2)}</td></tr>`);
+                    labor.forEach(l => rows += `<tr><td>${escapeHtml(l.description||'')}</td><td>${l.quantity||l.hours||1}</td><td>₾${(l.unit_rate||l.hourly_rate||0).toFixed(2)}</td><td>₾${(((l.quantity||l.hours||1)*(l.unit_rate||l.hourly_rate||0))).toFixed(2)}</td></tr>`);
 
                     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice - Case ${CASE_ID}</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7f7}</style></head><body>
                         <h2>Invoice - Case #${CASE_ID}</h2>
@@ -2894,7 +2894,7 @@ try {
                     const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => 
                         sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
                     const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => 
-                        sum + ((labor.quantity || 1) * (labor.unit_rate || 0)), 0);
+                        sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
                     return partsTotal + laborTotal;
                 },
 
