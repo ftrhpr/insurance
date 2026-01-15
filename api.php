@@ -1856,6 +1856,17 @@ try {
         }
 
         try {
+            // Defensive migration: ensure share_slug column exists
+            try {
+                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = 'share_slug'");
+                $checkStmt->execute([DB_NAME]);
+                if ($checkStmt->fetchColumn() == 0) {
+                    $pdo->exec("ALTER TABLE transfers ADD COLUMN `share_slug` VARCHAR(16) DEFAULT NULL UNIQUE");
+                }
+            } catch (Exception $migrationError) {
+                // Ignore if migration fails (e.g., permissions), proceed and let the query fail if column is truly missing
+            }
+
             $stmt = $pdo->prepare("SELECT share_slug FROM transfers WHERE id = ?");
             $stmt->execute([$id]);
             $slug = $stmt->fetchColumn();
