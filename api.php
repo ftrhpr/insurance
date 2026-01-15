@@ -356,6 +356,9 @@ try {
                 'vehicle_make' => "VARCHAR(100) DEFAULT NULL",
                 'vehicle_model' => "VARCHAR(100) DEFAULT NULL",
                 'case_images' => "TEXT DEFAULT NULL",
+                'parts_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
+                'services_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
+                'global_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -393,7 +396,10 @@ try {
                 'repair_notes' => 'repair_notes',
                 'repair_parts' => 'repair_parts',
                 'repair_labor' => 'repair_labor',
-                'repair_activity_log' => 'repair_activity_log'
+                'repair_activity_log' => 'repair_activity_log',
+                'parts_discount_percent' => 'parts_discount_percent',
+                'services_discount_percent' => 'services_discount_percent',
+                'global_discount_percent' => 'global_discount_percent'
             ];
 
             $update_fields = [];

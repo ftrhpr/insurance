@@ -696,6 +696,77 @@ try {
                                                         <div class="text-lg font-semibold text-slate-700" id="items-total-cost">₾0.00</div>
                                                     </div>
                                                     
+                                                    <!-- Discount Section -->
+                                                    <div class="py-4 border-b border-slate-200 space-y-3">
+                                                        <div class="flex items-center gap-2 mb-2">
+                                                            <i data-lucide="percent" class="w-4 h-4 text-red-500"></i>
+                                                            <span class="font-medium text-slate-700">Discounts</span>
+                                                        </div>
+                                                        
+                                                        <!-- Parts Discount -->
+                                                        <div class="flex items-center justify-between gap-4">
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+                                                                    <i data-lucide="package" class="w-3 h-3 text-blue-600"></i>
+                                                                </div>
+                                                                <span class="text-sm text-slate-600">Parts Discount</span>
+                                                            </div>
+                                                            <div class="flex items-center gap-2">
+                                                                <input type="number" id="parts-discount-pct" 
+                                                                    x-model.number="currentCase.parts_discount_percent"
+                                                                    @input="updateDiscounts()" 
+                                                                    class="w-16 px-2 py-1 text-sm border border-slate-300 rounded text-center" 
+                                                                    placeholder="0" min="0" max="100" step="0.5">
+                                                                <span class="text-sm text-slate-500">%</span>
+                                                                <span class="text-sm font-medium text-red-500 w-20 text-right" id="parts-discount-amount">-₾0.00</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Services Discount -->
+                                                        <div class="flex items-center justify-between gap-4">
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="w-6 h-6 bg-green-100 rounded flex items-center justify-center">
+                                                                    <i data-lucide="wrench" class="w-3 h-3 text-green-600"></i>
+                                                                </div>
+                                                                <span class="text-sm text-slate-600">Services Discount</span>
+                                                            </div>
+                                                            <div class="flex items-center gap-2">
+                                                                <input type="number" id="services-discount-pct" 
+                                                                    x-model.number="currentCase.services_discount_percent"
+                                                                    @input="updateDiscounts()" 
+                                                                    class="w-16 px-2 py-1 text-sm border border-slate-300 rounded text-center" 
+                                                                    placeholder="0" min="0" max="100" step="0.5">
+                                                                <span class="text-sm text-slate-500">%</span>
+                                                                <span class="text-sm font-medium text-red-500 w-20 text-right" id="services-discount-amount">-₾0.00</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Global Discount -->
+                                                        <div class="flex items-center justify-between gap-4 pt-2 border-t border-slate-100">
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="w-6 h-6 bg-purple-100 rounded flex items-center justify-center">
+                                                                    <i data-lucide="tag" class="w-3 h-3 text-purple-600"></i>
+                                                                </div>
+                                                                <span class="text-sm font-medium text-slate-700">Global Discount</span>
+                                                            </div>
+                                                            <div class="flex items-center gap-2">
+                                                                <input type="number" id="global-discount-pct" 
+                                                                    x-model.number="currentCase.global_discount_percent"
+                                                                    @input="updateDiscounts()" 
+                                                                    class="w-16 px-2 py-1 text-sm border border-slate-300 rounded text-center" 
+                                                                    placeholder="0" min="0" max="100" step="0.5">
+                                                                <span class="text-sm text-slate-500">%</span>
+                                                                <span class="text-sm font-medium text-red-500 w-20 text-right" id="global-discount-amount">-₾0.00</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Total Savings -->
+                                                        <div class="flex items-center justify-between py-2 px-3 bg-red-50 rounded-lg mt-2">
+                                                            <span class="text-sm font-medium text-red-700">Total Savings</span>
+                                                            <span class="text-lg font-bold text-red-600" id="total-discount-amount">-₾0.00</span>
+                                                        </div>
+                                                    </div>
+                                                    
                                                     <!-- Grand Total -->
                                                     <div class="flex items-center justify-between py-4 bg-gradient-to-r from-indigo-50 to-purple-50 -mx-6 px-6 mt-4">
                                                         <div class="text-lg font-bold text-slate-800">Grand Total</div>
@@ -1265,9 +1336,30 @@ try {
                 },
 
                 calculateTotalCost() {
-                    const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
-                    return partsTotal + laborTotal;
+                    // Calculate totals with individual item discounts
+                    const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => {
+                        const itemTotal = (part.quantity || 1) * (part.unit_price || 0);
+                        const itemDiscount = part.discount_percent || 0;
+                        return sum + (itemTotal * (1 - itemDiscount / 100));
+                    }, 0);
+                    
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => {
+                        const itemTotal = (labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0);
+                        const itemDiscount = labor.discount_percent || 0;
+                        return sum + (itemTotal * (1 - itemDiscount / 100));
+                    }, 0);
+                    
+                    // Apply category-level and global discounts
+                    const partsDiscountPct = this.currentCase.parts_discount_percent || 0;
+                    const servicesDiscountPct = this.currentCase.services_discount_percent || 0;
+                    const globalDiscountPct = this.currentCase.global_discount_percent || 0;
+                    
+                    const afterPartsDiscount = partsTotal * (1 - partsDiscountPct / 100);
+                    const afterServicesDiscount = laborTotal * (1 - servicesDiscountPct / 100);
+                    const subtotalAfterCategory = afterPartsDiscount + afterServicesDiscount;
+                    const grandTotal = subtotalAfterCategory * (1 - globalDiscountPct / 100);
+                    
+                    return grandTotal;
                 },
 
                 quickAddPart() {
@@ -1589,6 +1681,9 @@ try {
                     const statusColor = statusColors[item.status || 'Pending'] || 'bg-slate-100 text-slate-800';
 
                     if (isPart) {
+                        const itemDiscount = item.discount_percent || 0;
+                        const itemTotal = (item.quantity || 1) * (item.unit_price || 0);
+                        const discountedTotal = itemTotal * (1 - itemDiscount / 100);
                         return `
                             <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                 <div class="flex items-start justify-between mb-3">
@@ -1601,7 +1696,7 @@ try {
                                     </div>
                                     <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor}">${item.status || 'Pending'}</span>
                                 </div>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                                     <div>
                                         <span class="text-slate-600">Qty:</span>
                                         <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.quantity || 1}" min="1" onchange="updatePart(${item.originalIndex}, 'quantity', this.value)">
@@ -1611,8 +1706,13 @@ try {
                                         <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.unit_price || 0}" step="0.01" onchange="updatePart(${item.originalIndex}, 'unit_price', this.value)">
                                     </div>
                                     <div>
+                                        <span class="text-slate-600 flex items-center gap-1"><i data-lucide="percent" class="w-3 h-3 text-red-500"></i>Disc:</span>
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border border-red-200 rounded text-center bg-red-50" value="${itemDiscount}" min="0" max="100" step="0.5" onchange="updatePart(${item.originalIndex}, 'discount_percent', this.value)">
+                                    </div>
+                                    <div>
                                         <span class="text-slate-600">Total:</span>
-                                        <div class="mt-1 font-semibold text-slate-800">₾${((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}</div>
+                                        <div class="mt-1 font-semibold text-slate-800 ${itemDiscount > 0 ? 'line-through text-slate-400 text-xs' : ''}">₾${itemTotal.toFixed(2)}</div>
+                                        ${itemDiscount > 0 ? `<div class="font-bold text-green-600">₾${discountedTotal.toFixed(2)}</div>` : ''}
                                     </div>
                                     <div class="flex items-end">
                                         <button onclick="window.caseEditor.removePart(${item.originalIndex})" class="w-full px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
@@ -1624,6 +1724,9 @@ try {
                             </div>
                         `;
                     } else {
+                        const itemDiscount = item.discount_percent || 0;
+                        const itemTotal = (item.quantity || item.hours || 1) * (item.unit_rate || item.hourly_rate || 0);
+                        const discountedTotal = itemTotal * (1 - itemDiscount / 100);
                         return `
                             <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                 <div class="flex items-start justify-between mb-3">
@@ -1636,7 +1739,7 @@ try {
                                     </div>
                                     <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor}">${item.status || 'Pending'}</span>
                                 </div>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                                     <div>
                                         <span class="text-slate-600">Qty:</span>
                                         <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.quantity || item.hours || 1}" step="1" min="1" onchange="updateLabor(${item.originalIndex}, 'quantity', this.value)">
@@ -1646,8 +1749,13 @@ try {
                                         <input type="number" class="w-full mt-1 px-2 py-1 border rounded text-center" value="${item.unit_rate || item.hourly_rate || 0}" step="0.01" onchange="updateLabor(${item.originalIndex}, 'unit_rate', this.value)">
                                     </div>
                                     <div>
+                                        <span class="text-slate-600 flex items-center gap-1"><i data-lucide="percent" class="w-3 h-3 text-red-500"></i>Disc:</span>
+                                        <input type="number" class="w-full mt-1 px-2 py-1 border border-red-200 rounded text-center bg-red-50" value="${itemDiscount}" min="0" max="100" step="0.5" onchange="updateLabor(${item.originalIndex}, 'discount_percent', this.value)">
+                                    </div>
+                                    <div>
                                         <span class="text-slate-600">Total:</span>
-                                        <div class="mt-1 font-semibold text-slate-800">₾${((item.quantity || item.hours || 1) * (item.unit_rate || item.hourly_rate || 0)).toFixed(2)}</div>
+                                        <div class="mt-1 font-semibold text-slate-800 ${itemDiscount > 0 ? 'line-through text-slate-400 text-xs' : ''}">₾${itemTotal.toFixed(2)}</div>
+                                        ${itemDiscount > 0 ? `<div class="font-bold text-green-600">₾${discountedTotal.toFixed(2)}</div>` : ''}
                                     </div>
                                     <div class="flex items-end">
                                         <button onclick="window.caseEditor.removeLabor(${item.originalIndex})" class="w-full px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
@@ -1662,14 +1770,8 @@ try {
                 },
 
                 updateItemsCostSummary() {
-                    const totalCost = this.calculateTotalCost();
-                    const partsCost = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborCost = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
-
-                    document.getElementById('items-total-cost').textContent = `₾${totalCost.toFixed(2)}`;
-                    document.getElementById('items-parts-cost').textContent = `₾${partsCost.toFixed(2)}`;
-                    document.getElementById('items-labor-cost').textContent = `₾${laborCost.toFixed(2)}`;
-                    document.getElementById('items-grand-total').textContent = `₾${totalCost.toFixed(2)}`;
+                    // Delegate to updateRepairSummary for consistent discount handling
+                    this.updateRepairSummary();
                 },
 
                 renderTimeline() {
@@ -2051,6 +2153,10 @@ try {
                         repair_parts: this.currentCase.repair_parts || [],
                         repair_labor: this.currentCase.repair_labor || [],
                         repair_activity_log: this.currentCase.repair_activity_log || [],
+                        // Discount fields
+                        parts_discount_percent: this.currentCase.parts_discount_percent || 0,
+                        services_discount_percent: this.currentCase.services_discount_percent || 0,
+                        global_discount_percent: this.currentCase.global_discount_percent || 0,
                     };
 
                     const systemLogs = [...(this.currentCase.systemLogs || [])];
@@ -2276,16 +2382,44 @@ try {
                 confirmComplete(index) { const name = prompt('Completed by (name):'); if (!name) return; const l = this.currentCase.repair_labor[index]; if (!l) return; l.completed_by = name; l.completed_at = new Date().toISOString(); l.status = 'Completed'; this.updateLaborList(); showToast('Service Marked Completed', `Completed by ${name}`, 'success'); },
                 editComplete(index) { const l = this.currentCase.repair_labor[index]; if (!l) return; const name = prompt('Completed by (name):', l.completed_by || ''); if (name === null) return; l.completed_by = name; this.updateLaborList(); showToast('Completion Updated', '', 'success'); },
                 updateRepairSummary() {
-                    const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
-                    const grandTotal = partsTotal + laborTotal;
+                    // Calculate raw totals (before any discounts)
+                    const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => {
+                        const itemTotal = (part.quantity || 1) * (part.unit_price || 0);
+                        const itemDiscount = part.discount_percent || 0;
+                        return sum + (itemTotal * (1 - itemDiscount / 100));
+                    }, 0);
                     
+                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => {
+                        const itemTotal = (labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0);
+                        const itemDiscount = labor.discount_percent || 0;
+                        return sum + (itemTotal * (1 - itemDiscount / 100));
+                    }, 0);
+                    
+                    const subtotal = partsTotal + laborTotal;
+                    
+                    // Apply category-level discounts
+                    const partsDiscountPct = this.currentCase.parts_discount_percent || 0;
+                    const servicesDiscountPct = this.currentCase.services_discount_percent || 0;
+                    const globalDiscountPct = this.currentCase.global_discount_percent || 0;
+                    
+                    const partsDiscount = partsTotal * (partsDiscountPct / 100);
+                    const servicesDiscount = laborTotal * (servicesDiscountPct / 100);
+                    const afterCategoryDiscounts = subtotal - partsDiscount - servicesDiscount;
+                    const globalDiscount = afterCategoryDiscounts * (globalDiscountPct / 100);
+                    const totalDiscount = partsDiscount + servicesDiscount + globalDiscount;
+                    const grandTotal = afterCategoryDiscounts - globalDiscount;
+                    
+                    // Update DOM elements
                     const partsEl = document.getElementById('items-parts-cost');
                     const laborEl = document.getElementById('items-labor-cost');
                     const grandEl = document.getElementById('items-grand-total');
                     const subtotalEl = document.getElementById('items-total-cost');
                     const partsCountEl = document.getElementById('parts-count-label');
                     const laborCountEl = document.getElementById('labor-count-label');
+                    const partsDiscountAmountEl = document.getElementById('parts-discount-amount');
+                    const servicesDiscountAmountEl = document.getElementById('services-discount-amount');
+                    const globalDiscountAmountEl = document.getElementById('global-discount-amount');
+                    const totalDiscountAmountEl = document.getElementById('total-discount-amount');
                     
                     const partsCount = (this.currentCase.repair_parts || []).length;
                     const laborCount = (this.currentCase.repair_labor || []).length;
@@ -2293,9 +2427,19 @@ try {
                     if (partsEl) partsEl.textContent = `₾${partsTotal.toFixed(2)}`;
                     if (laborEl) laborEl.textContent = `₾${laborTotal.toFixed(2)}`;
                     if (grandEl) grandEl.textContent = `₾${grandTotal.toFixed(2)}`;
-                    if (subtotalEl) subtotalEl.textContent = `₾${grandTotal.toFixed(2)}`;
+                    if (subtotalEl) subtotalEl.textContent = `₾${subtotal.toFixed(2)}`;
                     if (partsCountEl) partsCountEl.textContent = `${partsCount} item${partsCount !== 1 ? 's' : ''}`;
                     if (laborCountEl) laborCountEl.textContent = `${laborCount} item${laborCount !== 1 ? 's' : ''}`;
+                    if (partsDiscountAmountEl) partsDiscountAmountEl.textContent = `-₾${partsDiscount.toFixed(2)}`;
+                    if (servicesDiscountAmountEl) servicesDiscountAmountEl.textContent = `-₾${servicesDiscount.toFixed(2)}`;
+                    if (globalDiscountAmountEl) globalDiscountAmountEl.textContent = `-₾${globalDiscount.toFixed(2)}`;
+                    if (totalDiscountAmountEl) totalDiscountAmountEl.textContent = `-₾${totalDiscount.toFixed(2)}`;
+                },
+                
+                // Method to update discounts from inputs
+                updateDiscounts() {
+                    this.updateRepairSummary();
+                    this.updateOverviewStats();
                 },
 
                 // Render combined items (parts + labor) into a single view
@@ -2306,20 +2450,77 @@ try {
                 showInvoice() {
                     const parts = this.currentCase.repair_parts || [];
                     const labor = this.currentCase.repair_labor || [];
-                    const partsTotal = parts.reduce((s,p)=>s+((p.quantity||1)*(p.unit_price||0)),0);
-                    const laborTotal = labor.reduce((s,l)=>s+((l.quantity||l.hours||1)*(l.unit_rate||l.hourly_rate||0)),0);
-                    const grand = partsTotal + laborTotal;
+                    // Calculate totals with individual item discounts
+                    const partsRaw = parts.reduce((s,p) => {
+                        const itemTotal = (p.quantity||1)*(p.unit_price||0);
+                        const itemDiscount = p.discount_percent || 0;
+                        return s + itemTotal;
+                    }, 0);
+                    const partsTotal = parts.reduce((s,p) => {
+                        const itemTotal = (p.quantity||1)*(p.unit_price||0);
+                        const itemDiscount = p.discount_percent || 0;
+                        return s + (itemTotal * (1 - itemDiscount/100));
+                    }, 0);
+                    
+                    const laborRaw = labor.reduce((s,l) => {
+                        const itemTotal = (l.quantity||l.hours||1)*(l.unit_rate||l.hourly_rate||0);
+                        return s + itemTotal;
+                    }, 0);
+                    const laborTotal = labor.reduce((s,l) => {
+                        const itemTotal = (l.quantity||l.hours||1)*(l.unit_rate||l.hourly_rate||0);
+                        const itemDiscount = l.discount_percent || 0;
+                        return s + (itemTotal * (1 - itemDiscount/100));
+                    }, 0);
+                    
+                    const subtotal = partsTotal + laborTotal;
+                    
+                    // Category and global discounts
+                    const partsDiscountPct = this.currentCase.parts_discount_percent || 0;
+                    const servicesDiscountPct = this.currentCase.services_discount_percent || 0;
+                    const globalDiscountPct = this.currentCase.global_discount_percent || 0;
+                    
+                    const partsDiscount = partsTotal * (partsDiscountPct/100);
+                    const servicesDiscount = laborTotal * (servicesDiscountPct/100);
+                    const afterCategoryDiscounts = subtotal - partsDiscount - servicesDiscount;
+                    const globalDiscount = afterCategoryDiscounts * (globalDiscountPct/100);
+                    const totalDiscount = partsDiscount + servicesDiscount + globalDiscount;
+                    const grand = afterCategoryDiscounts - globalDiscount;
 
                     const caseInfo = this.currentCase || {};
                     let rows = '';
-                    parts.forEach(p => rows += `<tr><td>${escapeHtml(p.name||'')}</td><td>${p.quantity||1}</td><td>₾${(p.unit_price||0).toFixed(2)}</td><td>₾${(((p.quantity||1)*(p.unit_price||0))).toFixed(2)}</td></tr>`);
-                    labor.forEach(l => rows += `<tr><td>${escapeHtml(l.description||'')}</td><td>${l.quantity||l.hours||1}</td><td>₾${(l.unit_rate||l.hourly_rate||0).toFixed(2)}</td><td>₾${(((l.quantity||l.hours||1)*(l.unit_rate||l.hourly_rate||0))).toFixed(2)}</td></tr>`);
+                    parts.forEach(p => {
+                        const itemDiscount = p.discount_percent || 0;
+                        const itemTotal = (p.quantity||1)*(p.unit_price||0);
+                        const discountedTotal = itemTotal * (1 - itemDiscount/100);
+                        const discountNote = itemDiscount > 0 ? ` <span style="color:#dc2626">(-${itemDiscount}%)</span>` : '';
+                        rows += `<tr><td>${escapeHtml(p.name||'')}${discountNote}</td><td>${p.quantity||1}</td><td>₾${(p.unit_price||0).toFixed(2)}</td><td>₾${discountedTotal.toFixed(2)}</td></tr>`;
+                    });
+                    labor.forEach(l => {
+                        const itemDiscount = l.discount_percent || 0;
+                        const itemTotal = (l.quantity||l.hours||1)*(l.unit_rate||l.hourly_rate||0);
+                        const discountedTotal = itemTotal * (1 - itemDiscount/100);
+                        const discountNote = itemDiscount > 0 ? ` <span style="color:#dc2626">(-${itemDiscount}%)</span>` : '';
+                        rows += `<tr><td>${escapeHtml(l.description||'')}${discountNote}</td><td>${l.quantity||l.hours||1}</td><td>₾${(l.unit_rate||l.hourly_rate||0).toFixed(2)}</td><td>₾${discountedTotal.toFixed(2)}</td></tr>`;
+                    });
 
-                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice - Case ${CASE_ID}</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7f7}</style></head><body>
+                    // Build discount rows for footer
+                    let discountRows = '';
+                    if (partsDiscountPct > 0) discountRows += `<tr style="color:#dc2626"><td colspan="3">Parts Discount (${partsDiscountPct}%)</td><td>-₾${partsDiscount.toFixed(2)}</td></tr>`;
+                    if (servicesDiscountPct > 0) discountRows += `<tr style="color:#dc2626"><td colspan="3">Services Discount (${servicesDiscountPct}%)</td><td>-₾${servicesDiscount.toFixed(2)}</td></tr>`;
+                    if (globalDiscountPct > 0) discountRows += `<tr style="color:#dc2626"><td colspan="3">Global Discount (${globalDiscountPct}%)</td><td>-₾${globalDiscount.toFixed(2)}</td></tr>`;
+
+                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice - Case ${CASE_ID}</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f7f7f7}.total-row{background:#f0f9ff;font-weight:bold}</style></head><body>
                         <h2>Invoice - Case #${CASE_ID}</h2>
                         <div><strong>Customer:</strong> ${escapeHtml(caseInfo.name||'')} &nbsp; <strong>Plate:</strong> ${escapeHtml(caseInfo.plate||'')}</div>
                         <table class="mt-4"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>${rows}</tbody>
-                        <tfoot><tr><th colspan="3">Parts Total</th><th>₾${partsTotal.toFixed(2)}</th></tr><tr><th colspan="3">Services Total</th><th>₾${laborTotal.toFixed(2)}</th></tr><tr><th colspan="3">Grand Total</th><th>₾${grand.toFixed(2)}</th></tr></tfoot></table>
+                        <tfoot>
+                            <tr><th colspan="3">Parts Subtotal</th><th>₾${partsTotal.toFixed(2)}</th></tr>
+                            <tr><th colspan="3">Services Subtotal</th><th>₾${laborTotal.toFixed(2)}</th></tr>
+                            <tr><th colspan="3">Subtotal</th><th>₾${subtotal.toFixed(2)}</th></tr>
+                            ${discountRows}
+                            ${totalDiscount > 0 ? `<tr style="color:#dc2626;font-weight:bold"><td colspan="3">Total Savings</td><td>-₾${totalDiscount.toFixed(2)}</td></tr>` : ''}
+                            <tr class="total-row"><th colspan="3">Grand Total</th><th style="font-size:1.2em">₾${grand.toFixed(2)}</th></tr>
+                        </tfoot></table>
                         <div style="margin-top:20px"><button onclick="window.print()">Print</button></div>
                     </body></html>`;
 
@@ -2889,14 +3090,8 @@ try {
                     alert(details); // Simple alert for now, could be enhanced with a modal
                 },
 
-                // Cost calculations
-                calculateTotalCost() {
-                    const partsTotal = (this.currentCase.repair_parts || []).reduce((sum, part) => 
-                        sum + ((part.quantity || 1) * (part.unit_price || 0)), 0);
-                    const laborTotal = (this.currentCase.repair_labor || []).reduce((sum, labor) => 
-                        sum + ((labor.quantity || labor.hours || 1) * (labor.unit_rate || labor.hourly_rate || 0)), 0);
-                    return partsTotal + laborTotal;
-                },
+                // Cost calculations with discount support (duplicate function - kept for backwards compatibility)
+                // Note: Primary calculateTotalCost is defined earlier in the caseEditor object
 
                 // Quick add methods
                 quickAddPart(name = '', quantity = 1, price = 0) {
