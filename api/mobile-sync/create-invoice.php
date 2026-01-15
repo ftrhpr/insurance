@@ -62,7 +62,10 @@ try {
         repair_status,
         user_response,
         operatorComment,
-        systemLogs
+        systemLogs,
+        services_discount_percent,
+        parts_discount_percent,
+        global_discount_percent
     ) VALUES (
         :plate,
         :vehicle_make,
@@ -79,7 +82,10 @@ try {
         :repair_status,
         :user_response,
         :operatorComment,
-        :systemLogs
+        :systemLogs,
+        :services_discount_percent,
+        :parts_discount_percent,
+        :global_discount_percent
     )";
     
     $stmt = $pdo->prepare($sql);
@@ -258,7 +264,10 @@ try {
         ':repair_status' => null,                     // Leave repair_status NULL
         ':user_response' => 'Processing',             // Default user response - Processing
         ':operatorComment' => 'Created from mobile app - Firebase ID: ' . ($data['firebaseId'] ?? 'N/A'),
-        ':systemLogs' => $imageTagsJson ?? null      // Store photo tags with service locations
+        ':systemLogs' => $imageTagsJson ?? null,     // Store photo tags with service locations
+        ':services_discount_percent' => floatval($data['services_discount_percent'] ?? 0),
+        ':parts_discount_percent' => floatval($data['parts_discount_percent'] ?? 0),
+        ':global_discount_percent' => floatval($data['global_discount_percent'] ?? 0)
     ]);
     
     $insertId = $pdo->lastInsertId();

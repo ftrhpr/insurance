@@ -62,6 +62,9 @@ try {
         'vehicleImages' => 'case_images',
         'damageImages' => 'case_images',
         'attachments' => 'case_images',
+        'services_discount_percent' => 'services_discount_percent',
+        'parts_discount_percent' => 'parts_discount_percent',
+        'global_discount_percent' => 'global_discount_percent',
     ];
     
     // Debug: Log all received data keys and image fields
@@ -81,9 +84,12 @@ try {
         if (isset($data[$appField]) && $data[$appField] !== null && $data[$appField] !== '') {
             $value = $data[$appField];
             
+            // Handle discount fields as floats
+            if (in_array($dbField, ['services_discount_percent', 'parts_discount_percent', 'global_discount_percent'])) {
+                $value = floatval($value);
+            }
             // Handle JSON fields
-            if (in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {
-                if (is_array($value)) {
+            else if (is_array($value) && in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {
                     // Transform services to match portal format (same as create-invoice.php)
                     if ($dbField === 'repair_labor') {
                         $transformedServices = array_map(function($service) {

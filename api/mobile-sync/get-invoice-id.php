@@ -94,6 +94,9 @@ try {
         'user_response' => $invoice['user_response'] ?? null,
         'services' => $services,
         'parts' => $parts,
+        'services_discount_percent' => floatval($invoice['services_discount_percent'] ?? 0),
+        'parts_discount_percent' => floatval($invoice['parts_discount_percent'] ?? 0),
+        'global_discount_percent' => floatval($invoice['global_discount_percent'] ?? 0),
         'serviceDate' => $invoice['serviceDate'] ?? $invoice['service_date'] ?? null,
         'updatedAt' => $invoice['updatedAt'] ?? null,
     ];
