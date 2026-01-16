@@ -435,12 +435,12 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                     </div>
 
                                     <div class="mt-3 rounded-xl bg-orange-50 p-4 border border-orange-200/50">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <div class="text-sm font-medium text-gray-700">საბოლოო გადასახდელი</div>
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-medium text-gray-700 truncate">საბოლოო გადასახდელი</div>
                                                 <div class="text-lg font-bold text-gray-900"><?php echo $vat_enabled && $vat_amount > 0 ? 'დღგ-ით' : ''; ?></div>
                                             </div>
-                                            <div class="text-3xl font-extrabold text-orange-600 break-words max-w-full text-right pl-3">₾<?php echo number_format($final_total, 2); ?></div>
+                                            <div class="text-3xl font-extrabold text-orange-600 text-right shrink-0">₾<?php echo number_format($final_total, 2); ?></div>
                                         </div>
                                     </div>
                                 </div>
