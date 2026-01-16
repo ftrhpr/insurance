@@ -22,6 +22,7 @@ $technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Define the workflow stages
 $stages = [
+    ['id' => 'backlog', 'title' => __('workflow.stage.backlog', 'Backlog')],
     ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'Disassembly')],
     ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'Body Work')],
     ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'Processing for Painting')],
@@ -34,8 +35,10 @@ $stages = [
 $stmt = $pdo->query("
     SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments
     FROM transfers
-    WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed', 'Issue', 'Archived')
-    ORDER BY id DESC
+    WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled')
+    ORDER BY 
+        CASE WHEN repair_stage IS NULL THEN 0 ELSE 1 END,
+        id DESC
 ");
 $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -45,7 +48,7 @@ foreach ($stages as $stage) {
     $casesByStage[$stage['id']] = [];
 }
 foreach ($cases as $case) {
-    $stageId = $case['repair_stage'] ?? 'disassembly';
+    $stageId = $case['repair_stage'] ?? 'backlog';
     if (array_key_exists($stageId, $casesByStage)) {
         $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
         $casesByStage[$stageId][] = $case;
@@ -80,33 +83,35 @@ foreach ($cases as $case) {
         <main class="flex-1 ml-64 py-10 px-6">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-slate-800"><?php echo __('workflow.header', 'Repair Workflow'); ?></h1>
-                <p class="text-slate-600 mt-1"><?php echo __('workflow.description', 'Drag and drop cases to update their repair stage.'); ?></p>
+                <p class="text-slate-600 mt-1"><?php echo __('workflow.description', 'Cases in the backlog are ready to be processed. Drag them into workflow stages to begin repair work.'); ?></p>
             </div>
 
             <div x-data="workflowBoard()" class="overflow-x-auto pb-4">
                 <div class="flex space-x-4 min-w-max">
                     <template x-for="stage in stages" :key="stage.id">
-                        <div class="w-72 bg-slate-200/60 rounded-xl shadow-sm flex-shrink-0">
+                        <div :class="stage.id === 'backlog' ? 'w-72 bg-amber-100/60 rounded-xl shadow-sm flex-shrink-0 border-2 border-amber-200' : 'w-72 bg-slate-200/60 rounded-xl shadow-sm flex-shrink-0'">
                             <div class="p-4 border-b border-slate-300">
-                                <h3 class="text-lg font-semibold text-slate-700 flex items-center justify-between">
+                                <h3 :class="stage.id === 'backlog' ? 'text-lg font-semibold text-amber-800 flex items-center justify-between' : 'text-lg font-semibold text-slate-700 flex items-center justify-between'">
                                     <span x-text="stage.title"></span>
-                                    <span class="text-sm font-medium bg-slate-300 text-slate-600 rounded-full px-2 py-0.5" x-text="cases[stage.id] ? cases[stage.id].length : 0"></span>
+                                    <span :class="stage.id === 'backlog' ? 'text-sm font-medium bg-amber-200 text-amber-700 rounded-full px-2 py-0.5' : 'text-sm font-medium bg-slate-300 text-slate-600 rounded-full px-2 py-0.5'" x-text="cases[stage.id] ? cases[stage.id].length : 0"></span>
                                 </h3>
                             </div>
-                            <div class="p-4 space-y-4 min-h-[60vh]" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
+                            <div :class="stage.id === 'backlog' ? 'p-4 space-y-4 min-h-[60vh] bg-amber-50/50' : 'p-4 space-y-4 min-h-[60vh]'" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
                                 <template x-for="caseItem in cases[stage.id]" :key="caseItem.id">
                                     <div class="bg-white rounded-lg p-4 shadow-md case-card" :data-case-id="caseItem.id">
                                         <div class="font-bold text-slate-800" x-text="`${caseItem.plate} - #${caseItem.id}`"></div>
                                         <div class="text-sm text-slate-500" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
-                                        <div class="mt-4">
-                                            <label class="text-xs font-medium text-slate-500">Technician</label>
-                                            <select @change="assignTechnician(caseItem.id, stage.id, $event.target.value)" class="mt-1 block w-full bg-slate-50 border-slate-200 rounded-md shadow-sm text-sm focus:ring-sky-500 focus:border-sky-500">
-                                                <option value="">Unassigned</option>
-                                                <template x-for="tech in technicians" :key="tech.id">
-                                                    <option :value="tech.id" :selected="caseItem.repair_assignments && caseItem.repair_assignments[stage.id] == tech.id" x-text="tech.full_name"></option>
-                                                </template>
-                                            </select>
-                                        </div>
+                                        <template x-if="stage.id !== 'backlog'">
+                                            <div class="mt-4">
+                                                <label class="text-xs font-medium text-slate-500">Technician</label>
+                                                <select @change="assignTechnician(caseItem.id, stage.id, $event.target.value)" class="mt-1 block w-full bg-slate-50 border-slate-200 rounded-md shadow-sm text-sm focus:ring-sky-500 focus:border-sky-500">
+                                                    <option value="">Unassigned</option>
+                                                    <template x-for="tech in technicians" :key="tech.id">
+                                                        <option :value="tech.id" :selected="caseItem.repair_assignments && caseItem.repair_assignments[stage.id] == tech.id" x-text="tech.full_name"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
                             </div>
