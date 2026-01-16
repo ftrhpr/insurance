@@ -333,7 +333,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
             
             <!-- Totals Section -->
             <div class="px-8 py-6 bg-gray-50 border-t border-gray-200">
-                <div class="max-w-4xl mx-auto">
+                <div class="w-full">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- Left: Bank panel (visible only when VAT enabled) -->
                         <div class="md:col-span-2">
@@ -345,7 +345,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                     <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-3 py-2">
                                         <div>
                                             <div class="text-xs text-gray-500">საქართველოს ბანკი</div>
-                                            <div class="font-mono font-medium">GE94BG0000000100727119</div>
+                                            <div class="font-mono font-medium break-words">GE94BG0000000100727119</div>
                                         </div>
                                         <button class="text-sm text-indigo-600" onclick="(function(btn){ if (!navigator.clipboard) return; navigator.clipboard.writeText('GE94BG0000000100727119').then(function(){ btn.innerText='კოპირებულია'; setTimeout(function(){ btn.innerText='კოპირება'; }, 1200); }).catch(function(){}); })(this)">კოპირება</button>
                                     </div>
@@ -353,7 +353,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                     <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-3 py-2">
                                         <div>
                                             <div class="text-xs text-gray-500">თიბისი ბანკი</div>
-                                            <div class="font-mono font-medium">GE64TB7669336080100009</div>
+                                            <div class="font-mono font-medium break-words">GE64TB7669336080100009</div>
                                         </div>
                                         <button class="text-sm text-indigo-600" onclick="(function(btn){ if (!navigator.clipboard) return; navigator.clipboard.writeText('GE64TB7669336080100009').then(function(){ btn.innerText='კოპირებულია'; setTimeout(function(){ btn.innerText='კოპირება'; }, 1200); }).catch(function(){}); })(this)">კოპირება</button>
                                     </div>
