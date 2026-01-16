@@ -350,6 +350,15 @@ foreach ($cases as $case) {
                         }, 15000);
                     });
                 },
+                refreshBacklog() {
+                    fetch('api.php?action=get_backlog').then(r => r.json()).then(data => {
+                        if (data && data.cases) {
+                            // replace backlog data with authoritative server copy
+                            this.cases['backlog'] = data.cases;
+                            this.cases = { ...this.cases };
+                        }
+                    }).catch(() => {});
+                },
                 moveCase(caseId, newStageId, oldStageId, newIndex) {
                     // Optimistically update the UI first
                     const caseToMove = this.cases[oldStageId].find(c => c.id == caseId);

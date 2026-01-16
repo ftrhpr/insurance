@@ -63,7 +63,7 @@ if (!isset($_SESSION['user_id'])) {
                 $is_active = ($current_page === $page);
             ?>
                 <a href="<?php echo $item['url']; ?>" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition <?php echo $is_active ? 'bg-blue-100 text-blue-700' : 'text-slate-700 hover:bg-slate-100'; ?>">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><?php echo $icons[$item['icon']] ?? '<circle cx=\"12\" cy=\"12\" r=\"10\"/>'; ?></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><?php echo $icons[$item['icon']] ?? '<circle cx="12" cy="12" r="10"/>'; ?></svg>
                     <span><?php echo $item['label']; ?></span>
                 </a>
             <?php endforeach; ?>
