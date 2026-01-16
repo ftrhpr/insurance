@@ -18,12 +18,12 @@ try {
 
 // Define the workflow stages to display (no backlog)
 $stages = [
-    ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'Disassembly')],
-    ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'Body Work')],
-    ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'Processing for Painting')],
-    ['id' => 'preparing_for_painting', 'title' => __('workflow.stage.preparing_for_painting', 'Preparing for Painting')],
-    ['id' => 'painting', 'title' => __('workflow.stage.painting', 'Painting')],
-    ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'Assembling')],
+    ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'დაშლა')],
+    ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'სათუნუქე')],
+    ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'დამუშავება')],
+    ['id' => 'preparing_for_painting', 'title' => __('workflow.stage.preparing_for_painting', 'შესაღებად გამზადება')],
+    ['id' => 'painting', 'title' => __('workflow.stage.painting', 'ღებვა')],
+    ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'აწყობა')],
 ];
 
 // Fetch users who can be assigned (technicians)
@@ -102,7 +102,7 @@ foreach ($cases as $case) {
                 },
                 updateLastText() {
                     const d = new Date(this.lastUpdated);
-                    this.lastUpdatedText = 'Last updated: ' + d.toLocaleTimeString();
+                    this.lastUpdatedText = 'განახლდა: ' + d.toLocaleTimeString();
                 },
                 refreshNow() { this.poll(); },
                 poll() {
@@ -190,7 +190,7 @@ foreach ($cases as $case) {
     </style>
 </head>
 <body x-data="workflowDisplay()" x-init="init()" class="antialiased">
-    <div class="fixed bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-10" x-text="`Updated: ${lastUpdatedText} | ${connectionStatus}`"></div>
+    <div class="fixed bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-10" x-text="`განახლდა: ${lastUpdatedText} | ${connectionStatus === 'online' ? 'ონლაინი' : 'ოფლაინი'}`"></div>
 
     <main class="overflow-auto h-screen">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 p-2">
@@ -206,7 +206,7 @@ foreach ($cases as $case) {
                                 <div class="flex items-center justify-between gap-2">
                                     <div class="flex-1 min-w-0 text-xs">
                                         <span class="font-semibold" x-text="caseItem.plate"></span>
-                                        <span class="text-gray-600" x-text="` - ${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || ' - Unknown'"></span>
+                                        <span class="text-gray-600" x-text="` - ${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || ' - უცნობი'"></span>
                                         <span class="text-gray-500" x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) ? ` - ${getTechName(caseItem.repair_assignments[stage.id]) || caseItem.repair_assignments[stage.id]}` : ''"></span>
                                     </div>
                                     <div class="timer-badge" x-text="getTimerDisplay(caseItem.id, stage.id)"></div>
@@ -216,7 +216,7 @@ foreach ($cases as $case) {
                         <template x-if="(cases[stage.id] || []).length === 0">
                             <div class="empty-stage">
                                 <div class="text-4xl mb-2">📋</div>
-                                <div>No cases in this stage</div>
+                                <div>მიმდინარე დავალებების გარეშე</div>
                             </div>
                         </template>
                     </div>
