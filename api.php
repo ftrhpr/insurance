@@ -367,13 +367,32 @@ try {
             foreach ($required as $col => $def) {
                 try {
                     $checkStmt->execute([DB_NAME, $col]);
-                    if ($checkStmt->fetchColumn() == 0) {
-                        $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
-                        error_log("Added missing column: $col");
+                    $exists = $checkStmt->fetchColumn();
+                    if ($exists == 0) {
+                        try {
+                            $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+                            error_log("Successfully added column: $col");
+                        } catch (PDOException $alterError) {
+                            error_log("Failed to add column $col: " . $alterError->getMessage());
+                            // Try alternative syntax for some MySQL versions
+                            try {
+                                $pdo->exec("ALTER TABLE transfers ADD `$col` $def");
+                                error_log("Successfully added column with alternative syntax: $col");
+                            } catch (PDOException $altError) {
+                                error_log("Alternative syntax also failed for column $col: " . $altError->getMessage());
+                            }
+                        }
                     }
-                } catch (PDOException $e) {
-                    error_log("Failed to check/add column $col: " . $e->getMessage());
-                    // Continue - column might already exist or we might not have permissions
+                } catch (PDOException $checkError) {
+                    error_log("Failed to check column $col: " . $checkError->getMessage());
+                    // If we can't check, try to add anyway (will fail silently if exists)
+                    try {
+                        $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+                        error_log("Added column without checking: $col");
+                    } catch (PDOException $e) {
+                        // Column probably already exists, ignore
+                        error_log("Column $col already exists or add failed: " . $e->getMessage());
+                    }
                 }
             }
         } catch (Exception $alterError) {
@@ -417,26 +436,10 @@ try {
 
             $update_fields = [];
             $params = [];
-            
-            // Prepare statement to check if columns exist
-            $colCheckStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
 
             foreach ($data as $key => $value) {
                 if (array_key_exists($key, $field_map)) {
                     $db_field = $field_map[$key];
-                    
-                    // Check if column exists before trying to update it
-                    try {
-                        $colCheckStmt->execute([DB_NAME, $db_field]);
-                        if ($colCheckStmt->fetchColumn() == 0) {
-                            error_log("Skipping update for non-existent column: $db_field");
-                            continue; // Skip this field if column doesn't exist
-                        }
-                    } catch (PDOException $e) {
-                        error_log("Error checking column $db_field: " . $e->getMessage());
-                        continue; // Skip on error
-                    }
-                    
                     $update_fields[] = "`$db_field` = ?";
 
                     // Normalize incoming values:

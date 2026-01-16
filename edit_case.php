@@ -2309,8 +2309,8 @@ try {
                         services_discount_percent: this.currentCase.services_discount_percent || 0,
                         global_discount_percent: this.currentCase.global_discount_percent || 0,
                         // VAT fields
-                        vatEnabled: this.currentCase.vat_enabled || false,
-                        vatAmount: this.currentCase.vat_amount || 0,
+                        vatEnabled: this.currentCase.vat_enabled ? 1 : 0,
+                        vatAmount: parseFloat(this.currentCase.vat_amount || 0),
                     };
 
                     const systemLogs = [...(this.currentCase.systemLogs || [])];
