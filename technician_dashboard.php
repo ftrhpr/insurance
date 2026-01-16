@@ -141,9 +141,9 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                             <div class="text-sm text-slate-500 mt-1 truncate" x-text="`#${caseGroup.id}`"></div>
                             <div class="mt-3 flex gap-2 flex-wrap">
                                 <template x-for="stage in caseGroup.stages" :key="stage.stage">
-                                    <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold">
+                                    <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold" :class="stage.status && stage.status.status === 'finished' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">
                                         <span x-text="stage.stage_title"></span>
-                                        <span class="font-mono text-sm" x-text="displayTimer(stage.timer)"></span>
+                                        <span class="font-mono text-sm" x-text="stage.status && stage.status.status === 'finished' ? 'Done' : displayTimer(stage.timer)"></span>
                                     </div>
                                 </template>
                             </div>
@@ -153,7 +153,8 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                         <template x-for="stage in caseGroup.stages" :key="stage.stage">
                             <div class="flex gap-2">
                                 <button x-show="!(stage.status && stage.status.status === 'finished')" @click="finishStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-emerald-600 text-white text-lg font-semibold touch-target">Finish</button>
-                                <div x-show="stage.status && stage.status.status === 'finished'" class="w-36 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
+                                <button x-show="stage.status && stage.status.status === 'finished' && stage.stage === 'processing_for_painting'" @click="moveToNextStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-blue-600 text-white text-lg font-semibold touch-target">Move to Preparing</button>
+                                <div x-show="stage.status && stage.status.status === 'finished' && stage.stage !== 'processing_for_painting'" class="w-36 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
                             </div>
                         </template>
                     </div>
@@ -277,9 +278,23 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                             alert('Failed: ' + (data.message || 'Unknown'));
                         }
                     }).catch(e => alert('Error: ' + e.message));
+                },
+                moveToNextStage(caseId, currentStage) {
+                    if (currentStage === 'processing_for_painting') {
+                        if (!confirm('Move this case to Preparing for Painting?')) return;
+                        fetch('api.php?action=update_repair_stage', {
+                            method: 'POST', headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({ case_id: caseId, stage: 'preparing_for_painting' })
+                        }).then(r => r.json()).then(data => {
+                            if (data.status === 'success') {
+                                alert('Case moved to Preparing for Painting');
+                                this.refresh();
+                            } else {
+                                alert('Failed to move: ' + (data.message || 'Unknown'));
+                            }
+                        }).catch(e => alert('Error: ' + e.message));
+                    }
                 }
-            }
-        }
     </script>
 </body>
 </html>
