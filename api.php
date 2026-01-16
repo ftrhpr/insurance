@@ -1898,14 +1898,17 @@ try {
         }
 
         // Validate stage exists
-        $valid_stages = ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
         if (!in_array($stage, $valid_stages)) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid stage']);
         }
 
+        // Handle backlog - set repair_stage to NULL
+        $db_stage = ($stage === 'backlog') ? null : $stage;
+
         try {
             $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ? WHERE id = ?");
-            $stmt->execute([$stage, $case_id]);
+            $stmt->execute([$db_stage, $case_id]);
 
             if ($stmt->rowCount() > 0) {
                 jsonResponse(['status' => 'success']);
@@ -1928,7 +1931,7 @@ try {
         }
 
         // Validate stage exists
-        $valid_stages = ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
         if (!in_array($stage, $valid_stages)) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid stage']);
         }
