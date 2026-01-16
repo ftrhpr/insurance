@@ -7,6 +7,12 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Only allow admin users to access user management
+if (($_SESSION['role'] ?? '') !== 'admin') {
+    header('Location: index.php');
+    exit();
+}
+
 // Simple language function for users
 function __($key, $default = '') {
     $fallbacks = [

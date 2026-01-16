@@ -7,6 +7,12 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Redirect technicians to their dashboard
+if (($_SESSION['role'] ?? '') === 'technician') {
+    header('Location: technician_dashboard.php');
+    exit();
+}
+
 require_once 'language.php';
 
 $current_user_name = $_SESSION['full_name'] ?? 'User';

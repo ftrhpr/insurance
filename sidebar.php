@@ -42,6 +42,20 @@ if (!isset($_SESSION['user_id'])) {
                 'reviews' => ['icon' => 'star', 'label' => 'Reviews', 'url' => 'reviews.php'],
                 'templates' => ['icon' => 'message-square-dashed', 'label' => 'SMS Templates', 'url' => 'templates.php']
             ];
+            
+            // Filter navigation items based on role
+            if ($current_user_role === 'technician') {
+                // Technicians see their dashboard and basic info pages
+                $nav_items = [
+                    'technician_dashboard' => ['icon' => 'users', 'label' => 'My Dashboard', 'url' => 'technician_dashboard.php'],
+                    'calendar' => ['icon' => 'calendar', 'label' => 'Calendar', 'url' => 'calendar.php'],
+                    'vehicles' => ['icon' => 'database', 'label' => 'Vehicle DB', 'url' => 'vehicles.php']
+                ];
+            } elseif ($current_user_role === 'viewer') {
+                // Viewers see limited navigation
+                unset($nav_items['parts_collection'], $nav_items['templates']);
+            }
+            
             if ($current_user_role === 'admin') {
                 $nav_items['sms_parsing'] = ['icon' => 'settings', 'label' => 'SMS Parsing', 'url' => 'sms_parsing.php'];
                 $nav_items['users'] = ['icon' => 'users', 'label' => 'Users', 'url' => 'users.php'];

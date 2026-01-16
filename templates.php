@@ -11,6 +11,12 @@ if (!isset($_SESSION['user_id'])) {
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
 
+// Restrict technicians from accessing SMS templates
+if ($current_user_role === 'technician') {
+    header('Location: technician_dashboard.php');
+    exit();
+}
+
 // Database connection
 require_once 'config.php';
 require_once 'language.php';
