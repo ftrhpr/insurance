@@ -188,7 +188,7 @@ foreach ($cases as $case) {
                                             <div class="text-sm font-semibold" x-text="stage"></div>
                                             <div class="mt-1 text-xs text-slate-600">
                                                 <template x-for="(duration, tech) in stageTimes" :key="tech">
-                                                    <div x-text="`Tech ${tech}: ${Math.round(duration/1000)}s`"></div>
+                                                <div x-text="`${this.getTechnicianName(tech)}: ${this.formatDuration(duration)}`"></div>
                                                 </template>
                                             </div>
                                         </div>
@@ -509,6 +509,17 @@ foreach ($cases as $case) {
                     if (!id) return 'system';
                     const tech = this.technicians.find(t => t.id == id);
                     return tech ? tech.full_name : `technician ${id}`;
+                },
+                formatDuration(ms) {
+                    const totalSeconds = Math.round(ms / 1000);
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    
+                    if (hours > 0) {
+                        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+                    } else {
+                        return `${minutes}m`;
+                    }
                 },
                 assignTechnician(caseId, stageId, technicianId) {
                     const caseToUpdate = this.cases[stageId].find(c => c.id == caseId);
