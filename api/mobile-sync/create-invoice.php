@@ -66,6 +66,10 @@ try {
         services_discount_percent,
         parts_discount_percent,
         global_discount_percent,
+        vat_enabled,
+        vat_amount,
+        vat_rate,
+        subtotal_before_vat,
         slug
     ) VALUES (
         :plate,
@@ -87,6 +91,10 @@ try {
         :services_discount_percent,
         :parts_discount_percent,
         :global_discount_percent,
+        :vat_enabled,
+        :vat_amount,
+        :vat_rate,
+        :subtotal_before_vat,
         :slug
     )";
     
@@ -305,6 +313,10 @@ try {
         ':services_discount_percent' => floatval($data['services_discount_percent'] ?? 0),
         ':parts_discount_percent' => floatval($data['parts_discount_percent'] ?? 0),
         ':global_discount_percent' => floatval($data['global_discount_percent'] ?? 0),
+        ':vat_enabled' => isset($data['includeVAT']) ? intval($data['includeVAT']) : 0,
+        ':vat_amount' => floatval($data['vatAmount'] ?? 0),
+        ':vat_rate' => floatval($data['vatRate'] ?? 0),
+        ':subtotal_before_vat' => floatval($data['subtotalBeforeVAT'] ?? 0),
         ':slug' => $slug
     ]);
     

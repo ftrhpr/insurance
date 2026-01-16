@@ -65,6 +65,10 @@ try {
         'services_discount_percent' => 'services_discount_percent',
         'parts_discount_percent' => 'parts_discount_percent',
         'global_discount_percent' => 'global_discount_percent',
+        'includeVAT' => 'vat_enabled',
+        'vatAmount' => 'vat_amount',
+        'vatRate' => 'vat_rate',
+        'subtotalBeforeVAT' => 'subtotal_before_vat',
     ];
     
     // Debug: Log all received data keys and image fields
@@ -92,9 +96,13 @@ try {
         if (isset($data[$appField]) && $data[$appField] !== null && $data[$appField] !== '') {
             $value = $data[$appField];
             
-            // Handle discount fields as floats
-            if (in_array($dbField, ['services_discount_percent', 'parts_discount_percent', 'global_discount_percent'])) {
+            // Handle discount and VAT fields as floats
+            if (in_array($dbField, ['services_discount_percent', 'parts_discount_percent', 'global_discount_percent', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
                 $value = floatval($value);
+            }
+            // Handle boolean VAT enabled field
+            elseif ($dbField === 'vat_enabled') {
+                $value = intval($value);
             }
             // Handle JSON fields for arrays
             elseif (is_array($value) && in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {

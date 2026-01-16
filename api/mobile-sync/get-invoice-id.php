@@ -115,6 +115,10 @@ try {
         'services_discount_percent' => floatval($invoice['services_discount_percent'] ?? 0),
         'parts_discount_percent' => floatval($invoice['parts_discount_percent'] ?? 0),
         'global_discount_percent' => floatval($invoice['global_discount_percent'] ?? 0),
+        'includeVAT' => intval($invoice['vat_enabled'] ?? 0),
+        'vatAmount' => floatval($invoice['vat_amount'] ?? 0),
+        'vatRate' => floatval($invoice['vat_rate'] ?? 0),
+        'subtotalBeforeVAT' => floatval($invoice['subtotal_before_vat'] ?? 0),
         'serviceDate' => $invoice['serviceDate'] ?? $invoice['service_date'] ?? null,
         'updatedAt' => $invoice['updatedAt'] ?? null,
     ];
