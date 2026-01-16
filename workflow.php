@@ -114,6 +114,11 @@ foreach ($cases as $case) {
         $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
         $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
         $case['stage_statuses'] = json_decode($case['stage_statuses'] ?? '{}', true);
+        $casesByStage[$stageId][] = $case;
+    }
+}
+
+?>
 <!DOCTYPE html>
 <html lang="<?php echo get_current_language(); ?>">
 <head>
