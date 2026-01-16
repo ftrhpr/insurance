@@ -118,6 +118,11 @@ foreach ($cases as $case) {
                                                         <span class="text-xs font-medium text-slate-500">Timer</span>
                                                         <span class="text-xs font-mono text-slate-600" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
                                                     </div>
+                                                    <!-- DEBUG: show raw timer and assignment data -->
+                                                    <div class="mt-1">
+                                                        <div class="text-xs text-amber-700">Assignment: <span x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) || 'none'"></span></div>
+                                                        <div class="text-xs text-rose-600 mt-1" x-text="dumpTimers(caseItem.id, stage.id)"></div>
+                                                    </div>
                                                 </div>
                                             </template>
                                         </template>
@@ -308,6 +313,15 @@ foreach ($cases as $case) {
                     const startTime = timerData;
                     const elapsed = Math.floor((this.currentTime - startTime) / 1000);
                     return this.formatTimer(elapsed);
+                },
+                dumpTimers(caseId, stageId) {
+                    const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
+                    if (!caseItem) return '{}';
+                    try {
+                        return JSON.stringify(caseItem.stage_timers || {});
+                    } catch (e) {
+                        return 'invalid timers';
+                    }
                 },
             }));
         });
