@@ -1907,7 +1907,8 @@ try {
         $db_stage = ($stage === 'backlog') ? null : $stage;
 
         try {
-            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ? WHERE id = ?");
+            // When changing stages, clear all timers since assignments are stage-specific
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ?, stage_timers = '{}' WHERE id = ?");
             $stmt->execute([$db_stage, $case_id]);
 
             if ($stmt->rowCount() > 0) {
@@ -1937,24 +1938,35 @@ try {
         }
 
         try {
-            // Get current assignments
-            $stmt = $pdo->prepare("SELECT repair_assignments FROM transfers WHERE id = ?");
+            // Get current assignments and timers
+            $stmt = $pdo->prepare("SELECT repair_assignments, stage_timers FROM transfers WHERE id = ?");
             $stmt->execute([$case_id]);
-            $current_assignments = $stmt->fetchColumn();
-
-            $assignments = json_decode($current_assignments ?: '{}', true);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            $assignments = json_decode($row['repair_assignments'] ?: '{}', true);
             if (!is_array($assignments)) {
                 $assignments = [];
+            }
+            
+            $timers = json_decode($row['stage_timers'] ?: '{}', true);
+            if (!is_array($timers)) {
+                $timers = [];
             }
 
             if ($technician_id > 0) {
                 $assignments[$stage] = $technician_id;
+                // Start timer if not already running
+                if (!isset($timers[$stage])) {
+                    $timers[$stage] = time() * 1000; // Store as milliseconds for JS compatibility
+                }
             } else {
                 unset($assignments[$stage]);
+                // Stop timer
+                unset($timers[$stage]);
             }
 
-            $stmt = $pdo->prepare("UPDATE transfers SET repair_assignments = ? WHERE id = ?");
-            $stmt->execute([json_encode($assignments), $case_id]);
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_assignments = ?, stage_timers = ? WHERE id = ?");
+            $stmt->execute([json_encode($assignments), json_encode($timers), $case_id]);
 
             if ($stmt->rowCount() > 0) {
                 jsonResponse(['status' => 'success']);

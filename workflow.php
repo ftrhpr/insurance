@@ -33,7 +33,7 @@ $stages = [
 
 // Fetch cases for the workflow board
 $stmt = $pdo->query("
-    SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments
+    SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers
     FROM transfers
     WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled')
     ORDER BY 
@@ -51,6 +51,7 @@ foreach ($cases as $case) {
     $stageId = $case['repair_stage'] ?? 'backlog';
     if (array_key_exists($stageId, $casesByStage)) {
         $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
+        $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
         $casesByStage[$stageId][] = $case;
     }
 }
@@ -99,8 +100,8 @@ foreach ($cases as $case) {
                             <div :class="stage.id === 'backlog' ? 'p-4 space-y-4 min-h-[60vh] bg-amber-50/50' : 'p-4 space-y-4 min-h-[60vh]'" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
                                 <template x-for="caseItem in cases[stage.id]" :key="caseItem.id">
                                     <div class="bg-white rounded-lg p-4 shadow-md case-card" :data-case-id="caseItem.id">
-                                        <div class="font-bold text-slate-800" x-text="`${caseItem.plate} - #${caseItem.id}`"></div>
-                                        <div class="text-sm text-slate-500" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
+                                        <div class="font-bold text-slate-800" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
+                                        <div class="text-sm text-slate-500" x-text="`${caseItem.plate} - #${caseItem.id}`"></div>
                                         <template x-if="stage.id !== 'backlog'">
                                             <div class="mt-4">
                                                 <label class="text-xs font-medium text-slate-500">Technician</label>
@@ -111,6 +112,14 @@ foreach ($cases as $case) {
                                                     </template>
                                                 </select>
                                             </div>
+                                            <template x-if="caseItem.repair_assignments && caseItem.repair_assignments[stage.id]">
+                                                <div class="mt-3">
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-xs font-medium text-slate-500">Timer</span>
+                                                        <span class="text-xs font-mono text-slate-600" x-text="getTimerDisplay(caseItem.id, stage.id)" x-ref="`timer-${caseItem.id}-${stage.id}`"></span>
+                                                    </div>
+                                                </div>
+                                            </template>
                                         </template>
                                     </div>
                                 </template>
@@ -128,6 +137,7 @@ foreach ($cases as $case) {
                 cases: <?php echo json_encode($casesByStage); ?>,
                 stages: <?php echo json_encode($stages); ?>,
                 technicians: <?php echo json_encode($technicians); ?>,
+                activeTimers: {},
                 init() {
                     this.$nextTick(() => {
                         this.stages.forEach(stage => {
@@ -152,6 +162,17 @@ foreach ($cases as $case) {
                             }
                         });
                         lucide.createIcons();
+                        
+                        // Initialize timers for cases with assigned technicians
+                        this.stages.forEach(stage => {
+                            if (stage.id !== 'backlog' && this.cases[stage.id]) {
+                                this.cases[stage.id].forEach(caseItem => {
+                                    if (caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) {
+                                        this.startTimer(caseItem.id, stage.id);
+                                    }
+                                });
+                            }
+                        });
                     });
                 },
                 moveCase(caseId, newStageId, oldStageId, newIndex) {
@@ -173,7 +194,17 @@ foreach ($cases as $case) {
                             showToast('Case Updated', `Moved to ${this.stages.find(s => s.id === newStageId).title}`, 'success');
                             // Find case and update its stage property for consistency
                             const caseToUpdate = this.cases[newStageId].find(c => c.id == caseId);
-                            if(caseToUpdate) caseToUpdate.repair_stage = newStageId;
+                            if(caseToUpdate) {
+                                caseToUpdate.repair_stage = newStageId;
+                                // Clear timers when moving stages
+                                caseToUpdate.stage_timers = {};
+                                
+                                // Handle timer transitions
+                                if (oldStageId !== 'backlog') {
+                                    this.stopTimer(caseId, oldStageId);
+                                }
+                                // Timer will start when technician is assigned to new stage
+                            }
                         } else {
                             showToast('Error', 'Failed to update case stage.', 'error');
                             // Note: A full revert would be complex. For now, we rely on a page refresh if errors occur.
@@ -182,6 +213,8 @@ foreach ($cases as $case) {
                 },
                 assignTechnician(caseId, stageId, technicianId) {
                     const caseToUpdate = this.cases[stageId].find(c => c.id == caseId);
+                    const wasAssigned = caseToUpdate && caseToUpdate.repair_assignments && caseToUpdate.repair_assignments[stageId];
+                    
                     if (caseToUpdate) {
                         if (!caseToUpdate.repair_assignments) caseToUpdate.repair_assignments = {};
                         caseToUpdate.repair_assignments[stageId] = technicianId;
@@ -195,11 +228,75 @@ foreach ($cases as $case) {
                         if (data.status === 'success') {
                             const techName = technicianId ? this.technicians.find(t => t.id == technicianId).full_name : 'nobody';
                             showToast('Technician Assigned', `Assigned to ${techName}`, 'success');
+                            
+                            // Handle timer
+                            if (technicianId) {
+                                this.startTimer(caseId, stageId);
+                            } else if (wasAssigned) {
+                                this.stopTimer(caseId, stageId);
+                            }
                         } else {
                             showToast('Error', 'Failed to assign technician.', 'error');
                         }
                     });
-                }
+                },
+                startTimer(caseId, stageId) {
+                    const timerKey = `${caseId}-${stageId}`;
+                    if (this.activeTimers[timerKey]) {
+                        clearInterval(this.activeTimers[timerKey]);
+                    }
+                    
+                    // Start timer update every second
+                    this.activeTimers[timerKey] = setInterval(() => {
+                        this.updateTimerDisplay(caseId, stageId);
+                    }, 1000);
+                    
+                    // Initial update
+                    this.updateTimerDisplay(caseId, stageId);
+                },
+                stopTimer(caseId, stageId) {
+                    const timerKey = `${caseId}-${stageId}`;
+                    if (this.activeTimers[timerKey]) {
+                        clearInterval(this.activeTimers[timerKey]);
+                        delete this.activeTimers[timerKey];
+                    }
+                },
+                updateTimerDisplay(caseId, stageId) {
+                    const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
+                    if (!caseItem || !caseItem.stage_timers) return;
+                    
+                    const startTime = caseItem.stage_timers[stageId];
+                    if (!startTime) return;
+                    
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const display = this.formatTimer(elapsed);
+                    
+                    const timerEl = this.$refs[`timer-${caseId}-${stageId}`];
+                    if (timerEl) {
+                        timerEl.textContent = display;
+                    }
+                },
+                formatTimer(seconds) {
+                    const hours = Math.floor(seconds / 3600);
+                    const minutes = Math.floor((seconds % 3600) / 60);
+                    const secs = seconds % 60;
+                    
+                    if (hours > 0) {
+                        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    } else {
+                        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+                    }
+                },
+                getTimerDisplay(caseId, stageId) {
+                    const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
+                    if (!caseItem || !caseItem.stage_timers || !caseItem.stage_timers[stageId]) {
+                        return '00:00';
+                    }
+                    
+                    const startTime = caseItem.stage_timers[stageId];
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    return this.formatTimer(elapsed);
+                },
             }));
         });
         
