@@ -83,39 +83,58 @@ foreach ($cases as $c) {
         @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-2px);}100%{transform:translateY(0);} }
     </style>
 </head>
-<body class="bg-slate-100 p-6">
-    <div class="max-w-4xl mx-auto" x-data="techDashboard()" x-init="init()">
-        <div class="flex items-center justify-between mb-4">
-            <div class="text-sm text-slate-500">Logged as: <strong><?php echo htmlspecialchars($_SESSION['full_name'] ?? ''); ?></strong> (ID: <?php echo intval($userId); ?>)</div>
-            <div class="flex items-center gap-2">
-                <div class="text-sm text-slate-500">Assigned: <span class="font-semibold text-slate-700" x-text="cases.length"></span></div>
-                <button @click="refresh()" class="px-3 py-1 rounded bg-sky-500 text-white">Refresh</button>
-            </div>
-        </div>
-        <h1 class="text-2xl font-bold mb-4"><?php echo __('technician.dashboard.header', 'Your Assigned Work'); ?></h1>
-        <div class="space-y-4">
-            <template x-if="cases.length === 0">
-                <div class="p-4 bg-white rounded shadow">No assigned cases</div>
-            </template>
-            <template x-for="c in cases" :key="c.id">
-                <div class="p-4 bg-white rounded-lg shadow flex items-center justify-between" :class="{'opacity-60': c.status && c.status.status === 'finished', 'ring-2 ring-emerald-200': c.status && c.status.status === 'finished'}">
-                    <div>
-                        <div class="text-lg font-bold" x-text="`${c.vehicle_make} ${c.vehicle_model}`"></div>
-                        <div class="text-sm text-slate-500" x-text="`${c.plate} - #${c.id} (${c.stage})`"></div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="text-sm font-mono text-slate-700" x-text="displayTimer(c.timer)"></div>
-                        <button x-show="!(c.status && c.status.status === 'finished')" @click="finish(c)" class="px-4 py-2 bg-emerald-600 text-white rounded">Finished</button>
-                        <div x-show="c.status && c.status.status === 'finished'" class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold">Finished</div>
-                    </div>
+<body class="bg-slate-50 min-h-screen">
+    <div class="w-full max-w-md mx-auto" x-data="techDashboard()" x-init="init()">
+        <header class="p-4 bg-white sticky top-0 z-20 border-b border-slate-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-lg font-semibold"><?php echo __('technician.dashboard.header', 'Your Assigned Work'); ?></div>
+                    <div class="text-xs text-slate-500">Logged in: <strong><?php echo htmlspecialchars($_SESSION['full_name'] ?? ''); ?></strong></div>
                 </div>
+                <div class="flex items-center gap-2">
+                    <div class="text-sm text-slate-600">Assigned: <span class="font-semibold" x-text="cases.length"></span></div>
+                    <button @click="refresh()" aria-label="Refresh list" class="px-3 py-2 rounded bg-sky-500 text-white">Refresh</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-4 pb-28 space-y-4">
+            <template x-if="cases.length === 0">
+                <div class="p-4 bg-white rounded shadow text-center">No assigned cases</div>
+            </template>
+
+            <template x-for="c in cases" :key="c.id">
+                <article class="bg-white rounded-xl shadow p-4 touch-manipulation" :class="{'opacity-60': c.status && c.status.status === 'finished'}">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-lg font-bold truncate" x-text="`${c.vehicle_make} ${c.vehicle_model}`"></div>
+                            <div class="text-sm text-slate-500 mt-1 truncate" x-text="`${c.plate} - #${c.id} — ${c.stage}`"></div>
+                            <div class="mt-3">
+                                <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold" x-text="displayTimer(c.timer)"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-2">
+                        <button x-show="!(c.status && c.status.status === 'finished')" @click="finish(c)" aria-label="Mark work finished" class="w-full h-14 rounded-md bg-emerald-600 text-white text-lg font-semibold touch-target">Finished</button>
+                        <div x-show="c.status && c.status.status === 'finished'" class="w-full h-14 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
+                    </div>
+                </article>
             </template>
 
             <!-- Admin debug: show raw cases for troubleshooting -->
             <template x-if="cases.length === 0 && <?php echo in_array($_SESSION['role'] ?? '', ['admin']) ? 'true' : 'false'; ?>">
                 <div class="mt-4 p-3 bg-yellow-50 rounded text-sm text-slate-700">No assigned cases found. Admins: try refreshing or check assignments in <a href="users.php">Users</a> or <a href="workflow.php">Workflow</a>.</div>
             </template>
-        </div>
+        </main>
+
+        <!-- Bottom action bar for one-handed use -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 p-3 flex items-center justify-between md:hidden">
+            <div class="text-sm text-slate-600">Tasks: <span class="font-semibold" x-text="cases.length"></span></div>
+            <div class="flex gap-2">
+                <button @click="refresh()" class="px-4 py-2 rounded bg-sky-500 text-white">Refresh</button>
+                <a href="logout.php" class="px-4 py-2 rounded bg-red-50 text-red-600">Logout</a>
+            </div>
+        </nav>
     </div>
 
     <script>
