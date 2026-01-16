@@ -4,6 +4,17 @@ require_once 'session_config.php';
 require_once 'config.php';
 require_once 'language.php';
 
+$stages = [
+    ['id' => 'backlog', 'title' => __('workflow.stage.backlog', 'Backlog')],
+    ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'Disassembly')],
+    ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'Body Work')],
+    ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'Processing for Painting')],
+    ['id' => 'preparing_for_painting', 'title' => __('workflow.stage.preparing_for_painting', 'Preparing for Painting')],
+    ['id' => 'painting', 'title' => __('workflow.stage.painting', 'Painting')],
+    ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'Assembling')],
+];
+$stage_titles = array_column($stages, 'title', 'id');
+
 if (empty($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -34,6 +45,7 @@ if (isset($_GET['json'])) {
                     'vehicle_make' => $c['vehicle_make'],
                     'vehicle_model' => $c['vehicle_model'],
                     'stage' => $stage,
+                    'stage_title' => $stage_titles[$stage] ?? $stage,
                     'status' => $statuses[$stage] ?? null,
                     'timer' => $timers[$stage] ?? null
                 ];
@@ -62,6 +74,7 @@ foreach ($cases as $c) {
                 'vehicle_make' => $c['vehicle_make'],
                 'vehicle_model' => $c['vehicle_model'],
                 'stage' => $stage,
+                'stage_title' => $stage_titles[$stage] ?? $stage,
                 'status' => $statuses[$stage] ?? null,
                 'timer' => $timers[$stage] ?? null
             ];
@@ -127,7 +140,7 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                             <div class="mt-3 flex gap-2 flex-wrap">
                                 <template x-for="stage in caseGroup.stages" :key="stage.stage">
                                     <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold">
-                                        <span x-text="stage.stage"></span>
+                                        <span x-text="stage.stage_title"></span>
                                         <span class="font-mono text-sm" x-text="displayTimer(stage.timer)"></span>
                                     </div>
                                 </template>
@@ -185,9 +198,9 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                     this.cases.forEach(s => {
                         const id = s.id;
                         if (!map[id]) {
-                            map[id] = { id: id, title: (s.vehicle_make && (s.vehicle_make + (s.vehicle_model ? ' ' + s.vehicle_model : ''))) || s.plate || ('#'+id), stages: [] };
+                            map[id] = { id: id, title: s.plate + (s.vehicle_make ? ' - ' + s.vehicle_make + (s.vehicle_model ? ' ' + s.vehicle_model : '') : ''), stages: [] };
                         }
-                        map[id].stages.push({ stage: s.stage, status: s.status, timer: s.timer });
+                        map[id].stages.push({ stage: s.stage, stage_title: s.stage_title, status: s.status, timer: s.timer });
                     });
                     // Convert to array and sort by latest timer / id
                     const arr = Object.values(map);
