@@ -84,14 +84,21 @@ foreach ($cases as $c) {
     </style>
 </head>
 <body class="bg-slate-100 p-6">
-    <div class="max-w-4xl mx-auto" x-data="techDashboard()">
+    <div class="max-w-4xl mx-auto" x-data="techDashboard()" x-init="init()">
+        <div class="flex items-center justify-between mb-4">
+            <div class="text-sm text-slate-500">Logged as: <strong><?php echo htmlspecialchars($_SESSION['full_name'] ?? ''); ?></strong> (ID: <?php echo intval($userId); ?>)</div>
+            <div class="flex items-center gap-2">
+                <div class="text-sm text-slate-500">Assigned: <span class="font-semibold text-slate-700" x-text="cases.length"></span></div>
+                <button @click="refresh()" class="px-3 py-1 rounded bg-sky-500 text-white">Refresh</button>
+            </div>
+        </div>
         <h1 class="text-2xl font-bold mb-4"><?php echo __('technician.dashboard.header', 'Your Assigned Work'); ?></h1>
         <div class="space-y-4">
             <template x-if="cases.length === 0">
                 <div class="p-4 bg-white rounded shadow">No assigned cases</div>
             </template>
             <template x-for="c in cases" :key="c.id">
-                <div class="p-4 bg-white rounded-lg shadow flex items-center justify-between" :class="{'opacity-60': c.status && c.status.status === 'finished'}">
+                <div class="p-4 bg-white rounded-lg shadow flex items-center justify-between" :class="{'opacity-60': c.status && c.status.status === 'finished', 'ring-2 ring-emerald-200': c.status && c.status.status === 'finished'}">
                     <div>
                         <div class="text-lg font-bold" x-text="`${c.vehicle_make} ${c.vehicle_model}`"></div>
                         <div class="text-sm text-slate-500" x-text="`${c.plate} - #${c.id} (${c.stage})`"></div>
@@ -102,6 +109,11 @@ foreach ($cases as $c) {
                         <div x-show="c.status && c.status.status === 'finished'" class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold">Finished</div>
                     </div>
                 </div>
+            </template>
+
+            <!-- Admin debug: show raw cases for troubleshooting -->
+            <template x-if="cases.length === 0 && <?php echo in_array($_SESSION['role'] ?? '', ['admin']) ? 'true' : 'false'; ?>">
+                <div class="mt-4 p-3 bg-yellow-50 rounded text-sm text-slate-700">No assigned cases found. Admins: try refreshing or check assignments in <a href="users.php">Users</a> or <a href="workflow.php">Workflow</a>.</div>
             </template>
         </div>
     </div>
