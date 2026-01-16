@@ -221,10 +221,34 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                         body: JSON.stringify({ case_id: caseId, stage: stage })
                     }).then(r => r.json()).then(data => {
                         if (data.status === 'success') {
-                            // Refresh list to apply authoritative statuses
-                            this.refresh();
-                            // optional toast
-                            alert('Stage marked finished');
+                            // Special handling for Processing for Painting stage
+                            if (stage === 'processing_for_painting') {
+                                const moveToNext = confirm('Stage marked finished. Move to Preparing for Painting now?');
+                                if (moveToNext) {
+                                    // Move to next stage
+                                    fetch('api.php?action=update_repair_stage', {
+                                        method: 'POST', headers: {'Content-Type':'application/json'},
+                                        body: JSON.stringify({ case_id: caseId, stage: 'preparing_for_painting' })
+                                    }).then(r => r.json()).then(moveData => {
+                                        if (moveData.status === 'success') {
+                                            alert('Stage finished and moved to Preparing for Painting');
+                                        } else {
+                                            alert('Stage finished but failed to move: ' + (moveData.message || 'Unknown'));
+                                        }
+                                        this.refresh();
+                                    }).catch(e => {
+                                        alert('Stage finished but error moving: ' + e.message);
+                                        this.refresh();
+                                    });
+                                } else {
+                                    alert('Stage marked finished. You can move it later from the workflow board.');
+                                    this.refresh();
+                                }
+                            } else {
+                                // Normal finish for other stages
+                                alert('Stage marked finished');
+                                this.refresh();
+                            }
                         } else {
                             alert('Failed: ' + (data.message || 'Unknown'));
                         }
