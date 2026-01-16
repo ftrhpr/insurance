@@ -348,7 +348,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                             <div class="font-mono font-semibold text-gray-800 break-words">GE94BG0000000100727119</div>
                                         </div>
                                         <button class="text-sm text-indigo-600 font-medium ml-4 shrink-0 flex items-center gap-1" onclick="(function(btn){ if (!navigator.clipboard) return; navigator.clipboard.writeText('GE94BG0000000100727119').then(function(){ btn.querySelector('span').innerText='კოპირებულია'; btn.querySelector('i').setAttribute('data-lucide', 'check'); btn.classList.add('text-green-600'); btn.classList.remove('text-indigo-600'); lucide.createIcons(); setTimeout(function(){ btn.querySelector('span').innerText='კოპირება'; btn.querySelector('i').setAttribute('data-lucide', 'copy'); btn.classList.remove('text-green-600'); btn.classList.add('text-indigo-600'); lucide.createIcons(); }, 1500); }).catch(function(){}); })(this)">
-                                            <span>კოპირება</span>
+                                            <span></span>
                                             <i data-lucide="copy" class="w-4 h-4"></i>
                                         </button>
                                     </div>
@@ -359,7 +359,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                             <div class="font-mono font-semibold text-gray-800 break-words">GE64TB7669336080100009</div>
                                         </div>
                                         <button class="text-sm text-indigo-600 font-medium ml-4 shrink-0 flex items-center gap-1" onclick="(function(btn){ if (!navigator.clipboard) return; navigator.clipboard.writeText('GE64TB7669336080100009').then(function(){ btn.querySelector('span').innerText='კოპირებულია'; btn.querySelector('i').setAttribute('data-lucide', 'check'); btn.classList.add('text-green-600'); btn.classList.remove('text-indigo-600'); lucide.createIcons(); setTimeout(function(){ btn.querySelector('span').innerText='კოპირება'; btn.querySelector('i').setAttribute('data-lucide', 'copy'); btn.classList.remove('text-green-600'); btn.classList.add('text-indigo-600'); lucide.createIcons(); }, 1500); }).catch(function(){}); })(this)">
-                                            <span>კოპირება</span>
+                                            <span></span>
                                             <i data-lucide="copy" class="w-4 h-4"></i>
                                         </button>
                                     </div>
@@ -376,8 +376,8 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                         <h3 class="text-sm font-semibold text-gray-500 uppercase">საფასურის მიმოხილვა</h3>
                                         <p class="text-xs text-gray-400">ფასების მოკლე მიმოხილვა</p>
                                     </div>
-                                    <button id="toggle-invoice-details" onclick="(function(btn){const el=document.getElementById('invoice-details'); el.classList.toggle('hidden'); const isHidden = el.classList.contains('hidden'); btn.querySelector('span').innerText = isHidden ? 'დეტალები' : 'დაკეცე'; const icon = btn.querySelector('i'); icon.setAttribute('data-lucide', isHidden ? 'chevron-down' : 'chevron-up'); lucide.createIcons();})(this)" class="text-sm text-indigo-600 hover:underline no-print shrink-0 ml-2 flex items-center gap-1">
-                                        <span>დაკეცე</span>
+                                    <button id="toggle-invoice-details" onclick="(function(btn){const el=document.getElementById('invoice-details'); el.classList.toggle('hidden'); const isHidden = el.classList.contains('hidden'); btn.querySelector('span').innerText = isHidden ? 'დეტალები' : ''; const icon = btn.querySelector('i'); icon.setAttribute('data-lucide', isHidden ? 'chevron-down' : 'chevron-up'); lucide.createIcons();})(this)" class="text-sm text-indigo-600 hover:underline no-print shrink-0 ml-2 flex items-center gap-1">
+                                        <span></span>
                                         <i data-lucide="chevron-up" class="w-4 h-4"></i>
                                     </button>
                                 </div>
