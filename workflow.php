@@ -188,7 +188,7 @@ foreach ($cases as $case) {
                                             <div class="text-sm font-semibold" x-text="stage"></div>
                                             <div class="mt-1 text-xs text-slate-600">
                                                 <template x-for="(duration, tech) in stageTimes" :key="tech">
-                                                <div x-text="`${this.getTechnicianName(tech)}: ${this.formatDuration(duration)}`"></div>
+                                                    <div x-text="`${getTechnicianName(tech)}: ${formatDuration(duration)}`"></div>
                                                 </template>
                                             </div>
                                         </div>
@@ -511,15 +511,27 @@ foreach ($cases as $case) {
                     return tech ? tech.full_name : `technician ${id}`;
                 },
                 formatDuration(ms) {
-                    const totalSeconds = Math.round(ms / 1000);
-                    const hours = Math.floor(totalSeconds / 3600);
-                    const minutes = Math.floor((totalSeconds % 3600) / 60);
-                    
-                    if (hours > 0) {
-                        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-                    } else {
-                        return `${minutes}m`;
+                    if (!ms) return '0m';
+                    let totalSeconds = Math.round(ms / 1000);
+                    if (totalSeconds < 60) return `${totalSeconds}s`;
+
+                    let hours = Math.floor(totalSeconds / 3600);
+                    let minutes = Math.floor((totalSeconds % 3600) / 60);
+                    let seconds = totalSeconds % 60;
+
+                    if (seconds >= 30) {
+                        minutes++;
+                        if (minutes === 60) {
+                            hours++;
+                            minutes = 0;
+                        }
                     }
+                    
+                    const parts = [];
+                    if (hours > 0) parts.push(`${hours}h`);
+                    if (minutes > 0) parts.push(`${minutes}m`);
+                    
+                    return parts.length > 0 ? parts.join(' ') : '0m';
                 },
                 assignTechnician(caseId, stageId, technicianId) {
                     const caseToUpdate = this.cases[stageId].find(c => c.id == caseId);
