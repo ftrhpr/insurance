@@ -158,6 +158,47 @@ foreach ($cases as $case) {
             </div>
 
             <div x-data="workflowBoard()" class="overflow-x-auto pb-4">
+                <!-- Case History Modal (moved inside Alpine scope so close binds correctly) -->
+                <div x-show="showHistoryModal" x-cloak class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click.self="closeCaseHistory()">
+                    <div class="bg-white rounded-lg p-4 max-w-2xl w-full mx-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold">Case History <span class="text-sm text-slate-500">#<span x-text="historyCaseId"></span></span></h3>
+                            <button @click="closeCaseHistory()" class="text-slate-500">Close</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-medium mb-2">System Logs</h4>
+                                <div class="max-h-64 overflow-auto text-xs bg-slate-50 p-2 rounded">
+                                    <template x-for="log in historyLogs.slice().reverse()" :key="JSON.stringify(log)">
+                                        <div class="mb-2">
+                                            <div class="text-xs text-slate-500" x-text="(new Date(log.timestamp || Date.now())).toLocaleString()"></div>
+                                            <div class="text-sm" x-text="log.type ? `${log.type}: ${log.message || JSON.stringify(log)}` : (log.message || JSON.stringify(log))"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-medium mb-2">Work Times</h4>
+                                <div class="max-h-64 overflow-auto text-xs bg-slate-50 p-2 rounded">
+                                    <template x-if="Object.keys(historyWorkTimes || {}).length === 0">
+                                        <div class="text-sm text-slate-500">No recorded work times</div>
+                                    </template>
+                                    <template x-for="(stageTimes, stage) in historyWorkTimes" :key="stage">
+                                        <div class="mb-3">
+                                            <div class="text-sm font-semibold" x-text="stage"></div>
+                                            <div class="mt-1 text-xs text-slate-600">
+                                                <template x-for="(duration, tech) in stageTimes" :key="tech">
+                                                    <div x-text="`Tech ${tech}: ${Math.round(duration/1000)}s`"></div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex space-x-4 min-w-max">
                     <template x-for="stage in stages" :key="stage.id">
                         <div :class="stage.id === 'backlog' ? 'w-72 bg-amber-100/60 rounded-xl shadow-sm flex-shrink-0 border-2 border-amber-200' : 'w-72 bg-slate-200/60 rounded-xl shadow-sm flex-shrink-0'">
@@ -229,46 +270,7 @@ foreach ($cases as $case) {
             </div>
         </main>
 
-        <!-- Case history modal -->
-        <div x-show="showHistoryModal" x-cloak class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click.self="closeCaseHistory()">
-            <div class="bg-white rounded-lg p-4 max-w-2xl w-full mx-4">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="font-semibold">Case History <span class="text-sm text-slate-500">#<span x-text="historyCaseId"></span></span></h3>
-                    <button @click="closeCaseHistory()" class="text-slate-500">Close</button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h4 class="font-medium mb-2">System Logs</h4>
-                        <div class="max-h-64 overflow-auto text-xs bg-slate-50 p-2 rounded">
-                            <template x-for="log in historyLogs.slice().reverse()" :key="JSON.stringify(log)">
-                                <div class="mb-2">
-                                    <div class="text-xs text-slate-500" x-text="(new Date(log.timestamp || Date.now())).toLocaleString()"></div>
-                                    <div class="text-sm" x-text="log.type ? `${log.type}: ${log.message || JSON.stringify(log)}` : (log.message || JSON.stringify(log))"></div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="font-medium mb-2">Work Times</h4>
-                        <div class="max-h-64 overflow-auto text-xs bg-slate-50 p-2 rounded">
-                            <template x-if="Object.keys(historyWorkTimes || {}).length === 0">
-                                <div class="text-sm text-slate-500">No recorded work times</div>
-                            </template>
-                            <template x-for="(stageTimes, stage) in historyWorkTimes" :key="stage">
-                                <div class="mb-3">
-                                    <div class="text-sm font-semibold" x-text="stage"></div>
-                                    <div class="mt-1 text-xs text-slate-600">
-                                        <template x-for="(duration, tech) in stageTimes" :key="tech">
-                                            <div x-text="`Tech ${tech}: ${Math.round(duration/1000)}s`"></div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <script>
