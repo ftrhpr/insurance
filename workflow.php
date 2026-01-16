@@ -285,8 +285,12 @@ foreach ($cases as $case) {
                         setInterval(() => {
                             fetch('workflow_display.php?json=1').then(r => r.json()).then(data => {
                                 if (!data || !data.cases) return;
-                                // Replace entire cases object to handle stage movements
-                                this.cases = data.cases;
+                                // Merge per-stage updates to avoid wiping local-only stages (like backlog)
+                                for (const stageId in data.cases) {
+                                    this.cases[stageId] = data.cases[stageId];
+                                }
+                                // Trigger reactivity update
+                                this.cases = { ...this.cases };
                             }).catch(() => {});
                         }, 15000);
                     });

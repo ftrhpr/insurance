@@ -36,12 +36,12 @@ try {
 
 // If JSON requested, return the cases grouped by stage (for polling)
 if (isset($_GET['json'])) {
-    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY CASE WHEN repair_stage IS NULL THEN 0 ELSE 1 END, id DESC");
+    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY id DESC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $casesByStage = [];
     foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
     foreach ($cases as $case) {
-        $s = $case['repair_stage'] ?? 'backlog';
+        $s = $case['repair_stage'] ?? 'disassembly';
         if (isset($casesByStage[$s])) {
             $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
             $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
