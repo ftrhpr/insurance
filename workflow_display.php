@@ -41,7 +41,7 @@ if (isset($_GET['json'])) {
     $casesByStage = [];
     foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
     foreach ($cases as $case) {
-        $s = $case['repair_stage'] ?? 'disassembly';
+        $s = $case['repair_stage'] ?? 'backlog';
         if (isset($casesByStage[$s])) {
             $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
             $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
