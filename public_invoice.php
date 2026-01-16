@@ -376,7 +376,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                         <h3 class="text-sm font-semibold text-gray-500 uppercase">საფასურის მიმოხილვა</h3>
                                         <p class="text-xs text-gray-400">ფასების მოკლე მიმოხილვა</p>
                                     </div>
-                                    <button id="toggle-invoice-details" onclick="(function(btn){const el=document.getElementById('invoice-details'); el.classList.toggle('hidden'); const isHidden = el.classList.contains('hidden'); btn.querySelector('span').innerText = isHidden ? 'დეტალები' : ''; const icon = btn.querySelector('i'); icon.setAttribute('data-lucide', isHidden ? 'chevron-down' : 'chevron-up'); lucide.createIcons();})(this)" class="text-sm text-indigo-600 hover:underline no-print shrink-0 ml-2 flex items-center gap-1">
+                                    <button id="toggle-invoice-details" onclick="(function(btn){const el=document.getElementById('invoice-details'); el.classList.toggle('hidden'); const isHidden = el.classList.contains('hidden'); btn.querySelector('span').innerText = isHidden ? '' : ''; const icon = btn.querySelector('i'); icon.setAttribute('data-lucide', isHidden ? 'chevron-down' : 'chevron-up'); lucide.createIcons();})(this)" class="text-sm text-indigo-600 hover:underline no-print shrink-0 ml-2 flex items-center gap-1">
                                         <span></span>
                                         <i data-lucide="chevron-up" class="w-4 h-4"></i>
                                     </button>
