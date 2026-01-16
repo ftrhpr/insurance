@@ -164,10 +164,10 @@ foreach ($cases as $case) {
                             <div class="p-4 border-b border-slate-300">
                                 <h3 :class="stage.id === 'backlog' ? 'text-lg font-semibold text-amber-800 flex items-center justify-between' : 'text-lg font-semibold text-slate-700 flex items-center justify-between'">
                                     <span x-text="stage.title"></span>
-                                    <span :class="stage.id === 'backlog' ? 'text-sm font-medium bg-amber-200 text-amber-700 rounded-full px-2 py-0.5' : 'text-sm font-medium bg-slate-300 text-slate-600 rounded-full px-2 py-0.5'" x-text="getFilteredCases(stage.id).length"></span>
+                                    <span :class="stage.id === 'backlog' ? 'text-sm font-medium bg-amber-200 text-amber-700 rounded-full px-2 py-0.5' : 'text-sm font-medium bg-slate-300 text-slate-600 rounded-full px-2 py-0.5'" x-text="stage.id === 'backlog' ? getTotalBacklogCount() : (cases[stage.id] ? cases[stage.id].length : 0)"></span>
                                 </h3>
                                 <div x-show="stage.id === 'backlog'" class="mt-2">
-                                    <input x-model="backlogSearch" type="text" placeholder="Search backlog..." class="w-full px-3 py-2 text-sm border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                    <input x-model="backlogSearch" @input="backlogPage = 1" type="text" placeholder="Search backlog..." class="w-full px-3 py-2 text-sm border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                                 </div>
                             </div>
                             <div :class="stage.id === 'backlog' ? 'p-4 space-y-4 min-h-[60vh] bg-amber-50/50' : 'p-4 space-y-4 min-h-[60vh]'" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
@@ -216,6 +216,11 @@ foreach ($cases as $case) {
                                         </template>
                                     </div>
                                 </template>
+                                <div x-show="stage.id === 'backlog' && hasMoreBacklog()" class="mt-4 text-center">
+                                    <button @click="loadMoreBacklog()" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+                                        Load More Cases
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </template>
@@ -233,6 +238,8 @@ foreach ($cases as $case) {
                 activeTimers: {},
                 currentTime: Date.now(),
                 backlogSearch: '',
+                backlogPage: 1,
+                backlogPageSize: 20,
                 init() {
                     this.$nextTick(() => {
                         this.stages.forEach(stage => {
@@ -426,8 +433,39 @@ foreach ($cases as $case) {
 
                 getFilteredCases(stageId) {
                     const stageCases = this.cases[stageId] || [];
-                    if (stageId !== 'backlog' || !this.backlogSearch.trim()) {
+                    if (stageId !== 'backlog') {
                         return stageCases;
+                    }
+                    
+                    // Sort backlog cases by newest first (higher ID)
+                    let filteredCases = [...stageCases].sort((a, b) => b.id - a.id);
+                    
+                    // Apply search filter if there's a search term
+                    if (this.backlogSearch.trim()) {
+                        const searchTerm = this.backlogSearch.toLowerCase().trim();
+                        filteredCases = filteredCases.filter(caseItem => {
+                            const plate = (caseItem.plate || '').toLowerCase();
+                            const make = (caseItem.vehicle_make || '').toLowerCase();
+                            const model = (caseItem.vehicle_model || '').toLowerCase();
+                            const caseId = String(caseItem.id).toLowerCase();
+                            
+                            return plate.includes(searchTerm) || 
+                                   make.includes(searchTerm) || 
+                                   model.includes(searchTerm) || 
+                                   caseId.includes(searchTerm) ||
+                                   `${make} ${model}`.toLowerCase().includes(searchTerm);
+                        });
+                    }
+                    
+                    // Apply pagination
+                    const startIndex = 0;
+                    const endIndex = this.backlogPage * this.backlogPageSize;
+                    return filteredCases.slice(startIndex, endIndex);
+                },
+                getTotalBacklogCount() {
+                    const stageCases = this.cases['backlog'] || [];
+                    if (!this.backlogSearch.trim()) {
+                        return stageCases.length;
                     }
                     
                     const searchTerm = this.backlogSearch.toLowerCase().trim();
@@ -442,7 +480,32 @@ foreach ($cases as $case) {
                                model.includes(searchTerm) || 
                                caseId.includes(searchTerm) ||
                                `${make} ${model}`.toLowerCase().includes(searchTerm);
-                    });
+                    }).length;
+                },
+                loadMoreBacklog() {
+                    this.backlogPage++;
+                },
+                hasMoreBacklog() {
+                    const stageCases = this.cases['backlog'] || [];
+                    let filteredCases = [...stageCases].sort((a, b) => b.id - a.id);
+                    
+                    if (this.backlogSearch.trim()) {
+                        const searchTerm = this.backlogSearch.toLowerCase().trim();
+                        filteredCases = filteredCases.filter(caseItem => {
+                            const plate = (caseItem.plate || '').toLowerCase();
+                            const make = (caseItem.vehicle_make || '').toLowerCase();
+                            const model = (caseItem.vehicle_model || '').toLowerCase();
+                            const caseId = String(caseItem.id).toLowerCase();
+                            
+                            return plate.includes(searchTerm) || 
+                                   make.includes(searchTerm) || 
+                                   model.includes(searchTerm) || 
+                                   caseId.includes(searchTerm) ||
+                                   `${make} ${model}`.toLowerCase().includes(searchTerm);
+                        });
+                    }
+                    
+                    return filteredCases.length > this.backlogPage * this.backlogPageSize;
                 },
                 dumpTimers(caseId, stageId) {
                     const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
