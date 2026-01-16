@@ -199,6 +199,24 @@ foreach ($cases as $case) {
                         setInterval(() => {
                             this.currentTime = Date.now();
                         }, 1000);
+
+                        // Periodically poll for statuses/timers updates (every 15s)
+                        setInterval(() => {
+                            fetch('workflow_display.php?json=1').then(r => r.json()).then(data => {
+                                if (!data || !data.cases) return;
+                                // Merge updated timers/statuses into local cases
+                                for (const stageId in data.cases) {
+                                    (data.cases[stageId] || []).forEach(remoteCase => {
+                                        const local = this.cases[stageId] && this.cases[stageId].find(c => c.id == remoteCase.id);
+                                        if (local) {
+                                            if (remoteCase.stage_timers) local.stage_timers = remoteCase.stage_timers;
+                                            if (remoteCase.stage_statuses) local.stage_statuses = remoteCase.stage_statuses;
+                                        }
+                                    });
+                                }
+                                this.cases = { ...this.cases };
+                            }).catch(() => {});
+                        }, 15000);
                     });
                 },
                 moveCase(caseId, newStageId, oldStageId, newIndex) {

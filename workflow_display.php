@@ -28,7 +28,7 @@ $stages = [
 
 // If JSON requested, return the cases grouped by stage (for polling)
 if (isset($_GET['json'])) {
-    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers FROM transfers WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed','Issue','Archived') ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed','Issue','Archived') ORDER BY id DESC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $casesByStage = [];
     foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -37,7 +37,7 @@ if (isset($_GET['json'])) {
         if (isset($casesByStage[$s])) {
             $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
             $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
-            $casesByStage[$s][] = $case;
+            $case['stage_statuses'] = json_decode($case['stage_statuses'] ?? '{}', true);
         }
     }
     header('Content-Type: application/json');
@@ -76,6 +76,8 @@ foreach ($cases as $case) {
         .tv-title { font-size: 36px; font-weight: 700; color: #0f172a; }
         .tv-sub { color: #1f2937; font-size: 20px; }
         .timer-badge { background: #ffedd5; color: #92400e; font-weight: 700; padding: 6px 10px; border-radius: 999px; font-size: 18px; }
+        .blink-finished { animation: finishedBlink 1.2s infinite; box-shadow: 0 0 18px rgba(16,185,129,0.35); }
+        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-2px);}100%{transform:translateY(0);} }
         @media (min-width: 1920px) {
             .stage-column { min-width: 520px; }
             .tv-title { font-size: 56px; }
@@ -112,7 +114,7 @@ foreach ($cases as $case) {
                                         <div class="text-sm text-slate-600 mt-1" x-text="`${caseItem.plate} - #${caseItem.id}`"></div>
                                     </div>
                                     <div class="flex flex-col items-end gap-2">
-                                        <div class="timer-badge" x-text="getTimerDisplay(caseItem.id, stage.id)"></div>
+                                        <div class="timer-badge" x-text="getTimerDisplay(caseItem.id, stage.id)" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}"></div>
                                         <div class="text-xs text-slate-500 mt-1" x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) ? ('Tech: '+ (getTechName(caseItem.repair_assignments[stage.id]) || caseItem.repair_assignments[stage.id])) : ''"></div>
                                     </div>
                                 </div>

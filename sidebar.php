@@ -38,6 +38,7 @@ if (!isset($_SESSION['user_id'])) {
                 'calendar' => ['icon' => 'calendar', 'label' => 'Calendar', 'url' => 'calendar.php'],
                 'vehicles' => ['icon' => 'database', 'label' => 'Vehicle DB', 'url' => 'vehicles.php'],
                 'parts_collection' => ['icon' => 'wrench', 'label' => 'Parts Collection', 'url' => 'parts_collection.php'],
+                'technician_dashboard' => ['icon' => 'users', 'label' => 'Technician Dashboard', 'url' => 'technician_dashboard.php'],
                 'reviews' => ['icon' => 'star', 'label' => 'Reviews', 'url' => 'reviews.php'],
                 'templates' => ['icon' => 'message-square-dashed', 'label' => 'SMS Templates', 'url' => 'templates.php']
             ];
