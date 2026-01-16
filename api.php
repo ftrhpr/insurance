@@ -2051,12 +2051,19 @@ try {
             $statuses = json_decode($row['stage_statuses'] ?: '{}', true);
             if (!is_array($statuses)) $statuses = [];
 
-            // Move case to next stage
-            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ? WHERE id = ?");
-            $stmt->execute([$next_stage, $case_id]);
+            // Transfer technician assignment to new stage and start timer
+            if (isset($assignments[$current_stage])) {
+                $technician_id = $assignments[$current_stage];
+                $assignments[$next_stage] = $technician_id;
+                $timers[$next_stage] = time() * 1000; // Start timer in milliseconds
+            }
+
+            // Move case to next stage and update assignments/timers
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ?, repair_assignments = ?, stage_timers = ? WHERE id = ?");
+            $stmt->execute([$next_stage, json_encode($assignments), json_encode($timers), $case_id]);
 
             if ($stmt->rowCount() > 0) {
-                jsonResponse(['status' => 'success', 'new_stage' => $next_stage]);
+                jsonResponse(['status' => 'success', 'new_stage' => $next_stage, 'assignments' => $assignments, 'timers' => $timers]);
             } else {
                 jsonResponse(['status' => 'error', 'message' => 'Failed to move to next stage']);
             }

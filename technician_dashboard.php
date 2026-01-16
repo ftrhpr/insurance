@@ -252,9 +252,9 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                         body: JSON.stringify({ case_id: caseId, stage: stage })
                     }).then(r => r.json()).then(data => {
                         if (data.status === 'success') {
-                            // Refresh list to show the case moved
+                            // Refresh list to show the case moved with new assignment
                             this.refresh();
-                            alert('Case moved to next stage');
+                            alert('Case moved to next stage and technician reassigned');
                         } else {
                             alert('Failed: ' + (data.message || 'Unknown'));
                         }
