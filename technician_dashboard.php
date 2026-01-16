@@ -42,8 +42,8 @@ if (isset($_GET['json'])) {
             $hasTimer = !empty($timers[$stage]);
             $canAdvance = in_array($stage, ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting']);
             
-            // Show if: assigned to user AND (not finished OR (finished but can advance))
-            if (intval($techId) === intval($userId) && (!$isFinished || ($isFinished && $canAdvance))) {
+            // Show if: assigned to user AND (has active timer OR finished and can advance)
+            if (intval($techId) === intval($userId) && ($hasTimer || ($isFinished && $canAdvance))) {
                 $assigned[] = [
                     'id' => $c['id'],
                     'plate' => $c['plate'],
@@ -77,8 +77,8 @@ foreach ($cases as $c) {
         $hasTimer = !empty($timers[$stage]);
         $canAdvance = in_array($stage, ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting']);
         
-        // Show if: assigned to user AND (not finished OR (finished but can advance))
-        if (intval($techId) === intval($userId) && (!$isFinished || ($isFinished && $canAdvance))) {
+        // Show if: assigned to user AND (has active timer OR finished and can advance)
+        if (intval($techId) === intval($userId) && ($hasTimer || ($isFinished && $canAdvance))) {
             $assigned[] = [
                 'id' => $c['id'],
                 'plate' => $c['plate'],
