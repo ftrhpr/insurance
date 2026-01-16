@@ -33,7 +33,7 @@ $stages = [
 
 // Fetch cases for the workflow board
 $stmt = $pdo->query("
-    SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers
+    SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses
     FROM transfers
     WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled')
     ORDER BY 
@@ -52,11 +52,7 @@ foreach ($cases as $case) {
     if (array_key_exists($stageId, $casesByStage)) {
         $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
         $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
-        $casesByStage[$stageId][] = $case;
-    }
-}
-
-?>
+        $case['stage_statuses'] = json_decode($case['stage_statuses'] ?? '{}', true);
 <!DOCTYPE html>
 <html lang="<?php echo get_current_language(); ?>">
 <head>
@@ -73,6 +69,14 @@ foreach ($cases as $case) {
         .sortable-chosen { cursor: grabbing; }
         .case-card { transition: box-shadow 0.2s; }
         .case-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        /* Finished blink */
+        @keyframes finishedBlink {
+            0% { box-shadow: 0 0 0px rgba(16,185,129,0); transform: translateY(0); }
+            50% { box-shadow: 0 0 20px rgba(16,185,129,0.35); transform: translateY(-2px); }
+            100% { box-shadow: 0 0 0px rgba(16,185,129,0); transform: translateY(0); }
+        }
+        .blink-finished { border-left: 4px solid #10B981; animation: finishedBlink 1.2s infinite; }
+        .finished-badge { background: #D1FAE5; color: #065F46; font-weight: 700; padding: 4px 8px; border-radius: 999px; font-size: 12px; }
     </style>
 </head>
 <body class="bg-slate-100">
@@ -99,7 +103,7 @@ foreach ($cases as $case) {
                             </div>
                             <div :class="stage.id === 'backlog' ? 'p-4 space-y-4 min-h-[60vh] bg-amber-50/50' : 'p-4 space-y-4 min-h-[60vh]'" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
                                 <template x-for="caseItem in cases[stage.id]" :key="caseItem.id">
-                                    <div class="bg-white rounded-lg p-4 shadow-md case-card" :data-case-id="caseItem.id">
+                                    <div :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}" class="bg-white rounded-lg p-4 shadow-md case-card" :data-case-id="caseItem.id">
                                         <div class="font-bold text-slate-800" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
                                         <div class="text-sm text-slate-500 flex items-center justify-between">
                                             <span x-text="`${caseItem.plate} - #${caseItem.id}`"></span>
@@ -121,6 +125,7 @@ foreach ($cases as $case) {
                                                     <div class="flex items-center justify-between">
                                                         <span class="text-xs font-medium text-slate-500">Timer</span>
                                                         <div class="flex items-center gap-2">
+                                                            <span x-show="caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'" class="finished-badge">Finished</span>
                                                             <span x-show="hasTimer(caseItem.id, stage.id)" class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-100 text-amber-800 font-semibold text-sm">
                                                                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l2 2"/></svg>
                                                                 <span x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
@@ -268,6 +273,7 @@ foreach ($cases as $case) {
                             if (caseObj) {
                                 if (data.assignments) caseObj.repair_assignments = data.assignments;
                                 if (data.timers) caseObj.stage_timers = data.timers;
+                                if (data.statuses) caseObj.stage_statuses = data.statuses;
                                 this.cases = { ...this.cases };
                             }
 

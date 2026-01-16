@@ -49,7 +49,8 @@ try {
         'vat_amount'    => "DECIMAL(10,2) DEFAULT 0.00",
         'repair_stage'  => "VARCHAR(50) NULL DEFAULT NULL",
         'repair_assignments' => "JSON NULL DEFAULT NULL",
-        'stage_timers'  => "JSON NULL DEFAULT NULL"
+        'stage_timers'  => "JSON NULL DEFAULT NULL",
+        'stage_statuses' => "JSON NULL DEFAULT NULL"
     ];
 
     foreach ($columns as $col => $def) {
