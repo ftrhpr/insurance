@@ -117,20 +117,30 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                 <div class="p-4 bg-white rounded shadow text-center">No assigned cases</div>
             </template>
 
-            <template x-for="c in cases" :key="c.id">
-                <article class="bg-white rounded-xl shadow p-4 touch-manipulation" :class="{'opacity-60': c.status && c.status.status === 'finished'}">
+            <!-- Grouped view: one card per case with per-stage rows -->
+            <template x-for="caseGroup in groupedCases()" :key="caseGroup.id">
+                <article class="bg-white rounded-xl shadow p-4 touch-manipulation" :class="{'opacity-60': caseGroup.stages.every(s=>s.status && s.status.status === 'finished')}">
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex-1 min-w-0">
-                            <div class="text-lg font-bold truncate" x-text="`${c.vehicle_make} ${c.vehicle_model}`"></div>
-                            <div class="text-sm text-slate-500 mt-1 truncate" x-text="`${c.plate} - #${c.id} — ${c.stage}`"></div>
-                            <div class="mt-3">
-                                <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold" x-text="displayTimer(c.timer)"></div>
+                            <div class="text-lg font-bold truncate" x-text="caseGroup.title"></div>
+                            <div class="text-sm text-slate-500 mt-1 truncate" x-text="`#${caseGroup.id}`"></div>
+                            <div class="mt-3 flex gap-2 flex-wrap">
+                                <template x-for="stage in caseGroup.stages" :key="stage.stage">
+                                    <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold">
+                                        <span x-text="stage.stage"></span>
+                                        <span class="font-mono text-sm" x-text="displayTimer(stage.timer)"></span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
                     <div class="mt-4 grid grid-cols-1 gap-2">
-                        <button x-show="!(c.status && c.status.status === 'finished')" @click="finish(c)" aria-label="Mark work finished" class="w-full h-14 rounded-md bg-emerald-600 text-white text-lg font-semibold touch-target">Finished</button>
-                        <div x-show="c.status && c.status.status === 'finished'" class="w-full h-14 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
+                        <template x-for="stage in caseGroup.stages" :key="stage.stage">
+                            <div class="flex gap-2">
+                                <button x-show="!(stage.status && stage.status.status === 'finished')" @click="finishStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-emerald-600 text-white text-lg font-semibold touch-target">Finish: <span x-text="stage.stage" class="ml-2 font-normal text-sm"></span></button>
+                                <div x-show="stage.status && stage.status.status === 'finished'" class="w-36 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
+                            </div>
+                        </template>
                     </div>
                 </article>
             </template>
@@ -168,6 +178,37 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                         }
                         this.cases = data.cases;
                     }).catch(e => { console.error('Failed to refresh tech cases', e); this.cases = []; });
+                },
+                groupedCases() {
+                    // Group cases array (one entry per stage) into case cards
+                    const map = {};
+                    this.cases.forEach(s => {
+                        const id = s.id;
+                        if (!map[id]) {
+                            map[id] = { id: id, title: (s.vehicle_make && (s.vehicle_make + (s.vehicle_model ? ' ' + s.vehicle_model : ''))) || s.plate || ('#'+id), stages: [] };
+                        }
+                        map[id].stages.push({ stage: s.stage, status: s.status, timer: s.timer });
+                    });
+                    // Convert to array and sort by latest timer / id
+                    const arr = Object.values(map);
+                    arr.sort((a,b)=> b.id - a.id);
+                    return arr;
+                },
+                finishStage(caseId, stage) {
+                    if (!confirm('Mark this stage as finished?')) return;
+                    fetch('api.php?action=finish_stage', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ case_id: caseId, stage: stage })
+                    }).then(r => r.json()).then(data => {
+                        if (data.status === 'success') {
+                            // Refresh list to apply authoritative statuses
+                            this.refresh();
+                            // optional toast
+                            alert('Stage marked finished');
+                        } else {
+                            alert('Failed: ' + (data.message || 'Unknown'));
+                        }
+                    }).catch(e => alert('Error: ' + e.message));
                 },
                 displayTimer(ms) {
                     if (!ms) return '—';
