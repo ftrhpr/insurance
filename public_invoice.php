@@ -334,9 +334,9 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
             <!-- Totals Section -->
             <div class="px-8 py-6 bg-gray-50 border-t border-gray-200 overflow-hidden">
                 <div class="w-full">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                         <!-- Left: Bank panel (visible only when VAT enabled) -->
-                        <div class="md:col-span-8 min-w-0">
+                        <div class="md:col-span-2 min-w-0">
                             <?php if ($vat_enabled && $vat_amount > 0): ?>
                             <div class="rounded-xl bg-white p-6 border border-gray-200 shadow-sm h-full min-w-0 overflow-hidden">
                                 <h4 class="text-sm font-semibold text-gray-600 mb-2">ბანკის მონაცემები</h4>
@@ -363,8 +363,8 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                         </div>
 
                         <!-- Right: Summary card -->
-                        <div class="md:col-span-4 min-w-0">
-                            <div class="rounded-xl bg-white shadow p-4 min-w-0 overflow-hidden">
+                        <div class="md:col-span-1 min-w-0 md:max-w-xs w-full ml-auto">
+                            <div class="rounded-xl bg-white shadow p-4 min-w-0 overflow-hidden w-full">
                                 <div class="flex items-center justify-between mb-3">
                                     <div>
                                         <h3 class="text-sm font-semibold text-gray-500 uppercase">საფასურის მიმოხილვა</h3>
@@ -439,7 +439,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                             <div class="text-sm text-gray-600">საბოლოო გადასახდელი</div>
                                             <div class="text-xl font-bold text-gray-800"><?php echo $vat_enabled && $vat_amount > 0 ? 'დღგ-ით' : ''; ?></div>
                                         </div>
-                                        <div class="text-2xl md:text-3xl font-extrabold text-orange-600 break-words max-w-full text-right">₾<?php echo number_format($final_total, 2); ?></div>
+                                        <div class="text-2xl md:text-3xl lg:text-4xl font-extrabold text-orange-600 break-words max-w-full text-right">₾<?php echo number_format($final_total, 2); ?></div>
                                     </div>
                                 </div>
                             </div>
