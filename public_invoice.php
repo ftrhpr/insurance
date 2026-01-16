@@ -384,7 +384,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                     
                     <!-- Grand Total -->
                     <div class="flex justify-between pt-3 border-t-2 border-gray-300">
-                        <span class="text-lg font-bold text-gray-800">ჯამი:</span>
+                        <span class="text-lg font-bold text-gray-800"><?php echo $vat_enabled ? 'ჯამი (დღგ-ს გარეშე):' : 'გადასახდელი:'; ?></span>
                         <span class="text-2xl font-bold text-indigo-600">₾<?php echo number_format($grand_total, 2); ?></span>
                     </div>
                     
