@@ -57,6 +57,10 @@ $case['repair_parts'] = json_decode($case['repair_parts'] ?? '[]', true);
 $case['repair_labor'] = json_decode($case['repair_labor'] ?? '[]', true);
 $case['repair_activity_log'] = json_decode($case['repair_activity_log'] ?? '[]', true);
 
+// Ensure VAT fields are properly typed
+$case['vat_enabled'] = !empty($case['vat_enabled']) && $case['vat_enabled'] != '0';
+$case['vat_amount'] = (float)($case['vat_amount'] ?? 0.00);
+
 // Get SMS templates for workflow bindings
 $smsTemplates = [];
 $smsWorkflowBindings = [];
