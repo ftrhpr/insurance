@@ -94,16 +94,33 @@ try {
             continue;
         }
         
-        if (isset($data[$appField]) && $data[$appField] !== null) {
-            $value = $data[$appField];
+        // Special handling for VAT fields - always process them if present in mapping
+        $shouldProcess = false;
+        if (in_array($dbField, ['vat_enabled', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
+            $shouldProcess = array_key_exists($appField, $data);
+        } else {
+            $shouldProcess = isset($data[$appField]) && $data[$appField] !== null;
+        }
+        
+        if ($shouldProcess) {
+            $value = $data[$appField] ?? null;
+            
+            // Debug VAT fields specifically
+            if (in_array($dbField, ['vat_enabled', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
+                error_log("Processing VAT field $appField -> $dbField with value: " . json_encode($value) . " (type: " . gettype($value) . ")");
+            }
             
             // Handle discount and VAT fields as floats - allow empty strings to be 0
             if (in_array($dbField, ['services_discount_percent', 'parts_discount_percent', 'global_discount_percent', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
-                $value = floatval($value);
+                $value = floatval($value ?? 0);
+                if (in_array($dbField, ['vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
+                    error_log("Converted VAT field $dbField to float: $value");
+                }
             }
             // Handle boolean VAT enabled field
             elseif ($dbField === 'vat_enabled') {
-                $value = intval($value);
+                $value = intval($value ?? 0);
+                error_log("Converted VAT enabled to int: $value");
             }
             // Handle JSON fields for arrays
             elseif (is_array($value) && in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {
