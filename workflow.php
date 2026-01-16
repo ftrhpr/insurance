@@ -1,4 +1,5 @@
 <?php
+error_log('[workflow.php] reached file top');
 session_start();
 // Production-safety: don't display PHP errors to users, but log them
 ini_set('display_errors', 0);
