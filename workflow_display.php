@@ -26,6 +26,14 @@ $stages = [
     ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'Assembling')],
 ];
 
+// Fetch users who can be assigned (technicians)
+try {
+    $stmt = $pdo->query("SELECT id, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
+    $technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $technicians = [];
+}
+
 // If JSON requested, return the cases grouped by stage (for polling)
 if (isset($_GET['json'])) {
     $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed','Issue','Archived') ORDER BY id DESC");
@@ -69,48 +77,66 @@ foreach ($cases as $case) {
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        html,body { height: 100%; }
-        body { margin: 0; background: #0f172a; }
-        .stage-column { min-width: 360px; }
-        .card { background: rgba(255,255,255,0.95); border-radius: 12px; padding: 18px; }
-        .tv-title { font-size: 36px; font-weight: 700; color: #0f172a; }
-        .tv-sub { color: #1f2937; font-size: 20px; }
-        .timer-badge { background: #ffedd5; color: #92400e; font-weight: 700; padding: 6px 10px; border-radius: 999px; font-size: 18px; }
-        .blink-finished { animation: finishedBlink 1.2s infinite; box-shadow: 0 0 18px rgba(16,185,129,0.35); }
-        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-2px);}100%{transform:translateY(0);} }
+        html,body { height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { margin: 0; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .stage-column { min-width: 280px; flex: 1; }
+        .card { background: rgba(255,255,255,0.98); border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
+        .tv-title { font-size: 28px; font-weight: 700; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .tv-sub { color: #e2e8f0; font-size: 16px; }
+        .timer-badge { background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); color: #9a3412; font-weight: 700; padding: 8px 12px; border-radius: 999px; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .blink-finished { animation: finishedBlink 1.2s infinite; box-shadow: 0 0 20px rgba(16,185,129,0.4), 0 4px 20px rgba(0,0,0,0.1); }
+        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-4px);}100%{transform:translateY(0);} }
+        .btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; transition: all 0.2s; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .connection-status { position: fixed; top: 10px; right: 10px; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+        .connection-online { background: #dcfce7; color: #166534; }
+        .connection-offline { background: #fee2e2; color: #991b1b; }
+        @media (max-width: 768px) {
+            .stage-column { min-width: 240px; }
+            .tv-title { font-size: 24px; }
+            .tv-sub { font-size: 14px; }
+            .card { padding: 16px; }
+            .timer-badge { font-size: 14px; padding: 6px 10px; }
+        }
         @media (min-width: 1920px) {
-            .stage-column { min-width: 520px; }
+            .stage-column { min-width: 400px; }
+            .tv-title { font-size: 48px; }
+            .timer-badge { font-size: 20px; padding: 10px 14px; }
+        }
+        @media (min-width: 2560px) {
+            .stage-column { min-width: 500px; }
             .tv-title { font-size: 56px; }
-            .timer-badge { font-size: 24px; padding: 10px 14px; }
+            .timer-badge { font-size: 24px; padding: 12px 16px; }
         }
     </style>
 </head>
 <body x-data="workflowDisplay()" x-init="init()" class="antialiased">
-    <div class="flex items-center justify-between p-6 bg-white/5 border-b border-white/6">
-        <div>
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 bg-white/5 border-b border-white/6">
+        <div class="mb-4 md:mb-0">
             <div class="tv-title"><?php echo __('workflow.display.header', 'Repair Board'); ?></div>
             <div class="tv-sub mt-1" x-text="lastUpdatedText"></div>
         </div>
-        <div class="flex items-center gap-4">
-            <button @click="toggleFullscreen()" class="px-4 py-2 rounded bg-white/10 text-white">Go Fullscreen</button>
-            <button @click="refreshNow()" class="px-4 py-2 rounded bg-white/10 text-white">Refresh</button>
+        <div class="flex items-center gap-2 md:gap-4">
+            <div class="connection-status" :class="connectionStatus === 'online' ? 'connection-online' : 'connection-offline'" x-text="connectionStatus === 'online' ? 'Online' : 'Offline'"></div>
+            <button @click="toggleFullscreen()" class="btn bg-white/10 text-white hover:bg-white/20">Go Fullscreen</button>
+            <button @click="refreshNow()" class="btn bg-white/10 text-white hover:bg-white/20">Refresh</button>
         </div>
     </div>
 
     <main class="overflow-auto" style="height: calc(100% - 92px);">
-        <div class="flex gap-6 px-6 py-6" style="min-width: 100%;">
+        <div class="flex flex-wrap gap-6 px-6 py-6 justify-center md:justify-start">
             <template x-for="stage in stages" :key="stage.id">
-                <div class="stage-column bg-white/6 rounded-xl p-4 flex-shrink-0" style="height: calc(100vh - 140px);">
+                <div class="stage-column bg-white/6 rounded-xl p-4 flex-shrink-0" style="height: calc(100vh - 140px); min-height: 400px;">
                     <div class="mb-4 flex items-center justify-between">
-                        <div class="text-white text-2xl font-semibold" x-text="stage.title"></div>
-                        <div class="text-white/80 text-xl font-medium" x-text="(cases[stage.id]||[]).length"></div>
+                        <div class="text-white text-xl md:text-2xl font-semibold" x-text="stage.title"></div>
+                        <div class="text-white/80 text-lg md:text-xl font-medium bg-black/20 px-3 py-1 rounded-full" x-text="(cases[stage.id]||[]).length"></div>
                     </div>
                     <div class="space-y-4 overflow-auto" style="height: calc(100% - 56px);">
                         <template x-for="caseItem in (cases[stage.id] || [])" :key="caseItem.id">
                             <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
-                                        <div class="text-2xl font-bold" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
+                                        <div class="text-xl md:text-2xl font-bold text-gray-900" x-text="`${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || 'Unknown Vehicle'"></div>
                                         <div class="text-sm text-slate-600 mt-1" x-text="`${caseItem.plate} - #${caseItem.id}`"></div>
                                     </div>
                                     <div class="flex flex-col items-end gap-2">
@@ -126,7 +152,6 @@ foreach ($cases as $case) {
         </div>
     </main>
 
-    <script>
         function workflowDisplay() {
             return {
                 stages: <?php echo json_encode($stages); ?>,
@@ -135,6 +160,7 @@ foreach ($cases as $case) {
                 lastUpdated: Date.now(),
                 lastUpdatedText: '',
                 currentTime: Date.now(),
+                connectionStatus: 'online',
                 init() {
                     this.updateLastText();
                     setInterval(() => { this.currentTime = Date.now(); this.updateLastText(); }, 1000);
@@ -149,16 +175,30 @@ foreach ($cases as $case) {
                 },
                 refreshNow() { this.poll(); },
                 poll() {
-                    fetch(location.pathname + '?json=1').then(r => r.json()).then(data => {
-                        if (data && data.cases) {
-                            this.cases = data.cases;
-                            this.lastUpdated = data.now || Date.now();
-                            this.updateLastText();
-                        }
-                    }).catch(e => console.error('Failed polling workflow:', e));
+                    fetch(location.pathname + '?json=1')
+                        .then(r => {
+                            if (!r.ok) throw new Error('Network response not ok');
+                            return r.json();
+                        })
+                        .then(data => {
+                            if (data && data.cases) {
+                                this.cases = data.cases;
+                                this.lastUpdated = data.now || Date.now();
+                                this.updateLastText();
+                                this.connectionStatus = 'online';
+                            }
+                        })
+                        .catch(e => {
+                            console.error('Failed polling workflow:', e);
+                            this.connectionStatus = 'offline';
+                        });
                 },
                 toggleFullscreen() {
-                    if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(e => console.log('Fullscreen failed:', e));
+                    } else {
+                        document.exitFullscreen().catch(e => console.log('Exit fullscreen failed:', e));
+                    }
                 },
                 getTimerDisplay(caseId, stageId) {
                     const caseItem = (this.cases[stageId]||[]).find(c => c.id == caseId);
@@ -179,6 +219,5 @@ foreach ($cases as $case) {
                 }
             }
         }
-    </script>
 </body>
 </html>
