@@ -2005,6 +2005,66 @@ try {
         }
     }
 
+    if ($action === 'move_to_next_stage' && $method === 'POST') {
+        $data = getJsonInput();
+        $case_id = intval($data['case_id'] ?? 0);
+        $current_stage = trim($data['stage'] ?? '');
+
+        if ($case_id <= 0 || empty($current_stage)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid case ID or stage']);
+        }
+
+        // Define stage progression
+        $stage_progression = [
+            'disassembly' => 'body_work',
+            'body_work' => 'processing_for_painting',
+            'processing_for_painting' => 'preparing_for_painting',
+            'preparing_for_painting' => 'painting',
+            'painting' => 'assembling'
+        ];
+
+        if (!isset($stage_progression[$current_stage])) {
+            jsonResponse(['status' => 'error', 'message' => 'Cannot advance from this stage']);
+        }
+
+        $next_stage = $stage_progression[$current_stage];
+
+        // Validate stages exist
+        $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        if (!in_array($current_stage, $valid_stages) || !in_array($next_stage, $valid_stages)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid stage progression']);
+        }
+
+        try {
+            // Get current data
+            $stmt = $pdo->prepare("SELECT repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE id = ?");
+            $stmt->execute([$case_id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) jsonResponse(['status' => 'error', 'message' => 'Case not found']);
+
+            $assignments = json_decode($row['repair_assignments'] ?: '{}', true);
+            if (!is_array($assignments)) $assignments = [];
+
+            $timers = json_decode($row['stage_timers'] ?: '{}', true);
+            if (!is_array($timers)) $timers = [];
+
+            $statuses = json_decode($row['stage_statuses'] ?: '{}', true);
+            if (!is_array($statuses)) $statuses = [];
+
+            // Move case to next stage
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ? WHERE id = ?");
+            $stmt->execute([$next_stage, $case_id]);
+
+            if ($stmt->rowCount() > 0) {
+                jsonResponse(['status' => 'success', 'new_stage' => $next_stage]);
+            } else {
+                jsonResponse(['status' => 'error', 'message' => 'Failed to move to next stage']);
+            }
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
     if ($action === 'finish_stage' && $method === 'POST') {
         $data = getJsonInput();
         $case_id = intval($data['case_id'] ?? 0);

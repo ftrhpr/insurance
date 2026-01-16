@@ -274,17 +274,8 @@ foreach ($cases as $case) {
                         setInterval(() => {
                             fetch('workflow_display.php?json=1').then(r => r.json()).then(data => {
                                 if (!data || !data.cases) return;
-                                // Merge updated timers/statuses into local cases
-                                for (const stageId in data.cases) {
-                                    (data.cases[stageId] || []).forEach(remoteCase => {
-                                        const local = this.cases[stageId] && this.cases[stageId].find(c => c.id == remoteCase.id);
-                                        if (local) {
-                                            if (remoteCase.stage_timers) local.stage_timers = remoteCase.stage_timers;
-                                            if (remoteCase.stage_statuses) local.stage_statuses = remoteCase.stage_statuses;
-                                        }
-                                    });
-                                }
-                                this.cases = { ...this.cases };
+                                // Replace entire cases object to handle stage movements
+                                this.cases = data.cases;
                             }).catch(() => {});
                         }, 15000);
                     });

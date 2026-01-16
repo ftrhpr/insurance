@@ -38,7 +38,7 @@ if (isset($_GET['json'])) {
         $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
         $timers = json_decode($c['stage_timers'] ?? '{}', true);
         foreach ($assignments as $stage => $techId) {
-            if (intval($techId) === intval($userId)) {
+            if (intval($techId) === intval($userId) && ($statuses[$stage] ?? null) !== 'finished' && !empty($timers[$stage])) {
                 $assigned[] = [
                     'id' => $c['id'],
                     'plate' => $c['plate'],
@@ -68,7 +68,7 @@ foreach ($cases as $c) {
     $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
     $timers = json_decode($c['stage_timers'] ?? '{}', true);
     foreach ($assignments as $stage => $techId) {
-        if (intval($techId) === intval($userId)) {
+        if (intval($techId) === intval($userId) && ($statuses[$stage] ?? null) !== 'finished' && !empty($timers[$stage])) {
             $assigned[] = [
                 'id' => $c['id'],
                 'plate' => $c['plate'],
@@ -141,9 +141,9 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                             <div class="text-sm text-slate-500 mt-1 truncate" x-text="`#${caseGroup.id}`"></div>
                             <div class="mt-3 flex gap-2 flex-wrap">
                                 <template x-for="stage in caseGroup.stages" :key="stage.stage">
-                                    <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold" :class="stage.status && stage.status.status === 'finished' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">
+                                    <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold">
                                         <span x-text="stage.stage_title"></span>
-                                        <span class="font-mono text-sm" x-text="stage.status && stage.status.status === 'finished' ? 'Done' : displayTimer(stage.timer)"></span>
+                                        <span class="font-mono text-sm" x-text="displayTimer(stage.timer)"></span>
                                     </div>
                                 </template>
                             </div>
@@ -153,8 +153,11 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                         <template x-for="stage in caseGroup.stages" :key="stage.stage">
                             <div class="flex gap-2">
                                 <button x-show="!(stage.status && stage.status.status === 'finished')" @click="finishStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-emerald-600 text-white text-lg font-semibold touch-target">Finish</button>
-                                <button x-show="stage.status && stage.status.status === 'finished' && stage.stage === 'processing_for_painting'" @click="moveToNextStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-blue-600 text-white text-lg font-semibold touch-target">Move to Preparing</button>
-                                <div x-show="stage.status && stage.status.status === 'finished' && stage.stage !== 'processing_for_painting'" class="w-36 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
+                                <div x-show="stage.status && stage.status.status === 'finished' && canAdvanceStage(stage.stage)" class="flex gap-2 flex-1">
+                                    <button @click="moveToNextStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-blue-600 text-white text-sm font-semibold touch-target">Move to Next</button>
+                                    <div class="w-24 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center text-sm">Finished</div>
+                                </div>
+                                <div x-show="stage.status && stage.status.status === 'finished' && !canAdvanceStage(stage.stage)" class="w-36 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
                             </div>
                         </template>
                     </div>
@@ -216,85 +219,59 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                     return arr;
                 },
                 finishStage(caseId, stage) {
-                    if (!confirm('Mark this stage as finished?')) return;
+                    let moveToNext = false;
+                    if (stage === 'processing_for_painting') {
+                        moveToNext = confirm('Mark this stage as finished? Also move to Preparing for Painting?');
+                    } else {
+                        if (!confirm('Mark this stage as finished?')) return;
+                    }
+                    
                     fetch('api.php?action=finish_stage', {
                         method: 'POST', headers: {'Content-Type':'application/json'},
                         body: JSON.stringify({ case_id: caseId, stage: stage })
                     }).then(r => r.json()).then(data => {
                         if (data.status === 'success') {
-                            // Special handling for Processing for Painting stage
-                            if (stage === 'processing_for_painting') {
-                                const moveToNext = confirm('Stage marked finished. Move to Preparing for Painting now?');
-                                if (moveToNext) {
-                                    // Move to next stage
-                                    fetch('api.php?action=update_repair_stage', {
-                                        method: 'POST', headers: {'Content-Type':'application/json'},
-                                        body: JSON.stringify({ case_id: caseId, stage: 'preparing_for_painting' })
-                                    }).then(r => r.json()).then(moveData => {
-                                        if (moveData.status === 'success') {
-                                            alert('Stage finished and moved to Preparing for Painting');
-                                        } else {
-                                            alert('Stage finished but failed to move: ' + (moveData.message || 'Unknown'));
-                                        }
-                                        this.refresh();
-                                    }).catch(e => {
-                                        alert('Stage finished but error moving: ' + e.message);
-                                        this.refresh();
-                                    });
-                                } else {
-                                    alert('Stage marked finished. You can move it later from the workflow board.');
-                                    this.refresh();
-                                }
+                            // If they chose to move to next stage, do it now
+                            if (moveToNext) {
+                                this.moveToNextStage(caseId, stage, false); // false = don't confirm again
                             } else {
-                                // Normal finish for other stages
-                                alert('Stage marked finished');
+                                // Refresh list to apply authoritative statuses
                                 this.refresh();
+                                alert('Stage marked finished');
                             }
                         } else {
                             alert('Failed: ' + (data.message || 'Unknown'));
                         }
                     }).catch(e => alert('Error: ' + e.message));
+                },
+                moveToNextStage(caseId, stage, showConfirm = true) {
+                    if (showConfirm && !confirm('Move this case to the next stage?')) return;
+                    
+                    fetch('api.php?action=move_to_next_stage', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ case_id: caseId, stage: stage })
+                    }).then(r => r.json()).then(data => {
+                        if (data.status === 'success') {
+                            // Refresh list to show the case moved
+                            this.refresh();
+                            alert('Case moved to next stage');
+                        } else {
+                            alert('Failed: ' + (data.message || 'Unknown'));
+                        }
+                    }).catch(e => alert('Error: ' + e.message));
+                },
+                canAdvanceStage(stage) {
+                    const advancableStages = ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting'];
+                    return advancableStages.includes(stage);
                 },
                 displayTimer(ms) {
                     if (!ms) return '—';
                     const elapsed = Math.floor((Date.now() - Number(ms)) / 1000);
                     const m = Math.floor(elapsed/60); const s = elapsed%60;
                     return `${m}:${String(s).padStart(2,'0')}`;
-                },
-                finish(c) {
-                    if (!confirm('Mark this work as finished?')) return;
-                    fetch('api.php?action=finish_stage', {
-                        method: 'POST', headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({ case_id: c.id, stage: c.stage })
-                    }).then(r => r.json()).then(data => {
-                        if (data.status === 'success') {
-                            // Update local case status
-                            c.status = data.statuses && data.statuses[c.stage] ? data.statuses[c.stage] : {status:'finished'};
-                            // stop showing timer
-                            c.timer = null;
-                            this.cases = [...this.cases];
-                            alert('Marked finished');
-                        } else {
-                            alert('Failed: ' + (data.message || 'Unknown'));
-                        }
-                    }).catch(e => alert('Error: ' + e.message));
-                },
-                moveToNextStage(caseId, currentStage) {
-                    if (currentStage === 'processing_for_painting') {
-                        if (!confirm('Move this case to Preparing for Painting?')) return;
-                        fetch('api.php?action=update_repair_stage', {
-                            method: 'POST', headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({ case_id: caseId, stage: 'preparing_for_painting' })
-                        }).then(r => r.json()).then(data => {
-                            if (data.status === 'success') {
-                                alert('Case moved to Preparing for Painting');
-                                this.refresh();
-                            } else {
-                                alert('Failed to move: ' + (data.message || 'Unknown'));
-                            }
-                        }).catch(e => alert('Error: ' + e.message));
-                    }
                 }
+            }
+        }
     </script>
 </body>
 </html>
