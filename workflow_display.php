@@ -107,7 +107,7 @@ foreach ($cases as $case) {
                     </div>
                     <div class="space-y-4 overflow-auto" style="height: calc(100% - 56px);">
                         <template x-for="caseItem in (cases[stage.id] || [])" :key="caseItem.id">
-                            <div class="card">
+                            <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <div class="text-2xl font-bold" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
