@@ -90,5 +90,24 @@ try {
     probe_log('include failed: '.$e->getMessage());
 }
 
+// Step: run php -l (lint) to get parse errors with file/line if possible
+$lintResult = null;
+$phpBinary = 'php';
+if (function_exists('exec')) {
+    $cmd = escapeshellcmd($phpBinary) . ' -l ' . escapeshellarg(__DIR__ . '/workflow.php') . ' 2>&1';
+    probe_log('running lint: ' . $cmd);
+    @exec($cmd, $lines, $rc);
+    $lintResult = ['rc' => $rc, 'output' => $lines];
+} else if (function_exists('shell_exec')) {
+    $cmd = escapeshellcmd($phpBinary) . ' -l ' . escapeshellarg(__DIR__ . '/workflow.php') . ' 2>&1';
+    probe_log('running lint via shell_exec: ' . $cmd);
+    $outStr = @shell_exec($cmd);
+    $lintResult = ['rc' => null, 'output' => explode("\n", trim($outStr))];
+} else {
+    $lintResult = ['error' => 'no exec/shell_exec available'];
+}
+$out['php_lint'] = $lintResult;
+
+
 $out['ok'] = true;
 echo json_encode($out, JSON_PRETTY_PRINT);
