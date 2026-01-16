@@ -435,7 +435,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                     </div>
 
                                     <div class="mt-3 rounded-xl bg-orange-50 p-4 border border-orange-200/50">
-                                        <div class="flex items-end justify-between gap-3">
+                                        <div class="flex flex-wrap items-end justify-between gap-3">
                                             <div class="min-w-0">
                                                 <div class="text-sm font-medium text-gray-700 truncate">საბოლოო გადასახდელი</div>
                                                 <div class="text-lg font-bold text-gray-900"><?php echo $vat_enabled && $vat_amount > 0 ? 'დღგ-ით' : ''; ?></div>
