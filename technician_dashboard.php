@@ -41,8 +41,8 @@ if (isset($_GET['json'])) {
             $isFinished = ($statuses[$stage] ?? null) === 'finished';
             $hasTimer = !empty($timers[$stage]);
             
-            // Show if: assigned to user AND (has active timer OR status is finished)
-            if (intval($techId) === intval($userId) && ($hasTimer || $isFinished)) {
+            // Show if: assigned to user AND (has active timer OR finished in processing_for_painting)
+            if (intval($techId) === intval($userId) && ($hasTimer || ($isFinished && $stage === 'processing_for_painting'))) {
                 $assigned[] = [
                     'id' => $c['id'],
                     'plate' => $c['plate'],
@@ -75,8 +75,8 @@ foreach ($cases as $c) {
         $isFinished = ($statuses[$stage] ?? null) === 'finished';
         $hasTimer = !empty($timers[$stage]);
         
-        // Show if: assigned to user AND (has active timer OR status is finished)
-        if (intval($techId) === intval($userId) && ($hasTimer || $isFinished)) {
+        // Show if: assigned to user AND (has active timer OR finished in processing_for_painting)
+        if (intval($techId) === intval($userId) && ($hasTimer || ($isFinished && $stage === 'processing_for_painting'))) {
             $assigned[] = [
                 'id' => $c['id'],
                 'plate' => $c['plate'],
@@ -161,11 +161,11 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                         <template x-for="stage in caseGroup.stages" :key="stage.stage">
                             <div class="flex gap-2">
                                 <button x-show="!(stage.status && stage.status.status === 'finished')" @click="finishStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-emerald-600 text-white text-lg font-semibold touch-target">Finish</button>
-                                <div x-show="stage.status && stage.status.status === 'finished' && canAdvanceStage(stage.stage)" class="flex gap-2 flex-1">
+                                <div x-show="stage.status && stage.status.status === 'finished' && stage.stage === 'processing_for_painting'" class="flex gap-2 flex-1">
                                     <button @click="moveToNextStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-blue-600 text-white text-sm font-semibold touch-target">Move to Next</button>
                                     <div class="w-24 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center text-sm">Finished</div>
                                 </div>
-                                <div x-show="stage.status && stage.status.status === 'finished' && !canAdvanceStage(stage.stage)" class="w-36 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
+                                <div x-show="stage.status && stage.status.status === 'finished' && stage.stage !== 'processing_for_painting'" class="w-36 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
                             </div>
                         </template>
                     </div>
