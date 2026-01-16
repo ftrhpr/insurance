@@ -205,8 +205,7 @@ foreach ($cases as $case) {
                             <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished', 'opacity-50': caseItem.status === 'Completed'}">
                                 <div class="flex items-center justify-between gap-2">
                                     <div class="flex-1 min-w-0 text-xs">
-                                        <span class="font-semibold" x-text="caseItem.plate + (caseItem.urgent ? ' 🔥' : '')"></span>
-                                        <span class="text-gray-600" x-text="` - ${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || ' - უცნობი'"></span>
+                                        <span class="font-semibold" x-text="`${caseItem.plate} ${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() + (caseItem.urgent ? ' 🔥' : '')"></span>
                                         <span class="text-gray-500" x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) ? ` - ${getTechName(caseItem.repair_assignments[stage.id]) || caseItem.repair_assignments[stage.id]}` : ''"></span>
                                     </div>
                                     <div class="timer-badge" x-text="getTimerDisplay(caseItem.id, stage.id)"></div>
