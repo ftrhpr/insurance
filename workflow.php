@@ -164,11 +164,14 @@ foreach ($cases as $case) {
                             <div class="p-4 border-b border-slate-300">
                                 <h3 :class="stage.id === 'backlog' ? 'text-lg font-semibold text-amber-800 flex items-center justify-between' : 'text-lg font-semibold text-slate-700 flex items-center justify-between'">
                                     <span x-text="stage.title"></span>
-                                    <span :class="stage.id === 'backlog' ? 'text-sm font-medium bg-amber-200 text-amber-700 rounded-full px-2 py-0.5' : 'text-sm font-medium bg-slate-300 text-slate-600 rounded-full px-2 py-0.5'" x-text="cases[stage.id] ? cases[stage.id].length : 0"></span>
+                                    <span :class="stage.id === 'backlog' ? 'text-sm font-medium bg-amber-200 text-amber-700 rounded-full px-2 py-0.5' : 'text-sm font-medium bg-slate-300 text-slate-600 rounded-full px-2 py-0.5'" x-text="getFilteredCases(stage.id).length"></span>
                                 </h3>
+                                <div x-show="stage.id === 'backlog'" class="mt-2">
+                                    <input x-model="backlogSearch" type="text" placeholder="Search backlog..." class="w-full px-3 py-2 text-sm border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                </div>
                             </div>
                             <div :class="stage.id === 'backlog' ? 'p-4 space-y-4 min-h-[60vh] bg-amber-50/50' : 'p-4 space-y-4 min-h-[60vh]'" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
-                                <template x-for="caseItem in cases[stage.id]" :key="caseItem.id">
+                                <template x-for="caseItem in getFilteredCases(stage.id)" :key="caseItem.id">
                                     <div :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}" class="bg-white rounded-lg p-4 shadow-md case-card" :data-case-id="caseItem.id">
                                         <div class="font-bold text-slate-800" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
                                         <div class="text-sm text-slate-500 flex items-center justify-between">
@@ -229,6 +232,7 @@ foreach ($cases as $case) {
                 technicians: <?php echo json_encode($technicians); ?>,
                 activeTimers: {},
                 currentTime: Date.now(),
+                backlogSearch: '',
                 init() {
                     this.$nextTick(() => {
                         this.stages.forEach(stage => {
@@ -420,6 +424,26 @@ foreach ($cases as $case) {
                 },
 
 
+                getFilteredCases(stageId) {
+                    const stageCases = this.cases[stageId] || [];
+                    if (stageId !== 'backlog' || !this.backlogSearch.trim()) {
+                        return stageCases;
+                    }
+                    
+                    const searchTerm = this.backlogSearch.toLowerCase().trim();
+                    return stageCases.filter(caseItem => {
+                        const plate = (caseItem.plate || '').toLowerCase();
+                        const make = (caseItem.vehicle_make || '').toLowerCase();
+                        const model = (caseItem.vehicle_model || '').toLowerCase();
+                        const caseId = String(caseItem.id).toLowerCase();
+                        
+                        return plate.includes(searchTerm) || 
+                               make.includes(searchTerm) || 
+                               model.includes(searchTerm) || 
+                               caseId.includes(searchTerm) ||
+                               `${make} ${model}`.toLowerCase().includes(searchTerm);
+                    });
+                },
                 dumpTimers(caseId, stageId) {
                     const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
                     if (!caseItem) return '{}';
