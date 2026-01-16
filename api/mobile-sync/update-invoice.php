@@ -74,6 +74,7 @@ try {
     // Debug: Log all received data keys and image fields
     error_log("=== UPDATE INVOICE - DATA RECEIVED ===");
     error_log("All keys: " . implode(', ', array_keys($data)));
+    error_log("VAT fields - includeVAT: " . ($data['includeVAT'] ?? 'NOT_SET') . ", vatAmount: " . ($data['vatAmount'] ?? 'NOT_SET') . ", vatRate: " . ($data['vatRate'] ?? 'NOT_SET') . ", subtotalBeforeVAT: " . ($data['subtotalBeforeVAT'] ?? 'NOT_SET'));
     error_log("Received data - vehicleMake: " . ($data['vehicleMake'] ?? 'NULL') . ", vehicleModel: " . ($data['vehicleModel'] ?? 'NULL'));
     
     // Check for image fields
@@ -93,10 +94,10 @@ try {
             continue;
         }
         
-        if (isset($data[$appField]) && $data[$appField] !== null && $data[$appField] !== '') {
+        if (isset($data[$appField]) && $data[$appField] !== null) {
             $value = $data[$appField];
             
-            // Handle discount and VAT fields as floats
+            // Handle discount and VAT fields as floats - allow empty strings to be 0
             if (in_array($dbField, ['services_discount_percent', 'parts_discount_percent', 'global_discount_percent', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
                 $value = floatval($value);
             }
