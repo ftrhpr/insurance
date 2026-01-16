@@ -735,6 +735,8 @@ try {
                 'repair_labor' => "TEXT DEFAULT NULL",
                 'repair_activity_log' => "TEXT DEFAULT NULL",
                 'link_opened_at' => "DATETIME DEFAULT NULL",
+                'work_times' => "JSON DEFAULT NULL",
+                'assignment_history' => "JSON DEFAULT NULL",
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -772,6 +774,23 @@ try {
         $stmt->execute();
         $transfers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         jsonResponse(['transfers' => $transfers]);
+    }
+
+    // Get single transfer with logs and work times
+    if ($action === 'get_transfer' && $method === 'GET') {
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) jsonResponse(['status' => 'error', 'message' => 'Invalid id']);
+        $stmt = $pdo->prepare("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, system_logs, work_times, assignment_history FROM transfers WHERE id = ?");
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) jsonResponse(['status' => 'error', 'message' => 'Not found']);
+        $row['repair_assignments'] = json_decode($row['repair_assignments'] ?? '{}', true);
+        $row['stage_timers'] = json_decode($row['stage_timers'] ?? '{}', true);
+        $row['stage_statuses'] = json_decode($row['stage_statuses'] ?? '{}', true);
+        $row['system_logs'] = json_decode($row['system_logs'] ?? '[]', true);
+        $row['work_times'] = json_decode($row['work_times'] ?? '{}', true);
+        $row['assignment_history'] = json_decode($row['assignment_history'] ?? '[]', true);
+        jsonResponse(['status' => 'success', 'case' => $row]);
     }
 
     // --- SMS TEMPLATES ACTIONS ---
@@ -1938,8 +1957,8 @@ try {
         }
 
         try {
-            // Get current assignments and timers
-            $stmt = $pdo->prepare("SELECT repair_assignments, stage_timers FROM transfers WHERE id = ?");
+            // Get current assignments, timers and work_times
+            $stmt = $pdo->prepare("SELECT repair_assignments, stage_timers, work_times FROM transfers WHERE id = ?");
             $stmt->execute([$case_id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -1953,27 +1972,61 @@ try {
                 $timers = [];
             }
 
+            $workTimes = json_decode($row['work_times'] ?: '{}', true);
+            if (!is_array($workTimes)) {
+                $workTimes = [];
+            }
+
+            $prevTech = $assignments[$stage] ?? null;
+            $prevTimer = $timers[$stage] ?? null;
+            $nowMs = time() * 1000;
+            $userId = getCurrentUserId();
+
+            // Handle assignment change / unassign logic and record work durations for previous technician
             if ($technician_id > 0) {
+                // Assign to new technician
+                if ($prevTech && $prevTech != $technician_id && $prevTimer) {
+                    $elapsed = $nowMs - intval($prevTimer);
+                    if (!isset($workTimes[$stage])) $workTimes[$stage] = [];
+                    if (!isset($workTimes[$stage][$prevTech])) $workTimes[$stage][$prevTech] = 0;
+                    $workTimes[$stage][$prevTech] += $elapsed;
+                    // clear old timer
+                    unset($timers[$stage]);
+                }
+
                 $assignments[$stage] = $technician_id;
                 // Start timer if not already running
                 if (!isset($timers[$stage])) {
-                    $timers[$stage] = time() * 1000; // Store as milliseconds for JS compatibility
+                    $timers[$stage] = $nowMs; // Store as milliseconds for JS compatibility
                 }
             } else {
+                // Unassign: record work duration if timer exists
+                if ($prevTech && $prevTimer) {
+                    $elapsed = $nowMs - intval($prevTimer);
+                    if (!isset($workTimes[$stage])) $workTimes[$stage] = [];
+                    if (!isset($workTimes[$stage][$prevTech])) $workTimes[$stage][$prevTech] = 0;
+                    $workTimes[$stage][$prevTech] += $elapsed;
+                }
                 unset($assignments[$stage]);
                 // Stop timer
                 unset($timers[$stage]);
             }
 
-            $stmt = $pdo->prepare("UPDATE transfers SET repair_assignments = ?, stage_timers = ? WHERE id = ?");
-            $stmt->execute([json_encode($assignments), json_encode($timers), $case_id]);
+            // Persist assignment/timer/workTimes
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_assignments = ?, stage_timers = ?, work_times = ? WHERE id = ?");
+            $stmt->execute([json_encode($assignments), json_encode($timers), json_encode($workTimes), $case_id]);
+
+            // Append structured assignment change to system_logs and assignment_history for auditing
+            $logEntry = json_encode(['type' => 'assignment', 'stage' => $stage, 'from' => $prevTech ?? null, 'to' => $technician_id > 0 ? $technician_id : null, 'by' => $userId ?? null, 'timestamp' => $nowMs]);
+            $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)), assignment_history = JSON_ARRAY_APPEND(COALESCE(assignment_history, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+            $log_stmt->execute([$logEntry, $logEntry, $case_id]);
 
             if ($stmt->rowCount() > 0) {
-                // Return updated assignments and timers to the client
-                $stmt2 = $pdo->prepare("SELECT repair_assignments, stage_timers, stage_statuses FROM transfers WHERE id = ?");
+                // Return updated assignments, timers and work times to the client
+                $stmt2 = $pdo->prepare("SELECT repair_assignments, stage_timers, stage_statuses, work_times FROM transfers WHERE id = ?");
                 $stmt2->execute([$case_id]);
                 $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
-                jsonResponse(['status' => 'success', 'assignments' => json_decode($row2['repair_assignments'] ?: '{}', true), 'timers' => json_decode($row2['stage_timers'] ?: '{}', true), 'statuses' => json_decode($row2['stage_statuses'] ?: '{}', true)]);
+                jsonResponse(['status' => 'success', 'assignments' => json_decode($row2['repair_assignments'] ?: '{}', true), 'timers' => json_decode($row2['stage_timers'] ?: '{}', true), 'statuses' => json_decode($row2['stage_statuses'] ?: '{}', true), 'work_times' => json_decode($row2['work_times'] ?: '{}', true)]);
             } else {
                 jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);
             }
@@ -2036,8 +2089,8 @@ try {
         }
 
         try {
-            // Get current data
-            $stmt = $pdo->prepare("SELECT repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE id = ?");
+            // Get current data (also fetch work_times)
+            $stmt = $pdo->prepare("SELECT repair_stage, repair_assignments, stage_timers, stage_statuses, work_times FROM transfers WHERE id = ?");
             $stmt->execute([$case_id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$row) jsonResponse(['status' => 'error', 'message' => 'Case not found']);
@@ -2051,22 +2104,45 @@ try {
             $statuses = json_decode($row['stage_statuses'] ?: '{}', true);
             if (!is_array($statuses)) $statuses = [];
 
+            $workTimes = json_decode($row['work_times'] ?: '{}', true);
+            if (!is_array($workTimes)) $workTimes = [];
+
+            // If a timer was running on the current stage, record elapsed time for the technician
+            $nowMs = time() * 1000;
+            if (!empty($timers[$current_stage]) && !empty($assignments[$current_stage])) {
+                $prevTech = $assignments[$current_stage];
+                $elapsed = $nowMs - intval($timers[$current_stage]);
+                if (!isset($workTimes[$current_stage])) $workTimes[$current_stage] = [];
+                if (!isset($workTimes[$current_stage][$prevTech])) $workTimes[$current_stage][$prevTech] = 0;
+                $workTimes[$current_stage][$prevTech] += $elapsed;
+
+                // Append work_time log
+                $logEntry = json_encode(['type' => 'work_time', 'stage' => $current_stage, 'tech' => $prevTech, 'duration_ms' => $elapsed, 'timestamp' => $nowMs]);
+                $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+                $log_stmt->execute([$logEntry, $case_id]);
+            }
+
             // Transfer technician assignment to new stage and start timer
             if (isset($assignments[$current_stage])) {
                 $technician_id = $assignments[$current_stage];
                 $assignments[$next_stage] = $technician_id;
-                $timers[$next_stage] = time() * 1000; // Start timer in milliseconds
+                $timers[$next_stage] = $nowMs; // Start timer in milliseconds
                 // Clear assignment from old stage since work is complete
                 unset($assignments[$current_stage]);
                 unset($timers[$current_stage]);
             }
 
-            // Move case to next stage and update assignments/timers
-            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ?, repair_assignments = ?, stage_timers = ? WHERE id = ?");
-            $stmt->execute([$next_stage, json_encode($assignments), json_encode($timers), $case_id]);
+            // Move case to next stage and update assignments/timers/work_times
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ?, repair_assignments = ?, stage_timers = ?, work_times = ? WHERE id = ?");
+            $stmt->execute([$next_stage, json_encode($assignments), json_encode($timers), json_encode($workTimes), $case_id]);
 
             if ($stmt->rowCount() > 0) {
-                jsonResponse(['status' => 'success', 'new_stage' => $next_stage, 'assignments' => $assignments, 'timers' => $timers]);
+                // Append a move log
+                $moveLog = json_encode(['type' => 'move', 'from' => $current_stage, 'to' => $next_stage, 'tech' => $technician_id ?? null, 'by' => getCurrentUserId(), 'timestamp' => $nowMs]);
+                $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+                $log_stmt->execute([$moveLog, $case_id]);
+
+                jsonResponse(['status' => 'success', 'new_stage' => $next_stage, 'assignments' => $assignments, 'timers' => $timers, 'work_times' => $workTimes]);
             } else {
                 jsonResponse(['status' => 'error', 'message' => 'Failed to move to next stage']);
             }
@@ -2097,8 +2173,8 @@ try {
         }
 
         try {
-            // Get current assignments/statuses/timers
-            $stmt = $pdo->prepare("SELECT repair_assignments, stage_timers, stage_statuses FROM transfers WHERE id = ?");
+            // Get current assignments/statuses/timers and work_times
+            $stmt = $pdo->prepare("SELECT repair_assignments, stage_timers, stage_statuses, work_times FROM transfers WHERE id = ?");
             $stmt->execute([$case_id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$row) jsonResponse(['status' => 'error', 'message' => 'Case not found']);
@@ -2112,24 +2188,43 @@ try {
             $statuses = json_decode($row['stage_statuses'] ?: '{}', true);
             if (!is_array($statuses)) $statuses = [];
 
+            $workTimes = json_decode($row['work_times'] ?: '{}', true);
+            if (!is_array($workTimes)) $workTimes = [];
+
             // Verify the current user is assigned to this stage
             if (empty($assignments[$stage]) || intval($assignments[$stage]) !== intval($userId)) {
                 jsonResponse(['status' => 'error', 'message' => 'You are not assigned to this stage']);
             }
 
-            // Mark finished: set status and clear timer
+            // Mark finished: set status
             $statuses[$stage] = ['status' => 'finished', 'finished_at' => time() * 1000, 'finished_by' => $userId];
+
+            // If a timer was running for this stage and there was an assigned technician, record the elapsed time
+            $nowMs = time() * 1000;
+            if (!empty($timers[$stage]) && !empty($assignments[$stage])) {
+                $techId = $assignments[$stage];
+                $elapsed = $nowMs - intval($timers[$stage]);
+                if (!isset($workTimes[$stage])) $workTimes[$stage] = [];
+                if (!isset($workTimes[$stage][$techId])) $workTimes[$stage][$techId] = 0;
+                $workTimes[$stage][$techId] += $elapsed;
+                // Append a work time record to system_logs
+                $logEntry = json_encode(['type' => 'work_time', 'stage' => $stage, 'tech' => $techId, 'duration_ms' => $elapsed, 'by' => $userId, 'timestamp' => $nowMs]);
+                $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+                $log_stmt->execute([$logEntry, $case_id]);
+            }
+
+            // Clear the timer for this stage
             unset($timers[$stage]);
 
-            $stmt = $pdo->prepare("UPDATE transfers SET stage_statuses = ?, stage_timers = ? WHERE id = ?");
-            $stmt->execute([json_encode($statuses), json_encode($timers), $case_id]);
+            $stmt = $pdo->prepare("UPDATE transfers SET stage_statuses = ?, stage_timers = ?, work_times = ? WHERE id = ?");
+            $stmt->execute([json_encode($statuses), json_encode($timers), json_encode($workTimes), $case_id]);
 
             if ($stmt->rowCount() > 0) {
                 // Return updated statuses and timers
-                $stmt2 = $pdo->prepare("SELECT repair_assignments, stage_timers, stage_statuses FROM transfers WHERE id = ?");
+                $stmt2 = $pdo->prepare("SELECT repair_assignments, stage_timers, stage_statuses, work_times FROM transfers WHERE id = ?");
                 $stmt2->execute([$case_id]);
                 $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
-                jsonResponse(['status' => 'success', 'assignments' => json_decode($row2['repair_assignments'] ?: '{}', true), 'timers' => json_decode($row2['stage_timers'] ?: '{}', true), 'statuses' => json_decode($row2['stage_statuses'] ?: '{}', true)]);
+                jsonResponse(['status' => 'success', 'assignments' => json_decode($row2['repair_assignments'] ?: '{}', true), 'timers' => json_decode($row2['stage_timers'] ?: '{}', true), 'statuses' => json_decode($row2['stage_statuses'] ?: '{}', true), 'work_times' => json_decode($row2['work_times'] ?: '{}', true)]);
             } else {
                 jsonResponse(['status' => 'error', 'message' => 'Failed to mark finished']);
             }

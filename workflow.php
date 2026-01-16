@@ -182,6 +182,7 @@ foreach ($cases as $case) {
                                         <div class="flex items-center gap-2 mt-2">
                                             <input type="checkbox" :checked="caseItem.urgent" @change="updateUrgent(caseItem.id, $event.target.checked)" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500">
                                             <label class="text-sm font-medium text-gray-700">სასწრაფო 🔥</label>
+                                            <button @click="openCaseHistory(caseItem.id)" class="ml-auto text-xs text-sky-600 hover:underline">View history</button>
                                         </div>
                                         <template x-if="stage.id !== 'backlog'">
                                             <div class="mt-4">
@@ -227,6 +228,47 @@ foreach ($cases as $case) {
                 </div>
             </div>
         </main>
+
+        <!-- Case history modal -->
+        <div x-show="showHistoryModal" x-cloak class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click.self="closeCaseHistory()">
+            <div class="bg-white rounded-lg p-4 max-w-2xl w-full mx-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold">Case History <span class="text-sm text-slate-500">#<span x-text="historyCaseId"></span></span></h3>
+                    <button @click="closeCaseHistory()" class="text-slate-500">Close</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-medium mb-2">System Logs</h4>
+                        <div class="max-h-64 overflow-auto text-xs bg-slate-50 p-2 rounded">
+                            <template x-for="log in historyLogs.slice().reverse()" :key="JSON.stringify(log)">
+                                <div class="mb-2">
+                                    <div class="text-xs text-slate-500" x-text="(new Date(log.timestamp || Date.now())).toLocaleString()"></div>
+                                    <div class="text-sm" x-text="log.type ? `${log.type}: ${log.message || JSON.stringify(log)}` : (log.message || JSON.stringify(log))"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-medium mb-2">Work Times</h4>
+                        <div class="max-h-64 overflow-auto text-xs bg-slate-50 p-2 rounded">
+                            <template x-if="Object.keys(historyWorkTimes || {}).length === 0">
+                                <div class="text-sm text-slate-500">No recorded work times</div>
+                            </template>
+                            <template x-for="(stageTimes, stage) in historyWorkTimes" :key="stage">
+                                <div class="mb-3">
+                                    <div class="text-sm font-semibold" x-text="stage"></div>
+                                    <div class="mt-1 text-xs text-slate-600">
+                                        <template x-for="(duration, tech) in stageTimes" :key="tech">
+                                            <div x-text="`Tech ${tech}: ${Math.round(duration/1000)}s`"></div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -240,6 +282,10 @@ foreach ($cases as $case) {
                 backlogSearch: '',
                 backlogPage: 1,
                 backlogPageSize: 20,
+                showHistoryModal: false,
+                historyLogs: [],
+                historyWorkTimes: {},
+                historyCaseId: null,
                 init() {
                     this.$nextTick(() => {
                         this.stages.forEach(stage => {
@@ -264,6 +310,15 @@ foreach ($cases as $case) {
                             }
                         });
                         lucide.createIcons();
+
+                                // modal state for viewing history
+                        this.showHistoryModal = false;
+                        this.historyLogs = [];
+                        this.historyWorkTimes = {};
+                        this.historyCaseId = null;
+
+                        // Re-poll backlog/timers immediately after initialization to ensure fresh data
+                        setTimeout(() => this.$nextTick(() => this.refreshBacklog()), 500);
                         
                         // Initialize timers for cases with assigned technicians
                         this.stages.forEach(stage => {
@@ -330,6 +385,29 @@ foreach ($cases as $case) {
                             // Note: A full revert would be complex. For now, we rely on a page refresh if errors occur.
                         }
                     });
+                },
+                openCaseHistory(caseId) {
+                    // Fetch case logs and work times
+                    this.historyCaseId = caseId;
+                    this.historyLogs = [];
+                    this.historyWorkTimes = {};
+                    this.showHistoryModal = true;
+                    fetch(`api.php?action=get_transfer&id=${caseId}`).then(r => r.json()).then(data => {
+                        if (data.status === 'success' && data.case) {
+                            this.historyLogs = data.case.system_logs || [];
+                            this.historyWorkTimes = data.case.work_times || {};
+                        } else {
+                            this.historyLogs = [{ type: 'error', message: data.message || 'Failed to load history' }];
+                        }
+                    }).catch(() => {
+                        this.historyLogs = [{ type: 'error', message: 'Failed to load history' }];
+                    });
+                },
+                closeCaseHistory() {
+                    this.showHistoryModal = false;
+                    this.historyLogs = [];
+                    this.historyWorkTimes = {};
+                    this.historyCaseId = null;
                 },
                 assignTechnician(caseId, stageId, technicianId) {
                     const caseToUpdate = this.cases[stageId].find(c => c.id == caseId);
