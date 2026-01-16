@@ -90,8 +90,8 @@ foreach ($cases as $case) {
                 init() {
                     this.updateLastText();
                     setInterval(() => { this.currentTime = Date.now(); this.updateLastText(); }, 1000);
-                    // Poll server every 30 seconds for TV stability
-                    setInterval(() => this.poll(), 30000);
+                    // Poll server every 10 seconds
+                    setInterval(() => this.poll(), 10000);
                     // Auto-enter fullscreen for TV
                     setTimeout(() => {
                         if (!document.fullscreenElement) {
@@ -105,7 +105,7 @@ foreach ($cases as $case) {
                 },
                 refreshNow() { this.poll(); },
                 poll() {
-                    fetch(location.pathname + '?json=1')
+                    fetch(location.pathname + '?json=1&t=' + Date.now())
                         .then(r => {
                             if (!r.ok) throw new Error('Network response not ok');
                             return r.json();
@@ -191,6 +191,7 @@ foreach ($cases as $case) {
     </style>
 </head>
 <body x-data="workflowDisplay()" x-init="init()" class="antialiased">
+    <div class="fixed top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-10" x-text="`Updated: ${lastUpdatedText} | ${connectionStatus}`"></div>
 
     <main class="overflow-auto h-screen">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 p-2">
