@@ -103,7 +103,8 @@ foreach ($cases as $case) {
                                         <div class="font-bold text-slate-800" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
                                         <div class="text-sm text-slate-500 flex items-center justify-between">
                                             <span x-text="`${caseItem.plate} - #${caseItem.id}`"></span>
-                                            <span x-show="stage.id !== 'backlog'" class="text-xs font-mono text-slate-600 ml-2" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
+                                            <span x-show="stage.id !== 'backlog' && hasTimer(caseItem.id, stage.id)" class="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
+                                            <span x-show="stage.id !== 'backlog' && !hasTimer(caseItem.id, stage.id)" class="ml-2 text-xs text-slate-400">—</span>
                                         </div>
                                         <template x-if="stage.id !== 'backlog'">
                                             <div class="mt-4">
@@ -119,12 +120,18 @@ foreach ($cases as $case) {
                                                 <div class="mt-3">
                                                     <div class="flex items-center justify-between">
                                                         <span class="text-xs font-medium text-slate-500">Timer</span>
-                                                        <span class="text-xs font-mono text-slate-600" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
+                                                        <div class="flex items-center gap-2">
+                                                            <span x-show="hasTimer(caseItem.id, stage.id)" class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-100 text-amber-800 font-semibold text-sm">
+                                                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l2 2"/></svg>
+                                                                <span x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
+                                                            </span>
+                                                            <span x-show="!hasTimer(caseItem.id, stage.id)" class="text-xs text-slate-400">No timer</span>
+                                                        </div>
                                                     </div>
                                                     <!-- DEBUG: show raw timer and assignment data -->
                                                     <div class="mt-1">
                                                         <div class="text-xs text-amber-700">Assignment: <span x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) || 'none'"></span></div>
-                                                        <div class="text-xs text-rose-600 mt-1" x-text="dumpTimers(caseItem.id, stage.id)"></div>
+                                                        <div class="text-xs text-rose-600 mt-1 hidden debug-timers" x-text="dumpTimers(caseItem.id, stage.id)"></div>
                                                     </div>
                                                 </div>
                                             </template>
@@ -302,30 +309,32 @@ foreach ($cases as $case) {
                         return `${minutes}:${secs.toString().padStart(2, '0')}`;
                     }
                 },
+                hasTimer(caseId, stageId) {
+                    const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
+                    return !!(caseItem && caseItem.stage_timers && caseItem.stage_timers[stageId] && caseItem.repair_assignments && caseItem.repair_assignments[stageId]);
+                },
                 getTimerDisplay(caseId, stageId) {
                     const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
-                    if (!caseItem) return 'Case not found';
-                    
-                    // Debug: show assignment status
+                    if (!caseItem) return '';
+
                     const hasAssignment = caseItem.repair_assignments && caseItem.repair_assignments[stageId];
-                    if (!hasAssignment) {
-                        return 'No assignment for ' + stageId;
+                    const hasTimer = caseItem.stage_timers && caseItem.stage_timers[stageId];
+
+                    if (hasTimer) {
+                        const startTime = Number(caseItem.stage_timers[stageId]);
+                        if (!startTime) return '00:00';
+                        const elapsed = Math.floor((this.currentTime - startTime) / 1000);
+                        if (elapsed < 0) return '00:00';
+                        return this.formatTimer(elapsed);
                     }
-                    
-                    // Debug: show timer data
-                    if (!caseItem.stage_timers) {
-                        return 'No stage_timers object';
-                    }
-                    
-                    const timerData = caseItem.stage_timers[stageId];
-                    if (!timerData) {
-                        return 'No timer for ' + stageId;
-                    }
-                    
-                    const startTime = timerData;
-                    const elapsed = Math.floor((this.currentTime - startTime) / 1000);
-                    return this.formatTimer(elapsed);
+
+                    // If there is an assignment but timer not yet present, show a starting label
+                    if (hasAssignment && !hasTimer) return 'Starting…';
+
+                    return '';
                 },
+
+
                 dumpTimers(caseId, stageId) {
                     const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
                     if (!caseItem) return '{}';
