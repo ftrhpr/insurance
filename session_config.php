@@ -11,17 +11,17 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_samesite', 'Lax'); // CSRF protection - changed from Lax to allow AJAX
     ini_set('session.use_only_cookies', 1); // Don't accept session IDs in URLs
     
-    // Set session timeout (30 minutes)
-    ini_set('session.gc_maxlifetime', 1800);
-    ini_set('session.cookie_lifetime', 1800);
+    // Set session timeout (2 hours)
+    ini_set('session.gc_maxlifetime', 7200);
+    ini_set('session.cookie_lifetime', 7200);
     
     session_start();
     
     // Regenerate session ID periodically to prevent fixation
     if (!isset($_SESSION['created'])) {
         $_SESSION['created'] = time();
-    } else if (time() - $_SESSION['created'] > 1800) {
-        // Session older than 30 minutes, regenerate ID
+    } else if (time() - $_SESSION['created'] > 7200) {
+        // Session older than 2 hours, regenerate ID
         session_regenerate_id(true);
         $_SESSION['created'] = time();
     }
