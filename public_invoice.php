@@ -340,14 +340,14 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                             <?php if ($vat_enabled && $vat_amount > 0): ?>
                             <div class="rounded-xl bg-white p-6 border border-gray-200 shadow-sm h-full">
                                 <h4 class="text-sm font-semibold text-gray-600 mb-2">ბანკის მონაცემები</h4>
-                                <p class="text-xs text-gray-500">გთხოვთ გადააზროთ გადახდისას და გამოიყენოთ ქვემოთ მოცემული IBAN-ები</p>
+                                <p class="text-xs text-gray-500">გთხოვთ, გადახდისას გადაამოწმოთ და გამოიყენოთ ქვემოთ მოცემული IBAN-ები</p>
                                 <div class="mt-4 grid gap-3">
                                     <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-3 py-2">
                                         <div>
                                             <div class="text-xs text-gray-500">საქართველოს ბანკი</div>
                                             <div class="font-mono font-medium">GE94BG0000000100727119</div>
                                         </div>
-                                        <button class="text-sm text-indigo-600" onclick="navigator.clipboard && navigator.clipboard.writeText('GE94BG0000000100727119').then(()=>{this.innerText='კოპირებულია'; setTimeout(()=>this.innerText='კოპირება',1200);}).catch(()=>{});">კოპირება</button>
+                                        <button class="text-sm text-indigo-600" onclick="(function(btn){ if (!navigator.clipboard) return; navigator.clipboard.writeText('GE94BG0000000100727119').then(function(){ btn.innerText='კოპირებულია'; setTimeout(function(){ btn.innerText='კოპირება'; }, 1200); }).catch(function(){}); })(this)">კოპირება</button>
                                     </div>
 
                                     <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-3 py-2">
@@ -355,7 +355,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                             <div class="text-xs text-gray-500">თიბისი ბანკი</div>
                                             <div class="font-mono font-medium">GE64TB7669336080100009</div>
                                         </div>
-                                        <button class="text-sm text-indigo-600" onclick="navigator.clipboard && navigator.clipboard.writeText('GE64TB7669336080100009').then(()=>{this.innerText='კოპირებულია'; setTimeout(()=>this.innerText='კოპირება',1200);}).catch(()=>{});">კოპირება</button>
+                                        <button class="text-sm text-indigo-600" onclick="(function(btn){ if (!navigator.clipboard) return; navigator.clipboard.writeText('GE64TB7669336080100009').then(function(){ btn.innerText='კოპირებულია'; setTimeout(function(){ btn.innerText='კოპირება'; }, 1200); }).catch(function(){}); })(this)">კოპირება</button>
                                     </div>
                                 </div>
                             </div>
