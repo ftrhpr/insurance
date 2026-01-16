@@ -38,7 +38,7 @@ if (isset($_GET['json'])) {
         $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
         $timers = json_decode($c['stage_timers'] ?? '{}', true);
         foreach ($assignments as $stage => $techId) {
-            if (intval($techId) === intval($userId) && ($statuses[$stage] ?? null) !== 'finished' && !empty($timers[$stage])) {
+            if (intval($techId) === intval($userId)) {
                 $assigned[] = [
                     'id' => $c['id'],
                     'plate' => $c['plate'],
@@ -68,7 +68,7 @@ foreach ($cases as $c) {
     $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
     $timers = json_decode($c['stage_timers'] ?? '{}', true);
     foreach ($assignments as $stage => $techId) {
-        if (intval($techId) === intval($userId) && ($statuses[$stage] ?? null) !== 'finished' && !empty($timers[$stage])) {
+        if (intval($techId) === intval($userId)) {
             $assigned[] = [
                 'id' => $c['id'],
                 'plate' => $c['plate'],
