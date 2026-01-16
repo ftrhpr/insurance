@@ -143,9 +143,7 @@ foreach ($cases as $case) {
                     if (elapsed < 0) return '00:00';
                     const hours = Math.floor(elapsed / 3600);
                     const minutes = Math.floor((elapsed % 3600) / 60);
-                    const secs = elapsed % 60;
-                    if (hours > 0) return `${hours}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-                    return `${minutes}:${String(secs).padStart(2,'0')}`;
+                    return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`;
                 },
                 getTechName(id) {
                     const t = this.technicians.find(x => x.id == id);
