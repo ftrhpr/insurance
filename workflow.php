@@ -423,6 +423,38 @@ foreach ($cases as $case) {
                             this.historyLogs = data.case.system_logs || [];
                             this.historyWorkTimes = data.case.work_times || {};
                             this.historyAssignmentHistory = data.case.assignment_history || [];
+
+                            // Fallback: if no work_times stored, derive from system_logs entries of type 'work_time'
+                            if (!this.historyWorkTimes || Object.keys(this.historyWorkTimes).length === 0) {
+                                const derived = {};
+                                (this.historyLogs || []).forEach(raw => {
+                                    let entry = raw;
+                                    try {
+                                        if (typeof raw === 'string') {
+                                            // try to extract JSON portion if logs were stored with a prefix like "work_time: {...}"
+                                            const m = raw.match(/(\{.*\})/);
+                                            if (m) entry = JSON.parse(m[1]);
+                                            else entry = JSON.parse(raw);
+                                        }
+                                    } catch (e) {
+                                        // ignore parse errors
+                                    }
+
+                                    // normalize shape: some logs store type in top-level or in a wrapper
+                                    if (entry && (entry.type === 'work_time' || raw && String(raw).startsWith('work_time'))) {
+                                        const stage = entry.stage || entry.stage_name || 'unknown';
+                                        const tech = entry.tech || entry.tech_id || entry.by || 'unknown';
+                                        const dur = Number(entry.duration_ms || entry.duration || 0);
+                                        if (!derived[stage]) derived[stage] = {};
+                                        if (!derived[stage][tech]) derived[stage][tech] = 0;
+                                        derived[stage][tech] += dur;
+                                    }
+                                });
+
+                                if (Object.keys(derived).length > 0) {
+                                    this.historyWorkTimes = derived;
+                                }
+                            }
                         } else {
                             this.historyLogs = [{ type: 'error', message: data.message || 'Failed to load history' }];
                         }
