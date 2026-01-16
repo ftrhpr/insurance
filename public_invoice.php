@@ -324,32 +324,6 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                     <p>ინვოისის დეტალები ჯერ არ არის დამატებული</p>
                 </div>
                 <?php endif; ?>
-                
-                <?php if (count($case_images) > 0): ?>
-                <!-- Photos Section -->
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4 flex items-center gap-2">
-                        <i data-lucide="camera" class="w-4 h-4"></i>
-                        ფოტოები (<?php echo count($case_images); ?>)
-                    </h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <?php foreach ($case_images as $index => $imageUrl): ?>
-                        <div class="relative aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-100 cursor-pointer group" onclick="openImageModal(<?php echo $index; ?>)">
-                            <img src="<?php echo htmlspecialchars($imageUrl); ?>" 
-                                 alt="ფოტო <?php echo $index + 1; ?>" 
-                                 class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                 loading="lazy"
-                                 onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-gray-400\'><i data-lucide=\'image-off\' class=\'w-8 h-8\'></i></div>';">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div class="absolute bottom-2 left-2 text-white text-xs font-medium">
-                                    ფოტო <?php echo $index + 1; ?>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
             </div>
             
             <!-- Totals Section -->
@@ -410,6 +384,32 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                     </div>
                 </div>
             </div>
+            
+            <?php if (count($case_images) > 0): ?>
+            <!-- Photos Section -->
+            <div class="px-8 py-6 border-t border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4 flex items-center gap-2">
+                    <i data-lucide="camera" class="w-4 h-4"></i>
+                    ფოტოები (<?php echo count($case_images); ?>)
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <?php foreach ($case_images as $index => $imageUrl): ?>
+                    <div class="relative aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-100 cursor-pointer group" onclick="openImageModal(<?php echo $index; ?>)">
+                        <img src="<?php echo htmlspecialchars($imageUrl); ?>" 
+                             alt="ფოტო <?php echo $index + 1; ?>" 
+                             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                             loading="lazy"
+                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-gray-400\'><i data-lucide=\'image-off\' class=\'w-8 h-8\'></i></div>';">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div class="absolute bottom-2 left-2 text-white text-xs font-medium">
+                                ფოტო <?php echo $index + 1; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <!-- Footer -->
             <div class="px-8 py-4 bg-white border-t border-gray-200 no-print">
