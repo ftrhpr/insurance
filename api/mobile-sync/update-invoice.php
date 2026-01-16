@@ -119,8 +119,15 @@ try {
             }
             // Handle boolean VAT enabled field
             elseif ($dbField === 'vat_enabled') {
-                $value = intval($value ?? 0);
-                error_log("Converted VAT enabled to int: $value");
+                // Handle both boolean and string values
+                if (is_bool($value)) {
+                    $value = $value ? 1 : 0;
+                } elseif (is_string($value)) {
+                    $value = ($value === 'true' || $value === '1') ? 1 : 0;
+                } else {
+                    $value = intval($value ?? 0);
+                }
+                error_log("Converted VAT enabled to int: $value (from " . json_encode($data[$appField]) . ")");
             }
             // Handle JSON fields for arrays
             elseif (is_array($value) && in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {
