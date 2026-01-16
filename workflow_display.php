@@ -156,48 +156,48 @@ foreach ($cases as $case) {
     <style>
         html,body { height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { margin: 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e293b; }
-        .stage-column { min-width: 400px; flex: 1; background: rgba(255,255,255,0.9); border-radius: 24px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.6); }
-        .card { background: #ffffff; border-radius: 20px; padding: 24px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); border: 2px solid #f1f5f9; transition: all 0.3s; font-size: 18px; }
-        .card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
-        .tv-title { font-size: 48px; font-weight: 900; color: #1e293b; text-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .tv-sub { color: #64748b; font-size: 20px; font-weight: 600; }
-        .timer-badge { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #92400e; font-weight: 800; padding: 12px 16px; border-radius: 999px; font-size: 20px; box-shadow: 0 4px 12px rgba(251,191,36,0.4); }
-        .blink-finished { animation: finishedBlink 2s infinite; box-shadow: 0 0 32px rgba(16,185,129,0.6), 0 12px 40px rgba(0,0,0,0.15); border-color: #10b981; border-width: 3px; }
-        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-8px);}100%{transform:translateY(0);} }
-        .btn { padding: 16px 24px; border-radius: 12px; font-weight: 700; transition: all 0.3s; border: none; cursor: pointer; font-size: 18px; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
-        .connection-status { position: fixed; top: 30px; right: 30px; padding: 8px 16px; border-radius: 24px; font-size: 16px; font-weight: 700; z-index: 10; }
+        .stage-column { min-width: 200px; flex: 1; background: rgba(255,255,255,0.9); border-radius: 16px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.5); }
+        .card { background: #ffffff; border-radius: 12px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; transition: all 0.2s; font-size: 14px; margin-bottom: 8px; }
+        .card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .tv-title { font-size: 24px; font-weight: 700; color: #1e293b; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .tv-sub { color: #64748b; font-size: 14px; font-weight: 500; }
+        .timer-badge { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #92400e; font-weight: 600; padding: 4px 8px; border-radius: 999px; font-size: 12px; box-shadow: 0 2px 6px rgba(251,191,36,0.3); }
+        .blink-finished { animation: finishedBlink 1.5s infinite; box-shadow: 0 0 16px rgba(16,185,129,0.4), 0 4px 16px rgba(0,0,0,0.1); border-color: #10b981; }
+        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-3px);}100%{transform:translateY(0);} }
+        .btn { padding: 8px 12px; border-radius: 8px; font-weight: 600; transition: all 0.2s; border: none; cursor: pointer; font-size: 14px; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .connection-status { position: fixed; top: 20px; right: 20px; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; z-index: 10; }
         .connection-online { background: #dcfce7; color: #166534; }
         .connection-offline { background: #fee2e2; color: #991b1b; }
-        .empty-stage { text-align: center; color: #94a3b8; font-style: italic; padding: 60px 30px; font-size: 24px; }
-        .stage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 3px solid #e2e8f0; }
-        .stage-title { font-size: 28px; font-weight: 800; color: #1e293b; }
-        .stage-count { background: #3b82f6; color: white; padding: 6px 12px; border-radius: 16px; font-size: 18px; font-weight: 700; }
+        .empty-stage { text-align: center; color: #94a3b8; font-style: italic; padding: 20px 10px; font-size: 16px; }
+        .stage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+        .stage-title { font-size: 16px; font-weight: 700; color: #1e293b; }
+        .stage-count { background: #3b82f6; color: white; padding: 2px 6px; border-radius: 8px; font-size: 12px; font-weight: 600; }
         @media (max-width: 768px) {
-            .stage-column { min-width: 320px; padding: 20px; }
-            .tv-title { font-size: 36px; }
-            .tv-sub { font-size: 16px; }
-            .card { padding: 20px; font-size: 16px; }
-            .timer-badge { font-size: 16px; padding: 10px 14px; }
-            .stage-title { font-size: 24px; }
-            .empty-stage { font-size: 20px; padding: 50px 25px; }
+            .stage-column { min-width: 180px; padding: 12px; }
+            .tv-title { font-size: 20px; }
+            .tv-sub { font-size: 12px; }
+            .card { padding: 10px; font-size: 12px; }
+            .timer-badge { font-size: 10px; padding: 3px 6px; }
+            .stage-title { font-size: 14px; }
+            .empty-stage { font-size: 14px; padding: 15px 8px; }
         }
         @media (min-width: 1920px) {
-            .stage-column { min-width: 500px; }
-            .tv-title { font-size: 64px; }
-            .timer-badge { font-size: 24px; padding: 14px 18px; }
-            .card { font-size: 20px; }
+            .stage-column { min-width: 250px; }
+            .tv-title { font-size: 32px; }
+            .timer-badge { font-size: 14px; padding: 6px 10px; }
+            .card { font-size: 16px; padding: 16px; }
         }
         @media (min-width: 2560px) {
-            .stage-column { min-width: 600px; }
-            .tv-title { font-size: 80px; }
-            .timer-badge { font-size: 28px; padding: 16px 20px; }
-            .card { font-size: 22px; }
+            .stage-column { min-width: 300px; }
+            .tv-title { font-size: 40px; }
+            .timer-badge { font-size: 16px; padding: 8px 12px; }
+            .card { font-size: 18px; padding: 20px; }
         }
     </style>
 </head>
 <body x-data="workflowDisplay()" x-init="init()" class="flex flex-col antialiased">
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-3 md:p-4 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
         <div class="mb-4 md:mb-0">
             <div class="tv-title"><?php echo __('workflow.display.header', 'Repair Board'); ?></div>
             <div class="tv-sub mt-1" x-text="lastUpdatedText"></div>
@@ -208,21 +208,21 @@ foreach ($cases as $case) {
     </div>
 
     <main class="overflow-auto flex-1">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 p-3">
             <template x-for="stage in stages" :key="stage.id">
                 <div class="stage-column">
                     <div class="stage-header">
                         <div class="stage-title" x-text="stage.title"></div>
                         <div class="stage-count" x-text="(cases[stage.id]||[]).length"></div>
                     </div>
-                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                    <div class="space-y-2 overflow-y-auto max-h-80">
                         <template x-for="caseItem in (cases[stage.id] || [])" :key="caseItem.id">
                             <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}">
-                                <div class="flex items-start justify-between gap-4">
-                                    <div class="flex-1">
-                                        <div class="text-lg font-bold text-gray-900 mb-1" x-text="`${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || 'Unknown Vehicle'"></div>
-                                        <div class="text-sm text-gray-600" x-text="`${caseItem.plate} • #${caseItem.id}`"></div>
-                                        <div class="text-xs text-gray-500 mt-1" x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) ? ('👤 ' + (getTechName(caseItem.repair_assignments[stage.id]) || caseItem.repair_assignments[stage.id])) : ''"></div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-gray-900 truncate" x-text="caseItem.plate"></div>
+                                        <div class="text-xs text-gray-600 truncate" x-text="`${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || 'Unknown'"></div>
+                                        <div class="text-xs text-gray-500 truncate" x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) ? getTechName(caseItem.repair_assignments[stage.id]) || caseItem.repair_assignments[stage.id] : ''"></div>
                                     </div>
                                     <div class="timer-badge" x-text="getTimerDisplay(caseItem.id, stage.id)"></div>
                                 </div>
