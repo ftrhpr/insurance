@@ -110,7 +110,7 @@ try {
         password VARCHAR(255) NOT NULL,
         full_name VARCHAR(100) NOT NULL,
         email VARCHAR(100),
-        role ENUM('admin', 'manager', 'viewer') DEFAULT 'manager',
+        role ENUM('admin', 'manager', 'viewer', 'technician') DEFAULT 'manager',
         status ENUM('active', 'inactive') DEFAULT 'active',
         last_login TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

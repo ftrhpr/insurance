@@ -1113,7 +1113,7 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Username, password, and full name are required']);
         }
         
-        if (!in_array($role, ['admin', 'manager', 'viewer'])) {
+        if (!in_array($role, ['admin', 'manager', 'viewer', 'technician'])) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid role']);
         }
         
