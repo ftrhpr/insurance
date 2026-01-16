@@ -61,7 +61,7 @@ try {
 // Fetch users who can be assigned (technicians) - assuming managers and admins
 workflowDebug('fetching technicians');
 try {
-    $stmt = $pdo->query("SELECT id, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
+    $stmt = $pdo->query("SELECT id, full_name FROM users WHERE role IN ('technician') ORDER BY full_name");
     $technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
     workflowDebug('got technicians: ' . count($technicians));
 } catch (Exception $e) {

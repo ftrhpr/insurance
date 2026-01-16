@@ -19,6 +19,12 @@ if (empty($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
+
+// Only allow technicians to access this page
+if ($_SESSION['role'] !== 'technician') {
+    header('Location: index.php');
+    exit;
+}
 $userId = $_SESSION['user_id'];
 
 try {

@@ -219,6 +219,7 @@ if (!isset($users) || !is_array($users)) {
                 <select name="role" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                     <option value="viewer">Viewer</option>
                     <option value="manager">Manager</option>
+                    <option value="technician">Technician</option>
                     <option value="admin">Admin</option>
                 </select>
             </div>
@@ -601,6 +602,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const roleColors = {
                     admin: 'bg-purple-100 text-purple-800 border-purple-200',
                     manager: 'bg-blue-100 text-blue-800 border-blue-200',
+                    technician: 'bg-emerald-100 text-emerald-800 border-emerald-200',
                     viewer: 'bg-slate-100 text-slate-800 border-slate-200'
                 };
                 

@@ -73,7 +73,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['full_name'] = $userData['full_name'];
                 $_SESSION['role'] = $userData['role'];
                 
-                header('Location: index.php');
+                // Redirect based on role
+                if ($userData['role'] === 'technician') {
+                    header('Location: technician_dashboard.php');
+                } else {
+                    header('Location: index.php');
+                }
                 exit();
             } else {
                 // Track failed attempt

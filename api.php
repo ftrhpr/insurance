@@ -1161,7 +1161,7 @@ try {
             $updates[] = "email = ?";
             $params[] = $email;
         }
-        if ($role && in_array($role, ['admin', 'manager', 'viewer'])) {
+        if ($role && in_array($role, ['admin', 'manager', 'viewer', 'technician'])) {
             $updates[] = "role = ?";
             $params[] = $role;
         }

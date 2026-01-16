@@ -28,7 +28,7 @@ $stages = [
 
 // Fetch users who can be assigned (technicians)
 try {
-    $stmt = $pdo->query("SELECT id, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
+    $stmt = $pdo->query("SELECT id, full_name FROM users WHERE role IN ('technician') ORDER BY full_name");
     $technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $technicians = [];
