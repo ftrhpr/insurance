@@ -45,6 +45,7 @@ if (!isset($_SESSION['user_id'])) {
                 $nav_items['sms_parsing'] = ['icon' => 'settings', 'label' => 'SMS Parsing', 'url' => 'sms_parsing.php'];
                 $nav_items['users'] = ['icon' => 'users', 'label' => 'Users', 'url' => 'users.php'];
                 $nav_items['translations'] = ['icon' => 'languages', 'label' => 'Translations', 'url' => 'translations.php'];
+                $nav_items['workflow'] = ['icon' => 'layout-kanban', 'label' => 'Workflow', 'url' => 'workflow.php'];
             }
             $icons = [
                 'layout-dashboard' => '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',

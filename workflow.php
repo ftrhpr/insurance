@@ -1,0 +1,225 @@
+<?php
+session_start();
+require_once 'session_config.php';
+require_once 'config.php';
+require_once 'language.php';
+
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
+    header('Location: login.php');
+    exit;
+}
+
+try {
+    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// Fetch users who can be assigned (technicians) - assuming managers and admins
+$stmt = $pdo->query("SELECT id, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
+$technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Define the workflow stages
+$stages = [
+    ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'Disassembly')],
+    ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'Body Work')],
+    ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'Processing for Painting')],
+    ['id' => 'preparing_for_painting', 'title' => __('workflow.stage.preparing_for_painting', 'Preparing for Painting')],
+    ['id' => 'painting', 'title' => __('workflow.stage.painting', 'Painting')],
+    ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'Assembling')],
+];
+
+// Fetch cases for the workflow board
+$stmt = $pdo->query("
+    SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments
+    FROM transfers
+    WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed', 'Issue', 'Archived')
+    ORDER BY id DESC
+");
+$cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Group cases by stage for Alpine.js
+$casesByStage = [];
+foreach ($stages as $stage) {
+    $casesByStage[$stage['id']] = [];
+}
+foreach ($cases as $case) {
+    $stageId = $case['repair_stage'] ?? 'disassembly';
+    if (array_key_exists($stageId, $casesByStage)) {
+        $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
+        $casesByStage[$stageId][] = $case;
+    }
+}
+
+?>
+<!DOCTYPE html>
+<html lang="<?php echo get_current_language(); ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo __('workflow.title', 'Case Processing Workflow'); ?> - OTOMOTORS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
+    <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
+    <style>
+        .ghost { opacity: 0.5; background: #c8ebfb; }
+        .sortable-chosen { cursor: grabbing; }
+        .case-card { transition: box-shadow 0.2s; }
+        .case-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] space-y-3"></div>
+
+    <div class="flex min-h-screen">
+        <?php include 'sidebar.php'; ?>
+
+        <main class="flex-1 ml-64 py-10 px-6">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-slate-800"><?php echo __('workflow.header', 'Repair Workflow'); ?></h1>
+                <p class="text-slate-600 mt-1"><?php echo __('workflow.description', 'Drag and drop cases to update their repair stage.'); ?></p>
+            </div>
+
+            <div x-data="workflowBoard()" class="overflow-x-auto pb-4">
+                <div class="flex space-x-4 min-w-max">
+                    <template x-for="stage in stages" :key="stage.id">
+                        <div class="w-72 bg-slate-200/60 rounded-xl shadow-sm flex-shrink-0">
+                            <div class="p-4 border-b border-slate-300">
+                                <h3 class="text-lg font-semibold text-slate-700 flex items-center justify-between">
+                                    <span x-text="stage.title"></span>
+                                    <span class="text-sm font-medium bg-slate-300 text-slate-600 rounded-full px-2 py-0.5" x-text="cases[stage.id] ? cases[stage.id].length : 0"></span>
+                                </h3>
+                            </div>
+                            <div class="p-4 space-y-4 min-h-[60vh]" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
+                                <template x-for="caseItem in cases[stage.id]" :key="caseItem.id">
+                                    <div class="bg-white rounded-lg p-4 shadow-md case-card" :data-case-id="caseItem.id">
+                                        <div class="font-bold text-slate-800" x-text="`${caseItem.plate} - #${caseItem.id}`"></div>
+                                        <div class="text-sm text-slate-500" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
+                                        <div class="mt-4">
+                                            <label class="text-xs font-medium text-slate-500">Technician</label>
+                                            <select @change="assignTechnician(caseItem.id, stage.id, $event.target.value)" class="mt-1 block w-full bg-slate-50 border-slate-200 rounded-md shadow-sm text-sm focus:ring-sky-500 focus:border-sky-500">
+                                                <option value="">Unassigned</option>
+                                                <template x-for="tech in technicians" :key="tech.id">
+                                                    <option :value="tech.id" :selected="caseItem.repair_assignments && caseItem.repair_assignments[stage.id] == tech.id" x-text="tech.full_name"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('workflowBoard', () => ({
+                cases: <?php echo json_encode($casesByStage); ?>,
+                stages: <?php echo json_encode($stages); ?>,
+                technicians: <?php echo json_encode($technicians); ?>,
+                init() {
+                    this.$nextTick(() => {
+                        this.stages.forEach(stage => {
+                            const el = this.$refs[`stage-${stage.id}`];
+                            new Sortable(el, {
+                                group: 'cases',
+                                animation: 150,
+                                ghostClass: 'ghost',
+                                chosenClass: 'sortable-chosen',
+                                onEnd: (evt) => {
+                                    const caseId = evt.item.dataset.caseId;
+                                    const newStageId = evt.to.dataset.stageId;
+                                    const oldStageId = evt.from.dataset.stageId;
+                                    const newIndex = evt.newDraggableIndex;
+                                    
+                                    if (newStageId !== oldStageId) {
+                                       this.moveCase(caseId, newStageId, oldStageId, newIndex);
+                                    }
+                                }
+                            });
+                        });
+                        lucide.createIcons();
+                    });
+                },
+                moveCase(caseId, newStageId, oldStageId, newIndex) {
+                    // Optimistically update the UI first
+                    const caseToMove = this.cases[oldStageId].find(c => c.id == caseId);
+                    if (caseToMove) {
+                        // Remove from old array
+                        this.cases[oldStageId] = this.cases[oldStageId].filter(c => c.id != caseId);
+                        // Add to new array at the correct position
+                        this.cases[newStageId].splice(newIndex, 0, caseToMove);
+                    }
+
+                    fetch('api.php?action=update_repair_stage', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ case_id: caseId, stage: newStageId })
+                    }).then(res => res.json()).then(data => {
+                        if (data.status === 'success') {
+                            showToast('Case Updated', `Moved to ${this.stages.find(s => s.id === newStageId).title}`, 'success');
+                            // Find case and update its stage property for consistency, though Sortable handles the UI
+                            const caseToUpdate = this.cases[oldStageId].find(c => c.id == caseId);
+                            if(caseToUpdate) caseToUpdate.repair_stage = newStageId;
+                        } else {
+                            showToast('Error', 'Failed to update case stage.', 'error');
+                            // Note: A full revert would be complex. For now, we rely on a page refresh if errors occur.
+                        }
+                    });
+                },
+                assignTechnician(caseId, stageId, technicianId) {
+                    const caseToUpdate = this.cases[stageId].find(c => c.id == caseId);
+                    if (caseToUpdate) {
+                        if (!caseToUpdate.repair_assignments) caseToUpdate.repair_assignments = {};
+                        caseToUpdate.repair_assignments[stageId] = technicianId;
+                    }
+
+                    fetch('api.php?action=assign_technician', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ case_id: caseId, stage: stageId, technician_id: technicianId })
+                    }).then(res => res.json()).then(data => {
+                        if (data.status === 'success') {
+                            const techName = technicianId ? this.technicians.find(t => t.id == technicianId).full_name : 'nobody';
+                            showToast('Technician Assigned', `Assigned to ${techName}`, 'success');
+                        } else {
+                            showToast('Error', 'Failed to assign technician.', 'error');
+                        }
+                    });
+                }
+            }));
+        });
+        
+        // Standard toast function from other pages
+        function showToast(title, message = '', type = 'success', duration = 4000) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const colors = {
+                success: { border: 'border-emerald-200', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', icon: 'check-circle-2' },
+                error: { border: 'border-red-200', iconBg: 'bg-red-100', iconColor: 'text-red-600', icon: 'alert-circle' },
+                info: { border: 'border-blue-200', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', icon: 'info' }
+            };
+            const style = colors[type] || colors.info;
+            toast.className = `pointer-events-auto w-96 bg-white border ${style.border} shadow-lg rounded-xl p-4 flex items-start gap-4 transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <div class="${style.iconBg} p-2 rounded-full"><i data-lucide="${style.icon}" class="w-6 h-6 ${style.iconColor}"></i></div>
+                <div class="flex-1"><h4 class="text-md font-bold text-slate-800">${title}</h4>${message ? `<p class="text-sm text-slate-600 mt-1">${message}</p>` : ''}</div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1 -mt-1 -mr-1"><i data-lucide="x" class="w-5 h-5"></i></button>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+    </script>
+</body>
+</html>
