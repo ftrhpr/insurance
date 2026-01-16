@@ -101,7 +101,10 @@ foreach ($cases as $case) {
                                 <template x-for="caseItem in cases[stage.id]" :key="caseItem.id">
                                     <div class="bg-white rounded-lg p-4 shadow-md case-card" :data-case-id="caseItem.id">
                                         <div class="font-bold text-slate-800" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
-                                        <div class="text-sm text-slate-500" x-text="`${caseItem.plate} - #${caseItem.id}`"></div>
+                                        <div class="text-sm text-slate-500 flex items-center justify-between">
+                                            <span x-text="`${caseItem.plate} - #${caseItem.id}`"></span>
+                                            <span x-show="stage.id !== 'backlog'" class="text-xs font-mono text-slate-600 ml-2" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
+                                        </div>
                                         <template x-if="stage.id !== 'backlog'">
                                             <div class="mt-4">
                                                 <label class="text-xs font-medium text-slate-500">Technician</label>
