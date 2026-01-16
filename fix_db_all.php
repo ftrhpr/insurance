@@ -46,7 +46,9 @@ try {
         'system_logs'   => "JSON DEFAULT NULL",   // or TEXT if MariaDB version is old
         'slug'          => "VARCHAR(32) UNIQUE DEFAULT NULL",
         'vat_enabled'   => "TINYINT(1) DEFAULT 0",
-        'vat_amount'    => "DECIMAL(10,2) DEFAULT 0.00"
+        'vat_amount'    => "DECIMAL(10,2) DEFAULT 0.00",
+        'repair_stage'  => "VARCHAR(50) NULL DEFAULT NULL",
+        'repair_assignments' => "JSON NULL DEFAULT NULL"
     ];
 
     foreach ($columns as $col => $def) {

@@ -1887,6 +1887,82 @@ try {
         }
     }
 
+    // --- WORKFLOW ENDPOINTS ---
+    if ($action === 'update_repair_stage' && $method === 'POST') {
+        $data = getJsonInput();
+        $case_id = intval($data['case_id'] ?? 0);
+        $stage = trim($data['stage'] ?? '');
+
+        if ($case_id <= 0 || empty($stage)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid case ID or stage']);
+        }
+
+        // Validate stage exists
+        $valid_stages = ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        if (!in_array($stage, $valid_stages)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid stage']);
+        }
+
+        try {
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ? WHERE id = ?");
+            $stmt->execute([$stage, $case_id]);
+
+            if ($stmt->rowCount() > 0) {
+                jsonResponse(['status' => 'success']);
+            } else {
+                jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);
+            }
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
+    if ($action === 'assign_technician' && $method === 'POST') {
+        $data = getJsonInput();
+        $case_id = intval($data['case_id'] ?? 0);
+        $stage = trim($data['stage'] ?? '');
+        $technician_id = intval($data['technician_id'] ?? 0);
+
+        if ($case_id <= 0 || empty($stage)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid case ID or stage']);
+        }
+
+        // Validate stage exists
+        $valid_stages = ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        if (!in_array($stage, $valid_stages)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid stage']);
+        }
+
+        try {
+            // Get current assignments
+            $stmt = $pdo->prepare("SELECT repair_assignments FROM transfers WHERE id = ?");
+            $stmt->execute([$case_id]);
+            $current_assignments = $stmt->fetchColumn();
+
+            $assignments = json_decode($current_assignments ?: '{}', true);
+            if (!is_array($assignments)) {
+                $assignments = [];
+            }
+
+            if ($technician_id > 0) {
+                $assignments[$stage] = $technician_id;
+            } else {
+                unset($assignments[$stage]);
+            }
+
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_assignments = ? WHERE id = ?");
+            $stmt->execute([json_encode($assignments), $case_id]);
+
+            if ($stmt->rowCount() > 0) {
+                jsonResponse(['status' => 'success']);
+            } else {
+                jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);
+            }
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
     // Default response if no action matched
     jsonResponse(['error' => 'Unknown action: ' . $action]);
 

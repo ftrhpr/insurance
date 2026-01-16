@@ -126,23 +126,25 @@ foreach ($cases as $case) {
                 init() {
                     this.$nextTick(() => {
                         this.stages.forEach(stage => {
-                            const el = this.$refs[`stage-${stage.id}`];
-                            new Sortable(el, {
-                                group: 'cases',
-                                animation: 150,
-                                ghostClass: 'ghost',
-                                chosenClass: 'sortable-chosen',
-                                onEnd: (evt) => {
-                                    const caseId = evt.item.dataset.caseId;
-                                    const newStageId = evt.to.dataset.stageId;
-                                    const oldStageId = evt.from.dataset.stageId;
-                                    const newIndex = evt.newDraggableIndex;
-                                    
-                                    if (newStageId !== oldStageId) {
-                                       this.moveCase(caseId, newStageId, oldStageId, newIndex);
+                            const el = document.querySelector(`[data-stage-id="${stage.id}"]`);
+                            if (el) {
+                                new Sortable(el, {
+                                    group: 'cases',
+                                    animation: 150,
+                                    ghostClass: 'ghost',
+                                    chosenClass: 'sortable-chosen',
+                                    onEnd: (evt) => {
+                                        const caseId = evt.item.dataset.caseId;
+                                        const newStageId = evt.to.dataset.stageId;
+                                        const oldStageId = evt.from.dataset.stageId;
+                                        const newIndex = evt.newDraggableIndex;
+                                        
+                                        if (newStageId !== oldStageId) {
+                                           this.moveCase(caseId, newStageId, oldStageId, newIndex);
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
                         });
                         lucide.createIcons();
                     });
@@ -164,8 +166,8 @@ foreach ($cases as $case) {
                     }).then(res => res.json()).then(data => {
                         if (data.status === 'success') {
                             showToast('Case Updated', `Moved to ${this.stages.find(s => s.id === newStageId).title}`, 'success');
-                            // Find case and update its stage property for consistency, though Sortable handles the UI
-                            const caseToUpdate = this.cases[oldStageId].find(c => c.id == caseId);
+                            // Find case and update its stage property for consistency
+                            const caseToUpdate = this.cases[newStageId].find(c => c.id == caseId);
                             if(caseToUpdate) caseToUpdate.repair_stage = newStageId;
                         } else {
                             showToast('Error', 'Failed to update case stage.', 'error');
@@ -207,13 +209,23 @@ foreach ($cases as $case) {
                 info: { border: 'border-blue-200', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', icon: 'info' }
             };
             const style = colors[type] || colors.info;
+            
+            // Create icon element first
+            const iconEl = document.createElement('i');
+            iconEl.setAttribute('data-lucide', style.icon);
+            iconEl.className = `w-6 h-6 ${style.iconColor}`;
+            
             toast.className = `pointer-events-auto w-96 bg-white border ${style.border} shadow-lg rounded-xl p-4 flex items-start gap-4 transform transition-all duration-300 translate-x-full`;
             toast.innerHTML = `
-                <div class="${style.iconBg} p-2 rounded-full"><i data-lucide="${style.icon}" class="w-6 h-6 ${style.iconColor}"></i></div>
+                <div class="${style.iconBg} p-2 rounded-full"></div>
                 <div class="flex-1"><h4 class="text-md font-bold text-slate-800">${title}</h4>${message ? `<p class="text-sm text-slate-600 mt-1">${message}</p>` : ''}</div>
                 <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1 -mt-1 -mr-1"><i data-lucide="x" class="w-5 h-5"></i></button>`;
+            
+            // Insert the icon into the icon container
+            toast.querySelector(`.${style.iconBg}`).appendChild(iconEl);
+            
             container.appendChild(toast);
-            lucide.createIcons();
+            setTimeout(() => lucide.createIcons(), 0);
             requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
             setTimeout(() => {
                 toast.classList.add('translate-x-full');
