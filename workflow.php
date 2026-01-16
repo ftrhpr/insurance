@@ -112,7 +112,7 @@ foreach ($cases as $case) {
                                                     </template>
                                                 </select>
                                             </div>
-                                            <template x-if="caseItem.repair_assignments && caseItem.repair_assignments[stage.id]">
+                                            <template x-if="stage.id !== 'backlog'">
                                                 <div class="mt-3">
                                                     <div class="flex items-center justify-between">
                                                         <span class="text-xs font-medium text-slate-500">Timer</span>
@@ -222,16 +222,20 @@ foreach ($cases as $case) {
                     const wasAssigned = caseToUpdate && caseToUpdate.repair_assignments && caseToUpdate.repair_assignments[stageId];
                     
                     if (caseToUpdate) {
+                        // Update repair_assignments
                         if (!caseToUpdate.repair_assignments) caseToUpdate.repair_assignments = {};
                         caseToUpdate.repair_assignments[stageId] = technicianId;
                         
-                        // Update stage_timers in frontend data
+                        // Update stage_timers
                         if (!caseToUpdate.stage_timers) caseToUpdate.stage_timers = {};
                         if (technicianId) {
                             caseToUpdate.stage_timers[stageId] = Date.now();
                         } else {
                             delete caseToUpdate.stage_timers[stageId];
                         }
+                        
+                        // Trigger reactivity by updating the cases array
+                        this.cases = { ...this.cases };
                     }
 
                     fetch('api.php?action=assign_technician', {
@@ -283,18 +287,25 @@ foreach ($cases as $case) {
                 },
                 getTimerDisplay(caseId, stageId) {
                     const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
-                    if (!caseItem) return '00:00';
+                    if (!caseItem) return 'Case not found';
                     
-                    // Debug: show if assignments exist
-                    if (!caseItem.repair_assignments || !caseItem.repair_assignments[stage.id]) {
-                        return 'No assignment';
+                    // Debug: show assignment status
+                    const hasAssignment = caseItem.repair_assignments && caseItem.repair_assignments[stageId];
+                    if (!hasAssignment) {
+                        return 'No assignment for ' + stageId;
                     }
                     
-                    if (!caseItem.stage_timers || !caseItem.stage_timers[stageId]) {
-                        return 'No timer data';
+                    // Debug: show timer data
+                    if (!caseItem.stage_timers) {
+                        return 'No stage_timers object';
                     }
                     
-                    const startTime = caseItem.stage_timers[stageId];
+                    const timerData = caseItem.stage_timers[stageId];
+                    if (!timerData) {
+                        return 'No timer for ' + stageId;
+                    }
+                    
+                    const startTime = timerData;
                     const elapsed = Math.floor((this.currentTime - startTime) / 1000);
                     return this.formatTimer(elapsed);
                 },
