@@ -426,6 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select id="user-role" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none">
                             <option value="viewer">Viewer (Read-only)</option>
                             <option value="manager" selected>Manager (Edit cases)</option>
+                            <option value="technician">Technician (Workshop)</option>
                             <option value="admin">Admin (Full access)</option>
                         </select>
                     </div>
