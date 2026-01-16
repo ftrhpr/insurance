@@ -2082,14 +2082,18 @@ try {
                 printCase() { window.print(); },
                 
                 // Share invoice link functionality
-                shareInvoiceLink() {
+                async shareInvoiceLink() {
                     // Generate random slug if not exists
                     if (!this.currentCase.slug) {
                         this.currentCase.slug = this.generateRandomSlug();
                         // Save slug to database
-                        fetchAPI('update_transfer', 'POST', { id: CASE_ID, slug: this.currentCase.slug }).catch(err => {
+                        try {
+                            await fetchAPI('update_transfer', 'POST', { id: CASE_ID, slug: this.currentCase.slug });
+                        } catch (err) {
                             console.error('Failed to save slug:', err);
-                        });
+                            showToast('Error', 'Failed to generate share link. Please try again.', 'error');
+                            return;
+                        }
                     }
                     
                     const invoiceUrl = `${window.location.origin}${window.location.pathname.replace('edit_case.php', 'public_invoice.php')}?slug=${this.currentCase.slug}`;

@@ -38,7 +38,7 @@ try {
 $case_id = intval($_GET['id'] ?? 0);
 $slug = trim($_GET['slug'] ?? '');
 
-if (($case_id <= 0 && empty($slug)) || (!empty($slug) && strlen($slug) !== 16)) {
+if (($case_id <= 0 && empty($slug)) || (!empty($slug) && (strlen($slug) < 3 || strlen($slug) > 100))) {
     http_response_code(404);
     die('<!DOCTYPE html><html><head><title>Not Found</title></head><body><h1>Invoice not found</h1></body></html>');
 }
