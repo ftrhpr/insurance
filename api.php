@@ -1969,7 +1969,11 @@ try {
             $stmt->execute([json_encode($assignments), json_encode($timers), $case_id]);
 
             if ($stmt->rowCount() > 0) {
-                jsonResponse(['status' => 'success']);
+                // Return updated assignments and timers to the client
+                $stmt2 = $pdo->prepare("SELECT repair_assignments, stage_timers FROM transfers WHERE id = ?");
+                $stmt2->execute([$case_id]);
+                $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
+                jsonResponse(['status' => 'success', 'assignments' => json_decode($row2['repair_assignments'] ?: '{}', true), 'timers' => json_decode($row2['stage_timers'] ?: '{}', true)]);
             } else {
                 jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);
             }

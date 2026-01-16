@@ -251,10 +251,19 @@ foreach ($cases as $case) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ case_id: caseId, stage: stageId, technician_id: technicianId })
                     }).then(res => res.json()).then(data => {
+                        console.log('assign_technician response', data);
                         if (data.status === 'success') {
                             const techName = technicianId ? this.technicians.find(t => t.id == technicianId).full_name : 'nobody';
                             showToast('Technician Assigned', `Assigned to ${techName}`, 'success');
                             
+                            // Apply authoritative assignments/timers from server
+                            const caseObj = this.cases[stageId].find(c => c.id == caseId);
+                            if (caseObj) {
+                                if (data.assignments) caseObj.repair_assignments = data.assignments;
+                                if (data.timers) caseObj.stage_timers = data.timers;
+                                this.cases = { ...this.cases };
+                            }
+
                             // Handle timer
                             if (technicianId) {
                                 this.startTimer(caseId, stageId);
