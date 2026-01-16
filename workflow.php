@@ -172,7 +172,7 @@ foreach ($cases as $case) {
                                     <template x-for="log in historyLogs.slice().reverse()" :key="JSON.stringify(log)">
                                         <div class="mb-2">
                                             <div class="text-xs text-slate-500" x-text="(new Date(log.timestamp || Date.now())).toLocaleString()"></div>
-                                            <div class="text-sm" x-html="formatLogEntry(log)"></div>
+                                            <div class="text-sm" x-text="formatLogEntry(log)"></div>
                                         </div>
                                     </template>
                                 </div>
@@ -204,7 +204,7 @@ foreach ($cases as $case) {
                                     <template x-for="entry in historyAssignmentHistory.slice().reverse()" :key="JSON.stringify(entry)">
                                         <div class="mb-2">
                                             <div class="text-xs text-slate-500" x-text="(new Date(entry.timestamp || Date.now())).toLocaleString()"></div>
-                                            <div class="text-sm" x-html="formatLogEntry(entry)"></div>
+                                            <div class="text-sm" x-text="formatAssignmentEntry(entry)"></div>
                                         </div>
                                     </template>
                                 </div>
@@ -455,17 +455,6 @@ foreach ($cases as $case) {
                                     this.historyWorkTimes = derived;
                                 }
                             }
-
-                            // Human-friendly fallback for empty assignment history: build from assignment logs
-                            if ((!this.historyAssignmentHistory || this.historyAssignmentHistory.length === 0) && this.historyLogs && this.historyLogs.length > 0) {
-                                const ah = [];
-                                (this.historyLogs || []).forEach(raw => {
-                                    let entry = raw;
-                                    try { if (typeof raw === 'string') { const m = raw.match(/(\{.*\})/); if (m) entry = JSON.parse(m[1]); else entry = JSON.parse(raw); } } catch(e) {}
-                                    if (entry && entry.type === 'assignment') ah.push(entry);
-                                });
-                                if (ah.length) this.historyAssignmentHistory = ah;
-                            }
                         } else {
                             this.historyLogs = [{ type: 'error', message: data.message || 'Failed to load history' }];
                         }
@@ -478,6 +467,43 @@ foreach ($cases as $case) {
                     this.historyLogs = [];
                     this.historyWorkTimes = {};
                     this.historyCaseId = null;
+                },
+                formatLogEntry(log) {
+                    try {
+                        let entry = log;
+                        if (typeof log === 'string') {
+                            // Try to extract JSON portion
+                            const m = log.match(/(\{.*\})/);
+                            if (m) entry = JSON.parse(m[1]);
+                            else entry = JSON.parse(log);
+                        }
+                        
+                        switch (entry.type) {
+                            case 'assignment':
+                                const techName = entry.to ? `technician ${entry.to}` : 'unassigned';
+                                return `Assigned ${techName} to ${entry.stage} stage`;
+                            case 'move':
+                                return `Case moved from ${entry.from || 'backlog'} to ${entry.to} by technician ${entry.by}`;
+                            case 'work_time':
+                                const duration = Math.round((entry.duration_ms || 0) / 1000);
+                                return `Work time logged: ${duration}s by technician ${entry.tech} on ${entry.stage} stage`;
+                            case 'finish_stage':
+                                return `Stage ${entry.stage} finished by technician ${entry.by}`;
+                            default:
+                                return entry.message || JSON.stringify(entry);
+                        }
+                    } catch (e) {
+                        return log.message || String(log);
+                    }
+                },
+                formatAssignmentEntry(entry) {
+                    if (!entry.to) {
+                        return `Technician unassigned from ${entry.stage} stage by technician ${entry.by}`;
+                    } else if (!entry.from) {
+                        return `Assigned technician ${entry.to} to ${entry.stage} stage by technician ${entry.by}`;
+                    } else {
+                        return `Technician assignment changed for ${entry.stage} stage: ${entry.from} → ${entry.to} by technician ${entry.by}`;
+                    }
                 },
                 assignTechnician(caseId, stageId, technicianId) {
                     const caseToUpdate = this.cases[stageId].find(c => c.id == caseId);
@@ -614,51 +640,6 @@ foreach ($cases as $case) {
                     const endIndex = this.backlogPage * this.backlogPageSize;
                     return filteredCases.slice(startIndex, endIndex);
                 },
-                // Helper: resolve technician name by id
-                techName(id) {
-                    if (!id) return 'none';
-                    const t = this.technicians && this.technicians.find(x => x.id == id);
-                    return t ? t.full_name : `Tech ${id}`;
-                },
-                formatDuration(ms) {
-                    if (!ms) return '0s';
-                    const s = Math.round(ms/1000);
-                    if (s < 60) return `${s}s`;
-                    const m = Math.floor(s/60);
-                    const sec = s%60;
-                    return `${m}m ${sec}s`;
-                },
-                formatLogEntry(raw) {
-                    let entry = raw;
-                    try {
-                        if (typeof raw === 'string') {
-                            const m = raw.match(/(\{.*\})/);
-                            if (m) entry = JSON.parse(m[1]); else entry = JSON.parse(raw);
-                        }
-                    } catch(e) {
-                        // fallback to raw text
-                        return String(raw);
-                    }
-
-                    if (!entry || !entry.type) return JSON.stringify(entry);
-
-                    if (entry.type === 'assignment') {
-                        const toName = this.techName(entry.to);
-                        const fromName = entry.from ? this.techName(entry.from) : 'none';
-                        const byName = this.techName(entry.by) || (`User ${entry.by || 'system'}`);
-                        return `Assigned ${toName} to <strong>${entry.stage}</strong> (from: ${fromName}) by ${byName}`;
-                    }
-                    if (entry.type === 'move') {
-                        const byName = this.techName(entry.by) || (`User ${entry.by || 'system'}`);
-                        return `Moved <strong>${entry.from || 'unknown'}</strong> → <strong>${entry.to || 'unknown'}</strong> by ${byName}`;
-                    }
-                    if (entry.type === 'work_time') {
-                        const tech = this.techName(entry.tech);
-                        const dur = this.formatDuration(Number(entry.duration_ms || entry.duration || 0));
-                        return `Work recorded on <strong>${entry.stage}</strong>: ${dur} by ${tech}`;
-                    }
-                    return JSON.stringify(entry);
-                }
                 getTotalBacklogCount() {
                     const stageCases = this.cases['backlog'] || [];
                     if (!this.backlogSearch.trim()) {
