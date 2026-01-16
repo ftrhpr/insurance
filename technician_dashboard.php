@@ -25,10 +25,6 @@ if ($_SESSION['role'] !== 'technician') {
     header('Location: index.php');
     exit;
 }
-
-// Redirect to external technician portal
-header('Location: https://portal.otoexpress.ge/technician_dashboard.php');
-exit;
 $userId = $_SESSION['user_id'];
 
 try {

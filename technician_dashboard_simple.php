@@ -13,10 +13,6 @@ if ($_SESSION['role'] !== 'technician') {
     exit();
 }
 
-// Redirect to external technician portal
-header('Location: https://portal.otoexpress.ge/technician_dashboard.php');
-exit();
-
 require_once 'language.php';
 
 $current_user_name = $_SESSION['full_name'] ?? 'User';
