@@ -2308,6 +2308,9 @@ try {
                         parts_discount_percent: this.currentCase.parts_discount_percent || 0,
                         services_discount_percent: this.currentCase.services_discount_percent || 0,
                         global_discount_percent: this.currentCase.global_discount_percent || 0,
+                        // VAT fields
+                        vatEnabled: this.currentCase.vat_enabled || false,
+                        vatAmount: this.currentCase.vat_amount || 0,
                     };
 
                     const systemLogs = [...(this.currentCase.systemLogs || [])];
@@ -2614,11 +2617,23 @@ try {
                 },
                 
                 // Method to update VAT calculations
-                updateVAT() {
+                async updateVAT() {
                     this.updateRepairSummary();
                     this.updateOverviewStats();
                     // Sync amount field with total including VAT if enabled
                     this.syncAmountWithTotal();
+                    
+                    // Save VAT changes immediately
+                    try {
+                        await fetchAPI('update_transfer', 'POST', { 
+                            id: CASE_ID, 
+                            vatEnabled: this.currentCase.vat_enabled || false,
+                            vatAmount: this.currentCase.vat_amount || 0
+                        });
+                    } catch (err) {
+                        console.error('Failed to save VAT:', err);
+                        showToast('Error', 'Failed to save VAT setting. Please try again.', 'error');
+                    }
                 },
                 
                 // Sync the amount input field with the calculated discounted total
