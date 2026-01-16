@@ -150,7 +150,7 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                     <div class="mt-4 grid grid-cols-1 gap-2">
                         <template x-for="stage in caseGroup.stages" :key="stage.stage">
                             <div class="flex gap-2">
-                                <button x-show="!(stage.status && stage.status.status === 'finished')" @click="finishStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-emerald-600 text-white text-lg font-semibold touch-target">Finish: <span x-text="stage.stage" class="ml-2 font-normal text-sm"></span></button>
+                                <button x-show="!(stage.status && stage.status.status === 'finished')" @click="finishStage(caseGroup.id, stage.stage)" class="flex-1 h-12 rounded-md bg-emerald-600 text-white text-lg font-semibold touch-target">Finish</button>
                                 <div x-show="stage.status && stage.status.status === 'finished'" class="w-36 h-12 rounded-md bg-green-100 text-green-800 text-center font-semibold flex items-center justify-center">Finished</div>
                             </div>
                         </template>
