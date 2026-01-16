@@ -125,6 +125,11 @@ $global_discount_amount = $after_category_discounts * ($global_discount_pct / 10
 $total_discount = $parts_discount_amount + $services_discount_amount + $global_discount_amount;
 $grand_total = $after_category_discounts - $global_discount_amount;
 
+// Calculate VAT if enabled (18% of grand total)
+$vat_enabled = isset($case['vat_enabled']) ? (bool)$case['vat_enabled'] : false;
+$vat_amount = $vat_enabled ? $grand_total * 0.18 : 0;
+$final_total = $grand_total + $vat_amount;
+
 // Format date safely
 $invoice_date = !empty($case['created_at']) ? date('d.m.Y', strtotime($case['created_at'])) : date('d.m.Y');
 $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($case['service_date'])) : 'Not scheduled';
@@ -379,9 +384,29 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                     
                     <!-- Grand Total -->
                     <div class="flex justify-between pt-3 border-t-2 border-gray-300">
+                        <span class="text-lg font-bold text-gray-800">ჯამი:</span>
+                        <span class="text-2xl font-bold text-indigo-600">₾<?php echo number_format($grand_total, 2); ?></span>
+                    </div>
+                    
+                    <?php if ($vat_enabled && $vat_amount > 0): ?>
+                    <!-- VAT -->
+                    <div class="flex justify-between py-2">
+                        <span class="text-lg font-semibold text-orange-700">დღგ (18%):</span>
+                        <span class="text-xl font-bold text-orange-600">₾<?php echo number_format($vat_amount, 2); ?></span>
+                    </div>
+                    
+                    <!-- Final Total with VAT -->
+                    <div class="flex justify-between pt-3 border-t-2 border-orange-300 bg-orange-50 -mx-6 px-6 py-3">
+                        <span class="text-xl font-bold text-gray-800">საბოლოო გადასახდელი (დღგ-ს ჩათვლით):</span>
+                        <span class="text-3xl font-bold text-orange-600">₾<?php echo number_format($final_total, 2); ?></span>
+                    </div>
+                    <?php else: ?>
+                    <!-- Grand Total (when no VAT) -->
+                    <div class="flex justify-between pt-3 border-t-2 border-gray-300">
                         <span class="text-lg font-bold text-gray-800">გადასახდელი:</span>
                         <span class="text-2xl font-bold text-indigo-600">₾<?php echo number_format($grand_total, 2); ?></span>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
             

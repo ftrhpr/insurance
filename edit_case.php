@@ -776,6 +776,28 @@ try {
                                                         <div class="text-lg font-bold text-slate-800">Grand Total</div>
                                                         <div class="text-2xl font-bold text-indigo-600" id="items-grand-total">₾0.00</div>
                                                     </div>
+                                                    
+                                                    <!-- VAT Section -->
+                                                    <div class="py-4 border-t border-slate-200">
+                                                        <div class="flex items-center justify-between">
+                                                            <div class="flex items-center gap-2">
+                                                                <input type="checkbox" id="vat-enabled" 
+                                                                    x-model="currentCase.vat_enabled"
+                                                                    @change="updateVAT()" 
+                                                                    class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
+                                                                <label for="vat-enabled" class="text-sm font-medium text-slate-700 cursor-pointer">
+                                                                    Include VAT (დღგ) 18%
+                                                                </label>
+                                                            </div>
+                                                            <div class="text-lg font-bold text-orange-600" id="vat-amount">₾0.00</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Final Total with VAT -->
+                                                    <div class="flex items-center justify-between py-4 bg-gradient-to-r from-orange-50 to-red-50 -mx-6 px-6 border-t border-slate-200" x-show="currentCase.vat_enabled">
+                                                        <div class="text-xl font-bold text-slate-800">Final Total (with VAT)</div>
+                                                        <div class="text-3xl font-bold text-orange-600" id="final-total-with-vat">₾0.00</div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1363,7 +1385,12 @@ try {
                     const subtotalAfterCategory = afterPartsDiscount + afterServicesDiscount;
                     const grandTotal = subtotalAfterCategory * (1 - globalDiscountPct / 100);
                     
-                    return grandTotal;
+                    // Include VAT if enabled
+                    const vatEnabled = this.currentCase.vat_enabled || false;
+                    const vatAmount = vatEnabled ? grandTotal * 0.18 : 0;
+                    const finalTotal = grandTotal + vatAmount;
+                    
+                    return finalTotal;
                 },
 
                 quickAddPart() {
@@ -2539,6 +2566,11 @@ try {
                     const totalDiscount = partsDiscount + servicesDiscount + globalDiscount;
                     const grandTotal = afterCategoryDiscounts - globalDiscount;
                     
+                    // Calculate VAT if enabled (18% of grand total)
+                    const vatEnabled = this.currentCase.vat_enabled || false;
+                    const vatAmount = vatEnabled ? grandTotal * 0.18 : 0;
+                    const finalTotal = grandTotal + vatAmount;
+                    
                     // Update DOM elements
                     const partsEl = document.getElementById('items-parts-cost');
                     const laborEl = document.getElementById('items-labor-cost');
@@ -2550,6 +2582,8 @@ try {
                     const servicesDiscountAmountEl = document.getElementById('services-discount-amount');
                     const globalDiscountAmountEl = document.getElementById('global-discount-amount');
                     const totalDiscountAmountEl = document.getElementById('total-discount-amount');
+                    const vatAmountEl = document.getElementById('vat-amount');
+                    const finalTotalEl = document.getElementById('final-total-with-vat');
                     
                     const partsCount = (this.currentCase.repair_parts || []).length;
                     const laborCount = (this.currentCase.repair_labor || []).length;
@@ -2564,6 +2598,11 @@ try {
                     if (servicesDiscountAmountEl) servicesDiscountAmountEl.textContent = `-₾${servicesDiscount.toFixed(2)}`;
                     if (globalDiscountAmountEl) globalDiscountAmountEl.textContent = `-₾${globalDiscount.toFixed(2)}`;
                     if (totalDiscountAmountEl) totalDiscountAmountEl.textContent = `-₾${totalDiscount.toFixed(2)}`;
+                    if (vatAmountEl) vatAmountEl.textContent = `₾${vatAmount.toFixed(2)}`;
+                    if (finalTotalEl) finalTotalEl.textContent = `₾${finalTotal.toFixed(2)}`;
+                    
+                    // Store VAT amount for saving
+                    this.currentCase.vat_amount = vatAmount;
                 },
                 
                 // Method to update discounts from inputs
@@ -2571,6 +2610,14 @@ try {
                     this.updateRepairSummary();
                     this.updateOverviewStats();
                     // Sync amount field with discounted total
+                    this.syncAmountWithTotal();
+                },
+                
+                // Method to update VAT calculations
+                updateVAT() {
+                    this.updateRepairSummary();
+                    this.updateOverviewStats();
+                    // Sync amount field with total including VAT if enabled
                     this.syncAmountWithTotal();
                 },
                 

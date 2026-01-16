@@ -401,7 +401,9 @@ try {
                 'parts_discount_percent' => 'parts_discount_percent',
                 'services_discount_percent' => 'services_discount_percent',
                 'global_discount_percent' => 'global_discount_percent',
-                'slug' => 'slug'
+                'slug' => 'slug',
+                'vatEnabled' => 'vat_enabled',
+                'vatAmount' => 'vat_amount'
             ];
 
             $update_fields = [];
