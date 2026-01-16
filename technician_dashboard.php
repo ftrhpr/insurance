@@ -38,7 +38,12 @@ if (isset($_GET['json'])) {
         $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
         $timers = json_decode($c['stage_timers'] ?? '{}', true);
         foreach ($assignments as $stage => $techId) {
-            if (intval($techId) === intval($userId) && ($statuses[$stage] ?? null) !== 'finished' && !empty($timers[$stage])) {
+            $isFinished = ($statuses[$stage] ?? null) === 'finished';
+            $hasTimer = !empty($timers[$stage]);
+            $canAdvance = in_array($stage, ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting']);
+            
+            // Show if: assigned to user AND (not finished OR (finished but can advance))
+            if (intval($techId) === intval($userId) && (!$isFinished || ($isFinished && $canAdvance))) {
                 $assigned[] = [
                     'id' => $c['id'],
                     'plate' => $c['plate'],
@@ -68,7 +73,12 @@ foreach ($cases as $c) {
     $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
     $timers = json_decode($c['stage_timers'] ?? '{}', true);
     foreach ($assignments as $stage => $techId) {
-        if (intval($techId) === intval($userId) && ($statuses[$stage] ?? null) !== 'finished' && !empty($timers[$stage])) {
+        $isFinished = ($statuses[$stage] ?? null) === 'finished';
+        $hasTimer = !empty($timers[$stage]);
+        $canAdvance = in_array($stage, ['disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting']);
+        
+        // Show if: assigned to user AND (not finished OR (finished but can advance))
+        if (intval($techId) === intval($userId) && (!$isFinished || ($isFinished && $canAdvance))) {
             $assigned[] = [
                 'id' => $c['id'],
                 'plate' => $c['plate'],
@@ -143,7 +153,7 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                                 <template x-for="stage in caseGroup.stages" :key="stage.stage">
                                     <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold">
                                         <span x-text="stage.stage_title"></span>
-                                        <span class="font-mono text-sm" x-text="displayTimer(stage.timer)"></span>
+                                        <span class="font-mono text-sm" x-text="stage.status && stage.status.status === 'finished' ? 'Finished' : displayTimer(stage.timer)"></span>
                                     </div>
                                 </template>
                             </div>

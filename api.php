@@ -2056,6 +2056,9 @@ try {
                 $technician_id = $assignments[$current_stage];
                 $assignments[$next_stage] = $technician_id;
                 $timers[$next_stage] = time() * 1000; // Start timer in milliseconds
+                // Clear assignment from old stage since work is complete
+                unset($assignments[$current_stage]);
+                unset($timers[$current_stage]);
             }
 
             // Move case to next stage and update assignments/timers
