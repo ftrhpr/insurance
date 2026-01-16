@@ -190,7 +190,7 @@ foreach ($cases as $case) {
     </style>
 </head>
 <body x-data="workflowDisplay()" x-init="init()" class="antialiased">
-    <div class="fixed top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-10" x-text="`Updated: ${lastUpdatedText} | ${connectionStatus}`"></div>
+    <div class="fixed bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-10" x-text="`Updated: ${lastUpdatedText} | ${connectionStatus}`"></div>
 
     <main class="overflow-auto h-screen">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 p-2">
