@@ -215,24 +215,24 @@ foreach ($cases as $case) {
 
                 <div class="flex space-x-4 min-w-max">
                     <template x-for="stage in stages" :key="stage.id">
-                        <div :class="stage.id === 'backlog' ? 'w-72 bg-amber-100/60 rounded-xl shadow-sm flex-shrink-0 border-2 border-amber-200' : 'w-72 bg-slate-200/60 rounded-xl shadow-sm flex-shrink-0'">
-                            <div class="p-4 border-b border-slate-300">
-                                <h3 :class="stage.id === 'backlog' ? 'text-lg font-semibold text-amber-800 flex items-center justify-between' : 'text-lg font-semibold text-slate-700 flex items-center justify-between'">
+                        <div :class="['w-72 rounded-xl shadow-sm flex-shrink-0', { 'bg-amber-100/60 border-2 border-amber-200': stage.id === 'backlog', 'bg-green-100/60 border-2 border-green-200': stage.id === 'done', 'bg-slate-200/60': !['backlog', 'done'].includes(stage.id) }]">
+                            <div class="p-4 border-b" :class="{'border-slate-300': !['backlog', 'done'].includes(stage.id), 'border-amber-300': stage.id === 'backlog', 'border-green-300': stage.id === 'done'}">
+                                <h3 :class="['text-lg font-semibold flex items-center justify-between', { 'text-amber-800': stage.id === 'backlog', 'text-green-800': stage.id === 'done', 'text-slate-700': !['backlog', 'done'].includes(stage.id) }]">
                                     <span x-text="stage.title"></span>
-                                    <span :class="stage.id === 'backlog' ? 'text-sm font-medium bg-amber-200 text-amber-700 rounded-full px-2 py-0.5' : 'text-sm font-medium bg-slate-300 text-slate-600 rounded-full px-2 py-0.5'" x-text="stage.id === 'backlog' ? getTotalBacklogCount() : (cases[stage.id] ? cases[stage.id].length : 0)"></span>
+                                    <span :class="['text-sm font-medium rounded-full px-2 py-0.5', { 'bg-amber-200 text-amber-700': stage.id === 'backlog', 'bg-green-200 text-green-700': stage.id === 'done', 'bg-slate-300 text-slate-600': !['backlog', 'done'].includes(stage.id) }]" x-text="stage.id === 'backlog' ? getTotalBacklogCount() : (cases[stage.id] ? cases[stage.id].length : 0)"></span>
                                 </h3>
                                 <div x-show="stage.id === 'backlog'" class="mt-2">
                                     <input x-model="backlogSearch" @input="backlogPage = 1" type="text" placeholder="Search backlog..." class="w-full px-3 py-2 text-sm border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                                 </div>
                             </div>
-                            <div :class="stage.id === 'backlog' ? 'p-4 space-y-4 min-h-[60vh] bg-amber-50/50' : 'p-4 space-y-4 min-h-[60vh]'" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
+                            <div :class="['p-4 space-y-4 min-h-[60vh]', { 'bg-amber-50/50': stage.id === 'backlog', 'bg-green-50/50': stage.id === 'done' }]" :data-stage-id="stage.id" x-ref="`stage-${stage.id}`">
                                 <template x-for="caseItem in getFilteredCases(stage.id)" :key="caseItem.id">
                                     <div :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}" class="bg-white rounded-lg p-4 shadow-md case-card" :data-case-id="caseItem.id">
                                         <div class="font-bold text-slate-800" x-text="`${caseItem.vehicle_make} ${caseItem.vehicle_model}`"></div>
                                         <div class="text-sm text-slate-500 flex items-center justify-between">
                                             <span x-text="`${caseItem.plate} - #${caseItem.id}`"></span>
-                                            <span x-show="stage.id !== 'backlog' && hasTimer(caseItem.id, stage.id)" class="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
-                                            <span x-show="stage.id !== 'backlog' && !hasTimer(caseItem.id, stage.id)" class="ml-2 text-xs text-slate-400">—</span>
+                                            <span x-show="!['backlog', 'done'].includes(stage.id) && hasTimer(caseItem.id, stage.id)" class="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
+                                            <span x-show="!['backlog', 'done'].includes(stage.id) && !hasTimer(caseItem.id, stage.id)" class="ml-2 text-xs text-slate-400">—</span>
                                         </div>
                                         <div class="flex items-center gap-2 mt-2">
                                             <input type="checkbox" :checked="caseItem.urgent" @change="updateUrgent(caseItem.id, $event.target.checked)" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500">
