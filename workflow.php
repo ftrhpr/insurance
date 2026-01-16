@@ -2,24 +2,28 @@
 session_start();
 // Production-safety: don't display PHP errors to users, but log them
 ini_set('display_errors', 0);
-// Early trace - write a marker to a local execution log and PHP error log
-@file_put_contents(__DIR__ . '/workflow_exec.log', '[' . date('c') . '] start request by user=' . ($_SESSION['user_id'] ?? 'guest') . "\n", FILE_APPEND | LOCK_EX);
-error_log("[workflow.php] start - user=" . ($_SESSION['user_id'] ?? 'guest'));
+
+// Use system temp dir for guaranteed-writable debug log
+$workflow_debug_file = sys_get_temp_dir() . '/workflow_debug.log';
+function workflowDebug($m) {
+    global $workflow_debug_file;
+    @error_log("[workflow_debug] " . $m);
+    @file_put_contents($workflow_debug_file, '[' . date('c') . '] ' . $m . "\n", FILE_APPEND | LOCK_EX);
+}
+workflowDebug('start request, user=' . ($_SESSION['user_id'] ?? 'guest'));
 
 // Register shutdown handler to capture fatal errors
 register_shutdown_function(function() {
     $err = error_get_last();
     if ($err) {
-        $msg = "[workflow.php][shutdown] last_error: " . json_encode($err);
-        error_log($msg);
-        @file_put_contents(__DIR__ . '/workflow_exec.log', '[' . date('c') . '] SHUTDOWN ' . $msg . "\n", FILE_APPEND | LOCK_EX);
+        $msg = "[shutdown] last_error: " . json_encode($err);
+        workflowDebug($msg);
     }
 });
 
 set_exception_handler(function($e){
-    $msg = "[workflow.php] Uncaught exception: " . $e->getMessage() . "\n" . $e->getTraceAsString();
-    error_log($msg);
-    @file_put_contents(__DIR__ . '/workflow_exec.log', '[' . date('c') . '] EXCEPTION ' . preg_replace('/\s+/', ' ', $e->getMessage()) . "\n", FILE_APPEND | LOCK_EX);
+    $msg = "[exception] " . $e->getMessage() . " | " . $e->getFile() . ':' . $e->getLine();
+    workflowDebug($msg);
     http_response_code(500);
     // Friendly message for the user; admin can add ?debug=1 to view more detail
     echo "<h2>Internal Server Error</h2><p>The server encountered an unexpected condition.</p>";
@@ -38,15 +42,31 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'mana
 }
 
 try {
+    workflowDebug('connecting to DB');
     $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    workflowDebug('DB connected');
 } catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
+    workflowDebug('DB connect failed: ' . $e->getMessage());
+    // give a user-friendly message and stop
+    http_response_code(500);
+    echo "<h2>Internal Server Error</h2><p>Database connection failed. Admins: check logs.</p>";
+    if (isset($_GET['debug']) && in_array($_SESSION['role'] ?? '', ['admin'])) {
+        echo "<pre>" . htmlspecialchars($e->getMessage() . "\n" . $e->getTraceAsString()) . "</pre>";
+    }
+    exit;
 }
 
 // Fetch users who can be assigned (technicians) - assuming managers and admins
-$stmt = $pdo->query("SELECT id, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
-$technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
+workflowDebug('fetching technicians');
+try {
+    $stmt = $pdo->query("SELECT id, full_name FROM users WHERE role IN ('admin', 'manager') ORDER BY full_name");
+    $technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    workflowDebug('got technicians: ' . count($technicians));
+} catch (Exception $e) {
+    workflowDebug('technicians query failed: ' . $e->getMessage());
+    $technicians = [];
+}
 
 // Define the workflow stages
 $stages = [
@@ -60,15 +80,27 @@ $stages = [
 ];
 
 // Fetch cases for the workflow board
-$stmt = $pdo->query("
-    SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses
-    FROM transfers
-    WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled')
-    ORDER BY 
-        CASE WHEN repair_stage IS NULL THEN 0 ELSE 1 END,
-        id DESC
-");
-$cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+workflowDebug('fetching cases');
+try {
+    $stmt = $pdo->query("
+        SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses
+        FROM transfers
+        WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled')
+        ORDER BY 
+            CASE WHEN repair_stage IS NULL THEN 0 ELSE 1 END,
+            id DESC
+    ");
+    $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    workflowDebug('got cases: ' . count($cases));
+} catch (Exception $e) {
+    workflowDebug('cases query failed: ' . $e->getMessage());
+    http_response_code(500);
+    echo "<h2>Internal Server Error</h2><p>Unable to load cases. Admins: check logs.</p>";
+    if (isset($_GET['debug']) && in_array($_SESSION['role'] ?? '', ['admin'])) {
+        echo "<pre>" . htmlspecialchars($e->getMessage() . "\n" . $e->getTraceAsString()) . "</pre>";
+    }
+    exit;
+}
 
 // Group cases by stage for Alpine.js
 $casesByStage = [];
