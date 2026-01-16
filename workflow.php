@@ -2,8 +2,24 @@
 session_start();
 // Production-safety: don't display PHP errors to users, but log them
 ini_set('display_errors', 0);
+// Early trace - write a marker to a local execution log and PHP error log
+@file_put_contents(__DIR__ . '/workflow_exec.log', '[' . date('c') . '] start request by user=' . ($_SESSION['user_id'] ?? 'guest') . "\n", FILE_APPEND | LOCK_EX);
+error_log("[workflow.php] start - user=" . ($_SESSION['user_id'] ?? 'guest'));
+
+// Register shutdown handler to capture fatal errors
+register_shutdown_function(function() {
+    $err = error_get_last();
+    if ($err) {
+        $msg = "[workflow.php][shutdown] last_error: " . json_encode($err);
+        error_log($msg);
+        @file_put_contents(__DIR__ . '/workflow_exec.log', '[' . date('c') . '] SHUTDOWN ' . $msg . "\n", FILE_APPEND | LOCK_EX);
+    }
+});
+
 set_exception_handler(function($e){
-    error_log("[workflow.php] Uncaught exception: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    $msg = "[workflow.php] Uncaught exception: " . $e->getMessage() . "\n" . $e->getTraceAsString();
+    error_log($msg);
+    @file_put_contents(__DIR__ . '/workflow_exec.log', '[' . date('c') . '] EXCEPTION ' . preg_replace('/\s+/', ' ', $e->getMessage()) . "\n", FILE_APPEND | LOCK_EX);
     http_response_code(500);
     // Friendly message for the user; admin can add ?debug=1 to view more detail
     echo "<h2>Internal Server Error</h2><p>The server encountered an unexpected condition.</p>";
@@ -12,8 +28,7 @@ set_exception_handler(function($e){
     }
     exit;
 });
-error_log("[workflow.php] start - user=" . ($_SESSION['user_id'] ?? 'guest'));
-require_once 'session_config.php';
+
 require_once 'config.php';
 require_once 'language.php';
 
