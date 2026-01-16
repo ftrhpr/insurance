@@ -333,80 +333,86 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
             
             <!-- Totals Section -->
             <div class="px-8 py-6 bg-gray-50 border-t border-gray-200">
-                <div class="max-w-xs ml-auto space-y-2">
-                    <!-- Parts Subtotal -->
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">ნაწილები:</span>
-                        <span class="font-medium">₾<?php echo number_format($parts_subtotal, 2); ?></span>
+                <div class="max-w-xs ml-auto">
+                    <div class="rounded-xl bg-white shadow p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-500 uppercase">საფასურის მიმოხილვა</h3>
+                                <p class="text-xs text-gray-400">ფასების მოკლე მიმოხილვა და სისტემა</p>
+                            </div>
+                            <button id="toggle-invoice-details" onclick="(function(btn){const el=document.getElementById('invoice-details');el.classList.toggle('hidden');btn.innerText = el.classList.contains('hidden') ? 'დეტალები' : 'დაკეცე';})(this)" class="text-sm text-indigo-600 hover:underline no-print">დაკეცე</button>
+                        </div>
+
+                        <div id="invoice-details" class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">ნაწილები</span>
+                                <span class="font-medium">₾<?php echo number_format($parts_subtotal, 2); ?></span>
+                            </div>
+
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">მომსახურება</span>
+                                <span class="font-medium">₾<?php echo number_format($services_subtotal, 2); ?></span>
+                            </div>
+
+                            <div class="flex justify-between text-sm pt-2 border-t border-gray-100">
+                                <span class="text-gray-600">ჯამი</span>
+                                <span class="font-medium">₾<?php echo number_format($subtotal, 2); ?></span>
+                            </div>
+
+                            <?php if ($total_discount > 0): ?>
+                            <div class="pt-2">
+                                <?php if ($parts_discount_pct > 0): ?>
+                                <div class="flex justify-between text-sm text-red-600">
+                                    <span>ნაწილების ფასდაკლება (<?php echo $parts_discount_pct; ?>%)</span>
+                                    <span>-₾<?php echo number_format($parts_discount_amount, 2); ?></span>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if ($services_discount_pct > 0): ?>
+                                <div class="flex justify-between text-sm text-red-600">
+                                    <span>მომსახურების ფასდაკლება (<?php echo $services_discount_pct; ?>%)</span>
+                                    <span>-₾<?php echo number_format($services_discount_amount, 2); ?></span>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if ($global_discount_pct > 0): ?>
+                                <div class="flex justify-between text-sm text-red-600">
+                                    <span>საერთო ფასდაკლება (<?php echo $global_discount_pct; ?>%)</span>
+                                    <span>-₾<?php echo number_format($global_discount_amount, 2); ?></span>
+                                </div>
+                                <?php endif; ?>
+
+                                <div class="flex justify-between text-sm font-medium text-red-600 pt-1">
+                                    <span>დაზოგილი თანხა</span>
+                                    <span>-₾<?php echo number_format($total_discount, 2); ?></span>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="mt-4 border-t pt-3">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="text-sm text-gray-500">ჯამი (დღგ-ის გარეშე)</div>
+                                    <div class="text-lg font-semibold text-gray-800">₾<?php echo number_format($grand_total, 2); ?></div>
+                                </div>
+                                <?php if ($vat_enabled && $vat_amount > 0): ?>
+                                <div class="text-right ml-4">
+                                    <div class="text-sm text-orange-700">დღგ (18%)</div>
+                                    <div class="text-lg font-semibold text-orange-600">₾<?php echo number_format($vat_amount, 2); ?></div>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="mt-3 rounded-lg bg-gradient-to-r from-orange-50 to-white p-3 border border-orange-100 flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm text-gray-600">საბოლოო გადასახდელი</div>
+                                    <div class="text-xl font-bold text-gray-800"><?php echo $vat_enabled && $vat_amount > 0 ? 'დღგ-ით' : ''; ?></div>
+                                </div>
+                                <div class="text-2xl font-extrabold text-orange-600">₾<?php echo number_format($final_total, 2); ?></div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <!-- Services Subtotal -->
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">მომსახურება:</span>
-                        <span class="font-medium">₾<?php echo number_format($services_subtotal, 2); ?></span>
-                    </div>
-                    
-                    <!-- Subtotal -->
-                    <div class="flex justify-between text-sm pt-2 border-t border-gray-200">
-                        <span class="text-gray-600">ჯამი:</span>
-                        <span class="font-medium">₾<?php echo number_format($subtotal, 2); ?></span>
-                    </div>
-                    
-                    <?php if ($total_discount > 0): ?>
-                    <!-- Discounts -->
-                    <?php if ($parts_discount_pct > 0): ?>
-                    <div class="flex justify-between text-sm text-red-600">
-                        <span>ნაწილების ფასდაკლება (<?php echo $parts_discount_pct; ?>%):</span>
-                        <span>-₾<?php echo number_format($parts_discount_amount, 2); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($services_discount_pct > 0): ?>
-                    <div class="flex justify-between text-sm text-red-600">
-                        <span>მომსახურების ფასდაკლება (<?php echo $services_discount_pct; ?>%):</span>
-                        <span>-₾<?php echo number_format($services_discount_amount, 2); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($global_discount_pct > 0): ?>
-                    <div class="flex justify-between text-sm text-red-600">
-                        <span>საერთო ფასდაკლება (<?php echo $global_discount_pct; ?>%):</span>
-                        <span>-₾<?php echo number_format($global_discount_amount, 2); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <!-- Total Savings -->
-                    <div class="flex justify-between text-sm font-medium text-red-600 pt-1">
-                        <span>დაზოგილი თანხა:</span>
-                        <span>-₾<?php echo number_format($total_discount, 2); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <!-- Grand Total -->
-                    <div class="flex justify-between pt-3 border-t-2 border-gray-300">
-                        <span class="text-lg font-bold text-gray-800"><?php echo $vat_enabled ? 'ჯამი (დღგ-ს გარეშე):' : 'გადასახდელი:'; ?></span>
-                        <span class="text-2xl font-bold text-indigo-600">₾<?php echo number_format($grand_total, 2); ?></span>
-                    </div>
-                    
-                    <?php if ($vat_enabled && $vat_amount > 0): ?>
-                    <!-- VAT -->
-                    <div class="flex justify-between py-2">
-                        <span class="text-lg font-semibold text-orange-700">დღგ (18%):</span>
-                        <span class="text-xl font-bold text-orange-600">₾<?php echo number_format($vat_amount, 2); ?></span>
-                    </div>
-                    
-                    <!-- Final Total with VAT -->
-                    <div class="flex justify-between pt-3 border-t-2 border-orange-300 bg-orange-50 -mx-6 px-6 py-3">
-                        <span class="text-xl font-bold text-gray-800">საბოლოო გადასახდელი (დღგ-ს ჩათვლით):</span>
-                        <span class="text-3xl font-bold text-orange-600">₾<?php echo number_format($final_total, 2); ?></span>
-                    </div>
-                    <?php else: ?>
-                    <!-- Grand Total (when no VAT) -->
-                    <div class="flex justify-between pt-3 border-t-2 border-gray-300">
-                        <span class="text-lg font-bold text-gray-800">გადასახდელი:</span>
-                        <span class="text-2xl font-bold text-indigo-600">₾<?php echo number_format($grand_total, 2); ?></span>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
             
