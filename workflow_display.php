@@ -90,10 +90,14 @@ foreach ($cases as $case) {
                 init() {
                     this.updateLastText();
                     setInterval(() => { this.currentTime = Date.now(); this.updateLastText(); }, 1000);
-                    // Poll server every 10 seconds
-                    setInterval(() => this.poll(), 10000);
-                    // Try to enter fullscreen after a short delay
-                    setTimeout(() => { try { document.documentElement.requestFullscreen(); } catch(e){} }, 1500);
+                    // Poll server every 30 seconds for TV stability
+                    setInterval(() => this.poll(), 30000);
+                    // Auto-enter fullscreen for TV
+                    setTimeout(() => {
+                        if (!document.fullscreenElement) {
+                            document.documentElement.requestFullscreen().catch(e => console.log('Auto fullscreen failed:', e));
+                        }
+                    }, 1000);
                 },
                 updateLastText() {
                     const d = new Date(this.lastUpdated);
@@ -107,11 +111,14 @@ foreach ($cases as $case) {
                             return r.json();
                         })
                         .then(data => {
+                            console.log('Polling data:', data);
                             if (data && data.cases) {
                                 this.cases = data.cases;
                                 this.lastUpdated = data.now || Date.now();
                                 this.updateLastText();
                                 this.connectionStatus = 'online';
+                            } else {
+                                console.warn('No cases data in poll response');
                             }
                         })
                         .catch(e => {
@@ -149,40 +156,43 @@ foreach ($cases as $case) {
     <style>
         html,body { height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { margin: 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e293b; }
-        .stage-column { min-width: 300px; flex: 1; background: rgba(255,255,255,0.8); border-radius: 20px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.5); }
-        .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.2s; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-        .tv-title { font-size: 32px; font-weight: 800; color: #1e293b; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .tv-sub { color: #64748b; font-size: 16px; font-weight: 500; }
-        .timer-badge { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #92400e; font-weight: 700; padding: 8px 12px; border-radius: 999px; font-size: 16px; box-shadow: 0 2px 8px rgba(251,191,36,0.3); }
-        .blink-finished { animation: finishedBlink 1.5s infinite; box-shadow: 0 0 24px rgba(16,185,129,0.5), 0 8px 32px rgba(0,0,0,0.1); border-color: #10b981; }
-        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-6px);}100%{transform:translateY(0);} }
-        .btn { padding: 12px 20px; border-radius: 10px; font-weight: 600; transition: all 0.2s; border: none; cursor: pointer; }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .connection-status { position: fixed; top: 20px; right: 20px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 10; }
+        .stage-column { min-width: 400px; flex: 1; background: rgba(255,255,255,0.9); border-radius: 24px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.6); }
+        .card { background: #ffffff; border-radius: 20px; padding: 24px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); border: 2px solid #f1f5f9; transition: all 0.3s; font-size: 18px; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
+        .tv-title { font-size: 48px; font-weight: 900; color: #1e293b; text-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .tv-sub { color: #64748b; font-size: 20px; font-weight: 600; }
+        .timer-badge { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #92400e; font-weight: 800; padding: 12px 16px; border-radius: 999px; font-size: 20px; box-shadow: 0 4px 12px rgba(251,191,36,0.4); }
+        .blink-finished { animation: finishedBlink 2s infinite; box-shadow: 0 0 32px rgba(16,185,129,0.6), 0 12px 40px rgba(0,0,0,0.15); border-color: #10b981; border-width: 3px; }
+        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-8px);}100%{transform:translateY(0);} }
+        .btn { padding: 16px 24px; border-radius: 12px; font-weight: 700; transition: all 0.3s; border: none; cursor: pointer; font-size: 18px; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+        .connection-status { position: fixed; top: 30px; right: 30px; padding: 8px 16px; border-radius: 24px; font-size: 16px; font-weight: 700; z-index: 10; }
         .connection-online { background: #dcfce7; color: #166534; }
         .connection-offline { background: #fee2e2; color: #991b1b; }
-        .empty-stage { text-align: center; color: #94a3b8; font-style: italic; padding: 40px 20px; }
-        .stage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
-        .stage-title { font-size: 20px; font-weight: 700; color: #1e293b; }
-        .stage-count { background: #3b82f6; color: white; padding: 4px 10px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+        .empty-stage { text-align: center; color: #94a3b8; font-style: italic; padding: 60px 30px; font-size: 24px; }
+        .stage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 3px solid #e2e8f0; }
+        .stage-title { font-size: 28px; font-weight: 800; color: #1e293b; }
+        .stage-count { background: #3b82f6; color: white; padding: 6px 12px; border-radius: 16px; font-size: 18px; font-weight: 700; }
         @media (max-width: 768px) {
-            .stage-column { min-width: 280px; padding: 16px; }
-            .tv-title { font-size: 24px; }
-            .tv-sub { font-size: 14px; }
-            .card { padding: 16px; }
-            .timer-badge { font-size: 14px; padding: 6px 10px; }
-            .stage-title { font-size: 18px; }
+            .stage-column { min-width: 320px; padding: 20px; }
+            .tv-title { font-size: 36px; }
+            .tv-sub { font-size: 16px; }
+            .card { padding: 20px; font-size: 16px; }
+            .timer-badge { font-size: 16px; padding: 10px 14px; }
+            .stage-title { font-size: 24px; }
+            .empty-stage { font-size: 20px; padding: 50px 25px; }
         }
         @media (min-width: 1920px) {
-            .stage-column { min-width: 400px; }
-            .tv-title { font-size: 48px; }
-            .timer-badge { font-size: 20px; padding: 10px 14px; }
+            .stage-column { min-width: 500px; }
+            .tv-title { font-size: 64px; }
+            .timer-badge { font-size: 24px; padding: 14px 18px; }
+            .card { font-size: 20px; }
         }
         @media (min-width: 2560px) {
-            .stage-column { min-width: 500px; }
-            .tv-title { font-size: 56px; }
-            .timer-badge { font-size: 24px; padding: 12px 16px; }
+            .stage-column { min-width: 600px; }
+            .tv-title { font-size: 80px; }
+            .timer-badge { font-size: 28px; padding: 16px 20px; }
+            .card { font-size: 22px; }
         }
     </style>
 </head>
@@ -193,8 +203,6 @@ foreach ($cases as $case) {
             <div class="tv-sub mt-1" x-text="lastUpdatedText"></div>
         </div>
         <div class="flex items-center gap-2 md:gap-4">
-            <div class="connection-status" :class="connectionStatus === 'online' ? 'connection-online' : 'connection-offline'" x-text="connectionStatus === 'online' ? '🟢 Online' : '🔴 Offline'"></div>
-            <button @click="toggleFullscreen()" class="btn bg-blue-600 text-white hover:bg-blue-700">Go Fullscreen</button>
             <button @click="refreshNow()" class="btn bg-gray-600 text-white hover:bg-gray-700">Refresh</button>
         </div>
     </div>
