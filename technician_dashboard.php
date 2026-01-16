@@ -69,6 +69,12 @@ foreach ($cases as $c) {
     }
 }
 
+// Admin helper: show server-side assigned debug (safe for admins only)
+$server_assigned_debug = '';
+if (in_array($_SESSION['role'] ?? '', ['admin'])) {
+    $server_assigned_debug = json_encode($assigned, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+}
+
 ?>
 <!doctype html>
 <html lang="<?php echo get_current_language(); ?>">
@@ -99,6 +105,14 @@ foreach ($cases as $c) {
         </header>
 
         <main class="p-4 pb-28 space-y-4">
+            <!-- Admin server-side debug: prints assigned cases JSON -->
+            <?php if (!empty($server_assigned_debug)): ?>
+                <details class="mb-3 p-3 bg-slate-50 rounded text-xs text-slate-700"> 
+                    <summary class="font-semibold">Server-side assigned (admin debug)</summary>
+                    <pre class="mt-2 text-xs overflow-auto" style="max-height:240px"><?php echo htmlspecialchars($server_assigned_debug); ?></pre>
+                </details>
+            <?php endif; ?>
+
             <template x-if="cases.length === 0">
                 <div class="p-4 bg-white rounded shadow text-center">No assigned cases</div>
             </template>
@@ -147,9 +161,13 @@ foreach ($cases as $c) {
                 },
                 refresh() {
                     fetch(location.pathname + '?json=1').then(r => r.json()).then(data => {
-                        if (!data || !data.cases) return;
+                        console.log('tech refresh response', data);
+                        if (!data || !data.cases) {
+                            this.cases = [];
+                            return;
+                        }
                         this.cases = data.cases;
-                    }).catch(e => console.error('Failed to refresh tech cases', e));
+                    }).catch(e => { console.error('Failed to refresh tech cases', e); this.cases = []; });
                 },
                 displayTimer(ms) {
                     if (!ms) return '—';
