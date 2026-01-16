@@ -30,6 +30,77 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// Helper function to get valid workflow stages from existing repair_stage values
+function getValidWorkflowStages() {
+    static $valid_stages = null;
+    if ($valid_stages === null) {
+        try {
+            global $pdo;
+            $stmt = $pdo->query("SELECT DISTINCT repair_stage FROM transfers WHERE repair_stage IS NOT NULL");
+            $stages = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            // Always include backlog and done
+            $valid_stages = array_unique(array_merge(['backlog', 'done'], $stages));
+        } catch (Exception $e) {
+            // Fallback to hardcoded stages if database query fails
+            $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling', 'done'];
+        }
+    }
+    return $valid_stages;
+}
+
+// Helper function to get stage progression from existing repair_stage usage patterns
+function getStageProgression() {
+    static $stage_progression = null;
+    if ($stage_progression === null) {
+        try {
+            global $pdo;
+            // Get the most common progression patterns from system_logs
+            $stmt = $pdo->query("
+                SELECT JSON_UNQUOTE(JSON_EXTRACT(log, '$.from')) as from_stage, 
+                       JSON_UNQUOTE(JSON_EXTRACT(log, '$.to')) as to_stage,
+                       COUNT(*) as count
+                FROM transfers t
+                CROSS JOIN JSON_TABLE(t.system_logs, '$[*]' COLUMNS (log JSON PATH '$')) logs
+                WHERE JSON_EXTRACT(log, '$.type') = 'move'
+                GROUP BY from_stage, to_stage
+                ORDER BY count DESC
+            ");
+            $progressions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $stage_progression = [];
+            foreach ($progressions as $prog) {
+                if ($prog['from_stage'] && $prog['to_stage']) {
+                    $stage_progression[$prog['from_stage']] = $prog['to_stage'];
+                }
+            }
+            
+            // Ensure standard progression exists
+            $default_progression = [
+                'disassembly' => 'body_work',
+                'body_work' => 'processing_for_painting',
+                'processing_for_painting' => 'preparing_for_painting',
+                'preparing_for_painting' => 'painting',
+                'painting' => 'assembling',
+                'assembling' => 'done'
+            ];
+            
+            $stage_progression = array_merge($default_progression, $stage_progression);
+            
+        } catch (Exception $e) {
+            // Fallback to hardcoded progression if database query fails
+            $stage_progression = [
+                'disassembly' => 'body_work',
+                'body_work' => 'processing_for_painting',
+                'processing_for_painting' => 'preparing_for_painting',
+                'preparing_for_painting' => 'painting',
+                'painting' => 'assembling',
+                'assembling' => 'done'
+            ];
+        }
+    }
+    return $stage_progression;
+}
+
 // Check authentication for protected endpoints
 $publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
@@ -1934,7 +2005,7 @@ try {
         }
 
         // Validate stage exists
-        $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        $valid_stages = getValidWorkflowStages();
         if (!in_array($stage, $valid_stages)) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid stage']);
         }
@@ -2008,7 +2079,7 @@ try {
         }
 
         // Validate stage exists
-        $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        $valid_stages = getValidWorkflowStages();
         if (!in_array($stage, $valid_stages)) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid stage']);
         }
@@ -2125,13 +2196,7 @@ try {
         }
 
         // Define stage progression
-        $stage_progression = [
-            'disassembly' => 'body_work',
-            'body_work' => 'processing_for_painting',
-            'processing_for_painting' => 'preparing_for_painting',
-            'preparing_for_painting' => 'painting',
-            'painting' => 'assembling'
-        ];
+        $stage_progression = getStageProgression();
 
         if (!isset($stage_progression[$current_stage])) {
             jsonResponse(['status' => 'error', 'message' => 'Cannot advance from this stage']);
@@ -2140,7 +2205,7 @@ try {
         $next_stage = $stage_progression[$current_stage];
 
         // Validate stages exist
-        $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        $valid_stages = getValidWorkflowStages();
         if (!in_array($current_stage, $valid_stages) || !in_array($next_stage, $valid_stages)) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid stage progression']);
         }
@@ -2190,8 +2255,18 @@ try {
             }
 
             // Move case to next stage and update assignments/timers/work_times
-            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ?, repair_assignments = ?, stage_timers = ?, work_times = ? WHERE id = ?");
-            $stmt->execute([$next_stage, json_encode($assignments), json_encode($timers), json_encode($workTimes), $case_id]);
+            // If moving to 'done', also update status to 'Completed'
+            $updateFields = "repair_stage = ?, repair_assignments = ?, stage_timers = ?, work_times = ?";
+            $updateValues = [$next_stage, json_encode($assignments), json_encode($timers), json_encode($workTimes)];
+            
+            if ($next_stage === 'done') {
+                $updateFields .= ", status = ?";
+                $updateValues[] = 'Completed';
+            }
+            
+            $stmt = $pdo->prepare("UPDATE transfers SET $updateFields WHERE id = ?");
+            $updateValues[] = $case_id;
+            $stmt->execute($updateValues);
 
             if ($stmt->rowCount() > 0) {
                 // Append a move log
@@ -2218,7 +2293,7 @@ try {
         }
 
         // Validate stage exists
-        $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling'];
+        $valid_stages = getValidWorkflowStages();
         if (!in_array($stage, $valid_stages)) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid stage']);
         }
