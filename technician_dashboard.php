@@ -30,7 +30,7 @@ try {
 
 // Support JSON polling for assigned cases
 if (isset($_GET['json'])) {
-    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled') ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled') ORDER BY id DESC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $assigned = [];
     foreach ($cases as $c) {
@@ -47,7 +47,8 @@ if (isset($_GET['json'])) {
                     'stage' => $stage,
                     'stage_title' => $stage_titles[$stage] ?? $stage,
                     'status' => $statuses[$stage] ?? null,
-                    'timer' => $timers[$stage] ?? null
+                    'timer' => $timers[$stage] ?? null,
+                    'urgent' => $c['urgent'] ?? 0
                 ];
             }
         }
@@ -58,7 +59,7 @@ if (isset($_GET['json'])) {
 }
 
 // Fetch active cases (we'll filter by assignment in PHP for simplicity)
-$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled') ORDER BY id DESC");
+$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled') ORDER BY id DESC");
 $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Filter assigned to current user
 $assigned = [];
@@ -76,7 +77,8 @@ foreach ($cases as $c) {
                 'stage' => $stage,
                 'stage_title' => $stage_titles[$stage] ?? $stage,
                 'status' => $statuses[$stage] ?? null,
-                'timer' => $timers[$stage] ?? null
+                'timer' => $timers[$stage] ?? null,
+                'urgent' => $c['urgent'] ?? 0
             ];
         }
     }
@@ -198,12 +200,17 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                     this.cases.forEach(s => {
                         const id = s.id;
                         if (!map[id]) {
-                            map[id] = { id: id, title: s.plate + (s.vehicle_make ? ' - ' + s.vehicle_make + (s.vehicle_model ? ' ' + s.vehicle_model : '') : ''), stages: [] };
+                            map[id] = { id: id, title: s.plate + (s.vehicle_make ? ' - ' + s.vehicle_make + (s.vehicle_model ? ' ' + s.vehicle_model : '') : ''), stages: [], urgent: s.urgent };
                         }
                         map[id].stages.push({ stage: s.stage, stage_title: s.stage_title, status: s.status, timer: s.timer });
                     });
                     // Convert to array and sort by latest timer / id
                     const arr = Object.values(map);
+                    arr.forEach(caseGroup => {
+                        if (caseGroup.urgent) {
+                            caseGroup.title += ' 🔥';
+                        }
+                    });
                     arr.sort((a,b)=> b.id - a.id);
                     return arr;
                 },

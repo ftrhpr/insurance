@@ -84,7 +84,7 @@ $stages = [
 workflowDebug('fetching cases');
 try {
     $stmt = $pdo->query("
-        SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses
+        SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent
         FROM transfers
         WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled')
         ORDER BY 
@@ -175,6 +175,10 @@ foreach ($cases as $case) {
                                             <span x-text="`${caseItem.plate} - #${caseItem.id}`"></span>
                                             <span x-show="stage.id !== 'backlog' && hasTimer(caseItem.id, stage.id)" class="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
                                             <span x-show="stage.id !== 'backlog' && !hasTimer(caseItem.id, stage.id)" class="ml-2 text-xs text-slate-400">—</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <input type="checkbox" :checked="caseItem.urgent" @change="updateUrgent(caseItem.id, $event.target.checked)" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500">
+                                            <label class="text-sm font-medium text-gray-700">სასწრაფო 🔥</label>
                                         </div>
                                         <template x-if="stage.id !== 'backlog'">
                                             <div class="mt-4">
@@ -433,6 +437,43 @@ foreach ($cases as $case) {
                     } catch (e) {
                         return 'invalid timers';
                     }
+                },
+                updateUrgent(caseId, urgent) {
+                    // Find the case in any stage
+                    let caseItem = null;
+                    let stageId = null;
+                    for (const sId in this.cases) {
+                        caseItem = this.cases[sId].find(c => c.id == caseId);
+                        if (caseItem) {
+                            stageId = sId;
+                            break;
+                        }
+                    }
+                    if (!caseItem) return;
+
+                    // Optimistically update UI
+                    caseItem.urgent = urgent;
+                    this.cases = { ...this.cases };
+
+                    fetch('api.php?action=update_urgent', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ case_id: caseId, urgent: urgent ? 1 : 0 })
+                    }).then(res => res.json()).then(data => {
+                        if (data.status === 'success') {
+                            showToast('Urgent Status Updated', urgent ? 'Marked as urgent' : 'Unmarked as urgent', 'success');
+                        } else {
+                            showToast('Error', 'Failed to update urgent status.', 'error');
+                            // Revert on failure
+                            caseItem.urgent = !urgent;
+                            this.cases = { ...this.cases };
+                        }
+                    }).catch(() => {
+                        showToast('Error', 'Failed to update urgent status.', 'error');
+                        // Revert on failure
+                        caseItem.urgent = !urgent;
+                        this.cases = { ...this.cases };
+                    });
                 },
             }));
         });

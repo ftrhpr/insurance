@@ -36,7 +36,7 @@ try {
 
 // If JSON requested, return the cases grouped by stage (for polling)
 if (isset($_GET['json'])) {
-    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY id DESC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $casesByStage = [];
     foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -55,7 +55,7 @@ if (isset($_GET['json'])) {
 }
 
 // Initial page render data
-$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY id DESC");
+$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY id DESC");
 $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $casesByStage = [];
 foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -205,7 +205,7 @@ foreach ($cases as $case) {
                             <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished', 'opacity-50': caseItem.status === 'Completed'}">
                                 <div class="flex items-center justify-between gap-2">
                                     <div class="flex-1 min-w-0 text-xs">
-                                        <span class="font-semibold" x-text="caseItem.plate"></span>
+                                        <span class="font-semibold" x-text="caseItem.plate + (caseItem.urgent ? ' 🔥' : '')"></span>
                                         <span class="text-gray-600" x-text="` - ${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || ' - უცნობი'"></span>
                                         <span class="text-gray-500" x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) ? ` - ${getTechName(caseItem.repair_assignments[stage.id]) || caseItem.repair_assignments[stage.id]}` : ''"></span>
                                     </div>

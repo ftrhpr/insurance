@@ -1982,6 +1982,29 @@ try {
         }
     }
 
+    if ($action === 'update_urgent' && $method === 'POST') {
+        $data = getJsonInput();
+        $case_id = intval($data['case_id'] ?? 0);
+        $urgent = intval($data['urgent'] ?? 0);
+
+        if ($case_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid case ID']);
+        }
+
+        try {
+            $stmt = $pdo->prepare("UPDATE transfers SET urgent = ? WHERE id = ?");
+            $stmt->execute([$urgent, $case_id]);
+
+            if ($stmt->rowCount() > 0) {
+                jsonResponse(['status' => 'success']);
+            } else {
+                jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);
+            }
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
     if ($action === 'finish_stage' && $method === 'POST') {
         $data = getJsonInput();
         $case_id = intval($data['case_id'] ?? 0);
