@@ -178,6 +178,28 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
             </template>
         </main>
 
+        <!-- Finish Stage Modal -->
+        <div x-show="showFinishModal" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closeFinishModal()">
+            <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+                <div x-show="modalStep === 1">
+                    <h3 class="text-lg font-semibold mb-4">Finish Work</h3>
+                    <p class="text-gray-600 mb-6">Are you sure you want to finish this work?</p>
+                    <div class="flex gap-3">
+                        <button @click="closeFinishModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">Cancel</button>
+                        <button @click="confirmFinish()" class="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg">Yes, Finish</button>
+                    </div>
+                </div>
+                <div x-show="modalStep === 2">
+                    <h3 class="text-lg font-semibold mb-4">Move to Next Stage</h3>
+                    <p class="text-gray-600 mb-6">Do you want to proceed to "Preparing for Painting" stage?</p>
+                    <div class="flex gap-3">
+                        <button @click="finishWithoutMoving()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">No, Stay Here</button>
+                        <button @click="finishAndMove()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg">Yes, Move</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Bottom action bar for one-handed use -->
         <nav class="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 p-3 flex items-center justify-between md:hidden">
             <div class="text-sm text-slate-600">Tasks: <span class="font-semibold" x-text="cases.length"></span></div>
@@ -192,6 +214,10 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
         function techDashboard() {
             return {
                 cases: <?php echo json_encode($assigned); ?>,
+                showFinishModal: false,
+                modalStep: 1,
+                currentCaseId: null,
+                currentStage: null,
                 init() {
                     // Poll every 10s to update assignments/timers/status
                     setInterval(() => this.refresh(), 10000);
@@ -227,30 +253,65 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                     return arr;
                 },
                 finishStage(caseId, stage) {
-                    let moveToNext = false;
-                    if (stage === 'processing_for_painting') {
-                        moveToNext = confirm('Mark this stage as finished? Also move to Preparing for Painting?');
-                    } else {
-                        if (!confirm('Mark this stage as finished?')) return;
-                    }
-                    
+                    this.currentCaseId = caseId;
+                    this.currentStage = stage;
+                    this.modalStep = 1;
+                    this.showFinishModal = true;
+                },
+                closeFinishModal() {
+                    this.showFinishModal = false;
+                    this.modalStep = 1;
+                    this.currentCaseId = null;
+                    this.currentStage = null;
+                },
+                confirmFinish() {
+                    // Finish the stage
                     fetch('api.php?action=finish_stage', {
                         method: 'POST', headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({ case_id: caseId, stage: stage })
+                        body: JSON.stringify({ case_id: this.currentCaseId, stage: this.currentStage })
                     }).then(r => r.json()).then(data => {
                         if (data.status === 'success') {
-                            // If they chose to move to next stage, do it now
-                            if (moveToNext) {
-                                this.moveToNextStage(caseId, stage, false); // false = don't confirm again
+                            if (this.currentStage === 'processing_for_painting') {
+                                // Move to step 2 for processing_for_painting
+                                this.modalStep = 2;
                             } else {
-                                // Refresh list to apply authoritative statuses
+                                // For other stages, just close modal and refresh
+                                this.closeFinishModal();
                                 this.refresh();
                                 alert('Stage marked finished');
                             }
                         } else {
                             alert('Failed: ' + (data.message || 'Unknown'));
+                            this.closeFinishModal();
                         }
-                    }).catch(e => alert('Error: ' + e.message));
+                    }).catch(e => {
+                        alert('Error: ' + e.message);
+                        this.closeFinishModal();
+                    });
+                },
+                finishWithoutMoving() {
+                    // Just close modal and refresh - stage is already finished
+                    this.closeFinishModal();
+                    this.refresh();
+                    alert('Stage marked finished');
+                },
+                finishAndMove() {
+                    // Move to next stage
+                    fetch('api.php?action=move_to_next_stage', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ case_id: this.currentCaseId, stage: this.currentStage })
+                    }).then(r => r.json()).then(data => {
+                        if (data.status === 'success') {
+                            this.closeFinishModal();
+                            this.refresh();
+                            alert('Case moved to next stage and technician reassigned');
+                        } else {
+                            alert('Failed: ' + (data.message || 'Unknown'));
+                        }
+                    }).catch(e => {
+                        alert('Error: ' + e.message);
+                        this.closeFinishModal();
+                    });
                 },
                 moveToNextStage(caseId, stage, showConfirm = true) {
                     if (showConfirm && !confirm('Move this case to the next stage?')) return;
