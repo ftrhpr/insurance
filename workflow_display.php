@@ -54,7 +54,7 @@ if (isset($_GET['json'])) {
 }
 
 // Initial page render data
-$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers FROM transfers WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed','Issue','Archived') ORDER BY id DESC");
+$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed','Issue','Archived') ORDER BY id DESC");
 $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $casesByStage = [];
 foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -63,6 +63,7 @@ foreach ($cases as $case) {
     if (isset($casesByStage[$s])) {
         $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
         $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
+        $case['stage_statuses'] = json_decode($case['stage_statuses'] ?? '{}', true);
         $casesByStage[$s][] = $case;
     }
 }
@@ -78,25 +79,31 @@ foreach ($cases as $case) {
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         html,body { height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { margin: 0; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
-        .stage-column { min-width: 280px; flex: 1; }
-        .card { background: rgba(255,255,255,0.98); border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
-        .tv-title { font-size: 28px; font-weight: 700; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .tv-sub { color: #e2e8f0; font-size: 16px; }
-        .timer-badge { background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); color: #9a3412; font-weight: 700; padding: 8px 12px; border-radius: 999px; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .blink-finished { animation: finishedBlink 1.2s infinite; box-shadow: 0 0 20px rgba(16,185,129,0.4), 0 4px 20px rgba(0,0,0,0.1); }
-        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-4px);}100%{transform:translateY(0);} }
-        .btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; transition: all 0.2s; }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .connection-status { position: fixed; top: 10px; right: 10px; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+        body { margin: 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e293b; }
+        .stage-column { min-width: 300px; flex: 1; background: rgba(255,255,255,0.8); border-radius: 20px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.5); }
+        .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.2s; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .tv-title { font-size: 32px; font-weight: 800; color: #1e293b; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .tv-sub { color: #64748b; font-size: 16px; font-weight: 500; }
+        .timer-badge { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #92400e; font-weight: 700; padding: 8px 12px; border-radius: 999px; font-size: 16px; box-shadow: 0 2px 8px rgba(251,191,36,0.3); }
+        .blink-finished { animation: finishedBlink 1.5s infinite; box-shadow: 0 0 24px rgba(16,185,129,0.5), 0 8px 32px rgba(0,0,0,0.1); border-color: #10b981; }
+        @keyframes finishedBlink { 0%{transform:translateY(0);}50%{transform:translateY(-6px);}100%{transform:translateY(0);} }
+        .btn { padding: 12px 20px; border-radius: 10px; font-weight: 600; transition: all 0.2s; border: none; cursor: pointer; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .connection-status { position: fixed; top: 20px; right: 20px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 10; }
         .connection-online { background: #dcfce7; color: #166534; }
         .connection-offline { background: #fee2e2; color: #991b1b; }
+        .empty-stage { text-align: center; color: #94a3b8; font-style: italic; padding: 40px 20px; }
+        .stage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
+        .stage-title { font-size: 20px; font-weight: 700; color: #1e293b; }
+        .stage-count { background: #3b82f6; color: white; padding: 4px 10px; border-radius: 12px; font-size: 14px; font-weight: 600; }
         @media (max-width: 768px) {
-            .stage-column { min-width: 240px; }
+            .stage-column { min-width: 280px; padding: 16px; }
             .tv-title { font-size: 24px; }
             .tv-sub { font-size: 14px; }
             .card { padding: 16px; }
             .timer-badge { font-size: 14px; padding: 6px 10px; }
+            .stage-title { font-size: 18px; }
         }
         @media (min-width: 1920px) {
             .stage-column { min-width: 400px; }
@@ -110,40 +117,44 @@ foreach ($cases as $case) {
         }
     </style>
 </head>
-<body x-data="workflowDisplay()" x-init="init()" class="antialiased">
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 bg-white/5 border-b border-white/6">
+<body x-data="workflowDisplay()" x-init="init()" class="flex flex-col antialiased">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
         <div class="mb-4 md:mb-0">
             <div class="tv-title"><?php echo __('workflow.display.header', 'Repair Board'); ?></div>
             <div class="tv-sub mt-1" x-text="lastUpdatedText"></div>
         </div>
         <div class="flex items-center gap-2 md:gap-4">
-            <div class="connection-status" :class="connectionStatus === 'online' ? 'connection-online' : 'connection-offline'" x-text="connectionStatus === 'online' ? 'Online' : 'Offline'"></div>
-            <button @click="toggleFullscreen()" class="btn bg-white/10 text-white hover:bg-white/20">Go Fullscreen</button>
-            <button @click="refreshNow()" class="btn bg-white/10 text-white hover:bg-white/20">Refresh</button>
+            <div class="connection-status" :class="connectionStatus === 'online' ? 'connection-online' : 'connection-offline'" x-text="connectionStatus === 'online' ? '🟢 Online' : '🔴 Offline'"></div>
+            <button @click="toggleFullscreen()" class="btn bg-blue-600 text-white hover:bg-blue-700">Go Fullscreen</button>
+            <button @click="refreshNow()" class="btn bg-gray-600 text-white hover:bg-gray-700">Refresh</button>
         </div>
     </div>
 
-    <main class="overflow-auto" style="height: calc(100% - 92px);">
-        <div class="flex flex-wrap gap-6 px-6 py-6 justify-center md:justify-start">
+    <main class="overflow-auto flex-1">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 p-6">
             <template x-for="stage in stages" :key="stage.id">
-                <div class="stage-column bg-white/6 rounded-xl p-4 flex-shrink-0" style="height: calc(100vh - 140px); min-height: 400px;">
-                    <div class="mb-4 flex items-center justify-between">
-                        <div class="text-white text-xl md:text-2xl font-semibold" x-text="stage.title"></div>
-                        <div class="text-white/80 text-lg md:text-xl font-medium bg-black/20 px-3 py-1 rounded-full" x-text="(cases[stage.id]||[]).length"></div>
+                <div class="stage-column">
+                    <div class="stage-header">
+                        <div class="stage-title" x-text="stage.title"></div>
+                        <div class="stage-count" x-text="(cases[stage.id]||[]).length"></div>
                     </div>
-                    <div class="space-y-4 overflow-auto" style="height: calc(100% - 56px);">
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
                         <template x-for="caseItem in (cases[stage.id] || [])" :key="caseItem.id">
                             <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}">
                                 <div class="flex items-start justify-between gap-4">
-                                    <div>
-                                        <div class="text-xl md:text-2xl font-bold text-gray-900" x-text="`${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || 'Unknown Vehicle'"></div>
-                                        <div class="text-sm text-slate-600 mt-1" x-text="`${caseItem.plate} - #${caseItem.id}`"></div>
+                                    <div class="flex-1">
+                                        <div class="text-lg font-bold text-gray-900 mb-1" x-text="`${caseItem.vehicle_make || ''} ${caseItem.vehicle_model || ''}`.trim() || 'Unknown Vehicle'"></div>
+                                        <div class="text-sm text-gray-600" x-text="`${caseItem.plate} • #${caseItem.id}`"></div>
+                                        <div class="text-xs text-gray-500 mt-1" x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) ? ('👤 ' + (getTechName(caseItem.repair_assignments[stage.id]) || caseItem.repair_assignments[stage.id])) : ''"></div>
                                     </div>
-                                    <div class="flex flex-col items-end gap-2">
-                                        <div class="timer-badge" x-text="getTimerDisplay(caseItem.id, stage.id)" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}"></div>
-                                        <div class="text-xs text-slate-500 mt-1" x-text="(caseItem.repair_assignments && caseItem.repair_assignments[stage.id]) ? ('Tech: '+ (getTechName(caseItem.repair_assignments[stage.id]) || caseItem.repair_assignments[stage.id])) : ''"></div>
-                                    </div>
+                                    <div class="timer-badge" x-text="getTimerDisplay(caseItem.id, stage.id)"></div>
                                 </div>
+                            </div>
+                        </template>
+                        <template x-if="(cases[stage.id] || []).length === 0">
+                            <div class="empty-stage">
+                                <div class="text-4xl mb-2">📋</div>
+                                <div>No cases in this stage</div>
                             </div>
                         </template>
                     </div>
