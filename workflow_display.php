@@ -36,7 +36,7 @@ try {
 
 // If JSON requested, return the cases grouped by stage (for polling)
 if (isset($_GET['json'])) {
-    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed','Issue','Archived') ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY id DESC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $casesByStage = [];
     foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -46,6 +46,7 @@ if (isset($_GET['json'])) {
             $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
             $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
             $case['stage_statuses'] = json_decode($case['stage_statuses'] ?? '{}', true);
+            $casesByStage[$s][] = $case;
         }
     }
     header('Content-Type: application/json');
@@ -54,7 +55,7 @@ if (isset($_GET['json'])) {
 }
 
 // Initial page render data
-$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status NOT IN ('Completed','Issue','Archived') ORDER BY id DESC");
+$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY id DESC");
 $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $casesByStage = [];
 foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -203,7 +204,7 @@ foreach ($cases as $case) {
                     </div>
                     <div class="space-y-1 overflow-y-auto max-h-80">
                         <template x-for="caseItem in (cases[stage.id] || [])" :key="caseItem.id">
-                            <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished'}">
+                            <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished', 'opacity-50': caseItem.status === 'Completed'}">
                                 <div class="flex items-center justify-between gap-2">
                                     <div class="flex-1 min-w-0 text-xs">
                                         <span class="font-semibold" x-text="caseItem.plate"></span>
