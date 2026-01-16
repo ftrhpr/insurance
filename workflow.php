@@ -69,47 +69,33 @@ try {
     $technicians = [];
 }
 
-// Load workflow stages from existing repair_stage values in transfers table
+// Define workflow stages (always include all expected stages)
+$defaultStages = [
+    ['id' => 'backlog', 'title' => __('workflow.stage.backlog', 'Backlog')],
+    ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'Disassembly')],
+    ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'Body Work')],
+    ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'Processing for Painting')],
+    ['id' => 'preparing_for_painting', 'title' => __('workflow.stage.preparing_for_painting', 'Preparing for Painting')],
+    ['id' => 'painting', 'title' => __('workflow.stage.painting', 'Painting')],
+    ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'Assembling')],
+    ['id' => 'done', 'title' => __('workflow.stage.done', 'DONE')],
+];
+
+// Load any additional stages from existing repair_stage values
 try {
-    $stmt = $pdo->query("SELECT DISTINCT repair_stage FROM transfers WHERE repair_stage IS NOT NULL ORDER BY 
-        CASE repair_stage 
-            WHEN 'backlog' THEN 1
-            WHEN 'disassembly' THEN 2
-            WHEN 'body_work' THEN 3
-            WHEN 'processing_for_painting' THEN 4
-            WHEN 'preparing_for_painting' THEN 5
-            WHEN 'painting' THEN 6
-            WHEN 'assembling' THEN 7
-            WHEN 'done' THEN 8
-            ELSE 99
-        END, repair_stage");
-    $stages = [];
-    $stages[] = ['id' => 'backlog', 'title' => __('workflow.stage.backlog', 'Backlog')]; // Always include backlog
+    $stmt = $pdo->query("SELECT DISTINCT repair_stage FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage NOT IN ('backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling', 'done')");
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $stageId = $row['repair_stage'];
-        $stages[] = [
+        $defaultStages[] = [
             'id' => $stageId,
             'title' => __('workflow.stage.' . $stageId, ucfirst(str_replace('_', ' ', $stageId)))
         ];
     }
-    // Ensure 'done' stage is included if not already present
-    $hasDone = array_filter($stages, fn($s) => $s['id'] === 'done');
-    if (empty($hasDone)) {
-        $stages[] = ['id' => 'done', 'title' => __('workflow.stage.done', 'DONE')];
-    }
 } catch (Exception $e) {
-    // Fallback to hardcoded stages if database query fails
-    $stages = [
-        ['id' => 'backlog', 'title' => __('workflow.stage.backlog', 'Backlog')],
-        ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'Disassembly')],
-        ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'Body Work')],
-        ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'Processing for Painting')],
-        ['id' => 'preparing_for_painting', 'title' => __('workflow.stage.preparing_for_painting', 'Preparing for Painting')],
-        ['id' => 'painting', 'title' => __('workflow.stage.painting', 'Painting')],
-        ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'Assembling')],
-        ['id' => 'done', 'title' => __('workflow.stage.done', 'DONE')],
-    ];
+    // Ignore database errors, use default stages
 }
+
+$stages = $defaultStages;
 
 // Fetch cases for the workflow board
 workflowDebug('fetching cases');

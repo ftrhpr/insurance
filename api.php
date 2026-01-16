@@ -34,15 +34,17 @@ if (empty($_SESSION['csrf_token'])) {
 function getValidWorkflowStages() {
     static $valid_stages = null;
     if ($valid_stages === null) {
+        // Always include all expected stages
+        $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling', 'done'];
+        
+        // Add any additional stages from database
         try {
             global $pdo;
-            $stmt = $pdo->query("SELECT DISTINCT repair_stage FROM transfers WHERE repair_stage IS NOT NULL");
-            $stages = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            // Always include backlog and done
-            $valid_stages = array_unique(array_merge(['backlog', 'done'], $stages));
+            $stmt = $pdo->query("SELECT DISTINCT repair_stage FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage NOT IN ('backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling', 'done')");
+            $extra_stages = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $valid_stages = array_unique(array_merge($valid_stages, $extra_stages));
         } catch (Exception $e) {
-            // Fallback to hardcoded stages if database query fails
-            $valid_stages = ['backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling', 'done'];
+            // Ignore database errors, use default stages
         }
     }
     return $valid_stages;
@@ -52,9 +54,19 @@ function getValidWorkflowStages() {
 function getStageProgression() {
     static $stage_progression = null;
     if ($stage_progression === null) {
+        // Start with default progression
+        $stage_progression = [
+            'disassembly' => 'body_work',
+            'body_work' => 'processing_for_painting',
+            'processing_for_painting' => 'preparing_for_painting',
+            'preparing_for_painting' => 'painting',
+            'painting' => 'assembling',
+            'assembling' => 'done'
+        ];
+        
+        // Try to enhance with actual usage patterns from database
         try {
             global $pdo;
-            // Get the most common progression patterns from system_logs
             $stmt = $pdo->query("
                 SELECT JSON_UNQUOTE(JSON_EXTRACT(log, '$.from')) as from_stage, 
                        JSON_UNQUOTE(JSON_EXTRACT(log, '$.to')) as to_stage,
@@ -67,35 +79,14 @@ function getStageProgression() {
             ");
             $progressions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            $stage_progression = [];
+            // Override defaults with actual usage patterns if they exist
             foreach ($progressions as $prog) {
                 if ($prog['from_stage'] && $prog['to_stage']) {
                     $stage_progression[$prog['from_stage']] = $prog['to_stage'];
                 }
             }
-            
-            // Ensure standard progression exists
-            $default_progression = [
-                'disassembly' => 'body_work',
-                'body_work' => 'processing_for_painting',
-                'processing_for_painting' => 'preparing_for_painting',
-                'preparing_for_painting' => 'painting',
-                'painting' => 'assembling',
-                'assembling' => 'done'
-            ];
-            
-            $stage_progression = array_merge($default_progression, $stage_progression);
-            
         } catch (Exception $e) {
-            // Fallback to hardcoded progression if database query fails
-            $stage_progression = [
-                'disassembly' => 'body_work',
-                'body_work' => 'processing_for_painting',
-                'processing_for_painting' => 'preparing_for_painting',
-                'preparing_for_painting' => 'painting',
-                'painting' => 'assembling',
-                'assembling' => 'done'
-            ];
+            // Ignore database errors, use default progression
         }
     }
     return $stage_progression;
