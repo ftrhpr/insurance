@@ -116,7 +116,7 @@ foreach ($cases as $case) {
                                                 <div class="mt-3">
                                                     <div class="flex items-center justify-between">
                                                         <span class="text-xs font-medium text-slate-500">Timer</span>
-                                                        <span class="text-xs font-mono text-slate-600" x-text="getTimerDisplay(caseItem.id, stage.id)" x-ref="`timer-${caseItem.id}-${stage.id}`"></span>
+                                                        <span class="text-xs font-mono text-slate-600" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
                                                     </div>
                                                 </div>
                                             </template>
@@ -138,6 +138,7 @@ foreach ($cases as $case) {
                 stages: <?php echo json_encode($stages); ?>,
                 technicians: <?php echo json_encode($technicians); ?>,
                 activeTimers: {},
+                currentTime: Date.now(),
                 init() {
                     this.$nextTick(() => {
                         this.stages.forEach(stage => {
@@ -173,6 +174,11 @@ foreach ($cases as $case) {
                                 });
                             }
                         });
+                        
+                        // Start global timer for reactive updates
+                        setInterval(() => {
+                            this.currentTime = Date.now();
+                        }, 1000);
                     });
                 },
                 moveCase(caseId, newStageId, oldStageId, newIndex) {
@@ -218,6 +224,14 @@ foreach ($cases as $case) {
                     if (caseToUpdate) {
                         if (!caseToUpdate.repair_assignments) caseToUpdate.repair_assignments = {};
                         caseToUpdate.repair_assignments[stageId] = technicianId;
+                        
+                        // Update stage_timers in frontend data
+                        if (!caseToUpdate.stage_timers) caseToUpdate.stage_timers = {};
+                        if (technicianId) {
+                            caseToUpdate.stage_timers[stageId] = Date.now();
+                        } else {
+                            delete caseToUpdate.stage_timers[stageId];
+                        }
                     }
 
                     fetch('api.php?action=assign_technician', {
@@ -246,34 +260,14 @@ foreach ($cases as $case) {
                         clearInterval(this.activeTimers[timerKey]);
                     }
                     
-                    // Start timer update every second
-                    this.activeTimers[timerKey] = setInterval(() => {
-                        this.updateTimerDisplay(caseId, stageId);
-                    }, 1000);
-                    
-                    // Initial update
-                    this.updateTimerDisplay(caseId, stageId);
+                    // Timer updates are now handled reactively via currentTime
+                    // Just mark this timer as active for cleanup purposes
+                    this.activeTimers[timerKey] = true;
                 },
                 stopTimer(caseId, stageId) {
                     const timerKey = `${caseId}-${stageId}`;
                     if (this.activeTimers[timerKey]) {
-                        clearInterval(this.activeTimers[timerKey]);
                         delete this.activeTimers[timerKey];
-                    }
-                },
-                updateTimerDisplay(caseId, stageId) {
-                    const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
-                    if (!caseItem || !caseItem.stage_timers) return;
-                    
-                    const startTime = caseItem.stage_timers[stageId];
-                    if (!startTime) return;
-                    
-                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                    const display = this.formatTimer(elapsed);
-                    
-                    const timerEl = this.$refs[`timer-${caseId}-${stageId}`];
-                    if (timerEl) {
-                        timerEl.textContent = display;
                     }
                 },
                 formatTimer(seconds) {
@@ -289,12 +283,19 @@ foreach ($cases as $case) {
                 },
                 getTimerDisplay(caseId, stageId) {
                     const caseItem = this.cases[stageId]?.find(c => c.id == caseId);
-                    if (!caseItem || !caseItem.stage_timers || !caseItem.stage_timers[stageId]) {
-                        return '00:00';
+                    if (!caseItem) return '00:00';
+                    
+                    // Debug: show if assignments exist
+                    if (!caseItem.repair_assignments || !caseItem.repair_assignments[stage.id]) {
+                        return 'No assignment';
+                    }
+                    
+                    if (!caseItem.stage_timers || !caseItem.stage_timers[stageId]) {
+                        return 'No timer data';
                     }
                     
                     const startTime = caseItem.stage_timers[stageId];
-                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const elapsed = Math.floor((this.currentTime - startTime) / 1000);
                     return this.formatTimer(elapsed);
                 },
             }));
