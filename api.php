@@ -1943,11 +1943,51 @@ try {
         $db_stage = ($stage === 'backlog') ? null : $stage;
 
         try {
-            // When changing stages, clear timers and statuses since assignments are stage-specific
-            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ?, stage_timers = '{}', stage_statuses = '{}' WHERE id = ?");
-            $stmt->execute([$db_stage, $case_id]);
+            // Get full current state so we can record work time for the stage we're leaving
+            $stmt = $pdo->prepare("SELECT repair_stage, repair_assignments, stage_timers, stage_statuses, work_times FROM transfers WHERE id = ?");
+            $stmt->execute([$case_id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) jsonResponse(['status' => 'error', 'message' => 'Case not found']);
+
+            $oldStage = $row['repair_stage'];
+            $assignments = json_decode($row['repair_assignments'] ?: '{}', true);
+            $timers = json_decode($row['stage_timers'] ?: '{}', true);
+            $statuses = json_decode($row['stage_statuses'] ?: '{}', true);
+            $workTimes = json_decode($row['work_times'] ?: '{}', true);
+
+            $nowMs = time() * 1000;
+
+            // If leaving a stage with an active timer and an assigned technician, record elapsed work time
+            if ($oldStage && !empty($timers[$oldStage]) && !empty($assignments[$oldStage])) {
+                $techId = $assignments[$oldStage];
+                $elapsed = $nowMs - intval($timers[$oldStage]);
+                if (!isset($workTimes[$oldStage])) $workTimes[$oldStage] = [];
+                if (!isset($workTimes[$oldStage][$techId])) $workTimes[$oldStage][$techId] = 0;
+                $workTimes[$oldStage][$techId] += $elapsed;
+
+                // Append work_time log
+                $logEntry = json_encode(['type' => 'work_time', 'stage' => $oldStage, 'tech' => $techId, 'duration_ms' => $elapsed, 'timestamp' => $nowMs]);
+                $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+                $log_stmt->execute([$logEntry, $case_id]);
+            }
+
+            // Clear timers/statuses/assignment for the old stage since assignments are stage-specific
+            if ($oldStage) {
+                unset($timers[$oldStage]);
+                unset($statuses[$oldStage]);
+                unset($assignments[$oldStage]);
+            }
+
+            // Move case to new stage and persist updated timers/statuses/assignments and work times
+            $stmt = $pdo->prepare("UPDATE transfers SET repair_stage = ?, repair_assignments = ?, stage_timers = ?, stage_statuses = ?, work_times = ? WHERE id = ?");
+            $stmt->execute([$db_stage, json_encode($assignments), json_encode($timers), json_encode($statuses), json_encode($workTimes), $case_id]);
 
             if ($stmt->rowCount() > 0) {
+                // Append a move log
+                $moveLog = json_encode(['type' => 'move', 'from' => $oldStage, 'to' => $stage, 'by' => getCurrentUserId(), 'timestamp' => $nowMs]);
+                $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+                $log_stmt->execute([$moveLog, $case_id]);
+
                 jsonResponse(['status' => 'success']);
             } else {
                 jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);

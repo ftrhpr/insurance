@@ -165,7 +165,7 @@ foreach ($cases as $case) {
                             <h3 class="font-semibold">Case History <span class="text-sm text-slate-500">#<span x-text="historyCaseId"></span></span></h3>
                             <button @click="closeCaseHistory()" class="text-slate-500">Close</button>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <h4 class="font-medium mb-2">System Logs</h4>
                                 <div class="max-h-64 overflow-auto text-xs bg-slate-50 p-2 rounded">
@@ -191,6 +191,20 @@ foreach ($cases as $case) {
                                                     <div x-text="`Tech ${tech}: ${Math.round(duration/1000)}s`"></div>
                                                 </template>
                                             </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-medium mb-2">Assignment History</h4>
+                                <div class="max-h-64 overflow-auto text-xs bg-slate-50 p-2 rounded">
+                                    <template x-if="historyAssignmentHistory && historyAssignmentHistory.length === 0">
+                                        <div class="text-sm text-slate-500">No assignment history</div>
+                                    </template>
+                                    <template x-for="entry in historyAssignmentHistory.slice().reverse()" :key="JSON.stringify(entry)">
+                                        <div class="mb-2">
+                                            <div class="text-xs text-slate-500" x-text="(new Date(entry.timestamp || Date.now())).toLocaleString()"></div>
+                                            <div class="text-sm" x-text="`Stage: ${entry.stage} | from: ${entry.from || 'none'} -> to: ${entry.to || 'none'} | by: ${entry.by || 'system'}`"></div>
                                         </div>
                                     </template>
                                 </div>
@@ -402,11 +416,13 @@ foreach ($cases as $case) {
                     this.historyCaseId = caseId;
                     this.historyLogs = [];
                     this.historyWorkTimes = {};
+                    this.historyAssignmentHistory = [];
                     this.showHistoryModal = true;
                     fetch(`api.php?action=get_transfer&id=${caseId}`).then(r => r.json()).then(data => {
                         if (data.status === 'success' && data.case) {
                             this.historyLogs = data.case.system_logs || [];
                             this.historyWorkTimes = data.case.work_times || {};
+                            this.historyAssignmentHistory = data.case.assignment_history || [];
                         } else {
                             this.historyLogs = [{ type: 'error', message: data.message || 'Failed to load history' }];
                         }
