@@ -335,10 +335,21 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
             <div class="px-8 py-6 bg-gray-50 border-t border-gray-200">
                 <div class="max-w-xs ml-auto">
                     <div class="rounded-xl bg-white shadow p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                <h3 class="text-sm font-semibold text-gray-500 uppercase">საფასურის მიმოხილვა</h3>
-                                <p class="text-xs text-gray-400">ფასების მოკლე მიმოხილვა და სისტემა</p>
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex gap-6 items-start">
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-500 uppercase">საფასურის მიმოხილვა</h3>
+                                    <p class="text-xs text-gray-400">ფასების მოკლე მიმოხილვა და სისტემა</p>
+                                </div>
+
+                                <?php if ($vat_enabled && $vat_amount > 0): ?>
+                                <div class="text-sm text-gray-700 bg-gray-50 border border-gray-100 rounded-lg p-2">
+                                    <div class="font-medium text-gray-800">საქართველოს ბანკი</div>
+                                    <div class="font-mono">GE94BG0000000100727119</div>
+                                    <div class="mt-2 font-medium text-gray-800">თიბისი ბანკი</div>
+                                    <div class="font-mono">GE64TB7669336080100009</div>
+                                </div>
+                                <?php endif; ?>
                             </div>
                             <button id="toggle-invoice-details" onclick="(function(btn){const el=document.getElementById('invoice-details');el.classList.toggle('hidden');btn.innerText = el.classList.contains('hidden') ? 'დეტალები' : 'დაკეცე';})(this)" class="text-sm text-indigo-600 hover:underline no-print">დაკეცე</button>
                         </div>
