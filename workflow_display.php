@@ -76,7 +76,76 @@ foreach ($cases as $case) {
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <title><?php echo __('workflow.display.title', 'Workflow Display'); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        function workflowDisplay() {
+            return {
+                stages: <?php echo json_encode($stages); ?>,
+                cases: <?php echo json_encode($casesByStage); ?>,
+                technicians: <?php echo json_encode($technicians); ?>,
+                lastUpdated: Date.now(),
+                lastUpdatedText: '',
+                currentTime: Date.now(),
+                connectionStatus: 'online',
+                init() {
+                    this.updateLastText();
+                    setInterval(() => { this.currentTime = Date.now(); this.updateLastText(); }, 1000);
+                    // Poll server every 10 seconds
+                    setInterval(() => this.poll(), 10000);
+                    // Try to enter fullscreen after a short delay
+                    setTimeout(() => { try { document.documentElement.requestFullscreen(); } catch(e){} }, 1500);
+                },
+                updateLastText() {
+                    const d = new Date(this.lastUpdated);
+                    this.lastUpdatedText = 'Last updated: ' + d.toLocaleTimeString();
+                },
+                refreshNow() { this.poll(); },
+                poll() {
+                    fetch(location.pathname + '?json=1')
+                        .then(r => {
+                            if (!r.ok) throw new Error('Network response not ok');
+                            return r.json();
+                        })
+                        .then(data => {
+                            if (data && data.cases) {
+                                this.cases = data.cases;
+                                this.lastUpdated = data.now || Date.now();
+                                this.updateLastText();
+                                this.connectionStatus = 'online';
+                            }
+                        })
+                        .catch(e => {
+                            console.error('Failed polling workflow:', e);
+                            this.connectionStatus = 'offline';
+                        });
+                },
+                toggleFullscreen() {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(e => console.log('Fullscreen failed:', e));
+                    } else {
+                        document.exitFullscreen().catch(e => console.log('Exit fullscreen failed:', e));
+                    }
+                },
+                getTimerDisplay(caseId, stageId) {
+                    const caseItem = (this.cases[stageId]||[]).find(c => c.id == caseId);
+                    if (!caseItem) return '';
+                    const timer = caseItem.stage_timers && caseItem.stage_timers[stageId];
+                    if (!timer) return '—';
+                    const elapsed = Math.floor((Date.now() - Number(timer)) / 1000);
+                    if (elapsed < 0) return '00:00';
+                    const hours = Math.floor(elapsed / 3600);
+                    const minutes = Math.floor((elapsed % 3600) / 60);
+                    const secs = elapsed % 60;
+                    if (hours > 0) return `${hours}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+                    return `${minutes}:${String(secs).padStart(2,'0')}`;
+                },
+                getTechName(id) {
+                    const t = this.technicians.find(x => x.id == id);
+                    return t ? t.full_name : null;
+                }
+            }
+        }
+    </script>
     <style>
         html,body { height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { margin: 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e293b; }
@@ -163,72 +232,5 @@ foreach ($cases as $case) {
         </div>
     </main>
 
-        function workflowDisplay() {
-            return {
-                stages: <?php echo json_encode($stages); ?>,
-                cases: <?php echo json_encode($casesByStage); ?>,
-                technicians: <?php echo json_encode($technicians); ?>,
-                lastUpdated: Date.now(),
-                lastUpdatedText: '',
-                currentTime: Date.now(),
-                connectionStatus: 'online',
-                init() {
-                    this.updateLastText();
-                    setInterval(() => { this.currentTime = Date.now(); this.updateLastText(); }, 1000);
-                    // Poll server every 10 seconds
-                    setInterval(() => this.poll(), 10000);
-                    // Try to enter fullscreen after a short delay
-                    setTimeout(() => { try { document.documentElement.requestFullscreen(); } catch(e){} }, 1500);
-                },
-                updateLastText() {
-                    const d = new Date(this.lastUpdated);
-                    this.lastUpdatedText = 'Last updated: ' + d.toLocaleTimeString();
-                },
-                refreshNow() { this.poll(); },
-                poll() {
-                    fetch(location.pathname + '?json=1')
-                        .then(r => {
-                            if (!r.ok) throw new Error('Network response not ok');
-                            return r.json();
-                        })
-                        .then(data => {
-                            if (data && data.cases) {
-                                this.cases = data.cases;
-                                this.lastUpdated = data.now || Date.now();
-                                this.updateLastText();
-                                this.connectionStatus = 'online';
-                            }
-                        })
-                        .catch(e => {
-                            console.error('Failed polling workflow:', e);
-                            this.connectionStatus = 'offline';
-                        });
-                },
-                toggleFullscreen() {
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen().catch(e => console.log('Fullscreen failed:', e));
-                    } else {
-                        document.exitFullscreen().catch(e => console.log('Exit fullscreen failed:', e));
-                    }
-                },
-                getTimerDisplay(caseId, stageId) {
-                    const caseItem = (this.cases[stageId]||[]).find(c => c.id == caseId);
-                    if (!caseItem) return '';
-                    const timer = caseItem.stage_timers && caseItem.stage_timers[stageId];
-                    if (!timer) return '—';
-                    const elapsed = Math.floor((Date.now() - Number(timer)) / 1000);
-                    if (elapsed < 0) return '00:00';
-                    const hours = Math.floor(elapsed / 3600);
-                    const minutes = Math.floor((elapsed % 3600) / 60);
-                    const secs = elapsed % 60;
-                    if (hours > 0) return `${hours}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-                    return `${minutes}:${String(secs).padStart(2,'0')}`;
-                },
-                getTechName(id) {
-                    const t = this.technicians.find(x => x.id == id);
-                    return t ? t.full_name : null;
-                }
-            }
-        }
 </body>
 </html>
