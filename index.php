@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Redirect technicians to their dashboard
 if (($_SESSION['role'] ?? '') === 'technician') {
-    header('Location: technician_dashboard.php');
+    header('Location: technician_dashboard_simple.php');
     exit();
 }
 

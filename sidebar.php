@@ -47,7 +47,7 @@ if (!isset($_SESSION['user_id'])) {
             if ($current_user_role === 'technician') {
                 // Technicians see their dashboard and basic info pages
                 $nav_items = [
-                    'technician_dashboard' => ['icon' => 'users', 'label' => 'My Dashboard', 'url' => 'technician_dashboard.php'],
+                    'technician_dashboard' => ['icon' => 'users', 'label' => 'My Dashboard', 'url' => 'technician_dashboard_simple.php'],
                     'calendar' => ['icon' => 'calendar', 'label' => 'Calendar', 'url' => 'calendar.php'],
                     'vehicles' => ['icon' => 'database', 'label' => 'Vehicle DB', 'url' => 'vehicles.php']
                 ];

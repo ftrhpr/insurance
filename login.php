@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Redirect based on role
                 if ($userData['role'] === 'technician') {
-                    header('Location: technician_dashboard.php');
+                    header('Location: technician_dashboard_simple.php');
                 } else {
                     header('Location: index.php');
                 }
