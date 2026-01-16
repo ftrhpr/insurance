@@ -359,16 +359,25 @@ try {
                 'parts_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
                 'services_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
                 'global_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
-                'slug' => "VARCHAR(32) UNIQUE DEFAULT NULL"
+                'slug' => "VARCHAR(32) UNIQUE DEFAULT NULL",
+                'vat_enabled' => "TINYINT(1) DEFAULT 0",
+                'vat_amount' => "DECIMAL(10,2) DEFAULT 0.00"
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
-                $checkStmt->execute([DB_NAME, $col]);
-                if ($checkStmt->fetchColumn() == 0) {
-                    $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+                try {
+                    $checkStmt->execute([DB_NAME, $col]);
+                    if ($checkStmt->fetchColumn() == 0) {
+                        $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
+                        error_log("Added missing column: $col");
+                    }
+                } catch (PDOException $e) {
+                    error_log("Failed to check/add column $col: " . $e->getMessage());
+                    // Continue - column might already exist or we might not have permissions
                 }
             }
         } catch (Exception $alterError) {
+            error_log("Error in defensive column migration: " . $alterError->getMessage());
             // Continue anyway - columns might already exist or ALTER might fail on some DB versions
         }
 
@@ -408,10 +417,26 @@ try {
 
             $update_fields = [];
             $params = [];
+            
+            // Prepare statement to check if columns exist
+            $colCheckStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
 
             foreach ($data as $key => $value) {
                 if (array_key_exists($key, $field_map)) {
                     $db_field = $field_map[$key];
+                    
+                    // Check if column exists before trying to update it
+                    try {
+                        $colCheckStmt->execute([DB_NAME, $db_field]);
+                        if ($colCheckStmt->fetchColumn() == 0) {
+                            error_log("Skipping update for non-existent column: $db_field");
+                            continue; // Skip this field if column doesn't exist
+                        }
+                    } catch (PDOException $e) {
+                        error_log("Error checking column $db_field: " . $e->getMessage());
+                        continue; // Skip on error
+                    }
+                    
                     $update_fields[] = "`$db_field` = ?";
 
                     // Normalize incoming values:
@@ -433,8 +458,16 @@ try {
             if (!empty($update_fields)) {
                 $sql = "UPDATE transfers SET " . implode(', ', $update_fields) . " WHERE id = ?";
                 $params[] = $id;
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($params);
+                
+                try {
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute($params);
+                } catch (PDOException $e) {
+                    error_log("Database error in update_transfer: " . $e->getMessage() . " SQL: $sql Params: " . json_encode($params));
+                    http_response_code(500);
+                    jsonResponse(['error' => 'Database error during update: ' . $e->getMessage()]);
+                    return;
+                }
             }
 
             jsonResponse(['status' => 'success']);

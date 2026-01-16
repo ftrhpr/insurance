@@ -2627,8 +2627,8 @@ try {
                     try {
                         await fetchAPI('update_transfer', 'POST', { 
                             id: CASE_ID, 
-                            vatEnabled: this.currentCase.vat_enabled || false,
-                            vatAmount: this.currentCase.vat_amount || 0
+                            vatEnabled: this.currentCase.vat_enabled ? 1 : 0,
+                            vatAmount: parseFloat(this.currentCase.vat_amount || 0)
                         });
                     } catch (err) {
                         console.error('Failed to save VAT:', err);
