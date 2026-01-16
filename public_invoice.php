@@ -334,26 +334,26 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
             <!-- Totals Section -->
             <div class="px-8 py-6 bg-gray-50 border-t border-gray-200 overflow-hidden">
                 <div class="w-full">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
                         <!-- Left: Bank panel (visible only when VAT enabled) -->
-                        <div class="md:col-span-2 min-w-0">
+                        <div class="md:col-span-1 min-w-0 md:max-w-xs">
                             <?php if ($vat_enabled && $vat_amount > 0): ?>
-                            <div class="rounded-xl bg-white p-6 border border-gray-200 shadow-sm h-full min-w-0 overflow-hidden">
+                            <div class="rounded-xl bg-white p-4 border border-gray-200 shadow-sm h-full min-w-0 overflow-hidden">
                                 <h4 class="text-sm font-semibold text-gray-600 mb-2">ბანკის მონაცემები</h4>
                                 <p class="text-xs text-gray-500">გთხოვთ, გადახდისას გადაამოწმოთ და გამოიყენოთ ქვემოთ მოცემული IBAN-ები</p>
                                 <div class="mt-4 grid gap-3">
-                                    <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-3 py-2">
+                                    <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-3 py-1.5">
                                         <div>
                                             <div class="text-xs text-gray-500">საქართველოს ბანკი</div>
-                                            <div class="font-mono font-medium break-words">GE94BG0000000100727119</div>
+                                            <div class="font-mono font-medium text-sm break-words">GE94BG0000000100727119</div>
                                         </div>
                                         <button class="text-sm text-indigo-600" onclick="(function(btn){ if (!navigator.clipboard) return; navigator.clipboard.writeText('GE94BG0000000100727119').then(function(){ btn.innerText='კოპირებულია'; setTimeout(function(){ btn.innerText='კოპირება'; }, 1200); }).catch(function(){}); })(this)">კოპირება</button>
                                     </div>
 
-                                    <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-3 py-2">
+                                    <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-3 py-1.5">
                                         <div>
                                             <div class="text-xs text-gray-500">თიბისი ბანკი</div>
-                                            <div class="font-mono font-medium break-words">GE64TB7669336080100009</div>
+                                            <div class="font-mono font-medium text-sm break-words">GE64TB7669336080100009</div>
                                         </div>
                                         <button class="text-sm text-indigo-600" onclick="(function(btn){ if (!navigator.clipboard) return; navigator.clipboard.writeText('GE64TB7669336080100009').then(function(){ btn.innerText='კოპირებულია'; setTimeout(function(){ btn.innerText='კოპირება'; }, 1200); }).catch(function(){}); })(this)">კოპირება</button>
                                     </div>
@@ -363,7 +363,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                         </div>
 
                         <!-- Right: Summary card -->
-                        <div class="md:col-span-1 min-w-0 md:max-w-xs w-full ml-auto">
+                        <div class="md:col-span-2 min-w-0 w-full">
                             <div class="rounded-xl bg-white shadow p-4 min-w-0 overflow-hidden w-full">
                                 <div class="flex items-center justify-between mb-3">
                                     <div>
@@ -439,7 +439,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                                             <div class="text-sm text-gray-600">საბოლოო გადასახდელი</div>
                                             <div class="text-xl font-bold text-gray-800"><?php echo $vat_enabled && $vat_amount > 0 ? 'დღგ-ით' : ''; ?></div>
                                         </div>
-                                        <div class="text-2xl md:text-3xl lg:text-4xl font-extrabold text-orange-600 break-words max-w-full text-right">₾<?php echo number_format($final_total, 2); ?></div>
+                                        <div class="text-2xl md:text-5xl lg:text-6xl font-extrabold text-orange-600 break-words max-w-full text-right">₾<?php echo number_format($final_total, 2); ?></div>
                                     </div>
                                 </div>
                             </div>
