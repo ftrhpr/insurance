@@ -52,6 +52,6 @@ try {
 }
 
 echo "<hr>";
-echo "<p><a href='technician_dashboard.php'>Go to Technician Dashboard</a></p>";
+echo "<p><a href='https://portal.otoexpress.ge/technician_dashboard.php'>Go to Technician Dashboard</a></p>";
 echo "<p><a href='logout.php'>Logout</a></p>";
 ?>

@@ -13,7 +13,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
 // Restrict technicians from accessing SMS templates
 if ($current_user_role === 'technician') {
-    header('Location: technician_dashboard_simple.php');
+    header('Location: https://portal.otoexpress.ge/technician_dashboard.php');
     exit();
 }
 

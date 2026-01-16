@@ -7,9 +7,9 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Redirect technicians to their dashboard
+// Redirect technicians to their external dashboard
 if (($_SESSION['role'] ?? '') === 'technician') {
-    header('Location: technician_dashboard_simple.php');
+    header('Location: https://portal.otoexpress.ge/technician_dashboard.php');
     exit();
 }
 
