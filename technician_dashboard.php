@@ -27,16 +27,24 @@ if (isset($_GET['json'])) {
         $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
         $timers = json_decode($c['stage_timers'] ?? '{}', true);
         foreach ($assignments as $stage => $techId) {
+            // Only include stages assigned to this user and not already finished
             if (intval($techId) === intval($userId)) {
-                $assigned[] = [
-                    'id' => $c['id'],
-                    'plate' => $c['plate'],
-                    'vehicle_make' => $c['vehicle_make'],
-                    'vehicle_model' => $c['vehicle_model'],
-                    'stage' => $stage,
-                    'status' => $statuses[$stage] ?? null,
-                    'timer' => $timers[$stage] ?? null
-                ];
+                $stageStatus = $statuses[$stage] ?? null;
+                if (!($stageStatus && isset($stageStatus['status']) && $stageStatus['status'] === 'finished')) {
+                    $assigned[] = [
+                        'id' => $c['id'],
+                        'plate' => $c['plate'],
+                        'vehicle_make' => $c['vehicle_make'],
+                        'vehicle_model' => $c['vehicle_model'],
+                        'stage' => $stage,
+                        'status' => $stageStatus ?? null,
+                        'timer' => $timers[$stage] ?? null
+                    ];
+                }      'stage' => $stage,
+                        'status' => $stageStatus ?? null,
+                        'timer' => $timers[$stage] ?? null
+                    ];
+                }
             }
         }
     }
