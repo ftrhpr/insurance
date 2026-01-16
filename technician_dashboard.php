@@ -38,7 +38,7 @@ if (isset($_GET['json'])) {
         $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
         $timers = json_decode($c['stage_timers'] ?? '{}', true);
         foreach ($assignments as $stage => $techId) {
-            $isFinished = ($statuses[$stage] ?? null) === 'finished';
+            $isFinished = ($statuses[$stage]['status'] ?? null) === 'finished';
             $hasTimer = !empty($timers[$stage]);
             
             // Show if: assigned to user AND (has active timer OR finished in processing_for_painting)
@@ -72,7 +72,7 @@ foreach ($cases as $c) {
     $statuses = json_decode($c['stage_statuses'] ?? '{}', true);
     $timers = json_decode($c['stage_timers'] ?? '{}', true);
     foreach ($assignments as $stage => $techId) {
-        $isFinished = ($statuses[$stage] ?? null) === 'finished';
+        $isFinished = ($statuses[$stage]['status'] ?? null) === 'finished';
         $hasTimer = !empty($timers[$stage]);
         
         // Show if: assigned to user AND (has active timer OR finished in processing_for_painting)
