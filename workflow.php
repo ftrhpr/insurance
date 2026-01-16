@@ -1,5 +1,18 @@
 <?php
 session_start();
+// Production-safety: don't display PHP errors to users, but log them
+ini_set('display_errors', 0);
+set_exception_handler(function($e){
+    error_log("[workflow.php] Uncaught exception: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    http_response_code(500);
+    // Friendly message for the user; admin can add ?debug=1 to view more detail
+    echo "<h2>Internal Server Error</h2><p>The server encountered an unexpected condition.</p>";
+    if (isset($_GET['debug']) && in_array($_SESSION['role'] ?? '', ['admin'])) {
+        echo "<pre>" . htmlspecialchars($e->getMessage() . "\n" . $e->getTraceAsString()) . "</pre>";
+    }
+    exit;
+});
+error_log("[workflow.php] start - user=" . ($_SESSION['user_id'] ?? 'guest'));
 require_once 'session_config.php';
 require_once 'config.php';
 require_once 'language.php';
