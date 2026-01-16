@@ -480,15 +480,15 @@ foreach ($cases as $case) {
                         
                         switch (entry.type) {
                             case 'assignment':
-                                const techName = entry.to ? `technician ${entry.to}` : 'unassigned';
+                                const techName = entry.to ? this.getTechnicianName(entry.to) : 'unassigned';
                                 return `Assigned ${techName} to ${entry.stage} stage`;
                             case 'move':
-                                return `Case moved from ${entry.from || 'backlog'} to ${entry.to} by technician ${entry.by}`;
+                                return `Case moved from ${entry.from || 'backlog'} to ${entry.to} by ${this.getTechnicianName(entry.by)}`;
                             case 'work_time':
                                 const duration = Math.round((entry.duration_ms || 0) / 1000);
-                                return `Work time logged: ${duration}s by technician ${entry.tech} on ${entry.stage} stage`;
+                                return `Work time logged: ${duration}s by ${this.getTechnicianName(entry.tech)} on ${entry.stage} stage`;
                             case 'finish_stage':
-                                return `Stage ${entry.stage} finished by technician ${entry.by}`;
+                                return `Stage ${entry.stage} finished by ${this.getTechnicianName(entry.by)}`;
                             default:
                                 return entry.message || JSON.stringify(entry);
                         }
@@ -498,12 +498,17 @@ foreach ($cases as $case) {
                 },
                 formatAssignmentEntry(entry) {
                     if (!entry.to) {
-                        return `Technician unassigned from ${entry.stage} stage by technician ${entry.by}`;
+                        return `Technician unassigned from ${entry.stage} stage by ${this.getTechnicianName(entry.by)}`;
                     } else if (!entry.from) {
-                        return `Assigned technician ${entry.to} to ${entry.stage} stage by technician ${entry.by}`;
+                        return `Assigned ${this.getTechnicianName(entry.to)} to ${entry.stage} stage by ${this.getTechnicianName(entry.by)}`;
                     } else {
-                        return `Technician assignment changed for ${entry.stage} stage: ${entry.from} → ${entry.to} by technician ${entry.by}`;
+                        return `Technician assignment changed for ${entry.stage} stage: ${this.getTechnicianName(entry.from)} → ${this.getTechnicianName(entry.to)} by ${this.getTechnicianName(entry.by)}`;
                     }
+                },
+                getTechnicianName(id) {
+                    if (!id) return 'system';
+                    const tech = this.technicians.find(t => t.id == id);
+                    return tech ? tech.full_name : `technician ${id}`;
                 },
                 assignTechnician(caseId, stageId, technicianId) {
                     const caseToUpdate = this.cases[stageId].find(c => c.id == caseId);
