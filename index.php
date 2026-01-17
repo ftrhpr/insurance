@@ -828,7 +828,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <div class="space-y-2">
                                     <div class="flex justify-between">
                                         <span class="text-sm text-slate-600">Plate:</span>
-                                        <span class="font-mono font-bold text-slate-800" id="invoice-vehicle-plate">-</span>
+                                        <span class="font-mono font-bold text-slate-800 flex items-center gap-1" id="invoice-vehicle-plate">-</span>
+                                        <span id="invoice-mobile-sync-icon" class="ml-1" style="display:none;" title="Synced from Mobile app">
+                                            <i data-lucide="smartphone" class="w-4 h-4 text-blue-500"></i>
+                                        </span>
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-sm text-slate-600">Amount:</span>
@@ -2958,7 +2961,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             });
             document.getElementById('invoice-customer-name').textContent = t.name || '-';
             document.getElementById('invoice-customer-phone').textContent = t.phone || '-';
-            document.getElementById('invoice-vehicle-plate').textContent = t.plate || '-';
+            const plateEl = document.getElementById('invoice-vehicle-plate');
+            plateEl.textContent = t.plate || '-';
+            // Show mobile sync icon if source is Mobile
+            const mobileIcon = document.getElementById('invoice-mobile-sync-icon');
+            if (mobileIcon) {
+                if (t.source && t.source.toLowerCase() === 'mobile') {
+                    mobileIcon.style.display = 'inline-flex';
+                } else {
+                    mobileIcon.style.display = 'none';
+                }
+            }
             document.getElementById('invoice-amount').textContent = t.amount ? `${t.amount}₾` : '-';
             document.getElementById('invoice-status').textContent = t.status || '-';
             document.getElementById('invoice-created-date').textContent = t.created_at ?
