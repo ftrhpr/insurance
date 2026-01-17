@@ -254,7 +254,14 @@ try {
                                 <input id="input-name" type="text" value="<?php echo htmlspecialchars($case['name']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                              <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.vehicle_plate', 'Vehicle Plate'); ?></label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-2">
+                                    <?php echo __('case.vehicle_plate', 'Vehicle Plate'); ?>
+                                    <?php if (!empty($case['operatorComment']) && strpos($case['operatorComment'], 'Created from mobile app') === 0): ?>
+                                        <span title="Synced from Mobile app" class="inline-flex items-center text-blue-500">
+                                            <i data-lucide="smartphone" class="w-4 h-4"></i>
+                                        </span>
+                                    <?php endif; ?>
+                                </label>
                                 <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <div>
