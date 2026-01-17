@@ -72,20 +72,18 @@ try {
 // Define workflow stages (always include all expected stages)
 $defaultStages = [
     ['id' => 'backlog', 'title' => __('workflow.stage.backlog', 'Backlog')],
-    ['id' => 'წიანსწარი შეფასება', 'title' => __('workflow.stage.preliminary_assessment', 'წიანსწარი შეფასება')],
-    ['id' => 'მუშავდება', 'title' => __('workflow.stage.processing', 'მუშავდება')],
-    ['id' => 'იღებება', 'title' => __('workflow.stage.receiving', 'იღებება')],
-    ['id' => 'იშლება', 'title' => __('workflow.stage.disassembling', 'იშლება')],
-    ['id' => 'აწყობა', 'title' => __('workflow.stage.assembling', 'აწყობა')],
-    ['id' => 'თუნუქი', 'title' => __('workflow.stage.painting', 'თუნუქი')],
-    ['id' => 'პლასტმასის აღდგენა', 'title' => __('workflow.stage.plastic_restoration', 'პლასტმასის აღდგენა')],
-    ['id' => 'პოლირება', 'title' => __('workflow.stage.polishing', 'პოლირება')],
-    ['id' => 'დაშლილი და გასული', 'title' => __('workflow.stage.disassembled_and_gone', 'დაშლილი და გასული')],
+    ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'Disassembly')],
+    ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'Body Work')],
+    ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'Processing for Painting')],
+    ['id' => 'preparing_for_painting', 'title' => __('workflow.stage.preparing_for_painting', 'Preparing for Painting')],
+    ['id' => 'painting', 'title' => __('workflow.stage.painting', 'Painting')],
+    ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'Assembling')],
+    ['id' => 'done', 'title' => __('workflow.stage.done', 'DONE')],
 ];
 
 // Load any additional stages from existing repair_stage values
 try {
-    $stmt = $pdo->query("SELECT DISTINCT repair_stage FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage NOT IN ('backlog', 'წიანსწარი შეფასება', 'მუშავდება', 'იღებება', 'იშლება', 'აწყობა', 'თუნუქი', 'პლასტმასის აღდგენა', 'პოლირება', 'დაშლილი და გასული')");
+    $stmt = $pdo->query("SELECT DISTINCT repair_stage FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage NOT IN ('backlog', 'disassembly', 'body_work', 'processing_for_painting', 'preparing_for_painting', 'painting', 'assembling', 'done')");
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $stageId = $row['repair_stage'];
         $defaultStages[] = [
