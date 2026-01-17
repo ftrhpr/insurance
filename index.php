@@ -2963,10 +2963,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             document.getElementById('invoice-customer-phone').textContent = t.phone || '-';
             const plateEl = document.getElementById('invoice-vehicle-plate');
             plateEl.textContent = t.plate || '-';
-            // Show mobile sync icon if source is Mobile
+            // Show mobile sync icon if created from mobile app
             const mobileIcon = document.getElementById('invoice-mobile-sync-icon');
             if (mobileIcon) {
-                if (t.source && t.source.toLowerCase() === 'mobile') {
+                if (t.operatorComment && t.operatorComment.startsWith('Created from mobile')) {
                     mobileIcon.style.display = 'inline-flex';
                 } else {
                     mobileIcon.style.display = 'none';
