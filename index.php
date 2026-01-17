@@ -1977,7 +1977,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     </div>
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-1">
-                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide">${escapeHtml(t.plate)}</span>
+                                            <span class="font-mono font-extrabold text-slate-900 text-sm tracking-wide flex items-center gap-1">
+                                                ${escapeHtml(t.plate)}
+                                                ${t.operatorComment && t.operatorComment.startsWith('Created from mobile app') ? '<span title="Synced from Mobile app" class="inline-flex items-center text-blue-500"><i data-lucide="smartphone" class="w-3 h-3"></i></span>' : ''}
+                                            </span>
                                             <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">ID: ${t.id}</span>
                                         </div>
                                         <div class="font-semibold text-xs text-slate-700">${escapeHtml(t.name)}</div>
