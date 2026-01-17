@@ -2965,14 +2965,25 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             plateEl.textContent = t.plate || '-';
             // Show mobile sync icon if created from mobile app
             const mobileIcon = document.getElementById('invoice-mobile-sync-icon');
+            console.log('mobileIcon element:', mobileIcon); // Debug: check if element exists
             if (mobileIcon) {
                 console.log('Transfer object:', t); // Debug: log the transfer object
                 console.log('operatorComment:', t.operatorComment); // Debug: log the field
-                if (t.operatorComment && t.operatorComment.startsWith('Created from mobile app')) {
+                const isMobile = t.operatorComment && t.operatorComment.startsWith('Created from mobile app');
+                console.log('isMobile:', isMobile); // Debug: log the condition result
+                if (isMobile) {
                     mobileIcon.style.display = 'inline-flex';
+                    console.log('Setting icon to visible'); // Debug: confirm setting
                 } else {
                     mobileIcon.style.display = 'none';
+                    console.log('Setting icon to hidden'); // Debug: confirm setting
                 }
+                // Re-init Lucide icons in case the icon was added dynamically
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            } else {
+                console.log('mobileIcon element not found'); // Debug: element not found
             }
             document.getElementById('invoice-amount').textContent = t.amount ? `${t.amount}₾` : '-';
             document.getElementById('invoice-status').textContent = t.status || '-';
