@@ -473,9 +473,9 @@ try {
                                 <div id="repair-progress-bar" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
                             </div>
                             <div class="flex justify-between text-xs text-slate-600">
-                                <span>Planning</span>
-                                <span>In Progress</span>
-                                <span>Completed</span>
+                                <span>შეფასება</span>
+                                <span>მუშავდება</span>
+                                <span>დასრულებულია</span>
                             </div>
                         </div>
 
@@ -543,11 +543,15 @@ try {
                                                 <h4 class="font-semibold text-slate-800 mb-1">Repair Status</h4>
                                                 <select x-model="currentCase.repair_status" @change="updateRepairProgress()" class="w-full text-sm bg-white border border-blue-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                     <option value="">Not Started</option>
-                                                    <option value="Planning">Planning</option>
-                                                    <option value="In Progress">In Progress</option>
-                                                    <option value="Parts Waiting">Parts Waiting</option>
-                                                    <option value="Quality Check">Quality Check</option>
-                                                    <option value="Completed">Completed</option>
+                                                    <option value="წიანსწარი შეფასება">წიანსწარი შეფასება</option>
+                                                    <option value="მუშავდება">მუშავდება</option>
+                                                    <option value="იღებება">იღებება</option>
+                                                    <option value="იშლება">იშლება</option>
+                                                    <option value="აწყობა">აწყობა</option>
+                                                    <option value="თუნუქი">თუნუქი</option>
+                                                    <option value="პლასტმასის აღდგენა">პლასტმასის აღდგენა</option>
+                                                    <option value="პოლირება">პოლირება</option>
+                                                    <option value="დაშლილი და გასული">დაშლილი და გასული</option>
                                                 </select>
                                             </div>
 
@@ -1323,11 +1327,15 @@ try {
 
                     const statusMap = {
                         '': { progress: 0, color: 'bg-slate-400', text: 'Not Started' },
-                        'Planning': { progress: 25, color: 'bg-blue-500', text: 'Planning' },
-                        'In Progress': { progress: 50, color: 'bg-yellow-500', text: 'In Progress' },
-                        'Parts Waiting': { progress: 75, color: 'bg-orange-500', text: 'Parts Waiting' },
-                        'Quality Check': { progress: 90, color: 'bg-purple-500', text: 'Quality Check' },
-                        'Completed': { progress: 100, color: 'bg-green-500', text: 'Completed' }
+                        'წიანსწარი შეფასება': { progress: 10, color: 'bg-blue-500', text: 'წიანსწარი შეფასება' },
+                        'მუშავდება': { progress: 20, color: 'bg-yellow-500', text: 'მუშავდება' },
+                        'იღებება': { progress: 30, color: 'bg-orange-500', text: 'იღებება' },
+                        'იშლება': { progress: 40, color: 'bg-red-500', text: 'იშლება' },
+                        'აწყობა': { progress: 60, color: 'bg-purple-500', text: 'აწყობა' },
+                        'თუნუქი': { progress: 70, color: 'bg-pink-500', text: 'თუნუქი' },
+                        'პლასტმასის აღდგენა': { progress: 80, color: 'bg-indigo-500', text: 'პლასტმასის აღდგენა' },
+                        'პოლირება': { progress: 90, color: 'bg-teal-500', text: 'პოლირება' },
+                        'დაშლილი და გასული': { progress: 100, color: 'bg-green-500', text: 'დაშლილი და გასული' }
                     };
 
                     const currentStatus = statusMap[status] || statusMap[''];

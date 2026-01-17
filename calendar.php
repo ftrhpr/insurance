@@ -163,10 +163,10 @@ try {
                                                     <td class="px-4 py-2">
                                                         <span class="inline-block px-2 py-1 rounded-full text-xs font-bold <?php
                                                             $rs = $c['repair_status'] ?? '';
-                                                            if ($rs === 'Repair Completed') echo 'bg-emerald-100 text-emerald-700';
-                                                            elseif ($rs === 'In Progress') echo 'bg-blue-100 text-blue-700';
-                                                            elseif ($rs === 'Parts Waiting') echo 'bg-yellow-100 text-yellow-700';
-                                                            elseif ($rs === 'Repair Started') echo 'bg-purple-100 text-purple-700';
+                                                            if ($rs === 'დაშლილი და გასული') echo 'bg-emerald-100 text-emerald-700';
+                                                            elseif ($rs === 'მუშავდება') echo 'bg-blue-100 text-blue-700';
+                                                            elseif ($rs === 'თუნუქი') echo 'bg-yellow-100 text-yellow-700';
+                                                            elseif ($rs === 'წიანსწარი შეფასება') echo 'bg-purple-100 text-purple-700';
                                                             else echo 'bg-gray-100 text-gray-700';
                                                         ?>"><?php echo htmlspecialchars($rs ?: 'Not Started'); ?></span>
                                                     </td>
@@ -220,10 +220,10 @@ try {
                                                     <td class="px-4 py-2">
                                                         <span class="inline-block px-2 py-1 rounded-full text-xs font-bold <?php
                                                             $rs = $c['repair_status'] ?? '';
-                                                            if ($rs === 'Repair Completed') echo 'bg-emerald-100 text-emerald-700';
-                                                            elseif ($rs === 'In Progress') echo 'bg-blue-100 text-blue-700';
-                                                            elseif ($rs === 'Parts Waiting') echo 'bg-yellow-100 text-yellow-700';
-                                                            elseif ($rs === 'Repair Started') echo 'bg-purple-100 text-purple-700';
+                                                            if ($rs === 'დაშლილი და გასული') echo 'bg-emerald-100 text-emerald-700';
+                                                            elseif ($rs === 'მუშავდება') echo 'bg-blue-100 text-blue-700';
+                                                            elseif ($rs === 'თუნუქი') echo 'bg-yellow-100 text-yellow-700';
+                                                            elseif ($rs === 'წიანსწარი შეფასება') echo 'bg-purple-100 text-purple-700';
                                                             else echo 'bg-gray-100 text-gray-700';
                                                         ?>"><?php echo htmlspecialchars($rs ?: 'Not Started'); ?></span>
                                                     </td>

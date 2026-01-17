@@ -18,12 +18,15 @@ try {
 
 // Define the workflow stages to display (no backlog)
 $stages = [
-    ['id' => 'disassembly', 'title' => __('workflow.stage.disassembly', 'დაშლა')],
-    ['id' => 'body_work', 'title' => __('workflow.stage.body_work', 'სათუნუქე')],
-    ['id' => 'processing_for_painting', 'title' => __('workflow.stage.processing_for_painting', 'დამუშავება')],
-    ['id' => 'preparing_for_painting', 'title' => __('workflow.stage.preparing_for_painting', 'შესაღებად გამზადება')],
-    ['id' => 'painting', 'title' => __('workflow.stage.painting', 'ღებვა')],
-    ['id' => 'assembling', 'title' => __('workflow.stage.assembling', 'აწყობა')],
+    ['id' => 'წიანსწარი შეფასება', 'title' => __('workflow.stage.preliminary_assessment', 'წიანსწარი შეფასება')],
+    ['id' => 'მუშავდება', 'title' => __('workflow.stage.processing', 'მუშავდება')],
+    ['id' => 'იღებება', 'title' => __('workflow.stage.receiving', 'იღებება')],
+    ['id' => 'იშლება', 'title' => __('workflow.stage.disassembling', 'იშლება')],
+    ['id' => 'აწყობა', 'title' => __('workflow.stage.assembling', 'აწყობა')],
+    ['id' => 'თუნუქი', 'title' => __('workflow.stage.painting', 'თუნუქი')],
+    ['id' => 'პლასტმასის აღდგენა', 'title' => __('workflow.stage.plastic_restoration', 'პლასტმასის აღდგენა')],
+    ['id' => 'პოლირება', 'title' => __('workflow.stage.polishing', 'პოლირება')],
+    ['id' => 'დაშლილი და გასული', 'title' => __('workflow.stage.disassembled_and_gone', 'დაშლილი და გასული')],
 ];
 
 // Fetch users who can be assigned (technicians)

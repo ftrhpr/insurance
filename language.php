@@ -344,6 +344,18 @@ function initialize_default_translations() {
 
         // Calendar page
         'calendar.title' => 'Due Date Calendar',
+
+        // Workflow stages
+        'workflow.stage.backlog' => 'Backlog',
+        'workflow.stage.preliminary_assessment' => 'Preliminary Assessment',
+        'workflow.stage.processing' => 'Processing',
+        'workflow.stage.receiving' => 'Receiving',
+        'workflow.stage.disassembling' => 'Disassembling',
+        'workflow.stage.assembling' => 'Assembling',
+        'workflow.stage.painting' => 'Painting',
+        'workflow.stage.plastic_restoration' => 'Plastic Restoration',
+        'workflow.stage.polishing' => 'Polishing',
+        'workflow.stage.disassembled_and_gone' => 'Disassembled and Gone',
     ];
 
     // Georgian translations
@@ -466,6 +478,18 @@ function initialize_default_translations() {
         'case.link_viewed' => 'ნანახია',
         'case.link_not_viewed' => 'ჯერ არ ნახულა',
         'case.link_not_viewed_desc' => 'კლიენტს საჯარო ბმული ჯერ არ გაუხსნია',
+
+        // Workflow stages
+        'workflow.stage.backlog' => 'უკან დაგდება',
+        'workflow.stage.preliminary_assessment' => 'წიანსწარი შეფასება',
+        'workflow.stage.processing' => 'მუშავდება',
+        'workflow.stage.receiving' => 'იღებება',
+        'workflow.stage.disassembling' => 'იშლება',
+        'workflow.stage.assembling' => 'აწყობა',
+        'workflow.stage.painting' => 'თუნუქი',
+        'workflow.stage.plastic_restoration' => 'პლასტმასის აღდგენა',
+        'workflow.stage.polishing' => 'პოლირება',
+        'workflow.stage.disassembled_and_gone' => 'დაშლილი და გასული',
 
         // SMS Templates
         'sms.registered' => "გამარჯობა {name}, გადახდა მიღებულია. მიმართ: {plate}. მოგესალმებით OTOMOTORS სერვისში.",
