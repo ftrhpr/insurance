@@ -799,6 +799,7 @@ try {
                 'link_opened_at' => "DATETIME DEFAULT NULL",
                 'work_times' => "JSON DEFAULT NULL",
                 'assignment_history' => "JSON DEFAULT NULL",
+                'operatorComment' => "TEXT DEFAULT NULL",
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -812,7 +813,7 @@ try {
         }
 
         // Includes review columns and reschedule data, now includes completed transfers for processing queue
-        $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment, link_opened_at as linkOpenedAt, operator_comment as operatorComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment, link_opened_at as linkOpenedAt, operatorComment FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed') ORDER BY created_at DESC");
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {

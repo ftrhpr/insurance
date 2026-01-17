@@ -2966,6 +2966,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Show mobile sync icon if created from mobile app
             const mobileIcon = document.getElementById('invoice-mobile-sync-icon');
             if (mobileIcon) {
+                console.log('Transfer object:', t); // Debug: log the transfer object
+                console.log('operatorComment:', t.operatorComment); // Debug: log the field
                 if (t.operatorComment && t.operatorComment.startsWith('Created from mobile')) {
                     mobileIcon.style.display = 'inline-flex';
                 } else {
