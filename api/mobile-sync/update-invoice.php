@@ -141,7 +141,7 @@ try {
                     $transformedServices = array_map(function($service) {
                         // Log incoming service data for debugging
                         error_log("Processing service: " . json_encode($service, JSON_UNESCAPED_UNICODE));
-                        222
+
                         // Prefer Georgian name, fallback to English, with better empty string handling
                         $serviceName = '';
                         
