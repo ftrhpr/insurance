@@ -2968,7 +2968,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (mobileIcon) {
                 console.log('Transfer object:', t); // Debug: log the transfer object
                 console.log('operatorComment:', t.operatorComment); // Debug: log the field
-                if (t.operatorComment && t.operatorComment.startsWith('Created from mobile')) {
+                if (t.operatorComment && t.operatorComment.startsWith('Created from mobile app')) {
                     mobileIcon.style.display = 'inline-flex';
                 } else {
                     mobileIcon.style.display = 'none';
