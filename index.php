@@ -2002,10 +2002,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </div>
                             </td>
                             <td class="px-5 py-4">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
-                                    ${t.status}
-                                </span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
+                                        ${t.status}
+                                    </span>
+                                    ${t.repair_status ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                        <i data-lucide="wrench" class="w-3 h-3"></i>
+                                        ${t.repair_status}
+                                    </span>` : ''}
+                                </div>
                             </td>
                             <td class="px-5 py-4">
                                 ${hasPhone}
