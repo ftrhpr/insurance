@@ -94,9 +94,12 @@ try {
             continue;
         }
         
-        // Special handling for VAT fields - always process them if present in mapping
+        // Special handling for fields that can be null or need special processing
         $shouldProcess = false;
         if (in_array($dbField, ['vat_enabled', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
+            $shouldProcess = array_key_exists($appField, $data);
+        } elseif (in_array($dbField, ['repair_status', 'user_response', 'status'])) {
+            // These fields should be processed even if they are null (to allow clearing)
             $shouldProcess = array_key_exists($appField, $data);
         } else {
             $shouldProcess = isset($data[$appField]) && $data[$appField] !== null;
@@ -138,7 +141,7 @@ try {
                     $transformedServices = array_map(function($service) {
                         // Log incoming service data for debugging
                         error_log("Processing service: " . json_encode($service, JSON_UNESCAPED_UNICODE));
-                        
+                        222
                         // Prefer Georgian name, fallback to English, with better empty string handling
                         $serviceName = '';
                         
