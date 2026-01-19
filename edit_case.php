@@ -3989,8 +3989,14 @@ try {
                 config.body = formData;
             }
             const response = await fetch(`${API_URL}?action=${endpoint}`, config);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            return response.json();
+            const text = await response.text();
+            let json = null;
+            try { json = text ? JSON.parse(text) : null; } catch(e) { /* not JSON */ }
+            if (!response.ok) {
+                const msg = (json && (json.error || json.message)) ? (json.error || json.message) : (text || `HTTP error ${response.status}`);
+                throw new Error(msg);
+            }
+            return json !== null ? json : {};
         }
 
         // -------------------- Payments handling --------------------

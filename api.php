@@ -1504,18 +1504,31 @@ try {
             http_response_code(403);
             jsonResponse(['error' => 'Manager access required']);
         }
+        // Try JSON body first, fallback to $_POST
         $data = getJsonInput();
         if (empty($data)) $data = $_POST;
-        $transfer_id = intval($data['transfer_id'] ?? 0);
-        $amount = floatval($data['amount'] ?? 0);
-        $methodType = strtolower(trim($data['method'] ?? 'cash'));
+
+        // Normalize inputs (accept multiple possible keys)
+        $transfer_id_raw = $data['transfer_id'] ?? $data['transferId'] ?? ($_POST['transfer_id'] ?? 0);
+        $amount_raw = $data['amount'] ?? $data['Amount'] ?? ($_POST['amount'] ?? 0);
+
+        // Clean numeric values (accept comma as decimal separator)
+        $transfer_id = intval($transfer_id_raw);
+        $amount = floatval(str_replace(',', '.', trim((string)$amount_raw)));
+
+        $methodType = strtolower(trim($data['method'] ?? $data['payment_method'] ?? 'cash'));
         if (!in_array($methodType, ['cash','transfer'])) $methodType = 'cash';
-        $reference = trim($data['reference'] ?? '');
-        $notes = trim($data['notes'] ?? '');
+        $reference = trim($data['reference'] ?? $data['ref'] ?? '');
+        $notes = trim($data['notes'] ?? $data['note'] ?? '');
+
+        // Debug: log request for easier troubleshooting when invalid
         if (!$transfer_id || $amount <= 0) {
+            error_log('create_payment validation failed - data: ' . json_encode(['data' => $data, '_POST' => $_POST, 'raw_input' => file_get_contents('php://input')]));
             http_response_code(400);
-            jsonResponse(['error' => 'transfer_id and positive amount are required']);
+            // Include helpful debug in response for admins
+            jsonResponse(['error' => 'transfer_id and positive amount are required', 'debug' => ['data' => $data, '_POST' => $_POST]]);
         }
+
         // Ensure payments table exists (defensive)
         try {
             $pdo->exec("CREATE TABLE IF NOT EXISTS payments (
