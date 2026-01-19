@@ -1581,10 +1581,41 @@ try {
             http_response_code(404);
             jsonResponse(['error' => 'Transfer not found']);
         }
+        // Build a dynamic insert to support legacy DBs (payment_date vs paid_at, missing recorded_by etc.)
         $recorded_by = getCurrentUserId();
-        $insert = $pdo->prepare("INSERT INTO payments (transfer_id, amount, method, reference, recorded_by, notes, currency, paid_at, created_at) VALUES (?, ?, ?, ?, ?, ?, 'GEL', NOW(), NOW())");
-        $insert->execute([$transfer_id, $amount, $methodType, $reference, $recorded_by, $notes]);
+
+        // Find existing payments columns
+        $colsStmt = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payments'");
+        $colsStmt->execute([DB_NAME]);
+        $existingCols = array_column($colsStmt->fetchAll(PDO::FETCH_COLUMN), 0);
+
+        $insertCols = ['transfer_id', 'amount'];
+        $insertParams = [$transfer_id, $amount];
+
+        if (in_array('method', $existingCols)) { $insertCols[] = 'method'; $insertParams[] = $methodType; }
+        if (in_array('reference', $existingCols)) { $insertCols[] = 'reference'; $insertParams[] = $reference; }
+        if (in_array('recorded_by', $existingCols)) { $insertCols[] = 'recorded_by'; $insertParams[] = $recorded_by; }
+        if (in_array('notes', $existingCols)) { $insertCols[] = 'notes'; $insertParams[] = $notes; }
+        if (in_array('currency', $existingCols)) { $insertCols[] = 'currency'; $insertParams[] = 'GEL'; }
+        // handle payment timestamp column variations
+        if (in_array('paid_at', $existingCols)) { $insertCols[] = 'paid_at'; $insertParams[] = date('Y-m-d H:i:s'); }
+        if (in_array('payment_date', $existingCols) && !in_array('paid_at', $existingCols)) { $insertCols[] = 'payment_date'; $insertParams[] = date('Y-m-d H:i:s'); }
+        if (in_array('created_at', $existingCols) && !in_array('paid_at', $existingCols) && !in_array('payment_date', $existingCols)) { $insertCols[] = 'created_at'; $insertParams[] = date('Y-m-d H:i:s'); }
+
+        $placeholders = rtrim(str_repeat('?,', count($insertCols)), ',');
+        $sql = "INSERT INTO payments (" . implode(', ', $insertCols) . ") VALUES (" . $placeholders . ")";
+        $insert = $pdo->prepare($sql);
+
+        try {
+            $insert->execute($insertParams);
+        } catch (Exception $e) {
+            error_log('create_payment insert failed: ' . $e->getMessage() . ' SQL: ' . $sql . ' Params: ' . json_encode($insertParams));
+            http_response_code(500);
+            jsonResponse(['error' => 'Failed to save payment', 'debug' => $e->getMessage()]);
+        }
+
         $payment_id = $pdo->lastInsertId();
+
         // Update transfer paid totals
         $new_paid = floatval($tr['amount_paid']) + $amount;
         $status = (!is_null($tr['amount']) && floatval($new_paid) >= floatval($tr['amount'])) ? 'paid' : ($new_paid > 0 ? 'partial' : 'unpaid');
@@ -1614,9 +1645,27 @@ try {
             http_response_code(400);
             jsonResponse(['error' => 'transfer_id is required']);
         }
-        $stmt = $pdo->prepare("SELECT p.*, u.username as recorded_by_username FROM payments p LEFT JOIN users u ON u.id = p.recorded_by WHERE p.transfer_id = ? ORDER BY p.paid_at DESC, p.id DESC");
-        $stmt->execute([$transfer_id]);
-        $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Detect columns present in payments table to avoid SQL errors on legacy schemas
+        $colStmt = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payments'");
+        $colStmt->execute([DB_NAME]);
+        $paymentsCols = array_column($colStmt->fetchAll(PDO::FETCH_COLUMN), 0);
+        $has_recorded_by = in_array('recorded_by', $paymentsCols);
+        $has_paid_at = in_array('paid_at', $paymentsCols);
+        $has_payment_date = in_array('payment_date', $paymentsCols);
+
+        if ($has_recorded_by) {
+            $orderBy = $has_paid_at ? 'p.paid_at DESC' : ($has_payment_date ? 'p.payment_date DESC' : 'p.id DESC');
+            $stmt = $pdo->prepare("SELECT p.*, u.username as recorded_by_username FROM payments p LEFT JOIN users u ON u.id = p.recorded_by WHERE p.transfer_id = ? ORDER BY $orderBy, p.id DESC");
+            $stmt->execute([$transfer_id]);
+            $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $orderBy = $has_paid_at ? 'p.paid_at DESC' : ($has_payment_date ? 'p.payment_date DESC' : 'p.id DESC');
+            $stmt = $pdo->prepare("SELECT p.* FROM payments p WHERE p.transfer_id = ? ORDER BY $orderBy, p.id DESC");
+            $stmt->execute([$transfer_id]);
+            $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
         $sumStmt = $pdo->prepare("SELECT COALESCE(SUM(amount),0) as total_paid FROM payments WHERE transfer_id = ?");
         $sumStmt->execute([$transfer_id]);
         $total_paid = $sumStmt->fetchColumn();
