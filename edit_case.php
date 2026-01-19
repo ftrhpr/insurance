@@ -4020,6 +4020,12 @@ try {
             try { json = text ? JSON.parse(text) : null; } catch(e) { /* not JSON */ }
             if (!response.ok) {
                 const msg = (json && (json.error || json.message)) ? (json.error || json.message) : (text || `HTTP error ${response.status}`);
+                // If server provided debug information, surface it to the console and append to error message for easier debugging
+                if (json && json.debug) {
+                    console.error('Server debug info:', json.debug);
+                    const dbg = typeof json.debug === 'string' ? json.debug : JSON.stringify(json.debug);
+                    throw new Error(`${msg} — debug: ${dbg}`);
+                }
                 throw new Error(msg);
             }
             return json !== null ? json : {};
