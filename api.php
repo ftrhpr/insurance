@@ -1691,6 +1691,53 @@ try {
         jsonResponse(['payments' => $payments, 'total_paid' => floatval($total_paid)]);
     }
 
+    if ($action === 'delete_payment' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+        $data = getJsonInput();
+        if (empty($data)) $data = $_POST;
+
+        $payment_id = intval($data['payment_id'] ?? 0);
+        if (!$payment_id) {
+            http_response_code(400);
+            jsonResponse(['error' => 'payment_id is required']);
+        }
+
+        // Get payment details before deletion
+        $stmt = $pdo->prepare("SELECT transfer_id, amount FROM payments WHERE id = ?");
+        $stmt->execute([$payment_id]);
+        $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$payment) {
+            http_response_code(404);
+            jsonResponse(['error' => 'Payment not found']);
+        }
+
+        $transfer_id = $payment['transfer_id'];
+        $deleted_amount = floatval($payment['amount']);
+
+        // Delete the payment
+        $deleteStmt = $pdo->prepare("DELETE FROM payments WHERE id = ?");
+        $deleteStmt->execute([$payment_id]);
+
+        // Update transfer paid totals
+        $stmt = $pdo->prepare("SELECT amount, COALESCE(amount_paid,0) as amount_paid FROM transfers WHERE id = ?");
+        $stmt->execute([$transfer_id]);
+        $tr = $stmt->fetch(PDO::FETCH_ASSOC);
+        $new_paid = floatval($tr['amount_paid']) - $deleted_amount;
+        $status = (!is_null($tr['amount']) && floatval($new_paid) >= floatval($tr['amount'])) ? 'paid' : ($new_paid > 0 ? 'partial' : 'unpaid');
+
+        $updateStmt = $pdo->prepare("UPDATE transfers SET amount_paid = ?, payment_status = ? WHERE id = ?");
+        $updateStmt->execute([number_format($new_paid,2,'.',''), $status, $transfer_id]);
+
+        // Log the deletion
+        $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+        $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'type' => 'payment_deleted', 'amount' => $deleted_amount, 'user' => getCurrentUserId(), 'message' => "Payment deleted: {$deleted_amount}"]), $transfer_id]);
+
+        jsonResponse(['status' => 'success', 'new_amount_paid' => $new_paid, 'payment_status' => $status]);
+    }
+
     // --- DELETE TRANSFER ENDPOINT ---
     if ($action === 'delete_transfer' && $method === 'POST') {
         // Check permissions - managers and admins can delete transfers

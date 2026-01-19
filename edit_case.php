@@ -4085,6 +4085,22 @@ try {
             }
         }
 
+        async function deletePayment(paymentId) {
+            if (!confirm('Are you sure you want to delete this payment? This action cannot be undone.')) return;
+            try {
+                const res = await fetchAPI('delete_payment', 'POST', { payment_id: paymentId });
+                if (res && res.status === 'success') {
+                    await loadPayments();
+                    showToast('Payment deleted', '', 'success');
+                } else {
+                    showToast('Failed to delete payment', res.error || 'Unknown error', 'error');
+                }
+            } catch (e) {
+                console.error('Delete payment error', e);
+                showToast('Delete payment error', e.message, 'error');
+            }
+        }
+
         function renderPaymentsList(payments) {
             let container = document.getElementById('payments-list');
             if (!container) {
@@ -4101,7 +4117,7 @@ try {
             payments.forEach(p => {
                 const when = p.paid_at || p.created_at || '';
                 const user = p.recorded_by_username || '';
-                html += `<div class="p-2 bg-white border rounded-lg flex justify-between items-center"><div><div class="text-sm font-medium">₾${parseFloat(p.amount).toFixed(2)} <span class="text-xs text-slate-500">(${p.method})</span></div><div class="text-xs text-gray-500">${p.reference ? 'Ref: '+p.reference+' • ' : ''}${p.notes ? p.notes : ''}</div></div><div class="text-xs text-gray-400 text-right">${when}<br>${user}</div></div>`;
+                html += `<div class="p-2 bg-white border rounded-lg flex justify-between items-center"><div><div class="text-sm font-medium">₾${parseFloat(p.amount).toFixed(2)} <span class="text-xs text-slate-500">(${p.method})</span></div><div class="text-xs text-gray-500">${p.reference ? 'Ref: '+p.reference+' • ' : ''}${p.notes ? p.notes : ''}</div></div><div class="text-xs text-gray-400 text-right flex items-center gap-2">${when}<br>${user}<button onclick="deletePayment(${p.id})" class="text-red-500 hover:text-red-700 text-xs ml-2" title="Delete payment"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>`;
             });
             html += '</div>';
             container.innerHTML = html;
