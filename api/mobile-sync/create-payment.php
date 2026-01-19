@@ -37,6 +37,43 @@ try {
     $paymentMethod = $data['paymentMethod'] ?? $data['method'] ?? 'Cash';
     $method = $data['method'] ?? $paymentMethod;
     $reference = $data['reference'] ?? '';
+
+    // Log the incoming data for debugging
+    error_log("Payment create - paymentMethod: '$paymentMethod', method: '$method'");
+
+    // Check column types for debugging
+    try {
+        $colInfo = $pdo->query("SHOW COLUMNS FROM payments WHERE Field IN ('method', 'payment_method')");
+        $columns = $colInfo->fetchAll(PDO::FETCH_ASSOC);
+        error_log("Payment columns info: " . json_encode($columns));
+    } catch (Exception $e) {
+        error_log("Could not check columns: " . $e->getMessage());
+    }
+
+    // Validate and normalize method values (database may have constraints)
+    $validMethods = ['Cash', 'BOG', 'TBC'];
+    if (!in_array($method, $validMethods)) {
+        // Try to map to valid method
+        if (stripos($method, 'cash') !== false) {
+            $method = 'Cash';
+        } elseif (stripos($method, 'bog') !== false) {
+            $method = 'BOG';
+        } elseif (stripos($method, 'tbc') !== false) {
+            $method = 'TBC';
+        } else {
+            $method = 'Cash'; // Default fallback
+        }
+    }
+
+    // Validate payment_method
+    $validPaymentMethods = ['Cash', 'Transfer'];
+    if (!in_array($paymentMethod, $validPaymentMethods)) {
+        if (stripos($paymentMethod, 'cash') !== false) {
+            $paymentMethod = 'Cash';
+        } else {
+            $paymentMethod = 'Transfer';
+        }
+    }
     $notes = $data['notes'] ?? '';
     $recordedBy = $data['recordedBy'] ?? 'მობილური აპი';
     $currency = $data['currency'] ?? 'GEL';
