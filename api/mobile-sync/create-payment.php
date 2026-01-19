@@ -51,9 +51,9 @@ try {
         sendResponse(false, null, 'Transfer not found', 404);
     }
 
-    // Insert payment
-    $sql = "INSERT INTO payments (transfer_id, amount, payment_date, payment_method, method, reference, notes, record_by, currency, paid_at, created_at, updated_at)
-            VALUES (:transfer_id, :amount, :payment_date, :payment_method, :method, :reference, :notes, :record_by, :currency, :paid_at, NOW(), NOW())";
+    // Insert payment (only use columns that exist in your table)
+    $sql = "INSERT INTO payments (transfer_id, amount, payment_date, payment_method, method, reference, notes, currency, paid_at, created_at, updated_at)
+            VALUES (:transfer_id, :amount, :payment_date, :payment_method, :method, :reference, :notes, :currency, :paid_at, NOW(), NOW())";
 
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute([
@@ -64,7 +64,6 @@ try {
         ':method' => $method,
         ':reference' => $reference,
         ':notes' => $notes,
-        ':record_by' => $recordedBy,
         ':currency' => $currency,
         ':paid_at' => $paymentDate,
     ]);
@@ -101,7 +100,7 @@ try {
             'method' => $payment['method'],
             'reference' => $payment['reference'],
             'notes' => $payment['notes'],
-            'recordedBy' => $payment['record_by'],
+            'recordedBy' => 'მობილური აპი',
             'currency' => $payment['currency'],
             'createdAt' => $payment['created_at'],
         ],

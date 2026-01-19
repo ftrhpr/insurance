@@ -44,7 +44,7 @@ try {
             'method' => $payment['method'] ?? $payment['payment_method'] ?? 'Cash',
             'reference' => $payment['reference'] ?? '',
             'notes' => $payment['notes'] ?? '',
-            'recordedBy' => $payment['record_by'] ?? '',
+            'recordedBy' => '',
             'currency' => $payment['currency'] ?? 'GEL',
             'createdAt' => $payment['created_at'] ?? null,
             'updatedAt' => $payment['updated_at'] ?? null,
