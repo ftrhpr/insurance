@@ -1608,12 +1608,15 @@ try {
         $sql = "INSERT INTO payments (" . implode(', ', $insertCols) . ") VALUES (" . $placeholders . ")";
         $insert = $pdo->prepare($sql);
 
+        // Log SQL and params for debugging
+        error_log('create_payment about to execute SQL: ' . $sql . ' Params: ' . json_encode($insertParams));
         try {
             $insert->execute($insertParams);
         } catch (Exception $e) {
-            error_log('create_payment insert failed: ' . $e->getMessage() . ' SQL: ' . $sql . ' Params: ' . json_encode($insertParams));
+            $errMsg = $e->getMessage();
+            error_log('create_payment insert failed: ' . $errMsg . ' SQL: ' . $sql . ' Params: ' . json_encode($insertParams));
             http_response_code(500);
-            jsonResponse(['error' => 'Failed to save payment', 'debug' => $e->getMessage()]);
+            jsonResponse(['error' => 'Failed to save payment', 'debug' => $errMsg, 'sql' => $sql, 'params' => $insertParams]);
         }
 
         $payment_id = $pdo->lastInsertId();
