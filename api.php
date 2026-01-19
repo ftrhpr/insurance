@@ -1575,6 +1575,19 @@ try {
             // ignore
         }
 
+        // Special handling for legacy payment_date column
+        try {
+            $checkDefault = $pdo->prepare("SELECT COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'payment_date'");
+            $checkDefault->execute([DB_NAME]);
+            $default = $checkDefault->fetchColumn();
+            if ($default === null || $default === '') {
+                $pdo->exec("ALTER TABLE payments MODIFY COLUMN payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                error_log("Modified payment_date column to have default timestamp");
+            }
+        } catch (Exception $e) {
+            error_log("Failed to check/modify payment_date default: " . $e->getMessage());
+        }
+
         $stmt = $pdo->prepare("SELECT id, amount, COALESCE(amount_paid,0) as amount_paid FROM transfers WHERE id = ? LIMIT 1");
         $stmt->execute([$transfer_id]);
         $tr = $stmt->fetch(PDO::FETCH_ASSOC);
