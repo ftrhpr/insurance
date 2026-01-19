@@ -95,6 +95,32 @@ try {
         // Provide initialCaseData early so Alpine has it when initializing
         let initialCaseData = {};
 
+        // Fallback global caseEditor skeleton to avoid Alpine errors while main implementation loads
+        if (!window.caseEditor) {
+            window.caseEditor = {
+                currentCase: {},
+                statuses: [],
+                openSections: JSON.parse(localStorage.getItem('openSections') || '[]') || ['details','communication','feedback','repair'],
+                isSectionOpen(section) {
+                    try { return Array.isArray(this.openSections) && this.openSections.includes(section); } catch(e) { return false; }
+                },
+                toggleSection(section) {
+                    try {
+                        const idx = this.openSections.indexOf(section);
+                        if (idx === -1) this.openSections.push(section); else this.openSections.splice(idx, 1);
+                        localStorage.setItem('openSections', JSON.stringify(this.openSections));
+                    } catch(e) {}
+                },
+                // Minimal defaults for templates that reference these
+                partsRequest: { description: '', supplier: '', collection_type: 'local' },
+                editingReview: false,
+                activeTab: 'quick',
+                repairTab: 'overview',
+                isSectionOpenGlobal: function(s) { return this.isSectionOpen(s); }
+            };
+        }
+        // Global helper for templates that call isSectionOpen as an identifier
+        window.isSectionOpen = function(section) { try { return window.caseEditor && typeof window.caseEditor.isSectionOpen === 'function' ? window.caseEditor.isSectionOpen(section) : false; } catch(e) { return false; } };
     </script>
 
 
