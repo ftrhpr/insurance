@@ -311,7 +311,8 @@ try {
         'recorded_by' => "INT DEFAULT NULL",
         'notes' => "TEXT DEFAULT NULL",
         'currency' => "VARCHAR(3) DEFAULT 'GEL'",
-        'paid_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        'paid_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        'payment_date' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  // For legacy schemas
     ];
     foreach ($payments_required as $col => $def) {
         if (!columnExists($pdo, 'payments', $col)) {
