@@ -4054,6 +4054,7 @@ try {
             const response = await fetch(`${API_URL}?action=${endpoint}`, config);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
+        }
 
         // -------------------- Payments handling --------------------
         async function loadPayments() {
