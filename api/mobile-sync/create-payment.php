@@ -40,7 +40,15 @@ try {
     $notes = $data['notes'] ?? '';
     $recordedBy = $data['recordedBy'] ?? 'მობილური აპი';
     $currency = $data['currency'] ?? 'GEL';
-    $paymentDate = $data['paymentDate'] ?? date('Y-m-d H:i:s');
+
+    // Convert ISO date to MySQL datetime format
+    $paymentDateInput = $data['paymentDate'] ?? null;
+    if ($paymentDateInput) {
+        $dateTime = new DateTime($paymentDateInput);
+        $paymentDate = $dateTime->format('Y-m-d H:i:s');
+    } else {
+        $paymentDate = date('Y-m-d H:i:s');
+    }
 
     // Verify transfer exists
     $checkSql = "SELECT id, amount FROM transfers WHERE id = :id LIMIT 1";
