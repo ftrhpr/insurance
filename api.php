@@ -1599,7 +1599,9 @@ try {
         if (in_array('currency', $existingCols)) { $insertCols[] = 'currency'; $insertParams[] = 'GEL'; }
         // handle payment timestamp column variations
         if (in_array('paid_at', $existingCols)) { $insertCols[] = 'paid_at'; $insertParams[] = date('Y-m-d H:i:s'); }
-        if (in_array('payment_date', $existingCols) && !in_array('paid_at', $existingCols)) { $insertCols[] = 'payment_date'; $insertParams[] = date('Y-m-d H:i:s'); }
+        // Always include payment_date if present to avoid NOT NULL without default errors on legacy schemas
+        if (in_array('payment_date', $existingCols)) { $insertCols[] = 'payment_date'; $insertParams[] = date('Y-m-d H:i:s'); }
+        // created_at as a fallback (if no explicit paid date columns exist)
         if (in_array('created_at', $existingCols) && !in_array('paid_at', $existingCols) && !in_array('payment_date', $existingCols)) { $insertCols[] = 'created_at'; $insertParams[] = date('Y-m-d H:i:s'); }
 
         $placeholders = rtrim(str_repeat('?,', count($insertCols)), ',');
