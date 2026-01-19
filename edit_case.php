@@ -94,74 +94,9 @@ try {
     <script>
         // Provide initialCaseData early so Alpine has it when initializing
         let initialCaseData = {};
-        // Placeholder caseEditor function - will be overridden by full implementation
-        function caseEditor() {
-            return {
-                currentCase: { ...initialCaseData },
-                collections: [],
-                openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback', 'repair'],
-                partsRequest: { description: '', supplier: '', collection_type: 'local' },
-                editingReview: false,
-                activeTab: 'quick',
-                repairTab: 'overview',
-                searchQuery: '',
-                filterType: 'all'
-            };
-        }
+
     </script>
-    <script>
-        // Define caseEditor function early for Alpine.js
-        function caseEditor() {
-            return {
-                currentCase: { ...initialCaseData },
-                collections: [],
-                openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback', 'repair'],
-                partsRequest: { description: '', supplier: '', collection_type: 'local' },
-                editingReview: false,
-                activeTab: 'quick',
-                repairTab: 'overview',
-                searchQuery: '',
-                filterType: 'all',
-                isSectionOpen(section) {
-                    return this.openSections && Array.isArray(this.openSections) ? this.openSections.includes(section) : false;
-                },
-                toggleSection(section) {
-                    const index = this.openSections.indexOf(section);
-                    if (index === -1) {
-                        this.openSections.push(section);
-                    } else {
-                        this.openSections.splice(index, 1);
-                    }
-                    localStorage.setItem('openSections', JSON.stringify(this.openSections));
-                },
-                // Placeholder methods that will be overridden
-                showParsedItemsModal() {},
-                renderParsedItemsModal() {},
-                addSelectedParsedItems() {},
-                selectAllParsedItems() {},
-                renderItemsList() {},
-                renderTimeline() {},
-                updateOverviewStats() {},
-                initSearchAndFilter() {},
-                loadCollections() {},
-                bulkDeleteItems() {},
-                bulkDuplicateItems() {},
-                bulkMoveToCollection() {},
-                bulkRequestPartsCollection() {},
-                createCollectionRequestFromSelected() {},
-                calculateTotalCost() { return 0; },
-                addPart() {},
-                addLabor() {},
-                removePart() {},
-                removeLabor() {},
-                updatePart() {},
-                updateLabor() {},
-                updateRepairProgress() {},
-                saveRepairData() {},
-                exportRepairData() {}
-            };
-        }
-    </script>
+
 
     <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <style>
@@ -1199,7 +1134,7 @@ try {
         const CASE_ID = <?php echo $case_id; ?>;
         const CAN_EDIT = <?php echo $CAN_EDIT ? 'true' : 'false'; ?>;
         
-        let initialCaseData = {};
+        initialCaseData = initialCaseData || {};
         try {
             initialCaseData = <?php echo json_encode($case, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
         } catch (e) { console.error('Error parsing case data:', e); initialCaseData = {}; }
