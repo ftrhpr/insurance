@@ -279,6 +279,28 @@ try {
 
     echo "---------------------------------\n";
 
+    // ---------------------------------------------------------  
+    // 6. TABLE: payments
+    // ---------------------------------------------------------
+    echo "\nChecking table 'payments'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        transfer_id INT NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        payment_date DATETIME NOT NULL,
+        payment_method ENUM('cash', 'transfer') NOT NULL,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (transfer_id) REFERENCES transfers(id) ON DELETE CASCADE,
+        INDEX idx_transfer_id (transfer_id),
+        INDEX idx_payment_date (payment_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
+    echo "---------------------------------\n";
+
     // Fix SMS Templates table
     require_once 'fix_sms_templates.php';
 
