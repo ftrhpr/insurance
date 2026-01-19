@@ -304,6 +304,24 @@ try {
     $pdo->exec($sql);
     echo " - Table structure verified.\n";
 
+    // Ensure required payments columns exist (for older installs)
+    $payments_required = [
+        'method' => "ENUM('cash','transfer') NOT NULL DEFAULT 'cash'",
+        'reference' => "VARCHAR(255) DEFAULT NULL",
+        'recorded_by' => "INT DEFAULT NULL",
+        'notes' => "TEXT DEFAULT NULL",
+        'currency' => "VARCHAR(3) DEFAULT 'GEL'",
+        'paid_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    ];
+    foreach ($payments_required as $col => $def) {
+        if (!columnExists($pdo, 'payments', $col)) {
+            $pdo->exec("ALTER TABLE payments ADD COLUMN $col $def");
+            echo " - Added missing column to payments: $col\n";
+        } else {
+            echo " - Column payments.$col exists.\n";
+        }
+    }
+
     echo "---------------------------------\n";
 
     // Fix SMS Templates table

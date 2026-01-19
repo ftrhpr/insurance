@@ -1547,6 +1547,33 @@ try {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         } catch (Exception $e) { /* ignore */ }
 
+        // Defensive: ensure payments table has expected columns (for older DBs)
+        try {
+            $colCheck = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payments' AND COLUMN_NAME = ?");
+            $schema = DB_NAME;
+            $paymentsCols = [
+                'method' => "ENUM('cash','transfer') NOT NULL DEFAULT 'cash'",
+                'reference' => "VARCHAR(255) DEFAULT NULL",
+                'recorded_by' => "INT DEFAULT NULL",
+                'notes' => "TEXT DEFAULT NULL",
+                'currency' => "VARCHAR(3) DEFAULT 'GEL'",
+                'paid_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+            ];
+            foreach ($paymentsCols as $col => $def) {
+                $colCheck->execute([$schema, $col]);
+                if ($colCheck->fetchColumn() == 0) {
+                    try {
+                        $pdo->exec("ALTER TABLE payments ADD COLUMN $col $def");
+                        error_log("Added missing payments column: $col");
+                    } catch (Exception $e) {
+                        error_log("Failed to add payments column $col: " . $e->getMessage());
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            // ignore
+        }
+
         $stmt = $pdo->prepare("SELECT id, amount, COALESCE(amount_paid,0) as amount_paid FROM transfers WHERE id = ? LIMIT 1");
         $stmt->execute([$transfer_id]);
         $tr = $stmt->fetch(PDO::FETCH_ASSOC);
