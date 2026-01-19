@@ -92,6 +92,8 @@ try {
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
     <script>
+        // Provide initialCaseData early so Alpine has it when initializing
+        let initialCaseData = {};
         // Placeholder caseEditor function - will be overridden by full implementation
         function caseEditor() {
             return {
@@ -4133,7 +4135,6 @@ try {
         }
 
         document.addEventListener('DOMContentLoaded', () => { loadPayments().catch(console.error); });
-        }
 
         async function sendSmsAndUpdateLog(phone, text, type) {
              if (!phone) return showToast("No phone number", "", "error");
