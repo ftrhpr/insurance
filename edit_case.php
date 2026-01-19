@@ -266,36 +266,77 @@ try {
                             <!-- Vehicle Make -->
                             <div>
 
-                            <!-- Payments Modal -->
                             <div id="payments-modal" class="hidden modal-backdrop" x-cloak>
-                                <div class="modal">
-                                    <h3 class="text-lg font-bold mb-2">Record Payment</h3>
-                                    <div class="space-y-2">
+                                <div class="modal max-w-md">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                            </svg>
+                                            Record Payment
+                                        </h3>
+                                        <button onclick="closePaymentsModal()" class="text-gray-400 hover:text-gray-600">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <form id="payment-form" class="space-y-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Amount (₾)</label>
-                                            <input id="payment-amount" type="number" step="0.01" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Amount (₾)</label>
+                                            <input id="payment-amount" type="number" step="0.01" min="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="0.00">
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Method</label>
-                                            <select id="payment-method" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg"><option value="cash">Cash</option><option value="transfer">Transfer</option></select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Reference</label>
-                                            <input id="payment-reference" type="text" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg">
-                                            <div class="flex gap-1 mt-1">
-                                                <button type="button" onclick="setPaymentReference('TBC')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">TBC</button>
-                                                <button type="button" onclick="setPaymentReference('BOG')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">BOG</button>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <label class="relative">
+                                                    <input type="radio" name="payment-method" value="cash" class="sr-only peer" checked>
+                                                    <div class="p-3 border border-gray-300 rounded-lg cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all">
+                                                        <div class="flex items-center gap-2">
+                                                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                                                            </svg>
+                                                            <span class="font-medium">Cash</span>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                                <label class="relative">
+                                                    <input type="radio" name="payment-method" value="transfer" class="sr-only peer">
+                                                    <div class="p-3 border border-gray-300 rounded-lg cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all">
+                                                        <div class="flex items-center gap-2">
+                                                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                                            </svg>
+                                                            <span class="font-medium">Transfer</span>
+                                                        </div>
+                                                    </div>
+                                                </label>
                                             </div>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Notes</label>
-                                            <textarea id="payment-notes" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg"></textarea>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Reference</label>
+                                            <input id="payment-reference" type="text" list="reference-options" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Transaction ID or bank reference">
+                                            <datalist id="reference-options">
+                                                <option value="TBC">
+                                                <option value="BOG">
+                                                <option value="Bank of Georgia">
+                                                <option value="TBC Bank">
+                                            </datalist>
                                         </div>
-                                        <div class="flex justify-end gap-2 mt-4">
-                                            <button type="button" onclick="closePaymentsModal()" class="px-4 py-2 rounded-lg border bg-white">Cancel</button>
-                                            <button type="button" onclick="submitPayment()" class="px-4 py-2 rounded-lg bg-blue-600 text-white">Save Payment</button>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                                            <textarea id="payment-notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Optional notes"></textarea>
                                         </div>
-                                    </div>
+                                        <div class="flex justify-end gap-3 pt-4 border-t">
+                                            <button type="button" onclick="closePaymentsModal()" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+                                            <button type="submit" class="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                                Save Payment
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.vehicle_make', 'Vehicle Make'); ?></label>
@@ -4038,6 +4079,11 @@ try {
 
         // -------------------- Payments handling --------------------
         async function loadPayments() {
+            const container = document.getElementById('payments-list');
+            if (container) {
+                container.innerHTML = '<div class="mt-2 text-sm text-gray-500 flex items-center gap-2"><svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Loading payments...</div>';
+            }
+            
             try {
                 const resp = await fetchAPI(`get_payments&transfer_id=<?php echo $case_id; ?>`, 'GET');
                 if (resp && resp.payments) {
@@ -4053,7 +4099,8 @@ try {
                         if (resp.payments.length > 0) {
                             const lastPayment = resp.payments[0]; // Assuming sorted by date desc
                             const when = lastPayment.paid_at || lastPayment.created_at || '';
-                            lastPaymentEl.innerHTML = `Last: ₾${parseFloat(lastPayment.amount).toFixed(2)} (${lastPayment.method}) ${lastPayment.reference ? '- ' + lastPayment.reference : ''} <span class="text-xs">${when.split(' ')[0]}</span>`;
+                            const method = lastPayment.method ? lastPayment.method.charAt(0).toUpperCase() + lastPayment.method.slice(1) : 'Cash';
+                            lastPaymentEl.innerHTML = `<div class="flex items-center gap-2 text-sm"><span class="font-medium">Last:</span><span class="text-green-600 font-semibold">₾${parseFloat(lastPayment.amount).toFixed(2)}</span><span class="px-2 py-1 text-xs rounded-full ${lastPayment.method === 'cash' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">${method}</span>${lastPayment.reference ? '<span class="text-gray-500">• ' + lastPayment.reference + '</span>' : ''}<span class="text-gray-400 ml-2">${when.split(' ')[0]}</span></div>`;
                         } else {
                             lastPaymentEl.innerHTML = '';
                         }
@@ -4061,6 +4108,9 @@ try {
                 }
             } catch (e) {
                 console.error('Failed to load payments', e);
+                if (container) {
+                    container.innerHTML = '<div class="mt-2 text-sm text-red-500">Failed to load payments. Please refresh the page.</div>';
+                }
             }
         }
 
@@ -4073,34 +4123,71 @@ try {
         function closePaymentsModal() {
             const modal = document.getElementById('payments-modal');
             if (modal) modal.classList.add('hidden');
-            document.getElementById('payment-amount').value = '';
-            document.getElementById('payment-reference').value = '';
-            document.getElementById('payment-notes').value = '';
-            document.getElementById('payment-method').value = 'cash';
+            const form = document.getElementById('payment-form');
+            if (form) form.reset();
+            // Reset radio buttons to cash
+            const cashRadio = document.querySelector('input[name="payment-method"][value="cash"]');
+            if (cashRadio) cashRadio.checked = true;
         }
 
         function setPaymentReference(value) {
             document.getElementById('payment-reference').value = value;
         }
 
-        async function submitPayment() {
-            const amount = parseFloat(document.getElementById('payment-amount').value || 0);
-            const method = document.getElementById('payment-method').value;
-            const reference = document.getElementById('payment-reference').value;
-            const notes = document.getElementById('payment-notes').value;
-            if (!amount || amount <= 0) { showToast('Validation Error', 'Please enter a positive amount', 'error'); return; }
+        async function submitPayment(event) {
+            if (event) event.preventDefault();
+            
+            const form = document.getElementById('payment-form');
+            const amountInput = document.getElementById('payment-amount');
+            const methodInput = document.querySelector('input[name="payment-method"]:checked');
+            const referenceInput = document.getElementById('payment-reference');
+            const notesInput = document.getElementById('payment-notes');
+            
+            // Clear previous validation
+            [amountInput, methodInput, referenceInput, notesInput].forEach(input => {
+                if (input) input.classList.remove('border-red-500', 'focus:ring-red-500');
+            });
+            
+            const amount = parseFloat(amountInput?.value || 0);
+            const method = methodInput?.value || 'cash';
+            const reference = referenceInput?.value || '';
+            const notes = notesInput?.value || '';
+            
+            let hasError = false;
+            
+            if (!amount || amount <= 0) {
+                if (amountInput) {
+                    amountInput.classList.add('border-red-500', 'focus:ring-red-500');
+                }
+                hasError = true;
+            }
+            
+            if (hasError) {
+                showToast('Validation Error', 'Please enter a valid amount', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...';
+            submitBtn.disabled = true;
+            
             try {
                 const res = await fetchAPI('create_payment', 'POST', { transfer_id: <?php echo $case_id; ?>, amount, method, reference, notes });
                 if (res && res.status === 'success') {
                     closePaymentsModal();
                     await loadPayments();
-                    showToast('Payment recorded', '', 'success');
+                    showToast('Payment recorded successfully', '', 'success');
                 } else {
                     showToast('Failed to record payment', res.error || 'Unknown error', 'error');
                 }
             } catch (e) {
                 console.error('Payment error', e);
-                showToast('Payment error', e.message, 'error');
+                showToast('Payment error', e.message || 'An unexpected error occurred', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         }
 
@@ -4136,13 +4223,22 @@ try {
             payments.forEach(p => {
                 const when = p.paid_at || p.created_at || '';
                 const user = p.recorded_by_username || '';
-                html += `<div class="p-2 bg-white border rounded-lg flex justify-between items-center"><div><div class="text-sm font-medium">₾${parseFloat(p.amount).toFixed(2)} <span class="text-xs text-slate-500">(${p.method})</span></div><div class="text-xs text-gray-500">${p.reference ? 'Ref: '+p.reference+' • ' : ''}${p.notes ? p.notes : ''}</div></div><div class="text-xs text-gray-400 text-right flex items-center gap-2">${when}<br>${user}<button onclick="deletePayment(${p.id})" class="text-red-500 hover:text-red-700 text-xs ml-2" title="Delete payment"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>`;
+                const method = p.method ? p.method.charAt(0).toUpperCase() + p.method.slice(1) : 'Cash';
+                html += `<div class="p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"><div class="flex justify-between items-start"><div class="flex-1"><div class="flex items-center gap-2 mb-1"><span class="text-lg font-semibold text-green-600">₾${parseFloat(p.amount).toFixed(2)}</span><span class="px-2 py-1 text-xs font-medium rounded-full ${p.method === 'cash' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">${method}</span></div><div class="text-sm text-gray-600">${p.reference ? 'Ref: ' + p.reference : ''}${p.notes ? (p.reference ? ' • ' : '') + p.notes : ''}</div></div><div class="text-right"><div class="text-xs text-gray-500 mb-1">${when.split(' ')[0]}</div><div class="text-xs text-gray-400">${user}</div><button onclick="deletePayment(${p.id})" class="text-red-500 hover:text-red-700 p-1 rounded transition-colors" title="Delete payment"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div></div>`;
             });
             html += '</div>';
             container.innerHTML = html;
         }
 
-        document.addEventListener('DOMContentLoaded', () => { loadPayments().catch(console.error); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            loadPayments().catch(console.error);
+            
+            // Add form submit handler
+            const paymentForm = document.getElementById('payment-form');
+            if (paymentForm) {
+                paymentForm.addEventListener('submit', submitPayment);
+            }
+        });
 
         async function sendSmsAndUpdateLog(phone, text, type) {
              if (!phone) return showToast("No phone number", "", "error");
