@@ -1498,6 +1498,91 @@ try {
         jsonResponse(['success' => true]);
     }
 
+    // --- PAYMENTS ENDPOINTS ---
+    if ($action === 'create_payment' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+        $data = getJsonInput();
+        if (empty($data)) $data = $_POST;
+        $transfer_id = intval($data['transfer_id'] ?? 0);
+        $amount = floatval($data['amount'] ?? 0);
+        $methodType = strtolower(trim($data['method'] ?? 'cash'));
+        if (!in_array($methodType, ['cash','transfer'])) $methodType = 'cash';
+        $reference = trim($data['reference'] ?? '');
+        $notes = trim($data['notes'] ?? '');
+        if (!$transfer_id || $amount <= 0) {
+            http_response_code(400);
+            jsonResponse(['error' => 'transfer_id and positive amount are required']);
+        }
+        // Ensure payments table exists (defensive)
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS payments (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                transfer_id INT NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                method ENUM('cash','transfer') NOT NULL DEFAULT 'cash',
+                reference VARCHAR(255) DEFAULT NULL,
+                recorded_by INT DEFAULT NULL,
+                notes TEXT DEFAULT NULL,
+                currency VARCHAR(3) DEFAULT 'GEL',
+                paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (transfer_id) REFERENCES transfers(id) ON DELETE CASCADE,
+                FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (Exception $e) { /* ignore */ }
+
+        $stmt = $pdo->prepare("SELECT id, amount, COALESCE(amount_paid,0) as amount_paid FROM transfers WHERE id = ? LIMIT 1");
+        $stmt->execute([$transfer_id]);
+        $tr = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$tr) {
+            http_response_code(404);
+            jsonResponse(['error' => 'Transfer not found']);
+        }
+        $recorded_by = getCurrentUserId();
+        $insert = $pdo->prepare("INSERT INTO payments (transfer_id, amount, method, reference, recorded_by, notes, currency, paid_at, created_at) VALUES (?, ?, ?, ?, ?, ?, 'GEL', NOW(), NOW())");
+        $insert->execute([$transfer_id, $amount, $methodType, $reference, $recorded_by, $notes]);
+        $payment_id = $pdo->lastInsertId();
+        // Update transfer paid totals
+        $new_paid = floatval($tr['amount_paid']) + $amount;
+        $status = (!is_null($tr['amount']) && floatval($new_paid) >= floatval($tr['amount'])) ? 'paid' : ($new_paid > 0 ? 'partial' : 'unpaid');
+        // Ensure transfer columns exist
+        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
+        $schema = DB_NAME;
+        foreach (['amount_paid','payment_status','last_payment_at'] as $col) {
+            $checkStmt->execute([$schema, $col]);
+            if ($checkStmt->fetchColumn() == 0) {
+                if ($col === 'amount_paid') $pdo->exec("ALTER TABLE transfers ADD COLUMN amount_paid DECIMAL(10,2) DEFAULT 0.00");
+                if ($col === 'payment_status') $pdo->exec("ALTER TABLE transfers ADD COLUMN payment_status ENUM('unpaid','partial','paid') DEFAULT 'unpaid'");
+                if ($col === 'last_payment_at') $pdo->exec("ALTER TABLE transfers ADD COLUMN last_payment_at DATETIME DEFAULT NULL");
+            }
+        }
+        $updateStmt = $pdo->prepare("UPDATE transfers SET amount_paid = ?, payment_status = ?, last_payment_at = NOW() WHERE id = ?");
+        $updateStmt->execute([number_format($new_paid,2,'.',''), $status, $transfer_id]);
+
+        $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
+        $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'type' => 'payment', 'amount' => floatval($amount), 'method' => $methodType, 'reference' => $reference, 'user' => $recorded_by, 'message' => "Payment recorded: {$amount} via {$methodType}"]), $transfer_id]);
+
+        jsonResponse(['status' => 'success', 'payment_id' => $payment_id, 'new_amount_paid' => $new_paid, 'payment_status' => $status]);
+    }
+
+    if ($action === 'get_payments' && $method === 'GET') {
+        $transfer_id = intval($_GET['transfer_id'] ?? 0);
+        if (!$transfer_id) {
+            http_response_code(400);
+            jsonResponse(['error' => 'transfer_id is required']);
+        }
+        $stmt = $pdo->prepare("SELECT p.*, u.username as recorded_by_username FROM payments p LEFT JOIN users u ON u.id = p.recorded_by WHERE p.transfer_id = ? ORDER BY p.paid_at DESC, p.id DESC");
+        $stmt->execute([$transfer_id]);
+        $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sumStmt = $pdo->prepare("SELECT COALESCE(SUM(amount),0) as total_paid FROM payments WHERE transfer_id = ?");
+        $sumStmt->execute([$transfer_id]);
+        $total_paid = $sumStmt->fetchColumn();
+        jsonResponse(['payments' => $payments, 'total_paid' => floatval($total_paid)]);
+    }
+
     // --- DELETE TRANSFER ENDPOINT ---
     if ($action === 'delete_transfer' && $method === 'POST') {
         // Check permissions - managers and admins can delete transfers
@@ -2354,137 +2439,6 @@ try {
             }
         } catch (Exception $e) {
             jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
-        }
-    }
-
-    // --- PAYMENT MANAGEMENT ENDPOINTS ---
-
-    if ($action === 'get_payments' && $method === 'GET') {
-        $transfer_id = intval($_GET['transfer_id'] ?? 0);
-        if ($transfer_id <= 0) {
-            jsonResponse(['status' => 'error', 'message' => 'Invalid transfer ID']);
-        }
-
-        try {
-            $stmt = $pdo->prepare("SELECT id, transfer_id, amount, payment_method, payment_date, notes, created_at FROM payments WHERE transfer_id = ? ORDER BY payment_date DESC, created_at DESC");
-            $stmt->execute([$transfer_id]);
-            $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            jsonResponse(['status' => 'success', 'payments' => $payments]);
-        } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Failed to load payments: ' . $e->getMessage()]);
-        }
-    }
-
-    if ($action === 'add_payment' && $method === 'POST') {
-        $data = getJsonInput();
-        $transfer_id = intval($data['transfer_id'] ?? 0);
-        $amount = floatval($data['amount'] ?? 0);
-        $payment_method = $data['payment_method'] ?? '';
-        $payment_date = $data['payment_date'] ?? '';
-        $notes = trim($data['notes'] ?? '');
-
-        // Validation
-        if ($transfer_id <= 0) {
-            jsonResponse(['status' => 'error', 'message' => 'Invalid transfer ID']);
-        }
-        if ($amount <= 0) {
-            jsonResponse(['status' => 'error', 'message' => 'Amount must be greater than 0']);
-        }
-        if (!in_array($payment_method, ['cash', 'transfer'])) {
-            jsonResponse(['status' => 'error', 'message' => 'Invalid payment method']);
-        }
-        if (empty($payment_date)) {
-            jsonResponse(['status' => 'error', 'message' => 'Payment date is required']);
-        }
-
-        try {
-            $stmt = $pdo->prepare("INSERT INTO payments (transfer_id, amount, payment_method, payment_date, notes) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$transfer_id, $amount, $payment_method, $payment_date, $notes]);
-
-            $payment_id = $pdo->lastInsertId();
-
-            // Log the payment in transfer system logs
-            $logEntry = json_encode(['type' => 'payment', 'payment_id' => $payment_id, 'amount' => $amount, 'method' => $payment_method, 'by' => $_SESSION['user_id'] ?? 'unknown', 'timestamp' => time() * 1000]);
-            $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
-            $log_stmt->execute([$logEntry, $transfer_id]);
-
-            jsonResponse(['status' => 'success', 'payment_id' => $payment_id]);
-        } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Failed to add payment: ' . $e->getMessage()]);
-        }
-    }
-
-    if ($action === 'update_payment' && $method === 'POST') {
-        $data = getJsonInput();
-        $payment_id = intval($data['payment_id'] ?? 0);
-        $amount = floatval($data['amount'] ?? 0);
-        $payment_method = $data['payment_method'] ?? '';
-        $payment_date = $data['payment_date'] ?? '';
-        $notes = trim($data['notes'] ?? '');
-
-        // Validation
-        if ($payment_id <= 0) {
-            jsonResponse(['status' => 'error', 'message' => 'Invalid payment ID']);
-        }
-        if ($amount <= 0) {
-            jsonResponse(['status' => 'error', 'message' => 'Amount must be greater than 0']);
-        }
-        if (!in_array($payment_method, ['cash', 'transfer'])) {
-            jsonResponse(['status' => 'error', 'message' => 'Invalid payment method']);
-        }
-        if (empty($payment_date)) {
-            jsonResponse(['status' => 'error', 'message' => 'Payment date is required']);
-        }
-
-        try {
-            $stmt = $pdo->prepare("UPDATE payments SET amount = ?, payment_method = ?, payment_date = ?, notes = ? WHERE id = ?");
-            $stmt->execute([$amount, $payment_method, $payment_date, $notes, $payment_id]);
-
-            if ($stmt->rowCount() > 0) {
-                jsonResponse(['status' => 'success']);
-            } else {
-                jsonResponse(['status' => 'error', 'message' => 'Payment not found or no changes made']);
-            }
-        } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Failed to update payment: ' . $e->getMessage()]);
-        }
-    }
-
-    if ($action === 'delete_payment' && $method === 'POST') {
-        $data = getJsonInput();
-        $payment_id = intval($data['payment_id'] ?? 0);
-
-        if ($payment_id <= 0) {
-            jsonResponse(['status' => 'error', 'message' => 'Invalid payment ID']);
-        }
-
-        try {
-            // Get transfer_id for logging
-            $stmt = $pdo->prepare("SELECT transfer_id, amount, payment_method FROM payments WHERE id = ?");
-            $stmt->execute([$payment_id]);
-            $payment = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$payment) {
-                jsonResponse(['status' => 'error', 'message' => 'Payment not found']);
-            }
-
-            // Delete the payment
-            $delete_stmt = $pdo->prepare("DELETE FROM payments WHERE id = ?");
-            $delete_stmt->execute([$payment_id]);
-
-            if ($delete_stmt->rowCount() > 0) {
-                // Log the deletion in transfer system logs
-                $logEntry = json_encode(['type' => 'payment_deleted', 'payment_id' => $payment_id, 'amount' => $payment['amount'], 'method' => $payment['payment_method'], 'by' => $_SESSION['user_id'] ?? 'unknown', 'timestamp' => time() * 1000]);
-                $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
-                $log_stmt->execute([$logEntry, $payment['transfer_id']]);
-
-                jsonResponse(['status' => 'success']);
-            } else {
-                jsonResponse(['status' => 'error', 'message' => 'Failed to delete payment']);
-            }
-        } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Failed to delete payment: ' . $e->getMessage()]);
         }
     }
 

@@ -287,9 +287,49 @@ try {
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.franchise', 'Franchise'); ?> (₾)</label>
                                 <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
-                            
+
+                            <!-- Payments Summary -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">Paid (₾)</label>
+                                <div id="payments-paid" class="text-lg font-semibold text-green-600">₾<?php echo number_format($case['amount_paid'] ?? 0,2); ?></div>
+                                <label class="block text-sm font-medium text-slate-700 mt-2 mb-1.5">Balance (₾)</label>
+                                <div id="payments-balance" class="text-lg font-semibold text-orange-600">₾<?php echo number_format(max(0,($case['amount'] ?? 0) - ($case['amount_paid'] ?? 0)),2); ?></div>
+                                <div class="mt-3">
+                                    <button type="button" onclick="openPaymentsModal()" class="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm inline-flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4"></i> Record Payment</button>
+                                </div>
+                            </div>
+
                             <!-- Vehicle Make -->
                             <div>
+
+                            <!-- Payments Modal -->
+                            <div id="payments-modal" class="hidden modal-backdrop" x-cloak>
+                                <div class="modal">
+                                    <h3 class="text-lg font-bold mb-2">Record Payment</h3>
+                                    <div class="space-y-2">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Amount (₾)</label>
+                                            <input id="payment-amount" type="number" step="0.01" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Method</label>
+                                            <select id="payment-method" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg"><option value="cash">Cash</option><option value="transfer">Transfer</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Reference</label>
+                                            <input id="payment-reference" type="text" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Notes</label>
+                                            <textarea id="payment-notes" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg"></textarea>
+                                        </div>
+                                        <div class="flex justify-end gap-2 mt-4">
+                                            <button type="button" onclick="closePaymentsModal()" class="px-4 py-2 rounded-lg border bg-white">Cancel</button>
+                                            <button type="button" onclick="submitPayment()" class="px-4 py-2 rounded-lg bg-blue-600 text-white">Save Payment</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.vehicle_make', 'Vehicle Make'); ?></label>
                                 <select id="input-vehicle-make" onchange="updateModelOptions('edit')" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                                     <option value="">Select Make</option>
@@ -4014,6 +4054,84 @@ try {
             const response = await fetch(`${API_URL}?action=${endpoint}`, config);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
+
+        // -------------------- Payments handling --------------------
+        async function loadPayments() {
+            try {
+                const resp = await fetchAPI(`get_payments&transfer_id=<?php echo $case_id; ?>`, 'GET');
+                if (resp && resp.payments) {
+                    renderPaymentsList(resp.payments);
+                    const totalPaid = parseFloat(resp.total_paid || 0);
+                    const amount = parseFloat(document.getElementById('input-amount')?.value || <?php echo json_encode((float)$case['amount']); ?>);
+                    const paidEl = document.getElementById('payments-paid');
+                    const balanceEl = document.getElementById('payments-balance');
+                    if (paidEl) paidEl.textContent = `₾${totalPaid.toFixed(2)}`;
+                    if (balanceEl) balanceEl.textContent = `₾${Math.max(0, (amount - totalPaid)).toFixed(2)}`;
+                }
+            } catch (e) {
+                console.error('Failed to load payments', e);
+            }
+        }
+
+        function openPaymentsModal() {
+            const modal = document.getElementById('payments-modal');
+            if (modal) modal.classList.remove('hidden');
+            initializeIcons();
+        }
+
+        function closePaymentsModal() {
+            const modal = document.getElementById('payments-modal');
+            if (modal) modal.classList.add('hidden');
+            document.getElementById('payment-amount').value = '';
+            document.getElementById('payment-reference').value = '';
+            document.getElementById('payment-notes').value = '';
+            document.getElementById('payment-method').value = 'cash';
+        }
+
+        async function submitPayment() {
+            const amount = parseFloat(document.getElementById('payment-amount').value || 0);
+            const method = document.getElementById('payment-method').value;
+            const reference = document.getElementById('payment-reference').value;
+            const notes = document.getElementById('payment-notes').value;
+            if (!amount || amount <= 0) { showToast('Validation Error', 'Please enter a positive amount', 'error'); return; }
+            try {
+                const res = await fetchAPI('create_payment', 'POST', { transfer_id: <?php echo $case_id; ?>, amount, method, reference, notes });
+                if (res && res.status === 'success') {
+                    closePaymentsModal();
+                    await loadPayments();
+                    showToast('Payment recorded', '', 'success');
+                } else {
+                    showToast('Failed to record payment', res.error || 'Unknown error', 'error');
+                }
+            } catch (e) {
+                console.error('Payment error', e);
+                showToast('Payment error', e.message, 'error');
+            }
+        }
+
+        function renderPaymentsList(payments) {
+            let container = document.getElementById('payments-list');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'payments-list';
+                const ref = document.getElementById('payments-paid');
+                ref && ref.parentNode && ref.parentNode.appendChild(container);
+            }
+            if (!payments || payments.length === 0) {
+                container.innerHTML = '<div class="text-sm text-gray-500 mt-2">No payments recorded.</div>';
+                return;
+            }
+            let html = '<div class="mt-2 space-y-2">';
+            payments.forEach(p => {
+                const when = p.paid_at || p.created_at || '';
+                const user = p.recorded_by_username || '';
+                html += `<div class="p-2 bg-white border rounded-lg flex justify-between items-center"><div><div class="text-sm font-medium">₾${parseFloat(p.amount).toFixed(2)} <span class="text-xs text-slate-500">(${p.method})</span></div><div class="text-xs text-gray-500">${p.reference ? 'Ref: '+p.reference+' • ' : ''}${p.notes ? p.notes : ''}</div></div><div class="text-xs text-gray-400 text-right">${when}<br>${user}</div></div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { loadPayments().catch(console.error); });
         }
 
         async function sendSmsAndUpdateLog(phone, text, type) {

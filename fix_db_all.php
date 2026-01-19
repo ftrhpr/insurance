@@ -50,7 +50,11 @@ try {
         'repair_stage'  => "VARCHAR(50) NULL DEFAULT NULL",
         'repair_assignments' => "JSON NULL DEFAULT NULL",
         'stage_timers'  => "JSON NULL DEFAULT NULL",
-        'stage_statuses' => "JSON NULL DEFAULT NULL"
+        'stage_statuses' => "JSON NULL DEFAULT NULL",
+        // Payment tracking
+        'amount_paid'   => "DECIMAL(10,2) DEFAULT 0.00",
+        'payment_status' => "ENUM('unpaid','partial','paid') DEFAULT 'unpaid'",
+        'last_payment_at' => "DATETIME DEFAULT NULL"
     ];
 
     foreach ($columns as $col => $def) {
@@ -277,24 +281,25 @@ try {
         }
     }
 
-    echo "---------------------------------\n";
-
-    // ---------------------------------------------------------  
-    // 6. TABLE: payments
+    // ---------------------------------------------------------
+    // 8. TABLE: payments (Payments/Income for transfers)
     // ---------------------------------------------------------
     echo "\nChecking table 'payments'...\n";
     $sql = "CREATE TABLE IF NOT EXISTS payments (
         id INT AUTO_INCREMENT PRIMARY KEY,
         transfer_id INT NOT NULL,
         amount DECIMAL(10,2) NOT NULL,
-        payment_date DATETIME NOT NULL,
-        payment_method ENUM('cash', 'transfer') NOT NULL,
-        notes TEXT,
+        method ENUM('cash','transfer') NOT NULL DEFAULT 'cash',
+        reference VARCHAR(255) DEFAULT NULL,
+        recorded_by INT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        currency VARCHAR(3) DEFAULT 'GEL',
+        paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (transfer_id) REFERENCES transfers(id) ON DELETE CASCADE,
+        FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE SET NULL,
         INDEX idx_transfer_id (transfer_id),
-        INDEX idx_payment_date (payment_date)
+        INDEX idx_method (method)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $pdo->exec($sql);
     echo " - Table structure verified.\n";
