@@ -1598,15 +1598,19 @@ try {
         // Build a dynamic insert to support legacy DBs (payment_date vs paid_at, missing recorded_by etc.)
         $recorded_by = getCurrentUserId();
 
+        // Ensure method column exists
+        try {
+            $pdo->exec("ALTER TABLE payments ADD COLUMN method ENUM('cash','transfer') NOT NULL DEFAULT 'cash'");
+        } catch (Exception $e) { /* ignore */ }
+
         // Find existing payments columns
         $colsStmt = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payments'");
         $colsStmt->execute([DB_NAME]);
         $existingCols = array_column($colsStmt->fetchAll(PDO::FETCH_COLUMN), 0);
 
-        $insertCols = ['transfer_id', 'amount'];
-        $insertParams = [$transfer_id, $amount];
+        $insertCols = ['transfer_id', 'amount', 'method'];
+        $insertParams = [$transfer_id, $amount, $methodType];
 
-        if (in_array('method', $existingCols)) { $insertCols[] = 'method'; $insertParams[] = $methodType; }
         if (in_array('reference', $existingCols)) { $insertCols[] = 'reference'; $insertParams[] = $reference; }
         if (in_array('recorded_by', $existingCols)) { $insertCols[] = 'recorded_by'; $insertParams[] = $recorded_by; }
         if (in_array('notes', $existingCols)) { $insertCols[] = 'notes'; $insertParams[] = $notes; }
