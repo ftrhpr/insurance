@@ -87,6 +87,7 @@ try {
         'subtotalBeforeVAT' => floatval($invoice['subtotal_before_vat'] ?? 0),
         'serviceDate' => $invoice['serviceDate'] ?? $invoice['service_date'] ?? null,
         'updatedAt' => $invoice['updatedAt'] ?? null,
+        'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
     ];
     
     error_log("Invoice fetched successfully. ID: " . $invoice['id']);

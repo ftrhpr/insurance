@@ -121,6 +121,7 @@ try {
             'createdAt' => $invoice['created_at'] ?? $invoice['serviceDate'] ?? null,
             'updatedAt' => $invoice['updatedAt'] ?? $invoice['updated_at'] ?? null,
             'slug' => $invoice['slug'] ?? null,
+            'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
         ];
     }, $invoices);
 

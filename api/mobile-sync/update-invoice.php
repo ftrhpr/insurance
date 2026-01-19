@@ -69,6 +69,7 @@ try {
         'vatAmount' => 'vat_amount',
         'vatRate' => 'vat_rate',
         'subtotalBeforeVAT' => 'subtotal_before_vat',
+        'internalNotes' => 'internalNotes',
     ];
     
     // Debug: Log all received data keys and image fields
@@ -131,6 +132,11 @@ try {
                     $value = intval($value ?? 0);
                 }
                 error_log("Converted VAT enabled to int: $value (from " . json_encode($data[$appField]) . ")");
+            }
+            // Handle internalNotes as JSON array
+            elseif ($dbField === 'internalNotes' && is_array($value)) {
+                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+                error_log("Internal notes transformed for update: " . $value);
             }
             // Handle JSON fields for arrays
             elseif (is_array($value) && in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {
