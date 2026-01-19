@@ -257,6 +257,7 @@ try {
                                 <div id="payments-paid" class="text-lg font-semibold text-green-600">₾<?php echo number_format($case['amount_paid'] ?? 0,2); ?></div>
                                 <label class="block text-sm font-medium text-slate-700 mt-2 mb-1.5">Balance (₾)</label>
                                 <div id="payments-balance" class="text-lg font-semibold text-orange-600">₾<?php echo number_format(max(0,($case['amount'] ?? 0) - ($case['amount_paid'] ?? 0)),2); ?></div>
+                                <div id="last-payment-info" class="mt-2 text-sm text-gray-600"></div>
                                 <div class="mt-3">
                                     <button type="button" onclick="openPaymentsModal()" class="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm inline-flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4"></i> Record Payment</button>
                                 </div>
@@ -281,6 +282,10 @@ try {
                                         <div>
                                             <label class="block text-sm font-medium text-slate-700 mb-1.5">Reference</label>
                                             <input id="payment-reference" type="text" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg">
+                                            <div class="flex gap-1 mt-1">
+                                                <button type="button" onclick="setPaymentReference('TBC')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">TBC</button>
+                                                <button type="button" onclick="setPaymentReference('BOG')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">BOG</button>
+                                            </div>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-slate-700 mb-1.5">Notes</label>
@@ -4041,8 +4046,18 @@ try {
                     const amount = parseFloat(document.getElementById('input-amount')?.value || <?php echo json_encode((float)$case['amount']); ?>);
                     const paidEl = document.getElementById('payments-paid');
                     const balanceEl = document.getElementById('payments-balance');
+                    const lastPaymentEl = document.getElementById('last-payment-info');
                     if (paidEl) paidEl.textContent = `₾${totalPaid.toFixed(2)}`;
                     if (balanceEl) balanceEl.textContent = `₾${Math.max(0, (amount - totalPaid)).toFixed(2)}`;
+                    if (lastPaymentEl) {
+                        if (resp.payments.length > 0) {
+                            const lastPayment = resp.payments[0]; // Assuming sorted by date desc
+                            const when = lastPayment.paid_at || lastPayment.created_at || '';
+                            lastPaymentEl.innerHTML = `Last: ₾${parseFloat(lastPayment.amount).toFixed(2)} (${lastPayment.method}) ${lastPayment.reference ? '- ' + lastPayment.reference : ''} <span class="text-xs">${when.split(' ')[0]}</span>`;
+                        } else {
+                            lastPaymentEl.innerHTML = '';
+                        }
+                    }
                 }
             } catch (e) {
                 console.error('Failed to load payments', e);
@@ -4062,6 +4077,10 @@ try {
             document.getElementById('payment-reference').value = '';
             document.getElementById('payment-notes').value = '';
             document.getElementById('payment-method').value = 'cash';
+        }
+
+        function setPaymentReference(value) {
+            document.getElementById('payment-reference').value = value;
         }
 
         async function submitPayment() {
