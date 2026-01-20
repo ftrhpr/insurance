@@ -569,6 +569,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             </th>
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
+                                                    <i data-lucide="layers" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.repair_status', 'Repair Status'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
                                                     <i data-lucide="calendar" class="w-4 h-4"></i>
                                                     <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
                                                 </div>
@@ -2254,6 +2260,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4">
                                 <div class="text-sm text-slate-700">
+                                    ${t.repair_status ? `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium">${escapeHtml(t.repair_status)}</span>` : '<span class="text-slate-400 text-xs">No status</span>'}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
                                     ${t.serviceDate ? (() => {
                                         try {
                                             let dateStr = t.serviceDate;
@@ -2581,6 +2592,36 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             // Render pagination buttons
             renderProcessingPagination(totalPages);
+
+            // Ensure Repair Status cells exist in the Service table rows (for cases when row templates lacked the cell)
+            try {
+                const serviceRows = document.querySelectorAll('#service-cases-body tr');
+                serviceRows.forEach(r => {
+                    const tds = r.querySelectorAll('td');
+                    // Expected columns: vehicle, contact, amount, case_type, repair_status, service_date, mechanic, actions => >=8
+                    if (tds.length >= 8) return;
+                    const onclickAttr = r.getAttribute('onclick') || '';
+                    const m = onclickAttr.match(/id=(\d+)/);
+                    if (!m) return;
+                    const id = m[1];
+                    const t = transfers.find(x => String(x.id) === String(id));
+                    if (!t) return;
+                    const cell = document.createElement('td');
+                    cell.className = 'px-5 py-4';
+                    const div = document.createElement('div');
+                    div.className = 'text-sm text-slate-700';
+                    if (t.repair_status) {
+                        div.innerHTML = `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium">${escapeHtml(t.repair_status)}</span>`;
+                    } else {
+                        div.innerHTML = `<span class="text-slate-400 text-xs">No status</span>`;
+                    }
+                    cell.appendChild(div);
+                    const reference = tds[4] || null;
+                    r.insertBefore(cell, reference);
+                });
+            } catch (e) {
+                console.warn('repair status inject failed', e);
+            }
             
             lucide.createIcons();
             updateTabCounts();
