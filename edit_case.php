@@ -1287,6 +1287,7 @@ try {
                     { id: 'Parts Ordered', name: 'Parts Ordered', icon: 'box-select' },
                     { id: 'Parts Arrived', name: 'Parts Arrived', icon: 'package-check' },
                     { id: 'Scheduled', name: 'Scheduled', icon: 'calendar-days' },
+                    { id: 'Already in service', name: 'Already in service', icon: 'wrench' },
                     { id: 'Completed', name: 'Completed', icon: 'check-circle-2' },
                     { id: 'Issue', name: 'Issue', icon: 'alert-triangle' },
                 ],

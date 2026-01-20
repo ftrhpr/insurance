@@ -145,6 +145,7 @@ try {
                                 <option value="Parts Ordered">Parts Ordered</option>
                                 <option value="Parts Arrived">Parts Arrived</option>
                                 <option value="Scheduled">Scheduled</option>
+                                <option value="Already in service">Already in service</option>
                                 <option value="Completed">Completed</option>
                                 <option value="Issue">Issue</option>
                                 <option value="no-history">No History</option>
@@ -783,6 +784,7 @@ try {
                             <option value="Parts Ordered" ${order.status === 'Parts Ordered' ? 'selected' : ''}>Parts Ordered</option>
                             <option value="Parts Arrived" ${order.status === 'Parts Arrived' ? 'selected' : ''}>Parts Arrived</option>
                             <option value="Scheduled" ${order.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                            <option value="Already in service" ${order.status === 'Already in service' ? 'selected' : ''}>Already in service</option>
                             <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
                             <option value="Issue" ${order.status === 'Issue' ? 'selected' : ''}>Issue</option>
                         </select>

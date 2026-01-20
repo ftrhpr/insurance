@@ -107,14 +107,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 SELECT t.*, v.make, v.model, v.year
                                 FROM transfers t
                                 LEFT JOIN vehicles v ON t.vehicle_id = v.id
-                                WHERE t.technician_id = ? AND t.status IN ('Processing', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed')
+                                WHERE t.technician_id = ? AND t.status IN ('Processing', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
                                 ORDER BY
                                     CASE t.status
                                         WHEN 'Processing' THEN 1
                                         WHEN 'Parts Ordered' THEN 2
                                         WHEN 'Parts Arrived' THEN 3
                                         WHEN 'Scheduled' THEN 4
-                                        WHEN 'Completed' THEN 5
+                                        WHEN 'Already in service' THEN 5
+                                        WHEN 'Completed' THEN 6
                                     END,
                                     t.service_date ASC
                             ");
@@ -148,6 +149,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                                     'Parts Ordered' => 'bg-blue-100 text-blue-800',
                                                     'Parts Arrived' => 'bg-green-100 text-green-800',
                                                     'Scheduled' => 'bg-purple-100 text-purple-800',
+                                                    'Already in service' => 'bg-orange-100 text-orange-800',
                                                     'Completed' => 'bg-emerald-100 text-emerald-800'
                                                 ];
                                                 echo $statusColors[$case['status']] ?? 'bg-slate-100 text-slate-800';

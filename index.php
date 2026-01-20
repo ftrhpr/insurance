@@ -358,6 +358,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <option value="Parts Ordered">📦 <?php echo __('dashboard.parts_ordered', 'Parts Ordered'); ?></option>
                                 <option value="Parts Arrived">🏁 <?php echo __('dashboard.parts_arrived', 'Parts Arrived'); ?></option>
                                 <option value="Scheduled">🟠 <?php echo __('dashboard.scheduled', 'Scheduled'); ?></option>
+                                <option value="Already in service">🔧 <?php echo __('dashboard.already_in_service', 'Already in Service'); ?></option>
                                 <option value="Completed">🟢 <?php echo __('dashboard.completed', 'Completed'); ?></option>
                                 <option value="Issue">🔴 <?php echo __('dashboard.issue', 'Issue'); ?></option>
                             </select>
@@ -512,6 +513,78 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </div>
                             <div class="flex gap-2" id="processing-pagination">
                                 <!-- Pagination buttons populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Already in Service Cases -->
+                <section id="already-in-service-section" class="space-y-4">
+                    <div class="flex items-center justify-between px-1">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <div class="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl shadow-lg shadow-orange-500/30">
+                                <i data-lucide="wrench" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <?php echo __('dashboard.already_in_service', 'Already in Service'); ?> <span id="service-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold bg-orange-100 text-orange-600 border border-orange-200 px-3 py-1 rounded-full shadow-sm">Service in Progress</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                    <tr>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="car" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="phone" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="user" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.mechanic', 'Mechanic'); ?></span>
+                                            </div>
+                                        </th>
+                                        <th class="px-5 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="settings" class="w-4 h-4"></i>
+                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="service-cases-body" class="divide-y divide-slate-200">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+
+                            <!-- Empty State -->
+                            <div id="service-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                <div class="bg-orange-50 p-4 rounded-full mb-4 ring-8 ring-orange-50/50"><i data-lucide="wrench" class="w-8 h-8 text-orange-300"></i></div>
+                                <h3 class="text-slate-900 font-medium">No cases in service</h3>
+                                <p class="text-slate-400 text-sm mt-1 max-w-xs">Cases currently being serviced will appear here.</p>
                             </div>
                         </div>
                     </div>
@@ -1758,9 +1831,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             const newContainer = document.getElementById('new-cases-grid');
             const activeContainer = document.getElementById('table-body');
-            newContainer.innerHTML = ''; activeContainer.innerHTML = '';
+            const serviceContainer = document.getElementById('service-cases-body');
+            newContainer.innerHTML = ''; activeContainer.innerHTML = ''; serviceContainer.innerHTML = '';
             
             let newCount = 0;
+            let serviceCount = 0;
             let activeTransfers = [];
 
             transfers.forEach(t => {
@@ -1813,6 +1888,60 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </button>
                             </div>
                         </div>`;
+                } else if(t.status === 'Already in service') {
+                    serviceCount++;
+                    serviceContainer.innerHTML += `
+                        <tr class="hover:bg-orange-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center shadow-sm">
+                                        <i data-lucide="car" class="w-5 h-5 text-orange-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
+                                        <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700 font-medium">${displayPhone ? escapeHtml(displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm font-bold text-emerald-600">${escapeHtml(t.amount)} ₾</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.serviceDate ? (() => {
+                                        try {
+                                            let dateStr = t.serviceDate;
+                                            if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                                            if (dateStr.length === 16) dateStr += ':00';
+                                            const svcDate = new Date(dateStr);
+                                            return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                        } catch(e) {
+                                            return 'Invalid date';
+                                        }
+                                    })() : '<span class="text-slate-400">Not scheduled</span>'}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.assigned_mechanic ? `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">${escapeHtml(t.assigned_mechanic)}</span>` : '<span class="text-slate-400 text-xs">Unassigned</span>'}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-orange-600 p-2 hover:bg-orange-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/25 active:scale-95" title="View Details">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>
+                                    ${CAN_EDIT ? 
+                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-orange-600 p-2 hover:bg-orange-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/25 active:scale-95">
+                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                        </button>` : ''
+                                    }
+                                </div>
+                            </td>
+                        </tr>`;
                 } else {
                     // Collect active transfers for pagination
                     activeTransfers.push({ transfer: t, dateStr, linkedVehicle, displayPhone });
@@ -1844,6 +1973,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         'Parts Ordered': 'bg-indigo-100 text-indigo-800 border-indigo-200',
                         'Parts Arrived': 'bg-teal-100 text-teal-800 border-teal-200',
                         'Scheduled': 'bg-orange-100 text-orange-800 border-orange-200',
+                        'Already in service': 'bg-orange-100 text-orange-800 border-orange-200',
                         'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
                         'Issue': 'bg-red-100 text-red-800 border-red-200'
                     };
@@ -2048,14 +2178,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             });
 
             const newCountEl = document.getElementById('new-count');
+            const serviceCountEl = document.getElementById('service-count');
             const recordCountEl = document.getElementById('record-count');
             const newCasesEmptyEl = document.getElementById('new-cases-empty');
+            const serviceEmptyEl = document.getElementById('service-empty-state');
             const emptyStateEl = document.getElementById('empty-state');
             const paginationContainerEl = document.getElementById('processing-pagination-container');
             
             if (newCountEl) newCountEl.innerText = `${newCount}`;
+            if (serviceCountEl) serviceCountEl.innerText = `${serviceCount}`;
             if (recordCountEl) recordCountEl.innerText = `${totalActive} active`;
             if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
+            if (serviceEmptyEl) serviceEmptyEl.classList.toggle('hidden', serviceCount > 0);
             if (emptyStateEl) emptyStateEl.classList.toggle('hidden', totalActive > 0);
             
             // Update pagination info and show/hide pagination
@@ -2190,7 +2324,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (statusEl) statusEl.value = t.status;
             
             // Update workflow progress indicator
-            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Completed', 'Issue'];
+            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed', 'Issue'];
             const currentStageIndex = statusStages.indexOf(t.status);
             const progressPercentage = ((currentStageIndex + 1) / statusStages.length) * 100;
             
@@ -2207,6 +2341,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 'Parts Ordered': 'Parts have been ordered for repair',
                 'Parts Arrived': 'Parts are ready for service',
                 'Scheduled': 'Service appointment is scheduled',
+                'Already in service': 'Vehicle is currently being serviced',
                 'Completed': 'Case has been completed successfully',
                 'Issue': 'Case requires special attention'
             };

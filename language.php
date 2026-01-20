@@ -166,6 +166,7 @@ function initialize_default_translations() {
         'dashboard.parts_ordered' => 'Parts Ordered',
         'dashboard.parts_arrived' => 'Parts Arrived',
         'dashboard.scheduled' => 'Scheduled',
+        'dashboard.already_in_service' => 'Already in Service',
         'dashboard.completed' => 'Completed',
         'dashboard.issue' => 'Issue',
         'dashboard.new_requests' => 'New Requests',
