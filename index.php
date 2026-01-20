@@ -1314,11 +1314,26 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 
                 // Handle new combined response format
                 if (response.transfers && response.vehicles) {
-                    transfers = response.transfers;
+                    // Deduplicate transfers by id (protect against duplicate rows from API)
+                    const origLen = (response.transfers || []).length;
+                    const trMap = new Map();
+                    (response.transfers || []).forEach(tr => {
+                        if (tr && (tr.id || tr.id === 0)) trMap.set(String(tr.id), tr);
+                    });
+                    transfers = Array.from(trMap.values());
+                    const dedupLen = transfers.length;
+                    if (dedupLen < origLen) console.warn(`Removed ${origLen - dedupLen} duplicate transfer(s) from API response`);
                     vehicles = response.vehicles;
                 } else if (Array.isArray(response)) {
-                    // Fallback for old format (just transfers array)
-                    transfers = response;
+                    // Fallback for old format (just transfers array) - also dedupe
+                    const origLen = (response || []).length;
+                    const trMap = new Map();
+                    (response || []).forEach(tr => {
+                        if (tr && (tr.id || tr.id === 0)) trMap.set(String(tr.id), tr);
+                    });
+                    transfers = Array.from(trMap.values());
+                    const dedupLen = transfers.length;
+                    if (dedupLen < origLen) console.warn(`Removed ${origLen - dedupLen} duplicate transfer(s) from fallback response`);
                     const newVehicles = await fetchAPI('get_vehicles');
                     if(Array.isArray(newVehicles)) vehicles = newVehicles;
                 }
