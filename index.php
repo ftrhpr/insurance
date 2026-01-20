@@ -514,6 +514,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         <i data-lucide="chevron-left" class="w-4 h-4"></i>
                                     </button>
                                     <span id="processing-page-info" class="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-lg">Page 1</span>
+
+                                    <!-- Page number buttons will be injected here -->
+                                    <div id="processing-pagination" class="flex items-center gap-1 ml-2"></div>
+
                                     <button id="processing-next-btn" onclick="changeProcessingPage(1)" class="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed">
                                         <i data-lucide="chevron-right" class="w-4 h-4"></i>
                                     </button>
@@ -2551,7 +2555,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const showingEndEl = document.getElementById('processing-showing-end');
                 const totalEl = document.getElementById('processing-total');
                 
-                if (pageInfoEl) pageInfoEl.classList.remove('hidden');
+                if (pageInfoEl) { pageInfoEl.classList.remove('hidden'); pageInfoEl.textContent = `Page ${currentProcessingPage}`; }
                 if (showingStartEl) showingStartEl.textContent = startIndex + 1;
                 if (showingEndEl) showingEndEl.textContent = endIndex;
                 if (totalEl) totalEl.textContent = totalActive;
