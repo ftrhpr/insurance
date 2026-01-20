@@ -2201,6 +2201,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </tr>`;
                 } else if(t.repair_status === 'წიანსწარი შეფასება') {
                     assessmentCount++;
+                    console.log('Adding assessment case:', t.id, t.plate);
                     assessmentContainer.innerHTML += `
                         <tr class="hover:bg-blue-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
@@ -2262,7 +2263,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                         </tr>`;
                 } else {
-                    // Collect active transfers for pagination
+                    // Collect active transfers for pagination (exclude assessment cases)
+                    console.log('Adding to active transfers:', t.id, t.plate, 'repair_status:', t.repair_status);
                     activeTransfers.push({ transfer: t, dateStr, linkedVehicle, displayPhone });
                 }
             });
@@ -2621,6 +2623,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const activeCount = transfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
             const serviceCount = transfers.filter(t => t.status === 'Already in service').length;
             const assessmentCount = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
+            console.log('Total assessment cases found:', assessmentCount);
+            console.log('Assessment cases:', transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').map(t => ({id: t.id, plate: t.plate, repair_status: t.repair_status})));
             const completedCount = transfers.filter(t => t.status === 'Completed').length;
 
             // Update tab badges
