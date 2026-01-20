@@ -31,6 +31,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
 
+    <!-- Favicon (inline SVG, avoids 404) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230ea5e9'/%3E%3Ctext x='50' y='57' font-size='50' text-anchor='middle' fill='white'%3EO%3C/text%3E%3C/svg%3E">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -2392,10 +2395,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </td>
                         <td class="px-5 py-4">
                             <div class="text-sm text-slate-700">
-                                ${primary.t.case_type === 'დაზღვევა' ? 
-                                    `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit"><i data-lucide=\"shield\" class=\"w-3 h-3\"></i> დაზღვევა</span>` : 
-                                    `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit"><i data-lucide=\"shopping-cart\" class=\"w-3 h-3\"></i> საცალო</span>`
-                                }
+                                ${primary.t.case_type === 'დაზღვევა' ? '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit"><i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა</span>' : '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit"><i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო</span>' }
                             </div>
                         </td>
                         <td class="px-5 py-4">
@@ -2415,7 +2415,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <div class="flex items-center justify-end gap-1">
                                 <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${primary.t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Details"><i data-lucide="eye" class="w-4 h-4"></i></button>
                                 ${CAN_EDIT ? `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${primary.t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95"><i data-lucide="edit-2" class="w-4 h-4"></i></button>` : ''}
-                                ${groupSize > 1 ? `<button onclick="event.stopPropagation(); toggleAssessmentGroup('${safeKey}')" class=\"text-slate-400 px-2 py-1 rounded-lg text-xs bg-slate-50\">Show ${groupSize - 1} more</button>` : ''}
+                                ${groupSize > 1 ? '<button onclick="event.stopPropagation(); toggleAssessmentGroup(\'' + safeKey + '\')" class="text-slate-400 px-2 py-1 rounded-lg text-xs bg-slate-50">Show ' + (groupSize - 1) + ' more</button>' : ''}
                             </div>
                         </td>
                     </tr>`;
@@ -2436,7 +2436,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <div class="text-sm font-bold text-blue-600">${escapeHtml(item.t.amount)} ₾</div>
                                 </td>
                                 <td class="px-5 py-4">
-                                    <div class="text-sm text-slate-700">${item.t.case_type === 'დაზღვევა' ? `<span class=\"bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium\">დაზღვევა</span>` : `<span class=\"bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium\">საცალო</span>`}</div>
+                                    <div class="text-sm text-slate-700">${item.t.case_type === 'დაზღვევა' ? '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">დაზღვევა</span>' : '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium">საცალო</span>'}</div>
                                 </td>
                                 <td class="px-5 py-4">
                                     <div class="text-sm text-slate-700">${item.t.serviceDate ? escapeHtml(item.t.serviceDate) : '<span class=\"text-slate-400\">Not scheduled</span>'}</div>
