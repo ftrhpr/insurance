@@ -96,17 +96,22 @@ try {
         sendResponse(false, null, 'Transfer not found', 404);
     }
 
-    // Insert payment (only use columns that exist in your table)
-    $sql = "INSERT INTO payments (transfer_id, amount, payment_date, payment_method, method, reference, notes, currency, paid_at, created_at, updated_at)
-            VALUES (:transfer_id, :amount, :payment_date, :payment_method, :method, :reference, :notes, :currency, :paid_at, NOW(), NOW())";
+    // Insert payment - skip 'method' column as it may have strict ENUM constraints
+    // Store the full method info in payment_method instead (e.g., "Transfer - BOG")
+    $fullPaymentMethod = $paymentMethod;
+    if ($paymentMethod === 'Transfer' && $method !== 'Transfer') {
+        $fullPaymentMethod = $method; // Store BOG or TBC directly
+    }
+
+    $sql = "INSERT INTO payments (transfer_id, amount, payment_date, payment_method, reference, notes, currency, paid_at, created_at, updated_at)
+            VALUES (:transfer_id, :amount, :payment_date, :payment_method, :reference, :notes, :currency, :paid_at, NOW(), NOW())";
 
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute([
         ':transfer_id' => $transferId,
         ':amount' => $amount,
         ':payment_date' => $paymentDate,
-        ':payment_method' => $paymentMethod,
-        ':method' => $method,
+        ':payment_method' => $fullPaymentMethod,
         ':reference' => $reference,
         ':notes' => $notes,
         ':currency' => $currency,
