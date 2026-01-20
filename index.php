@@ -2201,7 +2201,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </tr>`;
                 } else if(t.repair_status === 'წიანსწარი შეფასება') {
                     assessmentCount++;
-                    console.log('Adding assessment case:', t.id, t.plate);
                     assessmentContainer.innerHTML += `
                         <tr class="hover:bg-blue-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
@@ -2264,7 +2263,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </tr>`;
                 } else {
                     // Collect active transfers for pagination (exclude assessment cases)
-                    console.log('Adding to active transfers:', t.id, t.plate, 'repair_status:', t.repair_status);
                     activeTransfers.push({ transfer: t, dateStr, linkedVehicle, displayPhone });
                 }
             });
@@ -2619,12 +2617,40 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         // Update tab counts
         function updateTabCounts() {
-            const newCount = transfers.filter(t => t.status === 'New').length;
-            const activeCount = transfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
-            const serviceCount = transfers.filter(t => t.status === 'Already in service').length;
-            const assessmentCount = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
-            console.log('Total assessment cases found:', assessmentCount);
-            console.log('Assessment cases:', transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').map(t => ({id: t.id, plate: t.plate, repair_status: t.repair_status})));
+            const searchInputEl = document.getElementById('search-input');
+            const statusFilterEl = document.getElementById('status-filter');
+            const replyFilterEl = document.getElementById('reply-filter');
+            
+            const search = searchInputEl ? searchInputEl.value.toLowerCase() : '';
+            const filter = statusFilterEl ? statusFilterEl.value : 'All';
+            const replyFilter = replyFilterEl ? replyFilterEl.value : 'All';
+
+            let filteredTransfers = transfers.filter(t => {
+                // 1. Text Search Filter
+                const match = (t.plate+t.name+(t.phone||'')).toLowerCase().includes(search);
+                if(!match) return false;
+
+                // 2. Status Filter
+                if(filter !== 'All' && t.status !== filter) return false;
+
+                // 3. Reply Filter (Logic: 'Not Responded' matches 'Pending' or null)
+                if (replyFilter !== 'All') {
+                    if (replyFilter === 'Pending') {
+                        // Match "Not Responded" (Pending or empty)
+                        if (t.user_response && t.user_response !== 'Pending') return false;
+                    } else {
+                        // Match specific reply (Confirmed / Reschedule)
+                        if (t.user_response !== replyFilter) return false;
+                    }
+                }
+
+                return true;
+            });
+
+            const newCount = filteredTransfers.filter(t => t.status === 'New').length;
+            const activeCount = filteredTransfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
+            const serviceCount = filteredTransfers.filter(t => t.status === 'Already in service').length;
+            const assessmentCount = filteredTransfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
             const completedCount = transfers.filter(t => t.status === 'Completed').length;
 
             // Update tab badges
