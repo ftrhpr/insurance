@@ -2537,11 +2537,19 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const emptyStateEl = document.getElementById('empty-state');
             const paginationContainerEl = document.getElementById('processing-pagination-container');
             
-            if (newCountEl) newCountEl.innerText = `${newCount}`;
-            if (serviceCountEl) serviceCountEl.innerText = `${serviceCount}`;
-            if (completedCountEl) completedCountEl.innerText = `${completedCount}`;
-            if (assessmentCountEl) assessmentCountEl.innerText = `${assessmentCount}`;
+            // Calculate totals for each tab (unfiltered)
+            const totalNew = transfers.filter(t => t.status === 'New').length;
+            const totalService = transfers.filter(t => t.status === 'Already in service').length;
+            const totalCompleted = transfers.filter(t => t.status === 'Completed').length;
+            const totalAssessment = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
+
+            if (newCountEl) newCountEl.innerText = `${newCount} / ${totalNew}`;
+            if (serviceCountEl) serviceCountEl.innerText = `${serviceCount} / ${totalService}`;
+            if (completedCountEl) completedCountEl.innerText = `${completedCount} / ${totalCompleted}`;
+            if (assessmentCountEl) assessmentCountEl.innerText = `${assessmentCount} / ${totalAssessment}`;
             if (recordCountEl) recordCountEl.innerText = `${totalActive} active`;
+
+            // Show/hide empty states based on visible counts
             if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
             if (serviceEmptyEl) serviceEmptyEl.classList.toggle('hidden', serviceCount > 0);
             if (completedEmptyEl) completedEmptyEl.classList.toggle('hidden', completedCount > 0);
