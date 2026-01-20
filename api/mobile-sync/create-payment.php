@@ -96,8 +96,8 @@ try {
         sendResponse(false, null, 'Transfer not found', 404);
     }
 
-    // Insert payment - skip 'method' column as it may have strict ENUM constraints
-    // Store the full method info in payment_method instead (e.g., "Transfer - BOG")
+    // Insert payment - skip 'method' column due to ENUM constraints
+    // Store method info in payment_method: Cash, BOG, or TBC
     $fullPaymentMethod = $paymentMethod;
     if ($paymentMethod === 'Transfer' && $method !== 'Transfer') {
         $fullPaymentMethod = $method; // Store BOG or TBC directly
