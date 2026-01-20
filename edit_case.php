@@ -247,6 +247,13 @@ try {
                                 <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.case_type', 'Case Type'); ?></label>
+                                <select id="input-case-type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                                    <option value="საცალო" <?php echo ($case['case_type'] ?? 'საცალო') === 'საცალო' ? 'selected' : ''; ?>>საცალო (Retail)</option>
+                                    <option value="დაზღვევა" <?php echo ($case['case_type'] ?? 'საცალო') === 'დაზღვევა' ? 'selected' : ''; ?>>დაზღვევა (Insurance)</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.franchise', 'Franchise'); ?> (₾)</label>
                                 <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
@@ -2328,6 +2335,7 @@ try {
                         name: document.getElementById('input-name').value.trim(),
                         plate: document.getElementById('input-plate').value.trim(),
                         amount: calculatedAmount > 0 ? calculatedAmount.toFixed(2) : document.getElementById('input-amount').value.trim(),
+                        case_type: document.getElementById('input-case-type').value,
                         status: status,
                         phone: document.getElementById('input-phone').value.trim(),
                         serviceDate: serviceDate || null,

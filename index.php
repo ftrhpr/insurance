@@ -559,6 +559,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             </th>
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
+                                                    <i data-lucide="tag" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.case_type', 'Case Type'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
                                                     <i data-lucide="calendar" class="w-4 h-4"></i>
                                                     <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
                                                 </div>
@@ -629,6 +635,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             </th>
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
+                                                    <i data-lucide="tag" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.case_type', 'Case Type'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
                                                     <i data-lucide="calendar" class="w-4 h-4"></i>
                                                     <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
                                                 </div>
@@ -689,6 +701,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                                 <div class="flex items-center gap-2">
                                                     <i data-lucide="dollar-sign" class="w-4 h-4"></i>
                                                     <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="tag" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.case_type', 'Case Type'); ?></span>
                                                 </div>
                                             </th>
                                             <th class="px-5 py-4">
@@ -2077,6 +2095,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4">
                                 <div class="text-sm text-slate-700">
+                                    ${t.case_type === 'დაზღვევა' ? 
+                                        `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
+                                        </span>` : 
+                                        `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
+                                        </span>`
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
                                     ${t.serviceDate ? (() => {
                                         try {
                                             let dateStr = t.serviceDate;
@@ -2131,6 +2161,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4">
                                 <div class="text-sm text-slate-700">
+                                    ${t.case_type === 'დაზღვევა' ? 
+                                        `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
+                                        </span>` : 
+                                        `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
+                                        </span>`
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
                                     ${t.serviceDate ? (() => {
                                         try {
                                             let dateStr = t.serviceDate;
@@ -2178,6 +2220,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4">
                                 <div class="text-sm font-bold text-blue-600">${escapeHtml(t.amount)} ₾</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.case_type === 'დაზღვევა' ? 
+                                        `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
+                                        </span>` : 
+                                        `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
+                                        </span>`
+                                    }
+                                </div>
                             </td>
                             <td class="px-5 py-4">
                                 <div class="text-sm text-slate-700">
@@ -2405,6 +2459,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     ${t.repair_status ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
                                         <i data-lucide="wrench" class="w-3 h-3"></i>
                                         ${t.repair_status}
+                                    </span>` : ''}
+                                    ${t.case_type ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium ${t.case_type === 'დაზღვევა' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-green-100 text-green-700 border border-green-200'}">
+                                        <i data-lucide="${t.case_type === 'დაზღვევა' ? 'shield' : 'shopping-cart'}" class="w-3 h-3"></i>
+                                        ${t.case_type}
                                     </span>` : ''}
                                 </div>
                             </td>

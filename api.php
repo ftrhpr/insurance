@@ -423,7 +423,8 @@ try {
                 'global_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
                 'slug' => "VARCHAR(32) UNIQUE DEFAULT NULL",
                 'vat_enabled' => "TINYINT(1) DEFAULT 0",
-                'vat_amount' => "DECIMAL(10,2) DEFAULT 0.00"
+                'vat_amount' => "DECIMAL(10,2) DEFAULT 0.00",
+                'case_type' => "ENUM('საცალო', 'დაზღვევა') DEFAULT 'საცალო'"
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -467,6 +468,7 @@ try {
                 'name' => 'name',
                 'plate' => 'plate',
                 'amount' => 'amount',
+                'case_type' => 'case_type',
                 'status' => 'status',
                 'phone' => 'phone',
                 'serviceDate' => 'service_date',
