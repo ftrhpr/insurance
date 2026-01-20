@@ -369,358 +369,386 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     </div>
                 </div>
 
-                <!-- New Requests Grid -->
-                <section id="new-cases-section" class="space-y-4">
-                    <div class="flex items-center justify-between px-1">
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <span class="relative flex h-3 w-3">
-                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
-                              <span class="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
-                            </span>
-                            <?php echo __('dashboard.new_requests', 'New Requests'); ?> <span id="new-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
-                        </h2>
-                        <div class="flex items-center gap-2">
-                            <button id="bulk-schedule-new" onclick="window.openBulkScheduleModal()" title="Set schedule date for first N New cases" class="px-3 py-2 btn-primary text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-95">
-                                <i data-lucide="calendar" class="w-4 h-4 inline-block mr-2"></i>
-                                Schedule New Cases...
+                </div>
+
+                <!-- Cases Tabs -->
+                <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden">
+                    <!-- Tab Navigation -->
+                    <div class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/50">
+                        <nav class="flex space-x-1 px-6 py-4" aria-label="Tabs">
+                            <button id="tab-new" onclick="switchTab('new')" class="tab-button active flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 bg-primary-500 text-white shadow-md">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                </span>
+                                New Requests <span id="new-count-tab" class="ml-1 bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">(0)</span>
                             </button>
+                            <button id="tab-active" onclick="switchTab('active')" class="tab-button flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                                <i data-lucide="activity" class="w-4 h-4"></i>
+                                Active Queue <span id="active-count-tab" class="ml-1 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">(0)</span>
+                            </button>
+                            <button id="tab-service" onclick="switchTab('service')" class="tab-button flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                                <i data-lucide="wrench" class="w-4 h-4"></i>
+                                In Service <span id="service-count-tab" class="ml-1 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">(0)</span>
+                            </button>
+                            <button id="tab-assessment" onclick="switchTab('assessment')" class="tab-button flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                                <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+                                Assessment <span id="assessment-count-tab" class="ml-1 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">(0)</span>
+                            </button>
+                            <button id="tab-completed" onclick="switchTab('completed')" class="tab-button flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                                Completed <span id="completed-count-tab" class="ml-1 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">(0)</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="p-6">
+                        <!-- New Requests Tab -->
+                        <div id="tab-content-new" class="tab-content">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-lg font-bold text-slate-800"><?php echo __('dashboard.new_requests', 'New Requests'); ?></h3>
+                                <div class="flex items-center gap-2">
+                                    <button id="bulk-schedule-new" onclick="window.openBulkScheduleModal()" title="Set schedule date for first N New cases" class="px-3 py-2 btn-primary text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-95">
+                                        <i data-lucide="calendar" class="w-4 h-4 inline-block mr-2"></i>
+                                        Schedule New Cases...
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="new-cases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                <!-- Cards injected here -->
+                            </div>
+
+                            <div id="new-cases-empty" class="hidden py-12 flex flex-col items-center justify-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400">
+                                <div class="bg-slate-50 p-3 rounded-full mb-3"><i data-lucide="inbox" class="w-6 h-6"></i></div>
+                                <span class="text-sm font-medium"><?php echo __('dashboard.no_new_requests', 'No new incoming requests'); ?></span>
+                            </div>
                         </div>
 
-                        <!-- Bulk Schedule Modal -->
-                        <div id="bulk-schedule-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
-                            <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" onclick="window.closeBulkScheduleModal()"></div>
-                            <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
-                                <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <h3 class="text-lg font-bold">Bulk Schedule New Cases</h3>
-                                        <button onclick="window.closeBulkScheduleModal()" class="text-slate-500 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        <!-- Active Queue Tab -->
+                        <div id="tab-content-active" class="tab-content hidden">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-bold text-slate-800"><?php echo __('dashboard.processing_queue', 'Processing Queue'); ?></h3>
+                                <div class="flex items-center gap-2">
+                                    <button id="resend-schedule-sms" onclick="window.resendScheduleSMS()" title="Resend schedule SMS to all unconfirmed scheduled cases" class="px-3 py-2 text-sm font-bold bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-xl transition-all shadow-sm">
+                                        <i data-lucide="send" class="w-4 h-4 inline-block mr-2"></i>
+                                        Resend Schedule SMS
+                                    </button>
+                                    <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                        <tr>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="car" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="coins" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="activity" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.status', 'Status'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="phone" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.phone', 'Phone'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                    <span>Service Date</span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="clock" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.due_date', 'Due Date'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                                    <span>Customer Reply</span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4 text-right">
+                                                <div class="flex items-center gap-2 justify-end">
+                                                    <i data-lucide="settings" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-body" class="divide-y divide-slate-100 bg-white">
+                                        <!-- Rows injected by JS -->
+                                    </tbody>
+                                </table>
+                                <div id="empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                    <div class="bg-slate-50 p-4 rounded-full mb-4 ring-8 ring-slate-50/50"><i data-lucide="filter" class="w-8 h-8 text-slate-300"></i></div>
+                                    <h3 class="text-slate-900 font-medium">No matching cases found</h3>
+                                    <p class="text-slate-400 text-sm mt-1 max-w-xs">Try adjusting your search filters or import new transfers above.</p>
+                                </div>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div id="processing-pagination-container" class="hidden mt-6 flex items-center justify-between">
+                                <div class="flex items-center gap-2 text-sm text-slate-600">
+                                    <span>Showing <span id="processing-showing-start">1</span> to <span id="processing-showing-end">10</span> of <span id="processing-total">0</span> entries</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button id="processing-prev-btn" onclick="changeProcessingPage(-1)" class="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                    </button>
+                                    <span id="processing-page-info" class="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-lg">Page 1</span>
+                                    <button id="processing-next-btn" onclick="changeProcessingPage(1)" class="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Already in Service Tab -->
+                        <div id="tab-content-service" class="tab-content hidden">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <div class="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl shadow-lg shadow-orange-500/30">
+                                        <i data-lucide="wrench" class="w-5 h-5 text-white"></i>
                                     </div>
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="text-sm font-semibold text-slate-700 mb-1 block">Preferred Date & Time</label>
-                                            <input id="bulk-service-date" type="datetime-local" class="w-full px-4 py-2 border border-slate-200 rounded-lg" value="2026-01-05T10:00">
-                                        </div>
-                                        <div>
-                                            <label class="text-sm font-semibold text-slate-700 mb-1 block">Number of cases</label>
-                                            <input id="bulk-service-limit" type="number" min="1" max="100" value="10" class="w-32 px-4 py-2 border border-slate-200 rounded-lg" oninput="window.updateBulkScheduleDescription()">
-                                            <div id="bulk-schedule-description" class="text-xs text-slate-400 mt-1">This will schedule the first <strong>10</strong> cases with status <em>New</em>.</div>
-                                        </div>
+                                    <?php echo __('dashboard.already_in_service', 'Already in Service'); ?> <span id="service-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                                </h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold bg-orange-100 text-orange-600 border border-orange-200 px-3 py-1 rounded-full shadow-sm">Service in Progress</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                        <tr>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="car" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="phone" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="user" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.mechanic', 'Mechanic'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="settings" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="service-cases-body" class="divide-y divide-slate-200">
+                                        <!-- Populated by JavaScript -->
+                                    </tbody>
+                                </table>
+
+                                <!-- Empty State -->
+                                <div id="service-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                    <div class="bg-orange-50 p-4 rounded-full mb-4 ring-8 ring-orange-50/50"><i data-lucide="wrench" class="w-8 h-8 text-orange-300"></i></div>
+                                    <h3 class="text-slate-900 font-medium">No cases in service</h3>
+                                    <p class="text-slate-400 text-sm mt-1 max-w-xs">Cases currently being serviced will appear here.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preliminary Assessment Tab -->
+                        <div id="tab-content-assessment" class="tab-content hidden">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg shadow-blue-500/30">
+                                        <i data-lucide="clipboard-check" class="w-5 h-5 text-white"></i>
                                     </div>
-                                    <div class="mt-6 flex justify-end gap-2">
-                                        <button onclick="window.closeBulkScheduleModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-sm">Cancel</button>
-                                        <button id="bulk-schedule-confirm-btn" onclick="window.bulkScheduleNewCases()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm">Schedule First 10</button>
+                                    Preliminary Assessment <span id="assessment-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                                </h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold bg-blue-100 text-blue-600 border border-blue-200 px-3 py-1 rounded-full shadow-sm">Under Assessment</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                        <tr>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="car" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="phone" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="settings" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="assessment-cases-body" class="divide-y divide-slate-200">
+                                        <!-- Populated by JavaScript -->
+                                    </tbody>
+                                </table>
+
+                                <!-- Empty State -->
+                                <div id="assessment-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                    <div class="bg-blue-50 p-4 rounded-full mb-4 ring-8 ring-blue-50/50"><i data-lucide="clipboard-check" class="w-8 h-8 text-blue-300"></i></div>
+                                    <h3 class="text-slate-900 font-medium">No cases under assessment</h3>
+                                    <p class="text-slate-400 text-sm mt-1 max-w-xs">Cases in preliminary assessment will appear here.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Completed Tab -->
+                        <div id="tab-content-completed" class="tab-content hidden">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <div class="p-2 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg shadow-emerald-500/30">
+                                        <i data-lucide="check-circle-2" class="w-5 h-5 text-white"></i>
                                     </div>
+                                    <?php echo __('dashboard.completed', 'Completed'); ?> <span id="completed-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                                </h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold bg-emerald-100 text-emerald-600 border border-emerald-200 px-3 py-1 rounded-full shadow-sm">Service Completed</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                        <tr>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="car" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="phone" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="settings" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="completed-cases-body" class="divide-y divide-slate-200">
+                                        <!-- Populated by JavaScript -->
+                                    </tbody>
+                                </table>
+
+                                <!-- Empty State -->
+                                <div id="completed-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                    <div class="bg-emerald-50 p-4 rounded-full mb-4 ring-8 ring-emerald-50/50"><i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-300"></i></div>
+                                    <h3 class="text-slate-900 font-medium">No completed cases</h3>
+                                    <p class="text-slate-400 text-sm mt-1 max-w-xs">Completed service cases will appear here.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div id="new-cases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        <!-- Cards injected here -->
-                    </div>
-                    
-                    <div id="new-cases-empty" class="hidden py-12 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
-                        <div class="bg-slate-50 p-3 rounded-full mb-3"><i data-lucide="inbox" class="w-6 h-6"></i></div>
-                        <span class="text-sm font-medium"><?php echo __('dashboard.no_new_requests', 'No new incoming requests'); ?></span>
-                    </div>
-                </section>
+                </div>
 
-                <!-- Active Queue Table -->
-                <section>
-                    <div class="flex items-center justify-between mb-4 px-1">
-                        <h2 class="text-xl font-bold text-slate-800"><?php echo __('dashboard.processing_queue', 'Processing Queue'); ?></h2>
-                        <div class="flex items-center gap-2">
-                            <button id="resend-schedule-sms" onclick="window.resendScheduleSMS()" title="Resend schedule SMS to all unconfirmed scheduled cases" class="px-3 py-2 text-sm font-bold bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-xl transition-all shadow-sm">
-                                <i data-lucide="send" class="w-4 h-4 inline-block mr-2"></i>
-                                Resend Schedule SMS
-                            </button>
-                            <span id="record-count" class="text-xs font-semibold bg-white text-slate-500 border border-slate-200 px-3 py-1 rounded-full shadow-sm">0 active</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                        <div class="overflow-x-auto custom-scrollbar">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
-                                    <tr>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="car" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="coins" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="activity" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.status', 'Status'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="phone" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.phone', 'Phone'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                <span>Service Date</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="clock" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.due_date', 'Due Date'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="message-circle" class="w-4 h-4"></i>
-                                                <span>Customer Reply</span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4 text-right">
-                                            <div class="flex items-center gap-2 justify-end">
-                                                <i data-lucide="settings" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-body" class="divide-y divide-slate-100 bg-white">
-                                    <!-- Rows injected by JS -->
-                                </tbody>
-                            </table>
-                            <div id="empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
-                                <div class="bg-slate-50 p-4 rounded-full mb-4 ring-8 ring-slate-50/50"><i data-lucide="filter" class="w-8 h-8 text-slate-300"></i></div>
-                                <h3 class="text-slate-900 font-medium">No matching cases found</h3>
-                                <p class="text-slate-400 text-sm mt-1 max-w-xs">Try adjusting your search filters or import new transfers above.</p>
+                <!-- Bulk Schedule Modal -->
+                <div id="bulk-schedule-modal" class="hidden fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
+                    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" onclick="window.closeBulkScheduleModal()"></div>
+                    <div class="fixed inset-0 flex items-center justify-center p-4 z-[10000]">
+                        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold">Bulk Schedule New Cases</h3>
+                                <button onclick="window.closeBulkScheduleModal()" class="text-slate-500 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-sm font-semibold text-slate-700 mb-1 block">Preferred Date & Time</label>
+                                    <input id="bulk-service-date" type="datetime-local" class="w-full px-4 py-2 border border-slate-200 rounded-lg" value="2026-01-05T10:00">
+                                </div>
+                                <div>
+                                    <label class="text-sm font-semibold text-slate-700 mb-1 block">Number of cases</label>
+                                    <input id="bulk-service-limit" type="number" min="1" max="100" value="10" class="w-32 px-4 py-2 border border-slate-200 rounded-lg" oninput="window.updateBulkScheduleDescription()">
+                                    <div id="bulk-schedule-description" class="text-xs text-slate-400 mt-1">This will schedule the first <strong>10</strong> cases with status <em>New</em>.</div>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end gap-2">
+                                <button onclick="window.closeBulkScheduleModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-sm">Cancel</button>
+                                <button id="bulk-schedule-confirm-btn" onclick="window.bulkScheduleNewCases()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm">Schedule First 10</button>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Pagination -->
-                    <div id="processing-pagination-container" class="hidden mt-4">
-                        <div class="flex items-center justify-between bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200 shadow-sm">
-                            <div class="text-sm text-slate-600" id="processing-page-info">
-                                Showing <span id="processing-showing-start">0</span>-<span id="processing-showing-end">0</span> of <span id="processing-total">0</span>
-                            </div>
-                            <div class="flex gap-2" id="processing-pagination">
-                                <!-- Pagination buttons populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Already in Service Cases -->
-                <section id="already-in-service-section" class="space-y-4">
-                    <div class="flex items-center justify-between px-1">
-                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <div class="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl shadow-lg shadow-orange-500/30">
-                                <i data-lucide="wrench" class="w-5 h-5 text-white"></i>
-                            </div>
-                            <?php echo __('dashboard.already_in_service', 'Already in Service'); ?> <span id="service-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
-                        </h2>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-semibold bg-orange-100 text-orange-600 border border-orange-200 px-3 py-1 rounded-full shadow-sm">Service in Progress</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                        <div class="overflow-x-auto custom-scrollbar">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
-                                    <tr>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="car" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="phone" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="dollar-sign" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="user" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.mechanic', 'Mechanic'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="settings" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="service-cases-body" class="divide-y divide-slate-200">
-                                    <!-- Populated by JavaScript -->
-                                </tbody>
-                            </table>
-
-                            <!-- Empty State -->
-                            <div id="service-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
-                                <div class="bg-orange-50 p-4 rounded-full mb-4 ring-8 ring-orange-50/50"><i data-lucide="wrench" class="w-8 h-8 text-orange-300"></i></div>
-                                <h3 class="text-slate-900 font-medium">No cases in service</h3>
-                                <p class="text-slate-400 text-sm mt-1 max-w-xs">Cases currently being serviced will appear here.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Completed Cases -->
-                <section id="completed-cases-section" class="space-y-4">
-                    <div class="flex items-center justify-between px-1">
-                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <div class="p-2 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg shadow-emerald-500/30">
-                                <i data-lucide="check-circle-2" class="w-5 h-5 text-white"></i>
-                            </div>
-                            <?php echo __('dashboard.completed', 'Completed'); ?> <span id="completed-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
-                        </h2>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-semibold bg-emerald-100 text-emerald-600 border border-emerald-200 px-3 py-1 rounded-full shadow-sm">Service Completed</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                        <div class="overflow-x-auto custom-scrollbar">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
-                                    <tr>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="car" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="phone" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="dollar-sign" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="settings" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="completed-cases-body" class="divide-y divide-slate-200">
-                                    <!-- Populated by JavaScript -->
-                                </tbody>
-                            </table>
-
-                            <!-- Empty State -->
-                            <div id="completed-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
-                                <div class="bg-emerald-50 p-4 rounded-full mb-4 ring-8 ring-emerald-50/50"><i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-300"></i></div>
-                                <h3 class="text-slate-900 font-medium">No completed cases</h3>
-                                <p class="text-slate-400 text-sm mt-1 max-w-xs">Completed service cases will appear here.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Preliminary Assessment Cases -->
-                <section id="assessment-cases-section" class="space-y-4">
-                    <div class="flex items-center justify-between px-1">
-                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg shadow-blue-500/30">
-                                <i data-lucide="clipboard-check" class="w-5 h-5 text-white"></i>
-                            </div>
-                            Preliminary Assessment <span id="assessment-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
-                        </h2>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-semibold bg-blue-100 text-blue-600 border border-blue-200 px-3 py-1 rounded-full shadow-sm">Under Assessment</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/60 border border-slate-200/80 overflow-hidden card-hover">
-                        <div class="overflow-x-auto custom-scrollbar">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
-                                    <tr>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="car" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="phone" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="dollar-sign" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
-                                            </div>
-                                        </th>
-                                        <th class="px-5 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="settings" class="w-4 h-4"></i>
-                                                <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="assessment-cases-body" class="divide-y divide-slate-200">
-                                    <!-- Populated by JavaScript -->
-                                </tbody>
-                            </table>
-
-                            <!-- Empty State -->
-                            <div id="assessment-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
-                                <div class="bg-blue-50 p-4 rounded-full mb-4 ring-8 ring-blue-50/50"><i data-lucide="clipboard-check" class="w-8 h-8 text-blue-300"></i></div>
-                                <h3 class="text-slate-900 font-medium">No cases under assessment</h3>
-                                <p class="text-slate-400 text-sm mt-1 max-w-xs">Cases in preliminary assessment will appear here.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
             </div>
 
             <!-- VIEW: VEHICLES -->
@@ -1278,6 +1306,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
 
                 renderTable(currentProcessingPage);
+                updateTabCounts();
+                initializeTabs();
             } catch(e) {
                 // Squelch load errors to prevent loop spam, alert user once via status
             }
@@ -2462,6 +2492,91 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             renderProcessingPagination(totalPages);
             
             lucide.createIcons();
+            updateTabCounts();
+        }
+
+        // Tab switching functionality
+        let currentTab = 'new';
+        let tabsLoaded = { new: true, active: false, service: false, assessment: false, completed: false };
+
+        function switchTab(tabName) {
+            // Update tab button states
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active', 'bg-primary-500', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+            });
+            
+            const activeTabBtn = document.getElementById(`tab-${tabName}`);
+            if (activeTabBtn) {
+                activeTabBtn.classList.add('active', 'bg-primary-500', 'text-white', 'shadow-md');
+                activeTabBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+            }
+
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Show selected tab content
+            const activeContent = document.getElementById(`tab-content-${tabName}`);
+            if (activeContent) {
+                activeContent.classList.remove('hidden');
+            }
+
+            currentTab = tabName;
+
+            // Lazy load tab content if not already loaded
+            if (!tabsLoaded[tabName]) {
+                loadTabData(tabName);
+                tabsLoaded[tabName] = true;
+            }
+
+            // Update URL hash for bookmarking
+            window.location.hash = `#tab-${tabName}`;
+        }
+
+        function loadTabData(tabName) {
+            // For now, just re-render all data since we already have it loaded
+            // In the future, this could make separate API calls for each tab
+            renderTable();
+        }
+
+        // Initialize tabs on page load
+        function initializeTabs() {
+            // Check URL hash for initial tab
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#tab-')) {
+                const tabName = hash.replace('#tab-', '');
+                if (['new', 'active', 'service', 'assessment', 'completed'].includes(tabName)) {
+                    switchTab(tabName);
+                    return;
+                }
+            }
+            
+            // Default to new tab
+            switchTab('new');
+        }
+
+        // Update tab counts
+        function updateTabCounts() {
+            const newCount = transfers.filter(t => t.status === 'New').length;
+            const activeCount = transfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
+            const serviceCount = transfers.filter(t => t.status === 'Already in service').length;
+            const assessmentCount = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
+            const completedCount = transfers.filter(t => t.status === 'Completed').length;
+
+            // Update tab badges
+            const newTabEl = document.getElementById('new-count-tab');
+            const activeTabEl = document.getElementById('active-count-tab');
+            const serviceTabEl = document.getElementById('service-count-tab');
+            const assessmentTabEl = document.getElementById('assessment-count-tab');
+            const completedTabEl = document.getElementById('completed-count-tab');
+
+            if (newTabEl) newTabEl.textContent = `(${newCount})`;
+            if (activeTabEl) activeTabEl.textContent = `(${activeCount})`;
+            if (serviceTabEl) serviceTabEl.textContent = `(${serviceCount})`;
+            if (assessmentTabEl) assessmentTabEl.textContent = `(${assessmentCount})`;
+            if (completedTabEl) completedTabEl.textContent = `(${completedCount})`;
         }
 
         function renderProcessingPagination(totalPages) {
