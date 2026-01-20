@@ -31,9 +31,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
 
-    <!-- Favicon (inline SVG, avoids 404) -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230ea5e9'/%3E%3Ctext x='50' y='57' font-size='50' text-anchor='middle' fill='white'%3EO%3C/text%3E%3C/svg%3E">
-
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -2072,9 +2069,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             let assessmentCount = 0;
             let activeTransfers = [];
 
-            // Grouped assessment map (keyed by normalized plate + repair_status) to collapse duplicates
-            const assessmentGroups = new Map();
-
             // Use a sorted copy for iteration so sorting toggles affect all lists
             let iterTransfers = transfers.slice();
             if (currentSortField) {
@@ -2276,10 +2270,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                         </tr>`;
                 } else if(t.repair_status === 'წიანსწარი შეფასება') {
-                    // Group assessment entries by normalized plate to collapse duplicates
-                    const plateKey = normalizePlate(t.plate) || 'unknown';
-                    if (!assessmentGroups.has(plateKey)) assessmentGroups.set(plateKey, []);
-                    assessmentGroups.get(plateKey).push({ t, dateStr, linkedVehicle, displayPhone });
+                    assessmentCount++;
+                    assessmentContainer.innerHTML += `
+                        <tr class="hover:bg-blue-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center shadow-sm">
@@ -2353,111 +2346,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     activeTransfers.push({ transfer: t, dateStr, linkedVehicle, displayPhone });
                 }
             });
-
-            // After building groups, render assessment groups (collapse duplicates by plate)
-            assessmentContainer.innerHTML = '';
-            assessmentCount = 0;
-            // Log collapsed duplicates for debugging
-            try {
-                let groupedTotal = 0;
-                assessmentGroups.forEach(arr => { if (arr.length > 1) groupedTotal += arr.length - 1; });
-                if (groupedTotal > 0) console.warn(`Collapsed ${groupedTotal} duplicate assessment transfer(s) into ${assessmentGroups.size} group(s)`);
-            } catch (e) {}
-
-            assessmentGroups.forEach((arr, plateKey) => {
-                // Sort group by created_at desc (most recent first)
-                arr.sort((a,b) => new Date(b.t.created_at || 0) - new Date(a.t.created_at || 0));
-                const primary = arr[0];
-                const groupSize = arr.length;
-                assessmentCount++;
-                // unique-safe classname
-                const safeKey = plateKey.replace(/[^a-z0-9\-\_]/gi, '_');
-
-                assessmentContainer.innerHTML += `
-                    <tr class="hover:bg-blue-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${primary.t.id}'">
-                        <td class="px-5 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center shadow-sm">
-                                    <i data-lucide="clipboard-check" class="w-5 h-5 text-blue-600"></i>
-                                </div>
-                                <div>
-                                    <div class="font-bold text-slate-800 text-sm">${escapeHtml(primary.t.plate)} ${groupSize > 1 ? `<span class=\"ml-2 text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full\">${groupSize}</span>` : ''}</div>
-                                    <div class="text-xs text-slate-500 font-medium">${escapeHtml(primary.t.name)}</div>
-                                    <div class="text-[10px] text-blue-600 font-medium mt-1">Preliminary Assessment</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700 font-medium">${primary.displayPhone ? escapeHtml(primary.displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm font-bold text-blue-600">${escapeHtml(primary.t.amount)} ₾</div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700">
-                                ${primary.t.case_type === 'დაზღვევა' ? '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit"><i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა</span>' : '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit"><i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო</span>' }
-                            </div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700">
-                                ${primary.t.serviceDate ? (() => {
-                                    try {
-                                        let dateStr = primary.t.serviceDate;
-                                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
-                                        if (dateStr.length === 16) dateStr += ':00';
-                                        const svcDate = new Date(dateStr);
-                                        return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                    } catch(e) { return 'Invalid date'; }
-                                })() : '<span class="text-slate-400">Not scheduled</span>'}
-                            </div>
-                        </td>
-                        <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
-                            <div class="flex items-center justify-end gap-1">
-                                <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${primary.t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Details"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                                ${CAN_EDIT ? `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${primary.t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95"><i data-lucide="edit-2" class="w-4 h-4"></i></button>` : ''}
-                                ${groupSize > 1 ? '<button onclick="event.stopPropagation(); toggleAssessmentGroup(\'' + safeKey + '\')" class="text-slate-400 px-2 py-1 rounded-lg text-xs bg-slate-50">Show ' + (groupSize - 1) + ' more</button>' : ''}
-                            </div>
-                        </td>
-                    </tr>`;
-
-                // render hidden child rows if more than 1
-                if (groupSize > 1) {
-                    for (let i = 1; i < arr.length; i++) {
-                        const item = arr[i];
-                        assessmentContainer.innerHTML += `
-                            <tr class="assessment-child assessment-child-${safeKey} hidden" onclick="window.location.href='edit_case.php?id=${item.t.id}'">
-                                <td class="px-5 py-4 pl-16">
-                                    <div class="text-sm text-slate-700 font-medium">${escapeHtml(item.t.plate)} <div class=\"text-xs text-slate-400\">${escapeHtml(item.t.name)}</div></div>
-                                </td>
-                                <td class="px-5 py-4">
-                                    <div class="text-sm text-slate-700">${item.displayPhone ? escapeHtml(item.displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
-                                </td>
-                                <td class="px-5 py-4">
-                                    <div class="text-sm font-bold text-blue-600">${escapeHtml(item.t.amount)} ₾</div>
-                                </td>
-                                <td class="px-5 py-4">
-                                    <div class="text-sm text-slate-700">${item.t.case_type === 'დაზღვევა' ? '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">დაზღვევა</span>' : '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium">საცალო</span>'}</div>
-                                </td>
-                                <td class="px-5 py-4">
-                                    <div class="text-sm text-slate-700">${item.t.serviceDate ? escapeHtml(item.t.serviceDate) : '<span class=\"text-slate-400\">Not scheduled</span>'}</div>
-                                </td>
-                                <td class="px-5 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${item.t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl" title="View Details"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                                    </div>
-                                </td>
-                            </tr>`;
-                    }
-                }
-            });
-
-            // Helper to toggle group visibility (add to window)
-            window.toggleAssessmentGroup = (safeKey) => {
-                try {
-                    const rows = document.querySelectorAll('.assessment-child-' + safeKey);
-                    rows.forEach(r => r.classList.toggle('hidden'));
-                } catch (e) { console.warn('toggleAssessmentGroup failed', e); }
-            };
 
             // Calculate pagination for active transfers
             const totalActive = activeTransfers.length;
@@ -2714,8 +2602,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const totalNew = transfers.filter(t => t.status === 'New').length;
             const totalService = transfers.filter(t => t.status === 'Already in service').length;
             const totalCompleted = transfers.filter(t => t.status === 'Completed').length;
-            // Count unique plates under assessment (collapse duplicates)
-            const totalAssessment = new Set(transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').map(t => normalizePlate(t.plate) || 'unknown')).size;
+            const totalAssessment = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
 
             if (newCountEl) newCountEl.innerText = `${newCount} / ${totalNew}`;
             if (serviceCountEl) serviceCountEl.innerText = `${serviceCount} / ${totalService}`;
@@ -2857,8 +2744,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const newCount = transfers.filter(t => t.status === 'New').length;
             const activeCount = transfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
             const serviceCount = transfers.filter(t => t.status === 'Already in service').length;
-            // Use unique plates for assessment tab count to match grouped view
-            const assessmentCount = new Set(transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').map(t => normalizePlate(t.plate) || 'unknown')).size;
+            const assessmentCount = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
             const completedCount = transfers.filter(t => t.status === 'Completed').length;
 
             // Update tab badges
