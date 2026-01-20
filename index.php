@@ -2625,6 +2625,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const filter = statusFilterEl ? statusFilterEl.value : 'All';
             const replyFilter = replyFilterEl ? replyFilterEl.value : 'All';
 
+            console.log('updateTabCounts called with filters:', { search, filter, replyFilter });
+
             let filteredTransfers = transfers.filter(t => {
                 // 1. Text Search Filter
                 const match = (t.plate+t.name+(t.phone||'')).toLowerCase().includes(search);
@@ -2651,7 +2653,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const activeCount = filteredTransfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
             const serviceCount = filteredTransfers.filter(t => t.status === 'Already in service').length;
             const assessmentCount = filteredTransfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
-            const completedCount = transfers.filter(t => t.status === 'Completed').length;
+            const completedCount = filteredTransfers.filter(t => t.status === 'Completed').length;
+
+            console.log('Filtered assessment count:', assessmentCount, 'Total filtered transfers:', filteredTransfers.length);
 
             // Update tab badges
             const newTabEl = document.getElementById('new-count-tab');
@@ -2663,7 +2667,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (newTabEl) newTabEl.textContent = `(${newCount})`;
             if (activeTabEl) activeTabEl.textContent = `(${activeCount})`;
             if (serviceTabEl) serviceTabEl.textContent = `(${serviceCount})`;
-            if (assessmentTabEl) assessmentTabEl.textContent = `(${assessmentCount})`;
+            if (assessmentTabEl) {
+                assessmentTabEl.textContent = `(${assessmentCount})`;
+                console.log('Updated assessment tab to:', assessmentCount);
+            }
             if (completedTabEl) completedTabEl.textContent = `(${completedCount})`;
         }
 
