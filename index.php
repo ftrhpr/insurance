@@ -366,6 +366,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 <i data-lucide="chevron-down" class="w-4 h-4"></i>
                             </div>
                         </div>
+
+                        <!-- REPAIR STATUS FILTER -->
+                        <div class="relative">
+                            <select id="repair-status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
+                                <option value="All">All Repair Statuses</option>
+                                <option value="__NO_STATUS__">No status</option>
+                                <!-- dynamic statuses appended here -->
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -570,7 +582,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
                                                     <i data-lucide="layers" class="w-4 h-4"></i>
-                                                    <span><?php echo __('dashboard.repair_status', 'Repair Status'); ?></span>
+                                                    <button onclick="toggleSort('repair_status')" class="flex items-center gap-1 text-sm font-medium text-white/90">
+                                                        <span><?php echo __('dashboard.repair_status', 'Repair Status'); ?></span>
+                                                        <span id="repair_status-sort-indicator" class="ml-1 text-xs"></span>
+                                                    </button>
                                                 </div>
                                             </th>
                                             <th class="px-5 py-4">
@@ -1348,6 +1363,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     if(Array.isArray(newVehicles)) vehicles = newVehicles;
                 }
 
+                // Populate repair-status filter dynamically from transfers
+                populateRepairStatusFilter();
+
+                renderTable(currentProcessingPage);
+                updateTabCounts();
+                initializeTabs();
+
                 renderTable(currentProcessingPage);
                 updateTabCounts();
                 initializeTabs();
@@ -2047,7 +2069,19 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             let assessmentCount = 0;
             let activeTransfers = [];
 
-            transfers.forEach(t => {
+            // Use a sorted copy for iteration so sorting toggles affect all lists
+            let iterTransfers = transfers.slice();
+            if (currentSortField) {
+                iterTransfers.sort((a,b) => {
+                    const fa = (a[currentSortField] || '').toString().toLowerCase();
+                    const fb = (b[currentSortField] || '').toString().toLowerCase();
+                    if (fa === fb) return 0;
+                    if (currentSortDir === 'asc') return fa < fb ? -1 : 1;
+                    return fa < fb ? 1 : -1;
+                });
+            }
+
+            iterTransfers.forEach(t => {
                 // 1. Text Search Filter
                 const match = (t.plate+t.name+(t.phone||'')).toLowerCase().includes(search);
                 if(!match) return;
@@ -2063,6 +2097,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     } else {
                         // Match specific reply (Confirmed / Reschedule)
                         if (t.user_response !== replyFilter) return;
+                    }
+                }
+
+                // 4. Repair Status Filter
+                const repairStatusFilterEl = document.getElementById('repair-status-filter');
+                const rFilter = repairStatusFilterEl ? repairStatusFilterEl.value : 'All';
+                if (rFilter !== 'All') {
+                    if (rFilter === '__NO_STATUS__') {
+                        if (t.repair_status && t.repair_status.trim()) return;
+                    } else {
+                        if (t.repair_status !== rFilter) return;
                     }
                 }
 
@@ -2261,6 +2306,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <td class="px-5 py-4">
                                 <div class="text-sm text-slate-700">
                                     ${t.repair_status ? `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium">${escapeHtml(t.repair_status)}</span>` : '<span class="text-slate-400 text-xs">No status</span>'}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.repair_status ? `<button onclick="event.stopPropagation(); openRepairStatusEditor(${t.id}, event)" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">${escapeHtml(t.repair_status)}</button>` : `<button onclick="event.stopPropagation(); openRepairStatusEditor(${t.id}, event)" class="text-slate-400 text-xs">No status</button>`}
                                 </div>
                             </td>
                             <td class="px-5 py-4">
@@ -2785,6 +2835,132 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             container.innerHTML = html;
             if (window.lucide) lucide.createIcons();
         }
+
+        // Populate repair status filter with distinct values
+        function populateRepairStatusFilter() {
+            const sel = document.getElementById('repair-status-filter');
+            if (!sel) return;
+            // collect unique non-empty statuses
+            const set = new Set();
+            transfers.forEach(t => {
+                if (t.repair_status && t.repair_status.trim()) set.add(t.repair_status.trim());
+            });
+            // Remove existing dynamic options (keep first two: All, No status)
+            while (sel.options.length > 2) sel.remove(2);
+            const statuses = Array.from(set).sort((a,b) => a.localeCompare(b));
+            statuses.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.textContent = s;
+                sel.appendChild(opt);
+            });
+
+            // Attach a single change listener to re-render when filter changes
+            if (!sel.dataset.listenerAttached) {
+                sel.addEventListener('change', () => renderTable(1));
+                sel.dataset.listenerAttached = '1';
+            }
+        }
+
+        // Sorting state
+        let currentSortField = null; // e.g. 'repair_status'
+        let currentSortDir = 'asc';
+
+        function toggleSort(field) {
+            if (currentSortField === field) {
+                currentSortDir = (currentSortDir === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortField = field;
+                currentSortDir = 'asc';
+            }
+
+            // Update indicator
+            const ind = document.getElementById(field + '-sort-indicator');
+            if (ind) ind.textContent = currentSortField === field ? (currentSortDir === 'asc' ? ' ▲' : ' ▼') : '';
+
+            // Re-render current page
+            renderTable(currentProcessingPage);
+        }
+
+        // Inline repair status editor UI
+        function openRepairStatusEditor(id, ev) {
+            ev.stopPropagation();
+            // Ensure editor exists
+            let editor = document.getElementById('repair-status-editor');
+            if (!editor) {
+                editor = document.createElement('div');
+                editor.id = 'repair-status-editor';
+                editor.style.position = 'absolute';
+                editor.style.zIndex = 100000;
+                editor.className = 'bg-white border border-slate-200 rounded-lg p-3 shadow-lg';
+                editor.innerHTML = `
+                    <select id="repair-status-editor-select" class="mb-2 px-3 py-2 border rounded-lg"></select>
+                    <div class="flex gap-2 justify-end">
+                        <button id="repair-status-editor-cancel" class="px-3 py-1 rounded-lg text-sm">Cancel</button>
+                        <button id="repair-status-editor-save" class="px-3 py-1 rounded-lg bg-primary-500 text-white text-sm">Save</button>
+                    </div>
+                `;
+                document.body.appendChild(editor);
+                document.getElementById('repair-status-editor-cancel').addEventListener('click', closeRepairStatusEditor);
+            }
+
+            // Position editor near click
+            const rect = ev.target.getBoundingClientRect();
+            editor.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+            editor.style.left = (rect.left + window.scrollX) + 'px';
+
+            // Populate select with options
+            const sel = document.getElementById('repair-status-editor-select');
+            sel.innerHTML = '';
+            const allOpt = document.createElement('option'); allOpt.value = ''; allOpt.textContent = 'No status'; sel.appendChild(allOpt);
+            // include options from filter select (dynamic statuses)
+            const filterSel = document.getElementById('repair-status-filter');
+            if (filterSel) {
+                for (let i=2;i<filterSel.options.length;i++) {
+                    const o = filterSel.options[i];
+                    const opt = document.createElement('option'); opt.value = o.value; opt.textContent = o.textContent; sel.appendChild(opt);
+                }
+            }
+
+            // Set currently selected value
+            const t = transfers.find(x => String(x.id) === String(id));
+            if (t && t.repair_status) sel.value = t.repair_status;
+
+            // Hook save
+            const saveBtn = document.getElementById('repair-status-editor-save');
+            saveBtn.onclick = async () => {
+                const newStatus = sel.value || null;
+                try {
+                    await fetchAPI(`update_transfer&id=${id}`, 'POST', { repair_status: newStatus });
+                    // update local state and re-render
+                    const item = transfers.find(x => String(x.id) === String(id));
+                    if (item) item.repair_status = newStatus;
+                    populateRepairStatusFilter();
+                    renderTable(currentProcessingPage);
+                    closeRepairStatusEditor();
+                    showToast('Saved', 'Repair status updated', 'success');
+                } catch (e) {
+                    showToast('Error', 'Unable to save status', 'error');
+                }
+            };
+
+            // Show
+            editor.classList.remove('hidden');
+        }
+
+        function closeRepairStatusEditor() {
+            const editor = document.getElementById('repair-status-editor');
+            if (editor) editor.classList.add('hidden');
+        }
+
+        // Close editor if clicking outside
+        document.addEventListener('click', (e) => {
+            const editor = document.getElementById('repair-status-editor');
+            if (!editor || editor.classList.contains('hidden')) return;
+            if (!editor.contains(e.target)) {
+                editor.classList.add('hidden');
+            }
+        });
 
         // Helper for top prev/next buttons (changes page by delta -1 / +1)
         window.changeProcessingPage = (delta) => {
