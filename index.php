@@ -2294,6 +2294,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 currentProcessingPage = 1;
             }
 
+            // Update top prev/next controls disabled state
+            const prevBtn = document.getElementById('processing-prev-btn');
+            const nextBtn = document.getElementById('processing-next-btn');
+            if (prevBtn) prevBtn.disabled = (currentProcessingPage <= 1);
+            if (nextBtn) nextBtn.disabled = (currentProcessingPage >= totalPages || totalPages === 0);
+
             const startIndex = (currentProcessingPage - 1) * processingPerPage;
             const endIndex = Math.min(startIndex + processingPerPage, totalActive);
             const pageTransfers = activeTransfers.slice(startIndex, endIndex);
@@ -2726,6 +2732,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             container.innerHTML = html;
             if (window.lucide) lucide.createIcons();
         }
+
+        // Helper for top prev/next buttons (changes page by delta -1 / +1)
+        window.changeProcessingPage = (delta) => {
+            try {
+                // Render target page; renderTable will clamp to valid bounds
+                renderTable(currentProcessingPage + delta);
+            } catch (e) {
+                console.error('changeProcessingPage error', e);
+            }
+        };
 
         window.openEditModal = (id) => {
             const t = transfers.find(i => i.id == id);
