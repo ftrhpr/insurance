@@ -2262,7 +2262,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                         </tr>`;
                 } else {
-                    // Collect active transfers for pagination (exclude assessment cases)
+                    // Collect active transfers for pagination
                     activeTransfers.push({ transfer: t, dateStr, linkedVehicle, displayPhone });
                 }
             });
@@ -2617,45 +2617,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         // Update tab counts
         function updateTabCounts() {
-            const searchInputEl = document.getElementById('search-input');
-            const statusFilterEl = document.getElementById('status-filter');
-            const replyFilterEl = document.getElementById('reply-filter');
-            
-            const search = searchInputEl ? searchInputEl.value.toLowerCase() : '';
-            const filter = statusFilterEl ? statusFilterEl.value : 'All';
-            const replyFilter = replyFilterEl ? replyFilterEl.value : 'All';
-
-            console.log('updateTabCounts called with filters:', { search, filter, replyFilter });
-
-            let filteredTransfers = transfers.filter(t => {
-                // 1. Text Search Filter
-                const match = (t.plate+t.name+(t.phone||'')).toLowerCase().includes(search);
-                if(!match) return false;
-
-                // 2. Status Filter
-                if(filter !== 'All' && t.status !== filter) return false;
-
-                // 3. Reply Filter (Logic: 'Not Responded' matches 'Pending' or null)
-                if (replyFilter !== 'All') {
-                    if (replyFilter === 'Pending') {
-                        // Match "Not Responded" (Pending or empty)
-                        if (t.user_response && t.user_response !== 'Pending') return false;
-                    } else {
-                        // Match specific reply (Confirmed / Reschedule)
-                        if (t.user_response !== replyFilter) return false;
-                    }
-                }
-
-                return true;
-            });
-
-            const newCount = filteredTransfers.filter(t => t.status === 'New').length;
-            const activeCount = filteredTransfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
-            const serviceCount = filteredTransfers.filter(t => t.status === 'Already in service').length;
-            const assessmentCount = filteredTransfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
-            const completedCount = filteredTransfers.filter(t => t.status === 'Completed').length;
-
-            console.log('Filtered assessment count:', assessmentCount, 'Total filtered transfers:', filteredTransfers.length);
+            const newCount = transfers.filter(t => t.status === 'New').length;
+            const activeCount = transfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
+            const serviceCount = transfers.filter(t => t.status === 'Already in service').length;
+            const assessmentCount = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
+            const completedCount = transfers.filter(t => t.status === 'Completed').length;
 
             // Update tab badges
             const newTabEl = document.getElementById('new-count-tab');
@@ -2667,10 +2633,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (newTabEl) newTabEl.textContent = `(${newCount})`;
             if (activeTabEl) activeTabEl.textContent = `(${activeCount})`;
             if (serviceTabEl) serviceTabEl.textContent = `(${serviceCount})`;
-            if (assessmentTabEl) {
-                assessmentTabEl.textContent = `(${assessmentCount})`;
-                console.log('Updated assessment tab to:', assessmentCount);
-            }
+            if (assessmentTabEl) assessmentTabEl.textContent = `(${assessmentCount})`;
             if (completedTabEl) completedTabEl.textContent = `(${completedCount})`;
         }
 
