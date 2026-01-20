@@ -98,10 +98,17 @@ try {
 
     // Insert payment - skip 'method' column due to ENUM constraints
     // Store method info in payment_method: Cash, BOG, or TBC
+    // If paymentMethod is Transfer, use the sub-method (BOG/TBC) from 'method' field
     $fullPaymentMethod = $paymentMethod;
-    if ($paymentMethod === 'Transfer' && $method !== 'Transfer') {
-        $fullPaymentMethod = $method; // Store BOG or TBC directly
+    if ($paymentMethod === 'Transfer') {
+        // Use BOG or TBC from the method field
+        if ($method === 'BOG' || $method === 'TBC') {
+            $fullPaymentMethod = $method;
+        } else {
+            $fullPaymentMethod = 'BOG'; // Default to BOG for transfers
+        }
     }
+    error_log("Final payment method to save: '$fullPaymentMethod' (original paymentMethod: '$paymentMethod', method: '$method')");
 
     $sql = "INSERT INTO payments (transfer_id, amount, payment_date, payment_method, reference, notes, currency, paid_at, created_at, updated_at)
             VALUES (:transfer_id, :amount, :payment_date, :payment_method, :reference, :notes, :currency, :paid_at, NOW(), NOW())";
