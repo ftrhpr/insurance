@@ -31,8 +31,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS: Prefer compiled local CSS in production; fallback to CDN for dev/demo -->
+    <?php
+        $localTailwindPath = __DIR__ . '/assets/tailwind.css';
+        if (file_exists($localTailwindPath)) {
+            echo '<link rel="stylesheet" href="/assets/tailwind.css">\n';
+        } else {
+            // CDN fallback (not recommended for production)
+            echo "<!-- WARNING: Using Tailwind CDN. For production, install and compile Tailwind locally: https://tailwindcss.com/docs/installation -->\n";
+            echo "<script>console.warn('Tailwind CDN detected. For production, compile Tailwind locally and include the generated CSS file. See https://tailwindcss.com/docs/installation');</script>\n";
+            echo "<script src=\"https://cdn.tailwindcss.com\"></script>\n";
+        }
+    ?>
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -2123,6 +2133,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             let completedFilteredIncome = 0.0; // GEL
             let completedSamghebriFiltered = 0; // quantity for filtered set
             let completedSamghebriTotal = 0; // quantity across all transfers
+            // Assessment tab counter
+            let assessmentCount = 0; // number of cases with preliminary assessment
 
             // Use a sorted copy for iteration so sorting toggles affect all lists
             let iterTransfers = transfers.slice();
