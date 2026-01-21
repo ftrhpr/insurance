@@ -54,6 +54,7 @@ try {
         'user_response' => 'user_response',
         'services' => 'repair_labor',
         'parts' => 'repair_parts',
+        'inventoryParts' => 'repair_parts',
         'images' => 'case_images',
         'photos' => 'case_images',
         'imageUrls' => 'case_images',
