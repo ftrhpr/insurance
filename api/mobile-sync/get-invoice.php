@@ -57,13 +57,22 @@ try {
         $rawParts = json_decode($invoice['repair_parts'], true) ?? [];
         // Transform parts to app format
         $parts = array_map(function($part) {
+            $quantity = intval($part['quantity'] ?? 1);
+            $unitPrice = floatval($part['unit_price'] ?? $part['unitPrice'] ?? 0);
+            $totalPrice = floatval($part['total_price'] ?? $part['totalPrice'] ?? 0);
+
+            // Calculate totalPrice if it's 0 but unitPrice exists
+            if ($totalPrice == 0 && $unitPrice > 0) {
+                $totalPrice = $unitPrice * $quantity;
+            }
+
             return [
                 'name' => $part['name'] ?? $part['name_en'] ?? 'Unknown Part',
                 'nameKa' => $part['name'] ?? $part['name_en'] ?? 'უცნობი ნაწილი',
                 'partNumber' => $part['part_number'] ?? $part['partNumber'] ?? '',
-                'quantity' => intval($part['quantity'] ?? 1),
-                'unitPrice' => floatval($part['unit_price'] ?? $part['unitPrice'] ?? 0),
-                'totalPrice' => floatval($part['total_price'] ?? $part['totalPrice'] ?? 0),
+                'quantity' => $quantity,
+                'unitPrice' => $unitPrice,
+                'totalPrice' => $totalPrice,
                 'notes' => $part['notes'] ?? '',
             ];
         }, $rawParts);
@@ -71,19 +80,25 @@ try {
 
     // Transform repair_labor back to app format
     $services = array_map(function($labor) {
+        // CPanel stores service name in 'description' field, app uses 'name'
         $laborName = $labor['name'] ?? $labor['description'] ?? 'Unknown Service';
 
-        // Get price - prefer 'price' field, fallback to rate calculations
+        // Get quantity - CPanel uses 'quantity', app uses 'hours' or 'count'
+        $serviceCount = floatval($labor['quantity'] ?? $labor['hours'] ?? $labor['count'] ?? 1);
+
+        // Get unit rate - CPanel uses 'unit_rate'
+        $unitRate = floatval($labor['unit_rate'] ?? $labor['rate'] ?? $labor['hourly_rate'] ?? 0);
+
+        // Calculate total price = unit_rate * quantity
         $servicePrice = floatval($labor['price'] ?? 0);
-        if ($servicePrice == 0) {
-            // Try to calculate from rate * hours
-            $rate = floatval($labor['rate'] ?? $labor['hourly_rate'] ?? 0);
-            $hours = intval($labor['hours'] ?? $labor['count'] ?? 1);
-            $servicePrice = $rate * $hours;
+        if ($servicePrice == 0 && $unitRate > 0) {
+            $servicePrice = $unitRate * $serviceCount;
         }
 
-        // Get count - prefer 'hours' field, fallback to 'count'
-        $serviceCount = intval($labor['hours'] ?? $labor['count'] ?? 1);
+        // If still 0, try total_price or amount fields
+        if ($servicePrice == 0) {
+            $servicePrice = floatval($labor['total_price'] ?? $labor['amount'] ?? $labor['total'] ?? 0);
+        }
 
         return [
             'serviceName' => $laborName,
@@ -92,8 +107,10 @@ try {
             'nameKa' => $laborName,
             'price' => $servicePrice,
             'count' => $serviceCount,
+            'unitRate' => $unitRate,
             'discount_percent' => floatval($labor['discount_percent'] ?? 0),
             'discountedPrice' => floatval($labor['discounted_price'] ?? $servicePrice),
+            'billable' => $labor['billable'] ?? true,
         ];
     }, $repairLabor);
     
