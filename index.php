@@ -1794,6 +1794,23 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 .replace(/{count}/g, data.count || '');
         }
 
+        function getRepairStatusColor(status, context = 'badge') {
+            const statusColors = {
+                'ნაწილების შეკვეთა': { bg: 'bg-yellow-100', text: 'text-yellow-800', select: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' },
+                'ნაწილი მიღებულია': { bg: 'bg-blue-100', text: 'text-blue-800', select: 'bg-blue-100 text-blue-800 hover:bg-blue-200' },
+                'ჩანიშნულია': { bg: 'bg-purple-100', text: 'text-purple-800', select: 'bg-purple-100 text-purple-800 hover:bg-purple-200' },
+                'დასრულებული': { bg: 'bg-green-100', text: 'text-green-800', select: 'bg-green-100 text-green-800 hover:bg-green-200' },
+                'პრობლემა': { bg: 'bg-red-100', text: 'text-red-800', select: 'bg-red-100 text-red-800 hover:bg-red-200' },
+                'default': { bg: 'bg-slate-100', text: 'text-slate-800', select: 'bg-slate-100 text-slate-800 hover:bg-slate-200' }
+            };
+            const colors = statusColors[status] || statusColors['default'];
+            
+            if (context === 'select') {
+                return colors.select;
+            }
+            return `${colors.bg} ${colors.text}`;
+        }
+
         async function updateRepairStatus(transferId, newStatus) {
             const originalStatus = transfers.find(t => t.id == transferId)?.repair_status;
 
