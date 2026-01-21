@@ -736,9 +736,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <div class="bg-white p-4 rounded-xl shadow-sm border inline-flex items-center gap-3">
                                         <div class="p-3 rounded-lg bg-blue-50"><i data-lucide="layers" class="w-5 h-5 text-blue-600"></i></div>
                                         <div>
-                                            <div class="text-xs text-slate-500">სამღებრო სამუშაო (filtered)</div>
+                                            <div class="text-xs text-slate-500">ნაჭრები (filtered)</div>
                                             <div id="completed-samghebri-filtered" class="text-lg font-bold text-slate-800">0</div>
-                                            <div class="text-xs text-slate-400">All cases: <span id="completed-samghebri-total">0</span></div>
+                                            <div class="text-xs text-slate-400">ყველა: <span id="completed-samghebri-total">0</span></div>
                                         </div>
                                     </div>
 
