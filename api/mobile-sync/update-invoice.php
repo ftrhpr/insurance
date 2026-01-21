@@ -71,6 +71,7 @@ try {
         'vatRate' => 'vat_rate',
         'subtotalBeforeVAT' => 'subtotal_before_vat',
         'internalNotes' => 'internalNotes',
+        'caseType' => 'case_type',
     ];
     
     // Debug: Log all received data keys and image fields

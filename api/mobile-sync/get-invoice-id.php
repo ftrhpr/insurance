@@ -122,6 +122,7 @@ try {
         'serviceDate' => $invoice['serviceDate'] ?? $invoice['service_date'] ?? null,
         'updatedAt' => $invoice['updatedAt'] ?? null,
         'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
+        'caseType' => $invoice['case_type'] ?? null,
     ];
     
     error_log("Invoice full data fetched successfully. ID: " . $invoice['id']);

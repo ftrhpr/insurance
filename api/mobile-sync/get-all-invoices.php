@@ -122,6 +122,7 @@ try {
             'updatedAt' => $invoice['updatedAt'] ?? $invoice['updated_at'] ?? null,
             'slug' => $invoice['slug'] ?? null,
             'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
+            'caseType' => $invoice['case_type'] ?? null,
         ];
     }, $invoices);
 
