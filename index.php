@@ -34,12 +34,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <!-- Tailwind CSS: Prefer compiled local CSS in production; fallback to CDN for dev/demo -->
     <?php
         $localTailwindPath = __DIR__ . '/assets/tailwind.css';
+        $tailwindCdnFallback = false;
         if (file_exists($localTailwindPath)) {
             echo '<link rel="stylesheet" href="/assets/tailwind.css">\n';
         } else {
             // CDN fallback (not recommended for production)
-            echo "<!-- WARNING: Using Tailwind CDN. For production, install and compile Tailwind locally: https://tailwindcss.com/docs/installation -->\n";
+            $tailwindCdnFallback = true;
+            echo "<!-- WARNING: Using Tailwind CDN. For production, compile Tailwind locally and include the generated CSS file. See https://tailwindcss.com/docs/installation -->\n";
             echo "<script>console.warn('Tailwind CDN detected. For production, compile Tailwind locally and include the generated CSS file. See https://tailwindcss.com/docs/installation');</script>\n";
+            echo "<script>window.TAILWIND_CDN_FALLBACK = true;</script>\n";
             echo "<script src=\"https://cdn.tailwindcss.com\"></script>\n";
         }
     ?>
