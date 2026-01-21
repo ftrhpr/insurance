@@ -817,6 +817,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             </th>
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
+                                                    <i data-lucide="wrench" class="w-4 h-4"></i>
+                                                    <span>ნაჭრები</span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
                                                     <i data-lucide="calendar" class="w-4 h-4"></i>
                                                     <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
                                                 </div>
@@ -2349,6 +2355,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
                                         </span>`
                                     }
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm font-bold text-slate-800">
+                                    ${computeSamghebriInTransfer(t, 'სამღებრო სამუშაო')}
                                 </div>
                             </td>
                             <td class="px-5 py-4">
