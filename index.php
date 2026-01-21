@@ -3100,15 +3100,19 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const name = nameRaw.toString().trim().toLowerCase();
                 if (!name) return;
 
-                // Substring/case-insensitive match to permit slight naming variations
-                if (!name.includes(normTarget) && !normTarget.includes(name)) return;
+                // More flexible name matching - check for "სამღებრო" in any form
+                const hasSamghebri = name.includes('სამღებრო') || name.includes('samghebri') || name.includes('samghebrio');
+                if (!hasSamghebri) return;
 
-                // Prefer explicit numeric fields
+                // Prefer explicit numeric fields - check more fields
                 let n = 0;
                 if (s.hours != null && String(s.hours).trim() !== '') n = parseNumber(s.hours);
                 else if (s.quantity != null && String(s.quantity).trim() !== '') n = parseNumber(s.quantity);
                 else if (s.count != null && String(s.count).trim() !== '') n = parseNumber(s.count);
                 else if (s.units != null && String(s.units).trim() !== '') n = parseNumber(s.units);
+                else if (s.amount != null && String(s.amount).trim() !== '') n = parseNumber(s.amount);
+                else if (s.value != null && String(s.value).trim() !== '') n = parseNumber(s.value);
+                else if (s.number != null && String(s.number).trim() !== '') n = parseNumber(s.number);
                 else {
                     // Try to find a number embedded in the name or notes (e.g., 'სამღებრო 2', 'სამღებრო x2')
                     const combined = name + ' ' + (s.notes || s.description || '');
@@ -3120,7 +3124,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     }
                 }
 
-                qty += (isNaN(n) ? 0 : n);
+                qty += Math.max(1, (isNaN(n) ? 0 : n));
             });
 
             return qty;
