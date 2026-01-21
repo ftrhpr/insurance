@@ -75,7 +75,19 @@ try {
     
     $parts = [];
     if (!empty($invoice['repair_parts'])) {
-        $parts = json_decode($invoice['repair_parts'], true) ?? [];
+        $rawParts = json_decode($invoice['repair_parts'], true) ?? [];
+        // Transform parts to app format
+        $parts = array_map(function($part) {
+            return [
+                'name' => $part['name'] ?? $part['name_en'] ?? 'Unknown Part',
+                'nameKa' => $part['name'] ?? $part['name_en'] ?? 'უცნობი ნაწილი',
+                'partNumber' => $part['part_number'] ?? $part['partNumber'] ?? '',
+                'quantity' => intval($part['quantity'] ?? 1),
+                'unitPrice' => floatval($part['unit_price'] ?? $part['unitPrice'] ?? 0),
+                'totalPrice' => floatval($part['total_price'] ?? $part['totalPrice'] ?? 0),
+                'notes' => $part['notes'] ?? '',
+            ];
+        }, $rawParts);
     }
     
     // Transform repair_labor back to app format

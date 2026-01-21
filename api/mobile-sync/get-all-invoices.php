@@ -66,7 +66,19 @@ try {
 
         $parts = [];
         if (!empty($invoice['repair_parts'])) {
-            $parts = json_decode($invoice['repair_parts'], true) ?? [];
+            $rawParts = json_decode($invoice['repair_parts'], true) ?? [];
+            // Transform parts to app format
+            $parts = array_map(function($part) {
+                return [
+                    'name' => $part['name'] ?? $part['name_en'] ?? 'Unknown Part',
+                    'nameKa' => $part['name'] ?? $part['name_en'] ?? 'უცნობი ნაწილი',
+                    'partNumber' => $part['part_number'] ?? $part['partNumber'] ?? '',
+                    'quantity' => intval($part['quantity'] ?? 1),
+                    'unitPrice' => floatval($part['unit_price'] ?? $part['unitPrice'] ?? 0),
+                    'totalPrice' => floatval($part['total_price'] ?? $part['totalPrice'] ?? 0),
+                    'notes' => $part['notes'] ?? '',
+                ];
+            }, $rawParts);
         }
 
         $photos = [];
@@ -76,13 +88,17 @@ try {
 
         // Transform repair_labor to app services format
         $services = array_map(function($labor) {
+            $laborName = $labor['name'] ?? $labor['description'] ?? 'Unknown Service';
             return [
-                'serviceName' => $labor['name'] ?? $labor['description'] ?? 'Unknown Service',
-                'serviceNameKa' => $labor['name'] ?? $labor['description'] ?? 'უცნობი სერვისი',
+                'serviceName' => $laborName,
+                'serviceNameKa' => $laborName,
+                'name' => $laborName,
+                'nameKa' => $laborName,
                 'price' => floatval($labor['price'] ?? $labor['rate'] ?? $labor['hourly_rate'] ?? 0),
                 'count' => intval($labor['hours'] ?? $labor['count'] ?? 1),
                 'key' => $labor['key'] ?? null,
                 'discount_percent' => floatval($labor['discount_percent'] ?? 0),
+                'discountedPrice' => floatval($labor['discounted_price'] ?? $labor['price'] ?? 0),
             ];
         }, $repairLabor);
 
