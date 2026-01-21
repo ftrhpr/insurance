@@ -3117,10 +3117,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                 // Prefer explicit numeric fields - check more fields
                 let n = 0;
-                if (s.hours != null && String(s.hours).trim() !== '') n = parseNumber(s.hours);
-                else if (s.quantity != null && String(s.quantity).trim() !== '') n = parseNumber(s.quantity);
+                if (s.quantity != null && String(s.quantity).trim() !== '') n = parseNumber(s.quantity);
                 else if (s.count != null && String(s.count).trim() !== '') n = parseNumber(s.count);
                 else if (s.units != null && String(s.units).trim() !== '') n = parseNumber(s.units);
+                else if (s.hours != null && String(s.hours).trim() !== '') n = parseNumber(s.hours);
                 else if (s.amount != null && String(s.amount).trim() !== '') n = parseNumber(s.amount);
                 else if (s.value != null && String(s.value).trim() !== '') n = parseNumber(s.value);
                 else if (s.number != null && String(s.number).trim() !== '') n = parseNumber(s.number);
@@ -3135,9 +3135,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     }
                 }
 
-                if (t.id == 240) {
-                    console.log('Debugging service item for case #240:', s, ' | Parsed quantity:', n);
-                }
                 qty += (isNaN(n) ? 0 : n);
             });
 
