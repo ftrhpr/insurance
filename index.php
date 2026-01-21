@@ -238,6 +238,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen selection:bg-primary-200 selection:text-primary-900">
+    <?php if (!empty($tailwindCdnFallback)) : ?>
+        <div id="tailwind-cdn-warning" style="padding:10px;border-left:4px solid #f6ad55;background:#fff7ed;color:#7c3f00;font-size:13px;" class="hidden md:block">
+            <strong style="margin-right:8px;">Tailwind CDN in use</strong>
+            For production, compile Tailwind locally and include the generated CSS file. See <a href="https://tailwindcss.com/docs/installation" target="_blank" style="text-decoration:underline;color:#4a5568;">installation docs</a>.
+        </div>
+    <?php endif; ?>
+
 
     <!-- Modern Loading Screen -->
     <div id="loading-screen" class="fixed inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 flex flex-col items-center justify-center z-50 transition-opacity duration-500 pointer-events-auto">
@@ -2135,6 +2142,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             let completedSamghebriTotal = 0; // quantity across all transfers
             // Assessment tab counter
             let assessmentCount = 0; // number of cases with preliminary assessment
+            // Active transfers list used for pagination (must be declared to avoid ReferenceError)
+            let activeTransfers = [];
 
             // Use a sorted copy for iteration so sorting toggles affect all lists
             let iterTransfers = transfers.slice();
