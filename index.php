@@ -741,6 +741,23 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             <div class="text-xs text-slate-400">All cases: <span id="completed-samghebri-total">0</span></div>
                                         </div>
                                     </div>
+
+                                    <!-- Case type earnings (always show across all Completed cases) -->
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border inline-flex items-center gap-3">
+                                        <div class="p-3 rounded-lg bg-blue-50"><i data-lucide="shield" class="w-5 h-5 text-blue-600"></i></div>
+                                        <div>
+                                            <div class="text-xs text-slate-500">დაზღვევა Earnings (all Completed)</div>
+                                            <div id="completed-income-dazghveva" class="text-lg font-bold text-slate-800">0 ₾</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border inline-flex items-center gap-3">
+                                        <div class="p-3 rounded-lg bg-emerald-50"><i data-lucide="shopping-cart" class="w-5 h-5 text-emerald-600"></i></div>
+                                        <div>
+                                            <div class="text-xs text-slate-500">საცალო Earnings (all Completed)</div>
+                                            <div id="completed-income-sacalo" class="text-lg font-bold text-slate-800">0 ₾</div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Filters -->
@@ -2137,6 +2154,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             let completedFilteredIncome = 0.0; // GEL
             let completedSamghebriFiltered = 0; // quantity for filtered set
             let completedSamghebriTotal = 0; // quantity across all transfers
+            // Earnings per case type (all Completed cases)
+            let completedIncomeDazghveva = 0.0; // დაზღვევა total
+            let completedIncomeSacalo = 0.0; // საცალო total
             // Assessment tab counter
             let assessmentCount = 0; // number of cases with preliminary assessment
             // Active transfers list used for pagination (must be declared to avoid ReferenceError)
@@ -2284,6 +2304,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 } else if(t.status === 'Completed') {
                     // Total completed count (unfiltered)
                     completedCount++;
+
+                    // Accumulate earnings per case type (always, unfiltered)
+                    const amtAll = parseNumber(t.amount);
+                    if (t.case_type === 'დაზღვევა') completedIncomeDazghveva += amtAll;
+                    else if (t.case_type === 'საცალო') completedIncomeSacalo += amtAll;
 
                     // Apply Completed tab filters (case type + period)
                     const completedFilters = completedFiltersGlobal;
@@ -2774,6 +2799,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                 const samTotalEl = document.getElementById('completed-samghebri-total');
                 if (samTotalEl) samTotalEl.textContent = sumSamghebriAcrossAllTransfers('სამღებრო სამუშაო');
+
+                // Show unfiltered earnings per case type
+                const dazEl = document.getElementById('completed-income-dazghveva');
+                if (dazEl) dazEl.textContent = formatCurrency(completedIncomeDazghveva);
+                const sacEl = document.getElementById('completed-income-sacalo');
+                if (sacEl) sacEl.textContent = formatCurrency(completedIncomeSacalo);
             } catch (e) {
                 console.warn('Completed summary update failed', e);
             }
@@ -3022,7 +3053,24 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
         function parseNumber(v) {
             if (v === null || v === undefined) return 0;
-            const s = String(v).replace(/,/g, '');
+            let s = String(v).trim();
+            if (s === '') return 0;
+            // Handle comma as decimal separator or thousands separator intelligently
+            if (s.indexOf(',') !== -1 && s.indexOf('.') !== -1) {
+                // If comma comes before dot, assume comma is thousands sep: remove commas
+                if (s.indexOf(',') < s.indexOf('.')) {
+                    s = s.replace(/,/g, '');
+                } else {
+                    // dot before comma -> dot thousands, comma decimal
+                    s = s.replace(/\./g, '').replace(/,/g, '.');
+                }
+            } else if (s.indexOf(',') !== -1 && s.indexOf('.') === -1) {
+                // Only comma present - treat as decimal separator
+                s = s.replace(/,/g, '.');
+            } else {
+                // Only dot or neither - leave as is, remove spaces
+                s = s.replace(/\s+/g, '');
+            }
             const n = parseFloat(s);
             return isNaN(n) ? 0 : n;
         }
@@ -3032,6 +3080,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         }
 
         function computeSamghebriInTransfer(t, targetName) {
+            // Robust counting for 'სამღებრო სამუშაო'
             let qty = 0;
             const raw = t.repair_labor || t.repairLabor || t.services || null;
             if (!raw) return 0;
@@ -3040,17 +3089,40 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 try { arr = JSON.parse(raw); } catch (e) { return 0; }
             } else if (Array.isArray(raw)) {
                 arr = raw;
+            } else {
+                return 0;
             }
+
+            const normTarget = (targetName || '').toString().trim().toLowerCase();
+
             arr.forEach(s => {
-                const name = (s.serviceNameKa || s.nameKa || s.serviceName || s.name || s.description || '').toString().trim();
+                const nameRaw = (s.serviceNameKa || s.nameKa || s.serviceName || s.name || s.description || '') || '';
+                const name = nameRaw.toString().trim().toLowerCase();
                 if (!name) return;
-                if (name === targetName) {
-                    if (s.hours != null) qty += parseNumber(s.hours);
-                    else if (s.quantity != null) qty += parseNumber(s.quantity);
-                    else if (s.count != null) qty += parseNumber(s.count);
-                    else qty += 1;
+
+                // Substring/case-insensitive match to permit slight naming variations
+                if (!name.includes(normTarget) && !normTarget.includes(name)) return;
+
+                // Prefer explicit numeric fields
+                let n = 0;
+                if (s.hours != null && String(s.hours).trim() !== '') n = parseNumber(s.hours);
+                else if (s.quantity != null && String(s.quantity).trim() !== '') n = parseNumber(s.quantity);
+                else if (s.count != null && String(s.count).trim() !== '') n = parseNumber(s.count);
+                else if (s.units != null && String(s.units).trim() !== '') n = parseNumber(s.units);
+                else {
+                    // Try to find a number embedded in the name or notes (e.g., 'სამღებრო 2', 'სამღებრო x2')
+                    const combined = name + ' ' + (s.notes || s.description || '');
+                    const m = combined.match(/(\d+[\.,]?\d*)/);
+                    if (m) {
+                        n = parseNumber(m[1].replace(',', '.'));
+                    } else {
+                        n = 1; // fallback to 1 if no numeric hint
+                    }
                 }
+
+                qty += (isNaN(n) ? 0 : n);
             });
+
             return qty;
         }
 
