@@ -3135,7 +3135,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     }
                 }
 
-                qty += Math.max(1, (isNaN(n) ? 0 : n));
+                if (t.id == 240) {
+                    console.log('Debugging service item for case #240:', s, ' | Parsed quantity:', n);
+                }
+                qty += (isNaN(n) ? 0 : n);
             });
 
             return qty;
