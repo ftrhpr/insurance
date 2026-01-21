@@ -706,6 +706,56 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </div>
                             </div>
 
+                            <!-- Completed Filters & Summary -->
+                            <div class="mb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <!-- Summary cards -->
+                                <div id="completed-summary" class="flex items-center gap-4">
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border inline-flex items-center gap-3">
+                                        <div class="p-3 rounded-lg bg-emerald-50"><i data-lucide="dollar-sign" class="w-5 h-5 text-emerald-600"></i></div>
+                                        <div>
+                                            <div class="text-xs text-slate-500">Total Income</div>
+                                            <div id="completed-income" class="text-lg font-bold text-slate-800">0 ₾</div>
+                                            <div class="text-xs text-slate-400">Filtered: <span id="completed-filtered-count">0</span> / <span id="completed-total-count">0</span></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border inline-flex items-center gap-3">
+                                        <div class="p-3 rounded-lg bg-blue-50"><i data-lucide="layers" class="w-5 h-5 text-blue-600"></i></div>
+                                        <div>
+                                            <div class="text-xs text-slate-500">სამღებრო სამუშაო (filtered)</div>
+                                            <div id="completed-samghebri-filtered" class="text-lg font-bold text-slate-800">0</div>
+                                            <div class="text-xs text-slate-400">All cases: <span id="completed-samghebri-total">0</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Filters -->
+                                <div id="completed-filters" class="flex gap-2 items-center flex-wrap">
+                                    <select id="completed-case-type" class="text-sm px-3 py-2 rounded-lg border">
+                                        <option value="All">ყველა (All)</option>
+                                        <option value="დაზღვევა">დაზღვევა (Insurance)</option>
+                                        <option value="საცალო">საცალო (Retail)</option>
+                                    </select>
+
+                                    <select id="completed-period-type" class="text-sm px-3 py-2 rounded-lg border">
+                                        <option value="All">All time</option>
+                                        <option value="Day">Day</option>
+                                        <option value="Month">Month</option>
+                                        <option value="Year">Year</option>
+                                        <option value="Custom">Custom Range</option>
+                                    </select>
+
+                                    <input type="date" id="completed-filter-day" class="hidden text-sm px-3 py-2 rounded-lg border" />
+                                    <input type="month" id="completed-filter-month" class="hidden text-sm px-3 py-2 rounded-lg border" />
+                                    <input type="number" id="completed-filter-year" class="hidden w-24 text-sm px-3 py-2 rounded-lg border" placeholder="2026" min="2000" max="2100" />
+                                    <input type="date" id="completed-filter-from" class="hidden text-sm px-3 py-2 rounded-lg border" />
+                                    <input type="date" id="completed-filter-to" class="hidden text-sm px-3 py-2 rounded-lg border" />
+
+                                    <button id="completed-apply-filters" class="px-3 py-2 bg-primary-500 text-white rounded-lg text-sm font-semibold">Apply</button>
+                                    <button id="completed-reset-filters" class="px-3 py-2 bg-white border rounded-lg text-sm">Reset</button>
+                                </div>
+                            </div>
+
                             <div class="overflow-x-auto custom-scrollbar">
                                 <table class="w-full text-left border-collapse">
                                     <thead class="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
@@ -2055,6 +2105,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const search = searchInputEl ? searchInputEl.value.toLowerCase() : '';
             const filter = statusFilterEl ? statusFilterEl.value : 'All';
             const replyFilter = replyFilterEl ? replyFilterEl.value : 'All';
+            // Completed tab filters (read once per render for performance)
+            const completedFiltersGlobal = getCompletedFilters();
             
             const newContainer = document.getElementById('new-cases-grid');
             const activeContainer = document.getElementById('table-body');
@@ -2065,9 +2117,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             
             let newCount = 0;
             let serviceCount = 0;
-            let completedCount = 0;
-            let assessmentCount = 0;
-            let activeTransfers = [];
+            // Completed tab totals (unfiltered and filtered)
+            let completedCount = 0; // total completed (for header)
+            let completedFilteredCount = 0; // currently visible after filters
+            let completedFilteredIncome = 0.0; // GEL
+            let completedSamghebriFiltered = 0; // quantity for filtered set
+            let completedSamghebriTotal = 0; // quantity across all transfers
 
             // Use a sorted copy for iteration so sorting toggles affect all lists
             let iterTransfers = transfers.slice();
@@ -2209,8 +2264,20 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                         </tr>`;
                 } else if(t.status === 'Completed') {
+                    // Total completed count (unfiltered)
                     completedCount++;
-                    completedContainer.innerHTML += `
+
+                    // Apply Completed tab filters (case type + period)
+                    const completedFilters = completedFiltersGlobal;
+                    if (isTransferInCompletedFilter(t, completedFilters)) {
+                        // This transfer is visible under current filters — accumulate stats & render
+                        completedFilteredCount++;
+                        const amt = parseNumber(t.amount);
+                        completedFilteredIncome += amt;
+
+                        completedSamghebriFiltered += computeSamghebriInTransfer(t, 'სამღებრო სამუშაო');
+
+                        completedContainer.innerHTML += `
                         <tr class="hover:bg-emerald-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
@@ -2269,6 +2336,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </div>
                             </td>
                         </tr>`;
+                    }
                 } else if(t.repair_status === 'წიანსწარი შეფასება') {
                     assessmentCount++;
                     assessmentContainer.innerHTML += `
@@ -2613,7 +2681,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Show/hide empty states based on visible counts
             if (newCasesEmptyEl) newCasesEmptyEl.classList.toggle('hidden', newCount > 0);
             if (serviceEmptyEl) serviceEmptyEl.classList.toggle('hidden', serviceCount > 0);
-            if (completedEmptyEl) completedEmptyEl.classList.toggle('hidden', completedCount > 0);
+            if (completedEmptyEl) completedEmptyEl.classList.toggle('hidden', completedFilteredCount > 0);
             if (assessmentEmptyEl) assessmentEmptyEl.classList.toggle('hidden', assessmentCount > 0);
             if (emptyStateEl) emptyStateEl.classList.toggle('hidden', totalActive > 0);
             
@@ -2673,6 +2741,25 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 console.warn('repair status inject failed', e);
             }
             
+            // Update Completed tab summaries (safe guards for missing elements)
+            try {
+                const incomeEl = document.getElementById('completed-income');
+                if (incomeEl) incomeEl.textContent = formatCurrency(completedFilteredIncome);
+
+                const filteredCountEl = document.getElementById('completed-filtered-count');
+                const totalCountEl = document.getElementById('completed-total-count');
+                if (filteredCountEl) filteredCountEl.textContent = completedFilteredCount;
+                if (totalCountEl) totalCountEl.textContent = completedCount;
+
+                const samFilteredEl = document.getElementById('completed-samghebri-filtered');
+                if (samFilteredEl) samFilteredEl.textContent = completedSamghebriFiltered;
+
+                const samTotalEl = document.getElementById('completed-samghebri-total');
+                if (samTotalEl) samTotalEl.textContent = sumSamghebriAcrossAllTransfers('სამღებრო სამუშაო');
+            } catch (e) {
+                console.warn('Completed summary update failed', e);
+            }
+
             lucide.createIcons();
             updateTabCounts();
         }
@@ -2861,6 +2948,157 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 sel.dataset.listenerAttached = '1';
             }
         }
+
+        // --- Completed tab helpers & filters ---
+        function getCompletedFilters() {
+            return {
+                caseType: document.getElementById('completed-case-type')?.value || 'All',
+                periodType: document.getElementById('completed-period-type')?.value || 'All',
+                day: document.getElementById('completed-filter-day')?.value || null,
+                month: document.getElementById('completed-filter-month')?.value || null,
+                year: document.getElementById('completed-filter-year')?.value || null,
+                from: document.getElementById('completed-filter-from')?.value || null,
+                to: document.getElementById('completed-filter-to')?.value || null
+            };
+        }
+
+        function parseTransferDate(t) {
+            let dateStr = t.serviceDate || t.service_date || t.created_at || t.createdAt || null;
+            if (!dateStr) return null;
+            if (typeof dateStr === 'string') {
+                if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                if (dateStr.length === 16) dateStr += ':00';
+            }
+            const d = new Date(dateStr);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function isTransferInCompletedFilter(t, filters) {
+            if (!filters) return true;
+            if (filters.caseType && filters.caseType !== 'All') {
+                if (t.case_type !== filters.caseType) return false;
+            }
+            if (!filters.periodType || filters.periodType === 'All') return true;
+
+            const d = parseTransferDate(t);
+            if (!d) return false;
+
+            if (filters.periodType === 'Day') {
+                if (!filters.day) return false;
+                return d.toISOString().slice(0,10) === filters.day;
+            } else if (filters.periodType === 'Month') {
+                if (!filters.month) return false; // expected YYYY-MM
+                const [y,m] = (filters.month || '').split('-').map(Number);
+                return d.getFullYear() === y && (d.getMonth() + 1) === m;
+            } else if (filters.periodType === 'Year') {
+                if (!filters.year) return false;
+                return d.getFullYear() === parseInt(filters.year);
+            } else if (filters.periodType === 'Custom') {
+                if (!filters.from || !filters.to) return false;
+                const fromD = new Date(filters.from + 'T00:00:00');
+                const toD = new Date(filters.to + 'T23:59:59');
+                return d >= fromD && d <= toD;
+            }
+            return true;
+        }
+
+        function parseNumber(v) {
+            if (v === null || v === undefined) return 0;
+            const s = String(v).replace(/,/g, '');
+            const n = parseFloat(s);
+            return isNaN(n) ? 0 : n;
+        }
+
+        function formatCurrency(n) {
+            return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₾';
+        }
+
+        function computeSamghebriInTransfer(t, targetName) {
+            let qty = 0;
+            const raw = t.repair_labor || t.repairLabor || t.services || null;
+            if (!raw) return 0;
+            let arr = [];
+            if (typeof raw === 'string') {
+                try { arr = JSON.parse(raw); } catch (e) { return 0; }
+            } else if (Array.isArray(raw)) {
+                arr = raw;
+            }
+            arr.forEach(s => {
+                const name = (s.serviceNameKa || s.nameKa || s.serviceName || s.name || s.description || '').toString().trim();
+                if (!name) return;
+                if (name === targetName) {
+                    if (s.hours != null) qty += parseNumber(s.hours);
+                    else if (s.quantity != null) qty += parseNumber(s.quantity);
+                    else if (s.count != null) qty += parseNumber(s.count);
+                    else qty += 1;
+                }
+            });
+            return qty;
+        }
+
+        function sumSamghebriAcrossAllTransfers(name) {
+            let total = 0;
+            transfers.forEach(t => total += computeSamghebriInTransfer(t, name));
+            return total;
+        }
+
+        function updateCompletedFilterInputsVisibility() {
+            const type = document.getElementById('completed-period-type')?.value || 'All';
+            document.getElementById('completed-filter-day').classList.toggle('hidden', type !== 'Day');
+            document.getElementById('completed-filter-month').classList.toggle('hidden', type !== 'Month');
+            document.getElementById('completed-filter-year').classList.toggle('hidden', type !== 'Year');
+            document.getElementById('completed-filter-from').classList.toggle('hidden', type !== 'Custom');
+            document.getElementById('completed-filter-to').classList.toggle('hidden', type !== 'Custom');
+        }
+
+        function bindCompletedFilterEvents() {
+            const elType = document.getElementById('completed-period-type');
+            if (elType && !elType.dataset.bound) {
+                elType.addEventListener('change', () => { updateCompletedFilterInputsVisibility(); });
+                elType.dataset.bound = '1';
+            }
+
+            const applyBtn = document.getElementById('completed-apply-filters');
+            if (applyBtn && !applyBtn.dataset.bound) {
+                applyBtn.addEventListener('click', () => renderTable(1));
+                applyBtn.dataset.bound = '1';
+            }
+
+            const resetBtn = document.getElementById('completed-reset-filters');
+            if (resetBtn && !resetBtn.dataset.bound) {
+                resetBtn.addEventListener('click', () => {
+                    document.getElementById('completed-case-type').value = 'All';
+                    document.getElementById('completed-period-type').value = 'All';
+                    document.getElementById('completed-filter-day').value = '';
+                    document.getElementById('completed-filter-month').value = '';
+                    document.getElementById('completed-filter-year').value = '';
+                    document.getElementById('completed-filter-from').value = '';
+                    document.getElementById('completed-filter-to').value = '';
+                    updateCompletedFilterInputsVisibility();
+                    renderTable(1);
+                });
+                resetBtn.dataset.bound = '1';
+            }
+
+            // Bind quick inputs to re-render on change
+            ['completed-case-type','completed-filter-day','completed-filter-month','completed-filter-year','completed-filter-from','completed-filter-to'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el.dataset.bound) {
+                    el.addEventListener('change', () => renderTable(1));
+                    el.dataset.bound = '1';
+                }
+            });
+
+            // compute and display total samghebri overall
+            const totalEl = document.getElementById('completed-samghebri-total');
+            if (totalEl) totalEl.textContent = sumSamghebriAcrossAllTransfers('სამღებრო სამუშაო');
+
+            // ensure icons are rendered after dynamic insert
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Bind immediately (controls exist in DOM)
+        setTimeout(() => { updateCompletedFilterInputsVisibility(); bindCompletedFilterEvents(); }, 200);
 
         // Sorting state
         let currentSortField = null; // e.g. 'repair_status'
