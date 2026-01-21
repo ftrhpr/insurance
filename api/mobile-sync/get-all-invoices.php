@@ -89,16 +89,29 @@ try {
         // Transform repair_labor to app services format
         $services = array_map(function($labor) {
             $laborName = $labor['name'] ?? $labor['description'] ?? 'Unknown Service';
+
+            // Get price - prefer 'price' field, fallback to rate calculations
+            $servicePrice = floatval($labor['price'] ?? 0);
+            if ($servicePrice == 0) {
+                // Try to calculate from rate * hours
+                $rate = floatval($labor['rate'] ?? $labor['hourly_rate'] ?? 0);
+                $hours = intval($labor['hours'] ?? $labor['count'] ?? 1);
+                $servicePrice = $rate * $hours;
+            }
+
+            // Get count - prefer 'hours' field, fallback to 'count'
+            $serviceCount = intval($labor['hours'] ?? $labor['count'] ?? 1);
+
             return [
                 'serviceName' => $laborName,
                 'serviceNameKa' => $laborName,
                 'name' => $laborName,
                 'nameKa' => $laborName,
-                'price' => floatval($labor['price'] ?? $labor['rate'] ?? $labor['hourly_rate'] ?? 0),
-                'count' => intval($labor['hours'] ?? $labor['count'] ?? 1),
+                'price' => $servicePrice,
+                'count' => $serviceCount,
                 'key' => $labor['key'] ?? null,
                 'discount_percent' => floatval($labor['discount_percent'] ?? 0),
-                'discountedPrice' => floatval($labor['discounted_price'] ?? $labor['price'] ?? 0),
+                'discountedPrice' => floatval($labor['discounted_price'] ?? $servicePrice),
             ];
         }, $repairLabor);
 
