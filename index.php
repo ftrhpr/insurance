@@ -1794,55 +1794,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 .replace(/{count}/g, data.count || '');
         }
 
-        function getRepairStatusColor(status, context = 'badge') {
-            const statusColors = {
-                'ნაწილების შეკვეთა': { bg: 'bg-yellow-100', text: 'text-yellow-800', select: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' },
-                'ნაწილი მიღებულია': { bg: 'bg-blue-100', text: 'text-blue-800', select: 'bg-blue-100 text-blue-800 hover:bg-blue-200' },
-                'ჩანიშნულია': { bg: 'bg-purple-100', text: 'text-purple-800', select: 'bg-purple-100 text-purple-800 hover:bg-purple-200' },
-                'დასრულებული': { bg: 'bg-green-100', text: 'text-green-800', select: 'bg-green-100 text-green-800 hover:bg-green-200' },
-                'პრობლემა': { bg: 'bg-red-100', text: 'text-red-800', select: 'bg-red-100 text-red-800 hover:bg-red-200' },
-                'default': { bg: 'bg-slate-100', text: 'text-slate-800', select: 'bg-slate-100 text-slate-800 hover:bg-slate-200' }
-            };
-            const colors = statusColors[status] || statusColors['default'];
-            
-            if (context === 'select') {
-                return colors.select;
-            }
-            return `${colors.bg} ${colors.text}`;
-        }
-
-        async function updateRepairStatus(transferId, newStatus) {
-            const originalStatus = transfers.find(t => t.id == transferId)?.repair_status;
-
-            // Optimistically update UI
-            const transfer = transfers.find(t => t.id == transferId);
-            if (transfer) {
-                transfer.repair_status = newStatus;
-                renderTable(currentProcessingPage); // Re-render to reflect the change
-            }
-
-            try {
-                const response = await fetchAPI(`update_transfer&id=${transferId}`, 'POST', { repair_status: newStatus });
-                if (response.status !== 'success') {
-                    throw new Error(response.error || 'Failed to update status.');
-                }
-                showToast('Repair Status Updated', `Case #${transferId} status set to "${newStatus}".`, 'success');
-                
-                // Final state is good, just need to refresh data silently
-                const updatedData = await fetchAPI('get_transfers');
-                transfers = updatedData.transfers;
-                renderTable(currentProcessingPage);
-
-            } catch (error) {
-                showToast('Update Failed', error.message, 'error');
-                // Revert optimistic update
-                if (transfer) {
-                    transfer.repair_status = originalStatus;
-                    renderTable(currentProcessingPage);
-                }
-            }
-        }
-
         // Notification Prompt & Load Templates
         document.addEventListener('DOMContentLoaded', () => {
             if ('Notification' in window && Notification.permission === 'default') {
@@ -2241,27 +2192,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4">
                                 <div class="text-sm text-slate-700">
-                                     ${t.due_date ? new Date(t.due_date).toLocaleDateString() : '<span class="text-slate-400 text-xs">Not set</span>'}
-                                </div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="text-sm text-slate-700">
                                     ${t.assigned_mechanic ? `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">${escapeHtml(t.assigned_mechanic)}</span>` : '<span class="text-slate-400 text-xs">Unassigned</span>'}
-                                </div>
-                            </td>
-                            <td class="px-5 py-4" onclick="event.stopPropagation();">
-                                <div class="inline-block relative">
-                                    <select 
-                                        onchange="updateRepairStatus(${t.id}, this.value)" 
-                                        class="text-xs font-medium border-none rounded-md py-1 pl-2 pr-8 focus:ring-0 focus:outline-none appearance-none ${getRepairStatusColor(t.repair_status, 'select')}"
-                                        aria-label="Repair Status"
-                                    >
-                                        <option value="" ${!t.repair_status ? 'selected' : ''}>No Status</option>
-                                        ${repair_status_options.map(opt => `<option value="${escapeHtml(opt)}" ${t.repair_status === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                                    </div>
                                 </div>
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
