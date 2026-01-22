@@ -31,3 +31,10 @@ Options -Indexes
 php_flag display_errors Off
 php_flag display_startup_errors Off
 php_value error_reporting 0
+
+# Allow API access
+<Files "*.php">
+    SetEnvIf User-Agent "AutoBodyEstimator" allowed_bot
+    Order Deny,Allow
+    Allow from env=allowed_bot
+</Files>
