@@ -2144,6 +2144,23 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             lucide.createIcons();
         };
 
+        // Helper function to get the date when status was changed to "Already in service"
+        function getInServiceDate(transfer) {
+            const logs = transfer.systemLogs || [];
+            // Find the most recent log entry where status changed to "Already in service"
+            for (let i = logs.length - 1; i >= 0; i--) {
+                const log = logs[i];
+                if (log.message && log.message.includes('-> Already in service') && log.timestamp) {
+                    return new Date(log.timestamp);
+                }
+            }
+            // Fallback to service date or created_at
+            if (transfer.serviceDate) {
+                return new Date(transfer.serviceDate);
+            }
+            return new Date(transfer.created_at || 0);
+        }
+
         function renderTable(page = 1) {
             currentProcessingPage = page;
             
@@ -2179,7 +2196,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             let assessmentCount = 0; // number of cases with preliminary assessment
             // Active transfers list used for pagination (must be declared to avoid ReferenceError)
             let activeTransfers = [];
-            // Service cases collection for sorting
+            // Service cases list for sorting by in-service date
             let serviceCases = [];
 
             // Use a sorted copy for iteration so sorting toggles affect all lists
@@ -2256,26 +2273,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </div>
                         </div>`;
                 } else if(t.status === 'Already in service') {
-                    // Collect service cases for sorting instead of immediate rendering
-                    serviceCount++;
-                    
-                    // Find when this case entered "Already in service" status
-                    let serviceEntryDate = t.created_at || ''; // fallback to created_at
-                    if (t.systemLogs && t.systemLogs.length > 0) {
-                        // Find the most recent log entry where status changed to "Already in service"
-                        const serviceLog = t.systemLogs.slice().reverse().find(log => 
-                            log.type === 'status' && log.message && log.message.includes('Already in service')
-                        );
-                        if (serviceLog && serviceLog.timestamp) {
-                            serviceEntryDate = serviceLog.timestamp;
-                        }
-                    }
-                    
-                    serviceCases.push({
-                        transfer: t,
-                        displayPhone: displayPhone,
-                        serviceEntryDate: serviceEntryDate
-                    });
+                    // Collect service cases for sorting by in-service date
+                    serviceCases.push({ transfer: t, displayPhone });
                 } else if(t.status === 'Completed') {
                     // Total completed count (unfiltered)
                     completedCount++;
@@ -2436,6 +2435,110 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     // Collect active transfers for pagination
                     activeTransfers.push({ transfer: t, dateStr, linkedVehicle, displayPhone });
                 }
+            });
+
+            // Sort service cases by in-service date (oldest first = longest time in service)
+            serviceCases.sort((a, b) => {
+                const dateA = getInServiceDate(a.transfer);
+                const dateB = getInServiceDate(b.transfer);
+                return dateA - dateB; // Oldest first (longest in service at top)
+            });
+
+            // Render sorted service cases
+            serviceCount = serviceCases.length;
+            serviceCases.forEach(({ transfer: t, displayPhone }) => {
+                serviceContainer.innerHTML += `
+                    <tr class="hover:bg-orange-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
+                        <td class="px-5 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center shadow-sm">
+                                    <i data-lucide="car" class="w-5 h-5 text-orange-600"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
+                                    <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm text-slate-700">
+                                ${t.due_date ? (() => {
+                                    try {
+                                        let dateStr = t.due_date;
+                                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                                        if (dateStr.length === 16) dateStr += ':00';
+                                        const dueDate = new Date(dateStr);
+                                        const now = new Date();
+                                        const isOverdue = dueDate < now;
+                                        const formattedDate = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                        return isOverdue ? 
+                                            `<span class="text-red-600 font-semibold flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i>${formattedDate}</span>` : 
+                                            formattedDate;
+                                    } catch(e) {
+                                        return '<span class="text-slate-400">Invalid date</span>';
+                                    }
+                                })() : '<span class="text-slate-400">Not set</span>'}
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm text-slate-700">
+                                ${t.vehicle_make || t.vehicle_model ? 
+                                    `<span class="font-medium">${escapeHtml(t.vehicle_make || '')}</span>
+                                    ${t.vehicle_model ? `<span class="text-slate-500"> ${escapeHtml(t.vehicle_model)}</span>` : ''}` : 
+                                    '<span class="text-slate-400 text-xs">Not specified</span>'}
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm text-slate-700 font-medium">${displayPhone ? escapeHtml(displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm font-bold text-emerald-600">${escapeHtml(t.amount)} ₾</div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm text-slate-700">
+                                ${t.case_type === 'დაზღვევა' ? 
+                                    `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                        <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
+                                    </span>` : 
+                                    `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                        <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
+                                    </span>`
+                                }
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm text-slate-700">
+                                ${t.serviceDate ? (() => {
+                                    try {
+                                        let dateStr = t.serviceDate;
+                                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                                        if (dateStr.length === 16) dateStr += ':00';
+                                        const svcDate = new Date(dateStr);
+                                        return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                    } catch(e) {
+                                        return 'Invalid date';
+                                    }
+                                })() : '<span class="text-slate-400">Not scheduled</span>'}
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm text-slate-700">
+                                ${t.assigned_mechanic ? `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">${escapeHtml(t.assigned_mechanic)}</span>` : '<span class="text-slate-400 text-xs">Unassigned</span>'}
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                            <div class="flex items-center justify-end gap-1">
+                                <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-orange-600 p-2 hover:bg-orange-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/25 active:scale-95" title="View Details">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                                ${CAN_EDIT ? 
+                                    `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-orange-600 p-2 hover:bg-orange-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/25 active:scale-95">
+                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                    </button>` : ''
+                                }
+                            </div>
+                        </td>
+                    </tr>`;
             });
 
             // Calculate pagination for active transfers
@@ -2675,109 +2778,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 </div>
                             </td>
                         </tr>`;
-            });
-
-            // Sort and render service cases by date they entered service status (most recent first)
-            serviceCases.sort((a, b) => {
-                const dateA = new Date(a.serviceEntryDate);
-                const dateB = new Date(b.serviceEntryDate);
-                return dateB - dateA; // Most recent first
-            });
-
-            // Render sorted service cases
-            serviceCases.forEach(({ transfer: t, displayPhone }) => {
-                serviceContainer.innerHTML += `
-                    <tr class="hover:bg-orange-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
-                        <td class="px-5 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center shadow-sm">
-                                    <i data-lucide="car" class="w-5 h-5 text-orange-600"></i>
-                                </div>
-                                <div>
-                                    <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
-                                    <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700">
-                                ${t.due_date ? (() => {
-                                    try {
-                                        let dateStr = t.due_date;
-                                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
-                                        if (dateStr.length === 16) dateStr += ':00';
-                                        const dueDate = new Date(dateStr);
-                                        const now = new Date();
-                                        const isOverdue = dueDate < now;
-                                        const formattedDate = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                                        return isOverdue ? 
-                                            \`<span class="text-red-600 font-semibold flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i>\${formattedDate}</span>\` : 
-                                            formattedDate;
-                                    } catch(e) {
-                                        return '<span class="text-slate-400">Invalid date</span>';
-                                    }
-                                })() : '<span class="text-slate-400">Not set</span>'}
-                            </div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700">
-                                ${t.vehicle_make || t.vehicle_model ? 
-                                    \`<span class="font-medium">\${escapeHtml(t.vehicle_make || '')}</span>
-                                    \${t.vehicle_model ? \`<span class="text-slate-500"> \${escapeHtml(t.vehicle_model)}</span>\` : ''}\` : 
-                                    '<span class="text-slate-400 text-xs">Not specified</span>'}
-                            </div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700 font-medium">${displayPhone ? escapeHtml(displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm font-bold text-emerald-600">${escapeHtml(t.amount)} ₾</div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700">
-                                ${t.case_type === 'დაზღვევა' ? 
-                                    \`<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
-                                        <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
-                                    </span>\` : 
-                                    \`<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
-                                        <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
-                                    </span>\`
-                                }
-                            </div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700">
-                                ${t.serviceDate ? (() => {
-                                    try {
-                                        let dateStr = t.serviceDate;
-                                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
-                                        if (dateStr.length === 16) dateStr += ':00';
-                                        const svcDate = new Date(dateStr);
-                                        return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                    } catch(e) {
-                                        return 'Invalid date';
-                                    }
-                                })() : '<span class="text-slate-400">Not scheduled</span>'}
-                            </div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="text-sm text-slate-700">
-                                ${t.assigned_mechanic ? \`<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">\${escapeHtml(t.assigned_mechanic)}</span>\` : '<span class="text-slate-400 text-xs">Unassigned</span>'}
-                            </div>
-                        </td>
-                        <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
-                            <div class="flex items-center justify-end gap-1">
-                                <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-orange-600 p-2 hover:bg-orange-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/25 active:scale-95" title="View Details">
-                                    <i data-lucide="eye" class="w-4 h-4"></i>
-                                </button>
-                                ${CAN_EDIT ? 
-                                    \`<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=\${t.id}'" class="text-slate-400 hover:text-orange-600 p-2 hover:bg-orange-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/25 active:scale-95">
-                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                    </button>\` : ''
-                                }
-                            </div>
-                        </td>
-                    </tr>`;
             });
 
             const newCountEl = document.getElementById('new-count');
