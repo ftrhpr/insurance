@@ -577,6 +577,18 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             </th>
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
+                                                    <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.due_date', 'Due Date'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="info" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.make_model', 'Make & Model'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
                                                     <i data-lucide="phone" class="w-4 h-4"></i>
                                                     <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
                                                 </div>
@@ -2254,6 +2266,34 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
                                         <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
                                     </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.due_date ? (() => {
+                                        try {
+                                            let dateStr = t.due_date;
+                                            if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                                            if (dateStr.length === 16) dateStr += ':00';
+                                            const dueDate = new Date(dateStr);
+                                            const now = new Date();
+                                            const isOverdue = dueDate < now;
+                                            const formattedDate = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                            return isOverdue ? 
+                                                `<span class="text-red-600 font-semibold flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i>${formattedDate}</span>` : 
+                                                formattedDate;
+                                        } catch(e) {
+                                            return '<span class="text-slate-400">Invalid date</span>';
+                                        }
+                                    })() : '<span class="text-slate-400">Not set</span>'}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.vehicle_make || t.vehicle_model ? 
+                                        `<span class="font-medium">${escapeHtml(t.vehicle_make || '')}</span>
+                                        ${t.vehicle_model ? `<span class="text-slate-500"> ${escapeHtml(t.vehicle_model)}</span>` : ''}` : 
+                                        '<span class="text-slate-400 text-xs">Not specified</span>'}
                                 </div>
                             </td>
                             <td class="px-5 py-4">
