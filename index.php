@@ -577,6 +577,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             </th>
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
+                                                    <i data-lucide="clock" class="w-4 h-4"></i>
+                                                    <button onclick="toggleServiceSort()" class="flex items-center gap-1 text-sm font-medium text-white/90 hover:text-white transition-colors">
+                                                        <span><?php echo __('dashboard.in_service_since', 'In Service Since'); ?></span>
+                                                        <span id="service-date-sort-indicator" class="ml-1 text-xs"> ▼</span>
+                                                    </button>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
                                                     <i data-lucide="calendar-clock" class="w-4 h-4"></i>
                                                     <span><?php echo __('dashboard.due_date', 'Due Date'); ?></span>
                                                 </div>
@@ -2437,16 +2446,21 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 }
             });
 
-            // Sort service cases by in-service date (oldest first = longest time in service)
+            // Sort service cases by in-service date (controlled by serviceSortDir)
             serviceCases.sort((a, b) => {
                 const dateA = getInServiceDate(a.transfer);
                 const dateB = getInServiceDate(b.transfer);
-                return dateA - dateB; // Oldest first (longest in service at top)
+                return serviceSortDir === 'desc' ? dateB - dateA : dateA - dateB;
             });
 
             // Render sorted service cases
             serviceCount = serviceCases.length;
             serviceCases.forEach(({ transfer: t, displayPhone }) => {
+                const inServiceDate = getInServiceDate(t);
+                const inServiceDateStr = inServiceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                // Calculate days in service
+                const daysInService = Math.floor((new Date() - inServiceDate) / (1000 * 60 * 60 * 24));
+                
                 serviceContainer.innerHTML += `
                     <tr class="hover:bg-orange-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                         <td class="px-5 py-4">
@@ -2458,6 +2472,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
                                     <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
                                 </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm text-slate-700">
+                                <div class="font-medium">${inServiceDateStr}</div>
+                                <div class="text-xs ${daysInService > 7 ? 'text-red-500 font-semibold' : daysInService > 3 ? 'text-orange-500' : 'text-slate-400'}">${daysInService} day${daysInService !== 1 ? 's' : ''} ago</div>
                             </div>
                         </td>
                         <td class="px-5 py-4">
@@ -3280,6 +3300,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         // Sorting state
         let currentSortField = null; // e.g. 'repair_status'
         let currentSortDir = 'asc';
+        // Service tab sorting state
+        let serviceSortDir = 'desc'; // 'desc' = newest first, 'asc' = oldest first
+
+        function toggleServiceSort() {
+            serviceSortDir = (serviceSortDir === 'desc') ? 'asc' : 'desc';
+            // Update indicator
+            const ind = document.getElementById('service-date-sort-indicator');
+            if (ind) ind.textContent = (serviceSortDir === 'asc') ? ' ▲' : ' ▼';
+            // Re-render
+            renderTable(currentProcessingPage);
+        }
 
         function toggleSort(field) {
             if (currentSortField === field) {
