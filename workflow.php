@@ -103,7 +103,7 @@ try {
     $stmt = $pdo->query("
         SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent
         FROM transfers
-        WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service')
+        WHERE status NOT IN ('Completed', 'Issue')
         ORDER BY 
             CASE WHEN repair_stage IS NULL THEN 0 ELSE 1 END,
             id DESC
@@ -127,12 +127,14 @@ foreach ($stages as $stage) {
 }
 foreach ($cases as $case) {
     $stageId = $case['repair_stage'] ?? 'backlog';
-    if (array_key_exists($stageId, $casesByStage)) {
-        $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
-        $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
-        $case['stage_statuses'] = json_decode($case['stage_statuses'] ?? '{}', true);
-        $casesByStage[$stageId][] = $case;
+    // If stage doesn't exist in our stages list, put it in backlog
+    if (!array_key_exists($stageId, $casesByStage)) {
+        $stageId = 'backlog';
     }
+    $case['repair_assignments'] = json_decode($case['repair_assignments'] ?? '{}', true);
+    $case['stage_timers'] = json_decode($case['stage_timers'] ?? '{}', true);
+    $case['stage_statuses'] = json_decode($case['stage_statuses'] ?? '{}', true);
+    $casesByStage[$stageId][] = $case;
 }
 
 ?>
