@@ -103,7 +103,7 @@ try {
     $stmt = $pdo->query("
         SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent
         FROM transfers
-        WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled')
+        WHERE status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service')
         ORDER BY 
             CASE WHEN repair_stage IS NULL THEN 0 ELSE 1 END,
             id DESC
