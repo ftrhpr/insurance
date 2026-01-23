@@ -844,7 +844,7 @@ try {
     // Get backlog cases (repair_stage IS NULL)
     if ($action === 'get_backlog' && $method === 'GET') {
         try {
-            $stmt = $pdo->prepare("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled') ORDER BY id DESC");
+            $stmt = $pdo->prepare("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE (repair_stage IS NULL OR repair_stage = 'backlog') AND status NOT IN ('Completed', 'Issue') ORDER BY id DESC");
             $stmt->execute();
             $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
             foreach ($cases as &$case) {

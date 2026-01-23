@@ -36,7 +36,7 @@ try {
 
 // If JSON requested, return the cases grouped by stage (for polling)
 if (isset($_GET['json'])) {
-    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed') ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage != 'backlog' AND status NOT IN ('Completed', 'Issue') ORDER BY id DESC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $casesByStage = [];
     foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -55,7 +55,7 @@ if (isset($_GET['json'])) {
 }
 
 // Initial page render data
-$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND status IN ('Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed') ORDER BY id DESC");
+$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage != 'backlog' AND status NOT IN ('Completed', 'Issue') ORDER BY id DESC");
 $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $casesByStage = [];
 foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
