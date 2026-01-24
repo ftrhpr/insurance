@@ -594,7 +594,7 @@ try {
                                             <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
                                                 <div class="flex items-center justify-between mb-2">
                                                     <i data-lucide="settings" class="w-5 h-5 text-blue-600"></i>
-                                                    <span class="text-xs font-medium text-blue-700 bg-blue-200 px-2 py-1 rounded-full" id="status-indicator">Not Started</span>
+                                                    <span class="text-xs font-medium text-blue-700 bg-blue-200 px-2 py-1 rounded-full" id="status-indicator" x-text="currentCase.repair_status || 'Not Started'">Not Started</span>
                                                 </div>
                                                 <h4 class="font-semibold text-slate-800 mb-1">Repair Status</h4>
                                                 <select x-model="currentCase.repair_status" @change="updateRepairProgress()" class="w-full text-sm bg-white border border-blue-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -608,6 +608,13 @@ try {
                                                     <option value="პლასტმასის აღდგენა">პლასტმასის აღდგენა</option>
                                                     <option value="პოლირება">პოლირება</option>
                                                     <option value="დაშლილი და გასული">დაშლილი და გასული</option>
+                                                    <?php 
+                                                    // Include the current value from DB if it doesn't match predefined options
+                                                    $predefinedStatuses = ['', 'წიანსწარი შეფასება', 'მუშავდება', 'იღებება', 'იშლება', 'აწყობა', 'თუნუქი', 'პლასტმასის აღდგენა', 'პოლირება', 'დაშლილი და გასული'];
+                                                    $currentRepairStatus = $case['repair_status'] ?? '';
+                                                    if ($currentRepairStatus && !in_array($currentRepairStatus, $predefinedStatuses)): ?>
+                                                    <option value="<?php echo htmlspecialchars($currentRepairStatus); ?>" selected><?php echo htmlspecialchars($currentRepairStatus); ?></option>
+                                                    <?php endif; ?>
                                                 </select>
                                             </div>
 
@@ -1222,6 +1229,7 @@ try {
         initialCaseData = initialCaseData || {};
         try {
             initialCaseData = <?php echo json_encode($case, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '{}'; ?>;
+            console.log('Initial case data loaded - repair_status:', initialCaseData.repair_status, 'assigned_mechanic:', initialCaseData.assigned_mechanic);
         } catch (e) { console.error('Error parsing case data:', e); initialCaseData = {}; }
 
         let smsTemplates = {};
@@ -1275,7 +1283,12 @@ try {
 
         function caseEditor() {
             return {
-                currentCase: { ...initialCaseData },
+                currentCase: { 
+                    ...initialCaseData,
+                    // Ensure repair_status and assigned_mechanic are strings (not null)
+                    repair_status: initialCaseData.repair_status || '',
+                    assigned_mechanic: initialCaseData.assigned_mechanic || ''
+                },
                 collections: [],
                 technicians: [],
                 openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback', 'repair'],
