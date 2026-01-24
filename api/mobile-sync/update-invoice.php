@@ -309,10 +309,6 @@ try {
         sendResponse(false, null, 'No fields to update', 400);
     }
     
-    // Always update the updated_at timestamp when any field changes
-    $updateFields[] = "updated_at = :updated_at";
-    $bindParams[':updated_at'] = date('Y-m-d H:i:s');
-    
     // Build and execute UPDATE query
     $sql = "UPDATE transfers SET " . implode(", ", $updateFields) . " WHERE id = :id";
     error_log("Update query: $sql with params: " . json_encode($bindParams));
