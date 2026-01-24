@@ -33,31 +33,21 @@ if ($apiKey !== API_KEY) {
 try {
     $pdo = getDBConnection();
     
-    // Query to get unique mechanics from transfers table
-    // This gets all distinct assigned_mechanic values that are not null or empty
+    // Query to get users with technician role
     $stmt = $pdo->query("
-        SELECT DISTINCT assigned_mechanic as name 
-        FROM transfers 
-        WHERE assigned_mechanic IS NOT NULL 
-        AND assigned_mechanic != '' 
-        ORDER BY assigned_mechanic ASC
+        SELECT id, name 
+        FROM users 
+        WHERE role = 'technician' 
+        ORDER BY name ASC
     ");
     
     $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Format the response with id (index) and name
-    $formattedMechanics = array_map(function($mechanic, $index) {
-        return [
-            'id' => $index + 1,
-            'name' => $mechanic['name']
-        ];
-    }, $mechanics, array_keys($mechanics));
-    
     echo json_encode([
         'success' => true,
         'data' => [
-            'mechanics' => $formattedMechanics,
-            'count' => count($formattedMechanics)
+            'mechanics' => $mechanics,
+            'count' => count($mechanics)
         ]
     ]);
     
