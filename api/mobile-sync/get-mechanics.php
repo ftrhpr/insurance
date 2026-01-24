@@ -35,10 +35,10 @@ try {
     
     // Query to get users with technician role
     $stmt = $pdo->query("
-        SELECT id, name 
+        SELECT id, full_name as name 
         FROM users 
         WHERE role = 'technician' 
-        ORDER BY name ASC
+        ORDER BY full_name ASC
     ");
     
     $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
