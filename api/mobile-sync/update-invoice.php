@@ -103,7 +103,7 @@ try {
         $shouldProcess = false;
         if (in_array($dbField, ['vat_enabled', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
             $shouldProcess = array_key_exists($appField, $data);
-        } elseif (in_array($dbField, ['repair_status', 'user_response', 'status'])) {
+        } elseif (in_array($dbField, ['repair_status', 'user_response', 'status', 'assigned_mechanic'])) {
             // These fields should be processed even if they are null (to allow clearing)
             $shouldProcess = array_key_exists($appField, $data);
         } else {

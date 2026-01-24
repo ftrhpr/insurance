@@ -137,6 +137,8 @@ try {
         'updatedAt' => $invoice['updatedAt'] ?? null,
         'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
         'caseType' => $invoice['case_type'] ?? null,
+        'assigned_mechanic' => $invoice['assigned_mechanic'] ?? null,
+        'assignedMechanic' => $invoice['assigned_mechanic'] ?? null,
     ];
     
     error_log("Invoice fetched successfully. ID: " . $invoice['id']);

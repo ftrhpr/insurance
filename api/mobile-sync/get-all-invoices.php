@@ -174,6 +174,8 @@ try {
             'slug' => $invoice['slug'] ?? null,
             'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
             'caseType' => $invoice['case_type'] ?? null,
+            'assigned_mechanic' => $invoice['assigned_mechanic'] ?? null,
+            'assignedMechanic' => $invoice['assigned_mechanic'] ?? null,
         ];
     }, $invoices);
 
