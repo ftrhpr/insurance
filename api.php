@@ -1889,6 +1889,17 @@ try {
         jsonResponse(['managers' => $managers]);
     }
 
+    // --------------------------------------------------
+    // GET TECHNICIANS ENDPOINT (for repair management)
+    // --------------------------------------------------
+    if ($action === 'get_technicians' && $method === 'GET') {
+        $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE role = 'technician' AND status = 'active' ORDER BY full_name");
+        $stmt->execute();
+        $technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        jsonResponse(['technicians' => $technicians]);
+    }
+
     // --- NEW: PDF INVOICE PARSING ---
     if ($action === 'parse_invoice_pdf' && $method === 'POST') {
         if (!isset($_FILES['pdf']) || $_FILES['pdf']['error'] != UPLOAD_ERR_OK) {

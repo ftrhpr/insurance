@@ -618,7 +618,12 @@ try {
                                                     <span class="text-xs font-medium text-green-700 bg-green-200 px-2 py-1 rounded-full">Assigned</span>
                                                 </div>
                                                 <h4 class="font-semibold text-slate-800 mb-1">Mechanic</h4>
-                                                <input x-model="currentCase.assigned_mechanic" type="text" placeholder="Assign mechanic..." class="w-full text-sm bg-white border border-green-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                                <select x-model="currentCase.assigned_mechanic" class="w-full text-sm bg-white border border-green-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                                    <option value="">-- Select Mechanic --</option>
+                                                    <template x-for="tech in technicians" :key="tech.id">
+                                                        <option :value="tech.full_name" x-text="tech.full_name"></option>
+                                                    </template>
+                                                </select>
                                             </div>
 
                                             <!-- Timeline Card -->
@@ -1271,6 +1276,7 @@ try {
             return {
                 currentCase: { ...initialCaseData },
                 collections: [],
+                technicians: [],
                 openSections: JSON.parse(localStorage.getItem('openSections')) || ['details', 'communication', 'feedback', 'repair'],
                 partsRequest: { description: '', supplier: '', collection_type: 'local' },
                 editingReview: false,
@@ -1330,6 +1336,9 @@ try {
                     // Load suggestions
                     loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions');
                     loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions');
+
+                    // Load technicians for mechanic assignment dropdown
+                    this.loadTechnicians();
 
                     // Initialize new features (only call methods that exist)
                     if (typeof this.initSearchAndFilter === 'function') this.initSearchAndFilter();
@@ -2808,6 +2817,22 @@ try {
 
                     const win = window.open('', '_blank');
                     win.document.write(html); win.document.close(); win.focus();
+                },
+
+                // Load technicians for mechanic assignment dropdown
+                async loadTechnicians() {
+                    try {
+                        const resp = await fetch('api.php?action=get_technicians');
+                        const data = await resp.json();
+                        if (data.technicians) {
+                            this.technicians = data.technicians;
+                        } else {
+                            this.technicians = [];
+                        }
+                    } catch (e) {
+                        console.error('Failed to load technicians:', e);
+                        this.technicians = [];
+                    }
                 },
 
                 // Collections: load, render, import
