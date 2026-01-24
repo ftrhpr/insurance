@@ -72,6 +72,8 @@ try {
         'subtotalBeforeVAT' => 'subtotal_before_vat',
         'internalNotes' => 'internalNotes',
         'caseType' => 'case_type',
+        'assignedMechanic' => 'assigned_mechanic',
+        'assigned_mechanic' => 'assigned_mechanic',
     ];
     
     // Debug: Log all received data keys and image fields
