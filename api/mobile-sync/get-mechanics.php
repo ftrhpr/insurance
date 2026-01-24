@@ -4,6 +4,9 @@
  * Fetches list of mechanics from the database
  */
 
+// Define API_ACCESS before including config.php
+define('API_ACCESS', true);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
