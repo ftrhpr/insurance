@@ -618,12 +618,13 @@ try {
                                                     <span class="text-xs font-medium text-green-700 bg-green-200 px-2 py-1 rounded-full">Assigned</span>
                                                 </div>
                                                 <h4 class="font-semibold text-slate-800 mb-1">Mechanic</h4>
-                                                <select x-model="currentCase.assigned_mechanic" class="w-full text-sm bg-white border border-green-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                                <select x-model="currentCase.assigned_mechanic" @change="console.log('Mechanic selected:', currentCase.assigned_mechanic)" class="w-full text-sm bg-white border border-green-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                                     <option value="">-- Select Mechanic --</option>
                                                     <template x-for="tech in technicians" :key="tech.id">
-                                                        <option :value="tech.full_name" x-text="tech.full_name"></option>
+                                                        <option :value="tech.full_name" :selected="currentCase.assigned_mechanic === tech.full_name" x-text="tech.full_name"></option>
                                                     </template>
                                                 </select>
+                                                <p x-show="technicians.length === 0" class="text-xs text-amber-600 mt-1">No technicians available. Add users with 'technician' role.</p>
                                             </div>
 
                                             <!-- Timeline Card -->
@@ -1310,6 +1311,10 @@ try {
                 },
                 init() {
                     window.caseEditor = this;
+                    
+                    // Load technicians immediately for the dropdown
+                    this.loadTechnicians();
+                    
                     this.$nextTick(() => {
                         initializeIcons();
                         
@@ -1336,9 +1341,6 @@ try {
                     // Load suggestions
                     loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions');
                     loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions');
-
-                    // Load technicians for mechanic assignment dropdown
-                    this.loadTechnicians();
 
                     // Initialize new features (only call methods that exist)
                     if (typeof this.initSearchAndFilter === 'function') this.initSearchAndFilter();
@@ -2824,9 +2826,12 @@ try {
                     try {
                         const resp = await fetch('api.php?action=get_technicians');
                         const data = await resp.json();
-                        if (data.technicians) {
+                        console.log('Technicians API response:', data);
+                        if (data.technicians && Array.isArray(data.technicians)) {
                             this.technicians = data.technicians;
+                            console.log('Loaded technicians:', this.technicians.length);
                         } else {
+                            console.warn('No technicians in response or invalid format');
                             this.technicians = [];
                         }
                     } catch (e) {
