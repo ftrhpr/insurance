@@ -167,7 +167,7 @@ try {
         'vatRate' => floatval($invoice['vat_rate'] ?? 0),
         'subtotalBeforeVAT' => floatval($invoice['subtotal_before_vat'] ?? 0),
         'serviceDate' => $invoice['serviceDate'] ?? $invoice['service_date'] ?? null,
-        'updatedAt' => $invoice['updatedAt'] ?? null,
+        'updatedAt' => $invoice['updatedAt'] ?? $invoice['updated_at'] ?? null,
         'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
         'caseType' => $invoice['case_type'] ?? null,
         'assigned_mechanic' => $invoice['assigned_mechanic'] ?? null,
