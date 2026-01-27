@@ -599,21 +599,15 @@ try {
                                                 <h4 class="font-semibold text-slate-800 mb-1">Repair Status</h4>
                                                 <select x-model="currentCase.repair_status" @change="updateRepairProgress()" class="w-full text-sm bg-white border border-blue-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                     <option value="">Not Started</option>
-                                                    <option value="წიანსწარი შეფასება">წიანსწარი შეფასება</option>
-                                                    <option value="მუშავდება">მუშავდება</option>
-                                                    <option value="იღებება">იღებება</option>
-                                                    <option value="იშლება">იშლება</option>
-                                                    <option value="აწყობა">აწყობა</option>
-                                                    <option value="თუნუქი">თუნუქი</option>
-                                                    <option value="პლასტმასის აღდგენა">პლასტმასის აღდგენა</option>
-                                                    <option value="პოლირება">პოლირება</option>
-                                                    <option value="დაშლილი და გასული">დაშლილი და გასული</option>
+                                                    <template x-for="rs in repairStatuses" :key="rs.id">
+                                                        <option :value="rs.name_ka || rs.name" x-text="rs.name_ka || rs.name"></option>
+                                                    </template>
                                                     <?php 
-                                                    // Include the current value from DB if it doesn't match predefined options
-                                                    $predefinedStatuses = ['', 'წიანსწარი შეფასება', 'მუშავდება', 'იღებება', 'იშლება', 'აწყობა', 'თუნუქი', 'პლასტმასის აღდგენა', 'პოლირება', 'დაშლილი და გასული'];
+                                                    // Include the current value from DB if it doesn't match any known status (legacy values)
                                                     $currentRepairStatus = $case['repair_status'] ?? '';
-                                                    if ($currentRepairStatus && !in_array($currentRepairStatus, $predefinedStatuses)): ?>
-                                                    <option value="<?php echo htmlspecialchars($currentRepairStatus); ?>" selected><?php echo htmlspecialchars($currentRepairStatus); ?></option>
+                                                    if ($currentRepairStatus): ?>
+                                                    <!-- Fallback for current value if not in dynamic list -->
+                                                    <option value="<?php echo htmlspecialchars($currentRepairStatus); ?>" x-show="!repairStatuses.some(rs => (rs.name_ka || rs.name) === '<?php echo addslashes($currentRepairStatus); ?>')"><?php echo htmlspecialchars($currentRepairStatus); ?></option>
                                                     <?php endif; ?>
                                                 </select>
                                             </div>
@@ -1307,23 +1301,17 @@ try {
                 filterType: 'all',
                 timelineEvents: [],
                 parsedItems: [],
-                statuses: [
-                    { id: 'New', name: 'New', icon: 'file-plus-2' },
-                    { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
-                    { id: 'Called', name: 'Contacted', icon: 'phone' },
-                    { id: 'Parts Ordered', name: 'Parts Ordered', icon: 'box-select' },
-                    { id: 'Parts Arrived', name: 'Parts Arrived', icon: 'package-check' },
-                    { id: 'Scheduled', name: 'Scheduled', icon: 'calendar-days' },
-                    { id: 'Already in service', name: 'Already in service', icon: 'wrench' },
-                    { id: 'Completed', name: 'Completed', icon: 'check-circle-2' },
-                    { id: 'Issue', name: 'Issue', icon: 'alert-triangle' },
-                ],
+                statuses: [],
+                repairStatuses: [],
                 get currentStatusIndex() {
                     const index = this.statuses.findIndex(s => s.id === this.currentCase.status);
                     return index > -1 ? index : 0;
                 },
                 init() {
                     window.caseEditor = this;
+                    
+                    // Load statuses from database first
+                    this.loadStatuses();
                     
                     // Load technicians immediately for the dropdown
                     this.loadTechnicians();
@@ -1406,18 +1394,35 @@ try {
 
                     if (!progressBar || !statusBadge || !statusText) return;
 
-                    const statusMap = {
-                        '': { progress: 0, color: 'bg-slate-400', text: 'Not Started' },
-                        'წიანსწარი შეფასება': { progress: 10, color: 'bg-blue-500', text: 'წიანსწარი შეფასება' },
-                        'მუშავდება': { progress: 20, color: 'bg-yellow-500', text: 'მუშავდება' },
-                        'იღებება': { progress: 30, color: 'bg-orange-500', text: 'იღებება' },
-                        'იშლება': { progress: 40, color: 'bg-red-500', text: 'იშლება' },
-                        'აწყობა': { progress: 60, color: 'bg-purple-500', text: 'აწყობა' },
-                        'თუნუქი': { progress: 70, color: 'bg-pink-500', text: 'თუნუქი' },
-                        'პლასტმასის აღდგენა': { progress: 80, color: 'bg-indigo-500', text: 'პლასტმასის აღდგენა' },
-                        'პოლირება': { progress: 90, color: 'bg-teal-500', text: 'პოლირება' },
-                        'დაშლილი და გასული': { progress: 100, color: 'bg-green-500', text: 'დაშლილი და გასული' }
-                    };
+                    // Build dynamic status map from loaded repair statuses
+                    let statusMap = { '': { progress: 0, color: 'bg-slate-400', text: 'Not Started' } };
+                    
+                    if (this.repairStatuses && this.repairStatuses.length > 0) {
+                        const totalStatuses = this.repairStatuses.length;
+                        this.repairStatuses.forEach((rs, index) => {
+                            const key = rs.name_ka || rs.name;
+                            const progress = Math.round(((index + 1) / totalStatuses) * 100);
+                            statusMap[key] = {
+                                progress: progress,
+                                color: `bg-${rs.color || 'slate'}-500`,
+                                text: key
+                            };
+                        });
+                    } else {
+                        // Fallback to hardcoded map if no dynamic statuses
+                        statusMap = {
+                            '': { progress: 0, color: 'bg-slate-400', text: 'Not Started' },
+                            'წიანსწარი შეფასება': { progress: 10, color: 'bg-blue-500', text: 'წიანსწარი შეფასება' },
+                            'მუშავდება': { progress: 20, color: 'bg-yellow-500', text: 'მუშავდება' },
+                            'იღებება': { progress: 30, color: 'bg-orange-500', text: 'იღებება' },
+                            'იშლება': { progress: 40, color: 'bg-red-500', text: 'იშლება' },
+                            'აწყობა': { progress: 60, color: 'bg-purple-500', text: 'აწყობა' },
+                            'თუნუქი': { progress: 70, color: 'bg-pink-500', text: 'თუნუქი' },
+                            'პლასტმასის აღდგენა': { progress: 80, color: 'bg-indigo-500', text: 'პლასტმასის აღდგენა' },
+                            'პოლირება': { progress: 90, color: 'bg-teal-500', text: 'პოლირება' },
+                            'დაშლილი და გასული': { progress: 100, color: 'bg-green-500', text: 'დაშლილი და გასული' }
+                        };
+                    }
 
                     const currentStatus = statusMap[status] || statusMap[''];
                     progressBar.style.width = `${currentStatus.progress}%`;
@@ -2832,6 +2837,89 @@ try {
 
                     const win = window.open('', '_blank');
                     win.document.write(html); win.document.close(); win.focus();
+                },
+
+                // Load case and repair statuses from database
+                async loadStatuses() {
+                    try {
+                        const [caseRes, repairRes] = await Promise.all([
+                            fetch('api.php?action=get_case_statuses'),
+                            fetch('api.php?action=get_repair_statuses')
+                        ]);
+                        
+                        const caseData = await caseRes.json();
+                        const repairData = await repairRes.json();
+                        
+                        if (caseData.success && caseData.statuses) {
+                            // Map database statuses to the format expected by the stepper
+                            this.statuses = caseData.statuses.map(s => ({
+                                id: s.slug, // Use slug as ID for backward compatibility
+                                name: s.name,
+                                icon: s.icon || 'circle',
+                                color: s.color || 'slate',
+                                db_id: s.id // Keep database ID for reference
+                            }));
+                            console.log('Loaded case statuses:', this.statuses.length);
+                        } else {
+                            // Fallback to hardcoded statuses if API fails
+                            this.statuses = [
+                                { id: 'New', name: 'New', icon: 'file-plus-2' },
+                                { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
+                                { id: 'Called', name: 'Contacted', icon: 'phone' },
+                                { id: 'Parts Ordered', name: 'Parts Ordered', icon: 'box-select' },
+                                { id: 'Parts Arrived', name: 'Parts Arrived', icon: 'package-check' },
+                                { id: 'Scheduled', name: 'Scheduled', icon: 'calendar-days' },
+                                { id: 'Already in service', name: 'Already in service', icon: 'wrench' },
+                                { id: 'Completed', name: 'Completed', icon: 'check-circle-2' },
+                                { id: 'Issue', name: 'Issue', icon: 'alert-triangle' },
+                            ];
+                        }
+                        
+                        if (repairData.success && repairData.statuses) {
+                            this.repairStatuses = repairData.statuses.map(s => ({
+                                id: s.slug,
+                                name: s.name,
+                                name_ka: s.name_ka,
+                                icon: s.icon || 'circle',
+                                color: s.color || 'slate',
+                                db_id: s.id
+                            }));
+                            console.log('Loaded repair statuses:', this.repairStatuses.length);
+                        } else {
+                            // Fallback repair statuses
+                            this.repairStatuses = [
+                                { id: '', name: 'Not Started', name_ka: '' },
+                                { id: 'wianswari-shefaseba', name: 'წიანსწარი შეფასება', name_ka: 'წიანსწარი შეფასება' },
+                                { id: 'mushavdeba', name: 'მუშავდება', name_ka: 'მუშავდება' },
+                                { id: 'ighebeba', name: 'იღებება', name_ka: 'იღებება' },
+                                { id: 'ishleba', name: 'იშლება', name_ka: 'იშლება' },
+                                { id: 'awqoba', name: 'აწყობა', name_ka: 'აწყობა' },
+                                { id: 'tunuqi', name: 'თუნუქი', name_ka: 'თუნუქი' },
+                                { id: 'plastmasis-aghdgena', name: 'პლასტმასის აღდგენა', name_ka: 'პლასტმასის აღდგენა' },
+                                { id: 'polireba', name: 'პოლირება', name_ka: 'პოლირება' },
+                                { id: 'dashlili-da-gasuli', name: 'დაშლილი და გასული', name_ka: 'დაშლილი და გასული' }
+                            ];
+                        }
+                        
+                        // Re-initialize icons after loading statuses
+                        this.$nextTick(() => {
+                            if (typeof lucide !== 'undefined') lucide.createIcons();
+                        });
+                    } catch (e) {
+                        console.error('Failed to load statuses:', e);
+                        // Use fallback statuses
+                        this.statuses = [
+                            { id: 'New', name: 'New', icon: 'file-plus-2' },
+                            { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
+                            { id: 'Called', name: 'Contacted', icon: 'phone' },
+                            { id: 'Parts Ordered', name: 'Parts Ordered', icon: 'box-select' },
+                            { id: 'Parts Arrived', name: 'Parts Arrived', icon: 'package-check' },
+                            { id: 'Scheduled', name: 'Scheduled', icon: 'calendar-days' },
+                            { id: 'Already in service', name: 'Already in service', icon: 'wrench' },
+                            { id: 'Completed', name: 'Completed', icon: 'check-circle-2' },
+                            { id: 'Issue', name: 'Issue', icon: 'alert-triangle' },
+                        ];
+                    }
                 },
 
                 // Load technicians for mechanic assignment dropdown

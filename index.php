@@ -1910,7 +1910,94 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }
             loadSMSTemplates(); // Load SMS templates from API on start
             loadSMSParsingTemplates(); // Load SMS parsing templates from API on start
+            loadStatusesFromDB(); // Load case and repair statuses from database
         });
+
+        // --- CASE & REPAIR STATUS MANAGEMENT FROM DATABASE ---
+        let caseStatusesDB = [];
+        let repairStatusesDB = [];
+        
+        async function loadStatusesFromDB() {
+            try {
+                const [caseRes, repairRes] = await Promise.all([
+                    fetch('api.php?action=get_case_statuses'),
+                    fetch('api.php?action=get_repair_statuses')
+                ]);
+                
+                const caseData = await caseRes.json();
+                const repairData = await repairRes.json();
+                
+                if (caseData.success && caseData.statuses) {
+                    caseStatusesDB = caseData.statuses;
+                    populateCaseStatusDropdowns();
+                }
+                
+                if (repairData.success && repairData.statuses) {
+                    repairStatusesDB = repairData.statuses;
+                    populateRepairStatusDropdownsFromDB();
+                }
+                
+                console.log('Loaded case statuses:', caseStatusesDB.length, 'repair statuses:', repairStatusesDB.length);
+            } catch (e) {
+                console.error('Failed to load statuses from DB:', e);
+            }
+        }
+        
+        function populateCaseStatusDropdowns() {
+            // Update status filter dropdown
+            const statusFilter = document.getElementById('status-filter');
+            if (statusFilter && caseStatusesDB.length > 0) {
+                // Keep the "All Active Stages" option
+                const firstOption = statusFilter.options[0];
+                statusFilter.innerHTML = '';
+                statusFilter.appendChild(firstOption);
+                
+                caseStatusesDB.forEach(status => {
+                    const opt = document.createElement('option');
+                    opt.value = status.slug;
+                    opt.textContent = status.name;
+                    statusFilter.appendChild(opt);
+                });
+            }
+            
+            // Update manual create status dropdown
+            const manualStatus = document.getElementById('manual-status');
+            if (manualStatus && caseStatusesDB.length > 0) {
+                manualStatus.innerHTML = '';
+                caseStatusesDB.forEach(status => {
+                    // Only show non-final statuses for new case creation
+                    if (!status.is_final) {
+                        const opt = document.createElement('option');
+                        opt.value = status.slug;
+                        opt.textContent = status.name;
+                        manualStatus.appendChild(opt);
+                    }
+                });
+            }
+        }
+        
+        function populateRepairStatusDropdownsFromDB() {
+            const repairFilter = document.getElementById('repair-status-filter');
+            if (repairFilter && repairStatusesDB.length > 0) {
+                // Keep first two options: All, No status
+                while (repairFilter.options.length > 2) repairFilter.remove(2);
+                
+                repairStatusesDB.forEach(status => {
+                    const opt = document.createElement('option');
+                    opt.value = status.name_ka || status.name;
+                    opt.textContent = status.name_ka || status.name;
+                    repairFilter.appendChild(opt);
+                });
+            }
+        }
+        
+        function getCaseStatusBySlug(slug) {
+            return caseStatusesDB.find(s => s.slug === slug) || null;
+        }
+        
+        function getRepairStatusByName(name) {
+            return repairStatusesDB.find(s => (s.name_ka || s.name) === name) || null;
+        }
 
         // --- HTML ESCAPING FUNCTION ---
         const escapeHtml = (text) => {
@@ -3355,16 +3442,27 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             editor.style.top = (rect.bottom + window.scrollY + 8) + 'px';
             editor.style.left = (rect.left + window.scrollX) + 'px';
 
-            // Populate select with options
+            // Populate select with options from database or filter select
             const sel = document.getElementById('repair-status-editor-select');
             sel.innerHTML = '';
             const allOpt = document.createElement('option'); allOpt.value = ''; allOpt.textContent = 'No status'; sel.appendChild(allOpt);
-            // include options from filter select (dynamic statuses)
-            const filterSel = document.getElementById('repair-status-filter');
-            if (filterSel) {
-                for (let i=2;i<filterSel.options.length;i++) {
-                    const o = filterSel.options[i];
-                    const opt = document.createElement('option'); opt.value = o.value; opt.textContent = o.textContent; sel.appendChild(opt);
+            
+            // Prefer database-loaded repair statuses if available
+            if (repairStatusesDB && repairStatusesDB.length > 0) {
+                repairStatusesDB.forEach(status => {
+                    const opt = document.createElement('option');
+                    opt.value = status.name_ka || status.name;
+                    opt.textContent = status.name_ka || status.name;
+                    sel.appendChild(opt);
+                });
+            } else {
+                // Fallback: include options from filter select (dynamic statuses)
+                const filterSel = document.getElementById('repair-status-filter');
+                if (filterSel) {
+                    for (let i=2;i<filterSel.options.length;i++) {
+                        const o = filterSel.options[i];
+                        const opt = document.createElement('option'); opt.value = o.value; opt.textContent = o.textContent; sel.appendChild(opt);
+                    }
                 }
             }
 
@@ -3446,7 +3544,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (statusEl) statusEl.value = t.status;
             
             // Update workflow progress indicator
-            const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed', 'Issue'];
+            // Use database statuses if available, otherwise fallback to hardcoded
+            const statusStages = caseStatusesDB.length > 0 
+                ? caseStatusesDB.map(s => s.slug)
+                : ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed', 'Issue'];
             const currentStageIndex = statusStages.indexOf(t.status);
             const progressPercentage = ((currentStageIndex + 1) / statusStages.length) * 100;
             
@@ -3455,18 +3556,25 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (stageNumberEl) stageNumberEl.innerText = currentStageIndex + 1;
             if (progressBarEl) progressBarEl.style.width = `${progressPercentage}%`;
             
-            // Update status description
-            const statusDescriptions = {
-                'New': 'Initial case import - awaiting processing',
-                'Processing': 'Case is being reviewed and processed',
-                'Called': 'Customer has been contacted',
-                'Parts Ordered': 'Parts have been ordered for repair',
-                'Parts Arrived': 'Parts are ready for service',
-                'Scheduled': 'Service appointment is scheduled',
-                'Already in service': 'Vehicle is currently being serviced',
-                'Completed': 'Case has been completed successfully',
-                'Issue': 'Case requires special attention'
-            };
+            // Update status description - use database status or fallback
+            const statusDescriptions = {};
+            if (caseStatusesDB.length > 0) {
+                caseStatusesDB.forEach(s => {
+                    statusDescriptions[s.slug] = s.name_en || s.name || 'Unknown status';
+                });
+            } else {
+                Object.assign(statusDescriptions, {
+                    'New': 'Initial case import - awaiting processing',
+                    'Processing': 'Case is being reviewed and processed',
+                    'Called': 'Customer has been contacted',
+                    'Parts Ordered': 'Parts have been ordered for repair',
+                    'Parts Arrived': 'Parts are ready for service',
+                    'Scheduled': 'Service appointment is scheduled',
+                    'Already in service': 'Vehicle is currently being serviced',
+                    'Completed': 'Case has been completed successfully',
+                    'Issue': 'Case requires special attention'
+                });
+            }
             const statusDescEl = document.getElementById('status-description');
             if (statusDescEl) statusDescEl.innerText = statusDescriptions[t.status] || 'Unknown status';
             

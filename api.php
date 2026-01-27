@@ -1083,6 +1083,415 @@ try {
     }
 
     // =====================================================
+    // STATUS MANAGEMENT ENDPOINTS
+    // =====================================================
+
+    // Ensure status tables exist
+    function ensureStatusTablesExist($pdo) {
+        try {
+            // Check if case_statuses table exists
+            $stmt = $pdo->query("SHOW TABLES LIKE 'case_statuses'");
+            if ($stmt->rowCount() === 0) {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS case_statuses (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    name_ka VARCHAR(100) DEFAULT NULL,
+                    name_en VARCHAR(100) DEFAULT NULL,
+                    slug VARCHAR(50) NOT NULL UNIQUE,
+                    color VARCHAR(20) DEFAULT 'slate',
+                    icon VARCHAR(50) DEFAULT 'circle',
+                    sort_order INT DEFAULT 0,
+                    is_active TINYINT(1) DEFAULT 1,
+                    is_default TINYINT(1) DEFAULT 0,
+                    is_final TINYINT(1) DEFAULT 0,
+                    triggers_sms VARCHAR(100) DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                
+                // Insert default statuses
+                $pdo->exec("INSERT INTO case_statuses (name, name_ka, name_en, slug, color, icon, sort_order, is_default, is_final, triggers_sms) VALUES
+                    ('New', 'ახალი', 'New', 'new', 'blue', 'file-plus-2', 1, 1, 0, NULL),
+                    ('Processing', 'დამუშავება', 'Processing', 'processing', 'yellow', 'loader-circle', 2, 0, 0, 'registered'),
+                    ('Called', 'დაკავშირებული', 'Contacted', 'called', 'purple', 'phone', 3, 0, 0, 'schedule'),
+                    ('Parts Ordered', 'ნაწილები შეკვეთილია', 'Parts Ordered', 'parts_ordered', 'orange', 'box-select', 4, 0, 0, 'parts_ordered'),
+                    ('Parts Arrived', 'ნაწილები მოვიდა', 'Parts Arrived', 'parts_arrived', 'teal', 'package-check', 5, 0, 0, 'parts_arrived'),
+                    ('Scheduled', 'დაგეგმილი', 'Scheduled', 'scheduled', 'indigo', 'calendar-days', 6, 0, 0, 'schedule'),
+                    ('Already in service', 'სერვისზეა', 'In Service', 'in_service', 'cyan', 'wrench', 7, 0, 0, NULL),
+                    ('Completed', 'დასრულებული', 'Completed', 'completed', 'green', 'check-circle-2', 8, 0, 1, 'completed'),
+                    ('Issue', 'პრობლემა', 'Issue', 'issue', 'red', 'alert-triangle', 9, 0, 0, NULL)");
+            }
+            
+            // Check if repair_statuses table exists
+            $stmt = $pdo->query("SHOW TABLES LIKE 'repair_statuses'");
+            if ($stmt->rowCount() === 0) {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS repair_statuses (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    name_ka VARCHAR(100) DEFAULT NULL,
+                    name_en VARCHAR(100) DEFAULT NULL,
+                    slug VARCHAR(50) NOT NULL UNIQUE,
+                    color VARCHAR(20) DEFAULT 'amber',
+                    icon VARCHAR(50) DEFAULT 'wrench',
+                    sort_order INT DEFAULT 0,
+                    is_active TINYINT(1) DEFAULT 1,
+                    is_default TINYINT(1) DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                
+                // Insert default repair statuses
+                $pdo->exec("INSERT INTO repair_statuses (name, name_ka, name_en, slug, color, icon, sort_order, is_default) VALUES
+                    ('Not Started', 'დაუწყებელი', 'Not Started', 'not_started', 'slate', 'circle', 0, 1),
+                    ('წიანსწარი შეფასება', 'წიანსწარი შეფასება', 'Preliminary Assessment', 'preliminary_assessment', 'blue', 'clipboard-check', 1, 0),
+                    ('მუშავდება', 'მუშავდება', 'In Progress', 'in_progress', 'amber', 'loader', 2, 0),
+                    ('იღებება', 'იღებება', 'Being Received', 'receiving', 'cyan', 'download', 3, 0),
+                    ('იშლება', 'იშლება', 'Disassembly', 'disassembly', 'orange', 'unplug', 4, 0),
+                    ('აწყობა', 'აწყობა', 'Assembly', 'assembly', 'indigo', 'puzzle', 5, 0),
+                    ('თუნუქი', 'თუნუქი', 'Body Work', 'body_work', 'purple', 'hammer', 6, 0),
+                    ('პლასტმასის აღდგენა', 'პლასტმასის აღდგენა', 'Plastic Restoration', 'plastic_restoration', 'pink', 'sparkles', 7, 0),
+                    ('პოლირება', 'პოლირება', 'Polishing', 'polishing', 'emerald', 'star', 8, 0),
+                    ('დაშლილი და გასული', 'დაშლილი და გასული', 'Disassembled & Released', 'disassembled_released', 'green', 'check', 9, 0)");
+            }
+            
+            // Add status_id columns to transfers if not exist
+            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = 'status_id'");
+            $checkStmt->execute([DB_NAME]);
+            if ($checkStmt->fetchColumn() == 0) {
+                $pdo->exec("ALTER TABLE transfers ADD COLUMN status_id INT DEFAULT NULL");
+            }
+            
+            $checkStmt->execute([DB_NAME]);
+            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = 'repair_status_id'");
+            $checkStmt->execute([DB_NAME]);
+            if ($checkStmt->fetchColumn() == 0) {
+                $pdo->exec("ALTER TABLE transfers ADD COLUMN repair_status_id INT DEFAULT NULL");
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            error_log("Error ensuring status tables: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // --- GET CASE STATUSES ---
+    if ($action === 'get_case_statuses' && $method === 'GET') {
+        ensureStatusTablesExist($pdo);
+        $activeOnly = isset($_GET['active']) && $_GET['active'] === '1';
+        
+        $sql = "SELECT * FROM case_statuses";
+        if ($activeOnly) {
+            $sql .= " WHERE is_active = 1";
+        }
+        $sql .= " ORDER BY sort_order ASC";
+        
+        $stmt = $pdo->query($sql);
+        $statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        jsonResponse(['success' => true, 'statuses' => $statuses]);
+    }
+
+    // --- CREATE CASE STATUS ---
+    if ($action === 'create_case_status' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        ensureStatusTablesExist($pdo);
+        $data = getJsonInput();
+        
+        $name = trim($data['name'] ?? '');
+        $name_ka = trim($data['name_ka'] ?? $name);
+        $name_en = trim($data['name_en'] ?? $name);
+        $slug = trim($data['slug'] ?? '');
+        $color = trim($data['color'] ?? 'slate');
+        $icon = trim($data['icon'] ?? 'circle');
+        $sort_order = intval($data['sort_order'] ?? 0);
+        $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+        $is_default = isset($data['is_default']) ? (int)$data['is_default'] : 0;
+        $is_final = isset($data['is_final']) ? (int)$data['is_final'] : 0;
+        $triggers_sms = trim($data['triggers_sms'] ?? '') ?: null;
+        
+        if (!$name) {
+            jsonResponse(['success' => false, 'error' => 'Status name is required']);
+        }
+        
+        // Generate slug if not provided
+        if (!$slug) {
+            $slug = preg_replace('/[^a-z0-9]+/', '_', strtolower($name));
+            $slug = trim($slug, '_');
+        }
+        
+        // Check slug uniqueness
+        $checkStmt = $pdo->prepare("SELECT id FROM case_statuses WHERE slug = ?");
+        $checkStmt->execute([$slug]);
+        if ($checkStmt->fetch()) {
+            jsonResponse(['success' => false, 'error' => 'A status with this slug already exists']);
+        }
+        
+        // If this is set as default, unset other defaults
+        if ($is_default) {
+            $pdo->exec("UPDATE case_statuses SET is_default = 0");
+        }
+        
+        $stmt = $pdo->prepare("INSERT INTO case_statuses (name, name_ka, name_en, slug, color, icon, sort_order, is_active, is_default, is_final, triggers_sms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $name_ka, $name_en, $slug, $color, $icon, $sort_order, $is_active, $is_default, $is_final, $triggers_sms]);
+        
+        jsonResponse(['success' => true, 'id' => $pdo->lastInsertId()]);
+    }
+
+    // --- UPDATE CASE STATUS ---
+    if ($action === 'update_case_status' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['success' => false, 'error' => 'Invalid status ID']);
+        }
+        
+        $data = getJsonInput();
+        
+        $updates = [];
+        $params = [];
+        
+        $allowedFields = ['name', 'name_ka', 'name_en', 'slug', 'color', 'icon', 'sort_order', 'is_active', 'is_default', 'is_final', 'triggers_sms'];
+        
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $updates[] = "$field = ?";
+                $value = $data[$field];
+                if (in_array($field, ['sort_order', 'is_active', 'is_default', 'is_final'])) {
+                    $value = intval($value);
+                }
+                $params[] = $value;
+            }
+        }
+        
+        if (empty($updates)) {
+            jsonResponse(['success' => false, 'error' => 'No fields to update']);
+        }
+        
+        // If setting as default, unset other defaults
+        if (isset($data['is_default']) && $data['is_default']) {
+            $pdo->exec("UPDATE case_statuses SET is_default = 0");
+        }
+        
+        $params[] = $id;
+        $sql = "UPDATE case_statuses SET " . implode(', ', $updates) . " WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        
+        jsonResponse(['success' => true]);
+    }
+
+    // --- DELETE CASE STATUS ---
+    if ($action === 'delete_case_status' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['success' => false, 'error' => 'Invalid status ID']);
+        }
+        
+        // Check if status is in use
+        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM transfers WHERE status_id = ?");
+        $checkStmt->execute([$id]);
+        if ($checkStmt->fetchColumn() > 0) {
+            jsonResponse(['success' => false, 'error' => 'Cannot delete status that is in use by cases']);
+        }
+        
+        $stmt = $pdo->prepare("DELETE FROM case_statuses WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        jsonResponse(['success' => true]);
+    }
+
+    // --- GET REPAIR STATUSES ---
+    if ($action === 'get_repair_statuses' && $method === 'GET') {
+        ensureStatusTablesExist($pdo);
+        $activeOnly = isset($_GET['active']) && $_GET['active'] === '1';
+        
+        $sql = "SELECT * FROM repair_statuses";
+        if ($activeOnly) {
+            $sql .= " WHERE is_active = 1";
+        }
+        $sql .= " ORDER BY sort_order ASC";
+        
+        $stmt = $pdo->query($sql);
+        $statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        jsonResponse(['success' => true, 'statuses' => $statuses]);
+    }
+
+    // --- CREATE REPAIR STATUS ---
+    if ($action === 'create_repair_status' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        ensureStatusTablesExist($pdo);
+        $data = getJsonInput();
+        
+        $name = trim($data['name'] ?? '');
+        $name_ka = trim($data['name_ka'] ?? $name);
+        $name_en = trim($data['name_en'] ?? $name);
+        $slug = trim($data['slug'] ?? '');
+        $color = trim($data['color'] ?? 'amber');
+        $icon = trim($data['icon'] ?? 'wrench');
+        $sort_order = intval($data['sort_order'] ?? 0);
+        $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+        $is_default = isset($data['is_default']) ? (int)$data['is_default'] : 0;
+        
+        if (!$name) {
+            jsonResponse(['success' => false, 'error' => 'Status name is required']);
+        }
+        
+        // Generate slug if not provided
+        if (!$slug) {
+            $slug = preg_replace('/[^a-z0-9]+/', '_', strtolower(transliterate_georgian($name)));
+            $slug = trim($slug, '_');
+        }
+        
+        // Check slug uniqueness
+        $checkStmt = $pdo->prepare("SELECT id FROM repair_statuses WHERE slug = ?");
+        $checkStmt->execute([$slug]);
+        if ($checkStmt->fetch()) {
+            jsonResponse(['success' => false, 'error' => 'A status with this slug already exists']);
+        }
+        
+        // If this is set as default, unset other defaults
+        if ($is_default) {
+            $pdo->exec("UPDATE repair_statuses SET is_default = 0");
+        }
+        
+        $stmt = $pdo->prepare("INSERT INTO repair_statuses (name, name_ka, name_en, slug, color, icon, sort_order, is_active, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $name_ka, $name_en, $slug, $color, $icon, $sort_order, $is_active, $is_default]);
+        
+        jsonResponse(['success' => true, 'id' => $pdo->lastInsertId()]);
+    }
+
+    // --- UPDATE REPAIR STATUS ---
+    if ($action === 'update_repair_status' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['success' => false, 'error' => 'Invalid status ID']);
+        }
+        
+        $data = getJsonInput();
+        
+        $updates = [];
+        $params = [];
+        
+        $allowedFields = ['name', 'name_ka', 'name_en', 'slug', 'color', 'icon', 'sort_order', 'is_active', 'is_default'];
+        
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $updates[] = "$field = ?";
+                $value = $data[$field];
+                if (in_array($field, ['sort_order', 'is_active', 'is_default'])) {
+                    $value = intval($value);
+                }
+                $params[] = $value;
+            }
+        }
+        
+        if (empty($updates)) {
+            jsonResponse(['success' => false, 'error' => 'No fields to update']);
+        }
+        
+        // If setting as default, unset other defaults
+        if (isset($data['is_default']) && $data['is_default']) {
+            $pdo->exec("UPDATE repair_statuses SET is_default = 0");
+        }
+        
+        $params[] = $id;
+        $sql = "UPDATE repair_statuses SET " . implode(', ', $updates) . " WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        
+        jsonResponse(['success' => true]);
+    }
+
+    // --- DELETE REPAIR STATUS ---
+    if ($action === 'delete_repair_status' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['success' => false, 'error' => 'Invalid status ID']);
+        }
+        
+        // Check if status is in use
+        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM transfers WHERE repair_status_id = ?");
+        $checkStmt->execute([$id]);
+        if ($checkStmt->fetchColumn() > 0) {
+            jsonResponse(['success' => false, 'error' => 'Cannot delete status that is in use by cases']);
+        }
+        
+        $stmt = $pdo->prepare("DELETE FROM repair_statuses WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        jsonResponse(['success' => true]);
+    }
+
+    // --- REORDER STATUSES ---
+    if ($action === 'reorder_statuses' && $method === 'POST') {
+        if (!checkPermission('admin')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Admin access required']);
+        }
+        
+        $data = getJsonInput();
+        $type = $data['type'] ?? 'case'; // 'case' or 'repair'
+        $order = $data['order'] ?? []; // Array of {id, sort_order}
+        
+        $table = $type === 'repair' ? 'repair_statuses' : 'case_statuses';
+        
+        $pdo->beginTransaction();
+        try {
+            $stmt = $pdo->prepare("UPDATE $table SET sort_order = ? WHERE id = ?");
+            foreach ($order as $item) {
+                $stmt->execute([intval($item['sort_order']), intval($item['id'])]);
+            }
+            $pdo->commit();
+            jsonResponse(['success' => true]);
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            jsonResponse(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // Helper function for Georgian transliteration
+    function transliterate_georgian($text) {
+        $map = [
+            'ა' => 'a', 'ბ' => 'b', 'გ' => 'g', 'დ' => 'd', 'ე' => 'e', 'ვ' => 'v',
+            'ზ' => 'z', 'თ' => 't', 'ი' => 'i', 'კ' => 'k', 'ლ' => 'l', 'მ' => 'm',
+            'ნ' => 'n', 'ო' => 'o', 'პ' => 'p', 'ჟ' => 'zh', 'რ' => 'r', 'ს' => 's',
+            'ტ' => 't', 'უ' => 'u', 'ფ' => 'p', 'ქ' => 'k', 'ღ' => 'gh', 'ყ' => 'q',
+            'შ' => 'sh', 'ჩ' => 'ch', 'ც' => 'ts', 'ძ' => 'dz', 'წ' => 'ts', 'ჭ' => 'ch',
+            'ხ' => 'kh', 'ჯ' => 'j', 'ჰ' => 'h'
+        ];
+        return strtr($text, $map);
+    }
+
+    // =====================================================
     // USER MANAGEMENT ENDPOINTS
     // =====================================================
 
