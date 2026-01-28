@@ -564,6 +564,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                     <?php echo __('dashboard.already_in_service', 'Already in Service'); ?> <span id="service-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
                                 </h3>
                                 <div class="flex items-center gap-2">
+                                    <button onclick="printAllServiceQRCodes()" class="bg-white border-2 border-orange-500 text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-50 transition-all shadow-sm flex items-center gap-2">
+                                        <i data-lucide="printer" class="w-4 h-4"></i>
+                                        Print All QR Codes
+                                    </button>
                                     <span class="text-xs font-semibold bg-orange-100 text-orange-600 border border-orange-200 px-3 py-1 rounded-full shadow-sm">Service in Progress</span>
                                 </div>
                             </div>
@@ -4660,6 +4664,151 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         function closeQRModal() {
             const modal = document.getElementById('qr-modal');
             modal.classList.add('hidden');
+        }
+
+        function printAllServiceQRCodes() {
+            // Get all service cases
+            const serviceCases = transfers.filter(t => t.status === 'Already in service');
+            
+            if (serviceCases.length === 0) {
+                showToast('Info', 'No cases in service to print', 'info');
+                return;
+            }
+            
+            // Generate all QR codes
+            const qrPromises = serviceCases.map(caseItem => {
+                return new Promise((resolve) => {
+                    const tempContainer = document.createElement('div');
+                    tempContainer.style.position = 'absolute';
+                    tempContainer.style.left = '-9999px';
+                    document.body.appendChild(tempContainer);
+                    
+                    new QRCode(tempContainer, {
+                        text: caseItem.plate,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    
+                    setTimeout(() => {
+                        const originalCanvas = tempContainer.querySelector('canvas');
+                        if (originalCanvas) {
+                            const qrWidth = originalCanvas.width;
+                            const qrHeight = originalCanvas.height;
+                            const textHeight = 50;
+                            
+                            const newCanvas = document.createElement('canvas');
+                            newCanvas.width = qrWidth;
+                            newCanvas.height = qrHeight + textHeight;
+                            const ctx = newCanvas.getContext('2d');
+                            
+                            ctx.drawImage(originalCanvas, 0, 0);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, qrHeight, qrWidth, textHeight);
+                            ctx.strokeStyle = '#000000';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(1, qrHeight, qrWidth - 2, textHeight - 1);
+                            ctx.fillStyle = '#000000';
+                            ctx.font = 'bold 24px monospace';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(caseItem.plate, qrWidth / 2, qrHeight + textHeight / 2);
+                            
+                            const dataUrl = newCanvas.toDataURL('image/png');
+                            document.body.removeChild(tempContainer);
+                            resolve({ plate: caseItem.plate, dataUrl });
+                        } else {
+                            document.body.removeChild(tempContainer);
+                            resolve(null);
+                        }
+                    }, 100);
+                });
+            });
+            
+            Promise.all(qrPromises).then(qrCodes => {
+                const validCodes = qrCodes.filter(qr => qr !== null);
+                
+                if (validCodes.length === 0) {
+                    showToast('Error', 'Failed to generate QR codes', 'error');
+                    return;
+                }
+                
+                // Create print window
+                const printWindow = window.open('', '_blank');
+                
+                const qrImagesHtml = validCodes.map(qr => `
+                    <div class="qr-item">
+                        <h2>CASE QR CODE</h2>
+                        <img src="${qr.dataUrl}" alt="QR Code for ${qr.plate}">
+                        <div class="footer">OTOMOTORS</div>
+                    </div>
+                `).join('');
+                
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Print All Service QR Codes</title>
+                        <style>
+                            @page {
+                                size: 58mm auto;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                font-family: monospace;
+                            }
+                            .qr-item {
+                                width: 58mm;
+                                padding: 5mm;
+                                text-align: center;
+                                page-break-after: always;
+                            }
+                            .qr-item:last-child {
+                                page-break-after: auto;
+                            }
+                            h2 {
+                                color: #000000;
+                                margin: 0 0 3mm 0;
+                                font-size: 14px;
+                                font-weight: bold;
+                            }
+                            img {
+                                width: 48mm;
+                                height: auto;
+                                display: block;
+                                margin: 0 auto;
+                            }
+                            .footer {
+                                margin-top: 3mm;
+                                font-size: 10px;
+                                color: #000000;
+                            }
+                            @media print {
+                                .qr-item {
+                                    padding: 2mm;
+                                }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${qrImagesHtml}
+                    </body>
+                    </html>
+                `);
+                
+                printWindow.document.close();
+                printWindow.focus();
+                
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500);
+                
+                showToast('Success', `Printing ${validCodes.length} QR codes`, 'success');
+            });
         }
 
         function printQRCode() {
