@@ -4566,10 +4566,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 
                 <p class="text-sm text-slate-600 mb-4">Scan to view case details</p>
                 
-                <button onclick="downloadQRCode()" class="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
-                    <i data-lucide="download" class="w-5 h-5"></i>
-                    Download QR Code
-                </button>
+                <div class="flex gap-3">
+                    <button onclick="printQRCode()" class="flex-1 bg-white border-2 border-primary-500 text-primary-600 px-6 py-3 rounded-xl font-semibold hover:bg-primary-50 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                        <i data-lucide="printer" class="w-5 h-5"></i>
+                        Print
+                    </button>
+                    <button onclick="downloadQRCode()" class="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                        Download
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -4654,6 +4660,65 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         function closeQRModal() {
             const modal = document.getElementById('qr-modal');
             modal.classList.add('hidden');
+        }
+
+        function printQRCode() {
+            const qrCanvas = document.querySelector('#qr-code-container canvas');
+            if (!qrCanvas) {
+                showToast('Error', 'QR code not found', 'error');
+                return;
+            }
+            
+            // Create print window
+            const printWindow = window.open('', '_blank');
+            const qrDataUrl = qrCanvas.toDataURL('image/png');
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print QR Code - ${currentQRPlate}</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            min-height: 100vh;
+                            font-family: monospace;
+                        }
+                        h1 {
+                            color: #0ea5e9;
+                            margin-bottom: 20px;
+                            font-size: 32px;
+                        }
+                        img {
+                            max-width: 100%;
+                            height: auto;
+                        }
+                        @media print {
+                            body {
+                                padding: 0;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Case QR Code</h1>
+                    <img src="${qrDataUrl}" alt="QR Code for ${currentQRPlate}">
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.focus();
+            
+            // Wait for image to load before printing
+            setTimeout(() => {
+                printWindow.print();
+            }, 250);
         }
 
         function downloadQRCode() {
