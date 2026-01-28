@@ -4603,31 +4603,41 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 correctLevel: QRCode.CorrectLevel.H
             });
             
-            // Wait for QR code to render, then add plate text overlay
+            // Wait for QR code to render, then create new canvas with plate text below
             setTimeout(() => {
-                const canvas = qrContainer.querySelector('canvas');
-                if (canvas) {
-                    const ctx = canvas.getContext('2d');
-                    const canvasWidth = canvas.width;
-                    const canvasHeight = canvas.height;
+                const originalCanvas = qrContainer.querySelector('canvas');
+                if (originalCanvas) {
+                    const qrWidth = originalCanvas.width;
+                    const qrHeight = originalCanvas.height;
+                    const textHeight = 50;
                     
-                    // Draw white background rectangle for text
-                    const rectHeight = 40;
-                    const rectY = canvasHeight - rectHeight;
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-                    ctx.fillRect(0, rectY, canvasWidth, rectHeight);
+                    // Create new larger canvas
+                    const newCanvas = document.createElement('canvas');
+                    newCanvas.width = qrWidth;
+                    newCanvas.height = qrHeight + textHeight;
+                    const ctx = newCanvas.getContext('2d');
                     
-                    // Draw border
+                    // Draw original QR code on top
+                    ctx.drawImage(originalCanvas, 0, 0);
+                    
+                    // Draw white background for text below QR
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, qrHeight, qrWidth, textHeight);
+                    
+                    // Draw border around text area
                     ctx.strokeStyle = '#0ea5e9';
                     ctx.lineWidth = 2;
-                    ctx.strokeRect(0, rectY, canvasWidth, rectHeight);
+                    ctx.strokeRect(1, qrHeight, qrWidth - 2, textHeight - 1);
                     
                     // Draw plate number text
                     ctx.fillStyle = '#0ea5e9';
-                    ctx.font = 'bold 24px monospace';
+                    ctx.font = 'bold 28px monospace';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(plate, canvasWidth / 2, rectY + rectHeight / 2);
+                    ctx.fillText(plate, qrWidth / 2, qrHeight + textHeight / 2);
+                    
+                    // Replace original canvas
+                    originalCanvas.replaceWith(newCanvas);
                 }
             }, 100);
             
