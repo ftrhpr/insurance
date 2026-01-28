@@ -91,6 +91,8 @@ try {
     <title><?php echo __('case.title', 'Edit Case'); ?> #<?php echo $case_id; ?> - OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
         // Provide initialCaseData early so Alpine has it when initializing
         let initialCaseData = {};
@@ -224,8 +226,19 @@ try {
                                             <i data-lucide="smartphone" class="w-4 h-4"></i>
                                         </span>
                                     <?php endif; ?>
+                                    <button type="button" @click="showQRCode = !showQRCode" class="text-blue-600 hover:text-blue-800" title="Show QR Code">
+                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    </button>
                                 </label>
                                 <input id="input-plate" type="text" value="<?php echo htmlspecialchars($case['plate']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                                <div x-show="showQRCode" x-cloak class="mt-3 p-3 bg-white border border-slate-200 rounded-lg text-center">
+                                    <div class="text-xs text-slate-600 mb-2">QR Code for Plate: <span class="font-mono font-semibold"><?php echo htmlspecialchars($case['plate']); ?></span></div>
+                                    <div id="qr-code-container" class="flex justify-center"></div>
+                                    <button type="button" @click="downloadQRCode()" class="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center justify-center gap-1 mx-auto">
+                                        <i data-lucide="download" class="w-3 h-3"></i>
+                                        Download QR Code
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.phone_number', 'Phone Number'); ?></label>
@@ -1307,6 +1320,8 @@ try {
                 filterType: 'all',
                 timelineEvents: [],
                 parsedItems: [],
+                showQRCode: false,
+                qrCodeGenerated: false,
                 statuses: [
                     { id: 'New', name: 'New', icon: 'file-plus-2' },
                     { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
@@ -1395,6 +1410,60 @@ try {
                     if (plateEl && plateEl.value) {
                         setTimeout(() => lookupAndFillPhone(plateEl.value), 50);
                     }
+
+                    // Generate QR Code when shown
+                    this.$watch('showQRCode', (value) => {
+                        if (value && !this.qrCodeGenerated) {
+                            this.$nextTick(() => {
+                                this.generateQRCode();
+                                this.qrCodeGenerated = true;
+                            });
+                        }
+                    });
+                },
+
+                // QR Code generation method
+                generateQRCode() {
+                    const container = document.getElementById('qr-code-container');
+                    if (!container) return;
+
+                    // Clear previous QR code
+                    container.innerHTML = '';
+
+                    const plate = document.getElementById('input-plate')?.value || this.currentCase.plate;
+                    const caseUrl = `${window.location.origin}${window.location.pathname}?id=${CASE_ID}`;
+                    
+                    // Create QR code with case URL and plate number
+                    const qrData = `Plate: ${plate}\nCase ID: ${CASE_ID}\nURL: ${caseUrl}`;
+                    
+                    new QRCode(container, {
+                        text: qrData,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                },
+
+                // Download QR Code as image
+                downloadQRCode() {
+                    const container = document.getElementById('qr-code-container');
+                    if (!container) return;
+
+                    const canvas = container.querySelector('canvas');
+                    if (!canvas) {
+                        showToast('Error', 'QR code not generated yet', 'error');
+                        return;
+                    }
+
+                    const plate = document.getElementById('input-plate')?.value || this.currentCase.plate;
+                    const link = document.createElement('a');
+                    link.download = `QR-${plate}-Case-${CASE_ID}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    showToast('Success', 'QR code downloaded', 'success');
                 },
 
                 // New methods for redesigned UI
