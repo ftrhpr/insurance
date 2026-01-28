@@ -50,6 +50,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    
     <!-- FIREBASE SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
@@ -2276,9 +2279,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                 ${t.franchise ? `<p class="text-[10px] text-orange-500 mt-1">Franchise: ${escapeHtml(t.franchise)}</p>` : ''}
                             </div>
                             <div class="pl-3 text-right">
-                                <button onclick="window.location.href='edit_case.php?id=${t.id}'" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 ml-auto group-hover:bg-primary-50">
-                                    Process Case <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                                </button>
+                                <div class="flex items-center gap-2 justify-end">
+                                    <button onclick="showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="bg-white border border-slate-200 text-slate-400 hover:text-primary-600 hover:border-primary-500 text-xs font-semibold p-2 rounded-lg transition-all shadow-sm flex items-center gap-2" title="Show QR Code">
+                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="window.location.href='edit_case.php?id=${t.id}'" class="bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm flex items-center gap-2 group-hover:bg-primary-50">
+                                        Process Case <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>`;
                 } else if(t.status === 'Already in service') {
@@ -2356,6 +2364,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
+                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    </button>
                                     <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-emerald-600 p-2 hover:bg-emerald-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95" title="View Details">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </button>
@@ -2429,6 +2440,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
+                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    </button>
                                     <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Details">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </button>
@@ -2548,6 +2562,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </td>
                         <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                             <div class="flex items-center justify-end gap-1">
+                                <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
+                                    <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                </button>
                                 <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-orange-600 p-2 hover:bg-orange-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/25 active:scale-95" title="View Details">
                                     <i data-lucide="eye" class="w-4 h-4"></i>
                                 </button>
@@ -2784,6 +2801,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
+                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    </button>
                                     <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Invoice">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
                                     </button>
@@ -4527,6 +4547,105 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         
         if(window.lucide) lucide.createIcons();
 
+    </script>
+
+    <!-- QR Code Modal -->
+    <div id="qr-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+            <button onclick="closeQRModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            
+            <div class="text-center">
+                <h3 class="text-2xl font-bold text-slate-800 mb-2">Case QR Code</h3>
+                <p id="qr-plate-display" class="text-3xl font-bold text-primary-600 mb-6"></p>
+                
+                <div class="bg-white p-6 rounded-xl border-2 border-slate-200 inline-block mb-4">
+                    <div id="qr-code-container"></div>
+                </div>
+                
+                <p class="text-sm text-slate-600 mb-4">Scan to view case details</p>
+                
+                <button onclick="downloadQRCode()" class="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <i data-lucide="download" class="w-5 h-5"></i>
+                    Download QR Code
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // QR Code Functions
+        let currentQRPlate = '';
+        let currentQRCaseId = '';
+
+        function showQRCode(plate, caseId) {
+            currentQRPlate = plate;
+            currentQRCaseId = caseId;
+            
+            const modal = document.getElementById('qr-modal');
+            const plateDisplay = document.getElementById('qr-plate-display');
+            const qrContainer = document.getElementById('qr-code-container');
+            
+            // Clear previous QR code
+            qrContainer.innerHTML = '';
+            
+            // Display plate number
+            plateDisplay.textContent = plate;
+            
+            // Generate QR code with case URL
+            const caseUrl = `${window.location.origin}/public_view.php?id=${caseId}`;
+            new QRCode(qrContainer, {
+                text: caseUrl,
+                width: 256,
+                height: 256,
+                colorDark: "#0ea5e9",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            
+            // Re-initialize Lucide icons
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeQRModal() {
+            const modal = document.getElementById('qr-modal');
+            modal.classList.add('hidden');
+        }
+
+        function downloadQRCode() {
+            const qrCanvas = document.querySelector('#qr-code-container canvas');
+            if (!qrCanvas) {
+                showToast('Error', 'QR code not found', 'error');
+                return;
+            }
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = `QR_${currentQRPlate}_${currentQRCaseId}.png`;
+            link.href = qrCanvas.toDataURL('image/png');
+            link.click();
+            
+            showToast('Success', 'QR code downloaded', 'success');
+        }
+
+        // Close modal on outside click
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('qr-modal');
+            if (event.target === modal) {
+                closeQRModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeQRModal();
+            }
+        });
     </script>
 </body>
 </html>
