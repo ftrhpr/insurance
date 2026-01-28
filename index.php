@@ -4603,6 +4603,34 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 correctLevel: QRCode.CorrectLevel.H
             });
             
+            // Wait for QR code to render, then add plate text overlay
+            setTimeout(() => {
+                const canvas = qrContainer.querySelector('canvas');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    const canvasWidth = canvas.width;
+                    const canvasHeight = canvas.height;
+                    
+                    // Draw white background rectangle for text
+                    const rectHeight = 40;
+                    const rectY = canvasHeight - rectHeight;
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                    ctx.fillRect(0, rectY, canvasWidth, rectHeight);
+                    
+                    // Draw border
+                    ctx.strokeStyle = '#0ea5e9';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(0, rectY, canvasWidth, rectHeight);
+                    
+                    // Draw plate number text
+                    ctx.fillStyle = '#0ea5e9';
+                    ctx.font = 'bold 24px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(plate, canvasWidth / 2, rectY + rectHeight / 2);
+                }
+            }, 100);
+            
             // Show modal
             modal.classList.remove('hidden');
             
