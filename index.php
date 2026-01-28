@@ -4606,6 +4606,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Wait for QR code to render, then create new canvas with plate text below
             setTimeout(() => {
                 const originalCanvas = qrContainer.querySelector('canvas');
+                const originalImg = qrContainer.querySelector('img');
+                
                 if (originalCanvas) {
                     const qrWidth = originalCanvas.width;
                     const qrHeight = originalCanvas.height;
@@ -4636,8 +4638,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(plate, qrWidth / 2, qrHeight + textHeight / 2);
                     
-                    // Replace original canvas
-                    originalCanvas.replaceWith(newCanvas);
+                    // Clear container and add only the new canvas
+                    qrContainer.innerHTML = '';
+                    qrContainer.appendChild(newCanvas);
                 }
             }, 100);
             
