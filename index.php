@@ -4602,9 +4602,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Generate QR code with plate number only
             new QRCode(qrContainer, {
                 text: plate,
-                width: 256,
-                height: 256,
-                colorDark: "#0ea5e9",
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
             });
@@ -4633,13 +4633,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     ctx.fillRect(0, qrHeight, qrWidth, textHeight);
                     
                     // Draw border around text area
-                    ctx.strokeStyle = '#0ea5e9';
+                    ctx.strokeStyle = '#000000';
                     ctx.lineWidth = 2;
                     ctx.strokeRect(1, qrHeight, qrWidth - 2, textHeight - 1);
                     
                     // Draw plate number text
-                    ctx.fillStyle = '#0ea5e9';
-                    ctx.font = 'bold 28px monospace';
+                    ctx.fillStyle = '#000000';
+                    ctx.font = 'bold 24px monospace';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(plate, qrWidth / 2, qrHeight + textHeight / 2);
@@ -4679,35 +4679,45 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 <head>
                     <title>Print QR Code - ${currentQRPlate}</title>
                     <style>
+                        @page {
+                            size: 58mm auto;
+                            margin: 0;
+                        }
                         body {
                             margin: 0;
-                            padding: 20px;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            min-height: 100vh;
+                            padding: 5mm;
+                            width: 58mm;
                             font-family: monospace;
+                            text-align: center;
                         }
                         h1 {
-                            color: #0ea5e9;
-                            margin-bottom: 20px;
-                            font-size: 32px;
+                            color: #000000;
+                            margin: 0 0 3mm 0;
+                            font-size: 14px;
+                            font-weight: bold;
                         }
                         img {
-                            max-width: 100%;
+                            width: 48mm;
                             height: auto;
+                            display: block;
+                            margin: 0 auto;
+                        }
+                        .footer {
+                            margin-top: 3mm;
+                            font-size: 10px;
+                            color: #000000;
                         }
                         @media print {
                             body {
-                                padding: 0;
+                                padding: 2mm;
                             }
                         }
                     </style>
                 </head>
                 <body>
-                    <h1>Case QR Code</h1>
+                    <h1>CASE QR CODE</h1>
                     <img src="${qrDataUrl}" alt="QR Code for ${currentQRPlate}">
+                    <div class="footer">OTOMOTORS</div>
                 </body>
                 </html>
             `);
