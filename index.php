@@ -4593,10 +4593,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Display plate number
             plateDisplay.textContent = plate;
             
-            // Generate QR code with case URL
-            const caseUrl = `${window.location.origin}/public_view.php?id=${caseId}`;
+            // Generate QR code with plate number only
             new QRCode(qrContainer, {
-                text: caseUrl,
+                text: plate,
                 width: 256,
                 height: 256,
                 colorDark: "#0ea5e9",
