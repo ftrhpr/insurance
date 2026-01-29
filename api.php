@@ -424,7 +424,8 @@ try {
                 'slug' => "VARCHAR(32) UNIQUE DEFAULT NULL",
                 'vat_enabled' => "TINYINT(1) DEFAULT 0",
                 'vat_amount' => "DECIMAL(10,2) DEFAULT 0.00",
-                'case_type' => "ENUM('საცალო', 'დაზღვევა') DEFAULT 'საცალო'"
+                'case_type' => "ENUM('საცალო', 'დაზღვევა') DEFAULT 'საცალო'",
+                'nachrebi_qty' => "INT DEFAULT 0 COMMENT 'Pieces quantity (ნაჭრების რაოდენობა)'"
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
