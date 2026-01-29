@@ -27,9 +27,9 @@ try {
 
 // Get filter parameters
 $selected_month = $_GET['month'] ?? date('Y-m');
-$search_customer = $_GET['search'] ?? '';
+$selected_technician = $_GET['technician'] ?? '';
 
-// Build query with filters
+// Build query for completed cases with nachrebi_qty
 $query = "SELECT 
     name as customer_name,
     plate,
@@ -42,27 +42,24 @@ $query = "SELECT
     assigned_mechanic,
     id
 FROM transfers 
-WHERE nachrebi_qty > 0";
+WHERE nachrebi_qty > 0 
+AND status = 'Done'";
 
 $params = [];
 
-// Technician filter - only show their own cases
+// Technician filter - technicians only see their own, admins can filter by technician
 if ($current_user_role === 'technician') {
     $query .= " AND assigned_mechanic = ?";
     $params[] = $current_user_name;
+} elseif ($selected_technician) {
+    $query .= " AND assigned_mechanic = ?";
+    $params[] = $selected_technician;
 }
 
 // Month filter
 if ($selected_month) {
     $query .= " AND DATE_FORMAT(created_at, '%Y-%m') = ?";
     $params[] = $selected_month;
-}
-
-// Customer search filter
-if ($search_customer) {
-    $query .= " AND (name LIKE ? OR plate LIKE ?)";
-    $params[] = "%$search_customer%";
-    $params[] = "%$search_customer%";
 }
 
 $query .= " ORDER BY created_at DESC";
@@ -78,7 +75,7 @@ $total_amount = array_sum(array_column($records, 'amount'));
 // Get available months for filter dropdown
 $months_query = "SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month 
     FROM transfers 
-    WHERE nachrebi_qty > 0";
+    WHERE nachrebi_qty > 0 AND status = 'Done'";
 
 // Filter months by technician if applicable
 if ($current_user_role === 'technician') {
@@ -90,6 +87,33 @@ if ($current_user_role === 'technician') {
 }
 
 $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Get list of technicians for admin/manager filter
+$technicians = [];
+if ($current_user_role !== 'technician') {
+    $tech_stmt = $pdo->query("SELECT DISTINCT assigned_mechanic FROM transfers WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != '' AND nachrebi_qty > 0 AND status = 'Done' ORDER BY assigned_mechanic");
+    $technicians = $tech_stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+// Get summary by technician (for admin/manager view)
+$technician_summary = [];
+if ($current_user_role !== 'technician') {
+    $summary_query = "SELECT 
+        assigned_mechanic,
+        COUNT(*) as total_cases,
+        SUM(nachrebi_qty) as total_nachrebi
+    FROM transfers 
+    WHERE nachrebi_qty > 0 AND status = 'Done' AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
+    
+    if ($selected_month) {
+        $summary_query .= " AND DATE_FORMAT(created_at, '%Y-%m') = ?";
+        $summary_stmt = $pdo->prepare($summary_query . " GROUP BY assigned_mechanic ORDER BY total_nachrebi DESC");
+        $summary_stmt->execute([$selected_month]);
+    } else {
+        $summary_stmt = $pdo->query($summary_query . " GROUP BY assigned_mechanic ORDER BY total_nachrebi DESC");
+    }
+    $technician_summary = $summary_stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -136,7 +160,7 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
         
         <!-- Filters -->
         <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6 no-print">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 
                 <!-- Month Filter -->
                 <div>
@@ -154,23 +178,26 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
                     </select>
                 </div>
 
-                <!-- Customer Search -->
+                <!-- Technician Filter (Admin/Manager only) -->
+                <?php if ($current_user_role !== 'technician'): ?>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">
-                        <i data-lucide="search" class="w-4 h-4 inline mr-1"></i>
-                        მომხმარებლის ძებნა
+                        <i data-lucide="user" class="w-4 h-4 inline mr-1"></i>
+                        ტექნიკოსი
                     </label>
-                    <input 
-                        type="text" 
-                        name="search" 
-                        value="<?= htmlspecialchars($search_customer) ?>"
-                        placeholder="სახელი ან ნომერი..."
-                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
+                    <select name="technician" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">ყველა ტექნიკოსი</option>
+                        <?php foreach ($technicians as $tech): ?>
+                            <option value="<?= htmlspecialchars($tech) ?>" <?= $tech === $selected_technician ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($tech) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
+                <?php endif; ?>
 
                 <!-- Actions -->
-                <div class="flex items-end space-x-2">
+                <div class="flex items-end space-x-2 <?= $current_user_role !== 'technician' ? '' : 'md:col-span-2' ?>">
                     <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center">
                         <i data-lucide="filter" class="w-4 h-4 mr-2"></i>
                         ფილტრი
@@ -185,16 +212,42 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
             </form>
         </div>
 
+        <!-- Technician Summary (Admin/Manager only) -->
+        <?php if ($current_user_role !== 'technician' && count($technician_summary) > 0): ?>
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                <i data-lucide="users" class="w-5 h-5 mr-2 text-blue-600"></i>
+                ტექნიკოსების შეჯამება
+                <?php if ($selected_month): ?>
+                    <span class="text-sm font-normal text-slate-500 ml-2">(<?= date('F Y', strtotime($selected_month . '-01')) ?>)</span>
+                <?php endif; ?>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <?php foreach ($technician_summary as $tech): ?>
+                <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 hover:border-blue-300 transition">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-semibold text-slate-800"><?= htmlspecialchars($tech['assigned_mechanic']) ?></span>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full"><?= $tech['total_cases'] ?> შეკვეთა</span>
+                    </div>
+                    <div class="text-2xl font-bold text-emerald-600">
+                        <?= number_format($tech['total_nachrebi'], 2) ?> <span class="text-sm font-normal text-slate-500">ნაჭერი</span>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-slate-600 mb-1">სულ ჩანაწერები</p>
+                        <p class="text-sm text-slate-600 mb-1">დასრულებული შეკვეთები</p>
                         <p class="text-3xl font-bold text-slate-900"><?= count($records) ?></p>
                     </div>
                     <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+                        <i data-lucide="check-circle" class="w-6 h-6 text-blue-600"></i>
                     </div>
                 </div>
             </div>
@@ -233,10 +286,11 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">ID</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">მომხმარებელი</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">მანქანის ნომერი</th>
+                            <?php if ($current_user_role !== 'technician'): ?>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">ტექნიკოსი</th>
+                            <?php endif; ?>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">ნაჭრების რაოდ.</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">თანხა</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">ფრანშიზა</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">სტატუსი</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">თარიღი</th>
                         </tr>
                     </thead>
@@ -247,27 +301,15 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
                                     <td class="px-4 py-3 text-sm font-medium text-slate-900">#<?= $record['id'] ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-900"><?= htmlspecialchars($record['customer_name']) ?></td>
                                     <td class="px-4 py-3 text-sm font-mono text-slate-900"><?= htmlspecialchars($record['plate']) ?></td>
-                                    <td class="px-4 py-3 text-sm font-bold text-emerald-600"><?= number_format($record['nachrebi_qty'], 2) ?></td>
-                                    <td class="px-4 py-3 text-sm text-slate-900">₾<?= number_format($record['amount'], 2) ?></td>
-                                    <td class="px-4 py-3 text-sm text-slate-600">₾<?= number_format($record['franchise'], 2) ?></td>
-                                    <td class="px-4 py-3 text-sm">
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium
-                                            <?php 
-                                            switch($record['status']) {
-                                                case 'New': echo 'bg-gray-100 text-gray-700'; break;
-                                                case 'Processing': echo 'bg-blue-100 text-blue-700'; break;
-                                                case 'Called': echo 'bg-purple-100 text-purple-700'; break;
-                                                case 'Parts ordered': echo 'bg-orange-100 text-orange-700'; break;
-                                                case 'Parts arrived': echo 'bg-cyan-100 text-cyan-700'; break;
-                                                case 'Already in service': echo 'bg-indigo-100 text-indigo-700'; break;
-                                                case 'Done': echo 'bg-green-100 text-green-700'; break;
-                                                case 'Issue': echo 'bg-red-100 text-red-700'; break;
-                                                default: echo 'bg-slate-100 text-slate-700';
-                                            }
-                                            ?>">
-                                            <?= htmlspecialchars($record['status']) ?>
+                                    <?php if ($current_user_role !== 'technician'): ?>
+                                    <td class="px-4 py-3 text-sm text-slate-700">
+                                        <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
+                                            <?= htmlspecialchars($record['assigned_mechanic'] ?? 'Unassigned') ?>
                                         </span>
                                     </td>
+                                    <?php endif; ?>
+                                    <td class="px-4 py-3 text-sm font-bold text-emerald-600"><?= number_format($record['nachrebi_qty'], 2) ?></td>
+                                    <td class="px-4 py-3 text-sm text-slate-900">₾<?= number_format($record['amount'], 2) ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-600">
                                         <?= date('d/m/Y', strtotime($record['created_at'])) ?>
                                     </td>
@@ -275,10 +317,10 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" class="px-4 py-12 text-center">
+                                <td colspan="<?= $current_user_role !== 'technician' ? '7' : '6' ?>" class="px-4 py-12 text-center">
                                     <div class="flex flex-col items-center justify-center text-slate-400">
                                         <i data-lucide="inbox" class="w-12 h-12 mb-3"></i>
-                                        <p class="text-sm">მონაცემები არ მოიძებნა</p>
+                                        <p class="text-sm">დასრულებული შეკვეთები არ მოიძებნა</p>
                                     </div>
                                 </td>
                             </tr>
