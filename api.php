@@ -816,46 +816,24 @@ try {
             // Continue anyway - columns might already exist or ALTER might fail on some DB versions
         }
 
-        // Pagination support
-        $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 0;
-        $offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0;
-        
-        // Build query with optional pagination
-        $query = "SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment, link_opened_at as linkOpenedAt, operatorComment, repair_status FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed') ORDER BY created_at DESC";
-        
-        if ($limit > 0) {
-            $query .= " LIMIT " . $limit . " OFFSET " . $offset;
-        }
-        
-        $stmt = $pdo->prepare($query);
+        // Includes review columns and reschedule data, now includes completed transfers for processing queue
+        $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment, link_opened_at as linkOpenedAt, operatorComment, repair_status FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed') ORDER BY created_at DESC");
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Get total count for pagination
-        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')");
-        $countStmt->execute();
-        $totalCount = $countStmt->fetchColumn();
         foreach ($rows as &$row) {
             $row['internalNotes'] = json_decode($row['internalNotes'] ?? '[]');
             $row['systemLogs'] = json_decode($row['systemLogs'] ?? '[]');
             // serviceDate is already correctly named in the database
         }
         
-        // Also get vehicles for vehicle DB page (only on initial load)
-        $vehicles = [];
-        if ($offset === 0) {
-            $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles ORDER BY plate ASC");
-            $vehicleStmt->execute();
-            $vehicles = $vehicleStmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        
-        $hasMore = ($limit > 0) ? (count($rows) === $limit && ($offset + $limit) < $totalCount) : false;
+        // Also get vehicles for vehicle DB page
+        $vehicleStmt = $pdo->prepare("SELECT * FROM vehicles ORDER BY plate ASC");
+        $vehicleStmt->execute();
+        $vehicles = $vehicleStmt->fetchAll(PDO::FETCH_ASSOC);
         
         jsonResponse([
             'transfers' => $rows,
-            'vehicles' => $vehicles,
-            'hasMore' => $hasMore,
-            'total' => $limit > 0 ? $totalCount : count($rows)
+            'vehicles' => $vehicles
         ]);
     }
 

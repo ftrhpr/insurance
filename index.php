@@ -1380,14 +1380,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         
         // Pagination variables
         const processingPerPage = 10;
-        let currentProcessingPage = 1;
-        
-        // Infinite scroll pagination
-        const CASES_PER_PAGE = 15;
-        let currentOffset = 0;
-        let isLoading = false;
-        let hasMoreCases = true;
-        let totalCases = 0; 
+        let currentProcessingPage = 1; 
 
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
@@ -1475,80 +1468,45 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         // Set to FALSE to stop using fake data and connect to your SQL Database
         const USE_MOCK_DATA = false; 
 
-        async function loadData(isInitial = true) {
-            if (isLoading) return;
-            isLoading = true;
-            
+        async function loadData() {
             try {
-                // Reset pagination on initial load
-                if (isInitial) {
-                    currentOffset = 0;
-                    hasMoreCases = true;
-                    transfers = [];
-                }
+                const response = await fetchAPI('get_transfers');
                 
-                const response = await fetchAPI(`get_transfers&limit=${CASES_PER_PAGE}&offset=${currentOffset}`);
-                
-                // Handle new combined response format with pagination
-                if (response.transfers) {
+                // Handle new combined response format
+                if (response.transfers && response.vehicles) {
                     // Deduplicate transfers by id
                     const origLen = (response.transfers || []).length;
                     const trMap = new Map();
-                    
-                    // Add existing transfers to map first
-                    transfers.forEach(tr => {
-                        if (tr && (tr.id || tr.id === 0)) trMap.set(String(tr.id), tr);
-                    });
-                    
-                    // Add new transfers
                     (response.transfers || []).forEach(tr => {
                         if (tr && (tr.id || tr.id === 0)) trMap.set(String(tr.id), tr);
                     });
-                    
                     transfers = Array.from(trMap.values());
                     const dedupLen = transfers.length;
-                    if (dedupLen < origLen + (isInitial ? 0 : transfers.length - origLen)) {
-                        console.warn(`Removed duplicate transfer(s) from API response`);
-                    }
-                    
-                    // Update vehicles only on initial load
-                    if (isInitial && response.vehicles) {
-                        vehicles = response.vehicles;
-                    }
-                    
-                    // Update pagination state
-                    hasMoreCases = response.hasMore || false;
-                    totalCases = response.total || transfers.length;
-                    currentOffset += CASES_PER_PAGE;
-                    
-                    console.log(`Loaded ${response.transfers.length} cases. Total: ${transfers.length}/${totalCases}. Has more: ${hasMoreCases}`);
+                    if (dedupLen < origLen) console.warn(`Removed ${origLen - dedupLen} duplicate transfer(s) from API response`);
+                    vehicles = response.vehicles;
                 } else if (Array.isArray(response)) {
                     // Fallback for old format
-                    transfers = response;
-                    if (isInitial) {
-                        const newVehicles = await fetchAPI('get_vehicles');
-                        if(Array.isArray(newVehicles)) vehicles = newVehicles;
-                    }
-                    hasMoreCases = false;
+                    const origLen = (response || []).length;
+                    const trMap = new Map();
+                    (response || []).forEach(tr => {
+                        if (tr && (tr.id || tr.id === 0)) trMap.set(String(tr.id), tr);
+                    });
+                    transfers = Array.from(trMap.values());
+                    const dedupLen = transfers.length;
+                    if (dedupLen < origLen) console.warn(`Removed ${origLen - dedupLen} duplicate transfer(s) from fallback response`);
+                    const newVehicles = await fetchAPI('get_vehicles');
+                    if(Array.isArray(newVehicles)) vehicles = newVehicles;
                 }
 
                 // Populate repair-status filter dynamically from transfers
-                if (isInitial) {
-                    populateRepairStatusFilter();
-                }
+                populateRepairStatusFilter();
 
                 renderTable(currentProcessingPage);
                 updateTabCounts();
-                
-                if (isInitial) {
-                    initializeTabs();
-                    setupInfiniteScroll();
-                }
+                initializeTabs();
             } catch(e) {
                 console.error('loadData error:', e);
                 showToast('Error', 'Failed to load data', 'error');
-            } finally {
-                isLoading = false;
             }
 
             const loadingScreenEl = document.getElementById('loading-screen');
@@ -1559,32 +1517,6 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 if (loadingScreenEl) loadingScreenEl.classList.add('hidden');
                 if (appContentEl) appContentEl.classList.remove('hidden');
             }, 500);
-        }
-        
-        // Setup infinite scroll listener
-        function setupInfiniteScroll() {
-            let scrollTimeout;
-            window.addEventListener('scroll', () => {
-                clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(() => {
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                    const windowHeight = window.innerHeight;
-                    const documentHeight = document.documentElement.scrollHeight;
-                    
-                    // Load more when user scrolls to within 300px of bottom
-                    if (scrollTop + windowHeight >= documentHeight - 300) {
-                        loadMoreData();
-                    }
-                }, 100);
-            });
-        }
-        
-        // Load more data when scrolling
-        async function loadMoreData() {
-            if (!hasMoreCases || isLoading) return;
-            
-            console.log('Loading more cases...');
-            await loadData(false);
         }
 
         // Poll for updates every 10 seconds
