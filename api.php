@@ -864,17 +864,20 @@ try {
     if ($action === 'get_transfer' && $method === 'GET') {
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0) jsonResponse(['status' => 'error', 'message' => 'Invalid id']);
-        $stmt = $pdo->prepare("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, system_logs, work_times, assignment_history FROM transfers WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM transfers WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) jsonResponse(['status' => 'error', 'message' => 'Not found']);
-        $row['repair_assignments'] = json_decode($row['repair_assignments'] ?? '{}', true);
-        $row['stage_timers'] = json_decode($row['stage_timers'] ?? '{}', true);
-        $row['stage_statuses'] = json_decode($row['stage_statuses'] ?? '{}', true);
-        $row['system_logs'] = json_decode($row['system_logs'] ?? '[]', true);
-        $row['work_times'] = json_decode($row['work_times'] ?? '{}', true);
-        $row['assignment_history'] = json_decode($row['assignment_history'] ?? '[]', true);
-        jsonResponse(['status' => 'success', 'case' => $row]);
+        
+        // Decode JSON fields
+        $jsonFields = ['repair_assignments', 'stage_timers', 'stage_statuses', 'system_logs', 'work_times', 'assignment_history', 'internalNotes', 'systemLogs', 'case_images', 'repair_parts', 'repair_labor', 'repair_activity_log'];
+        foreach ($jsonFields as $field) {
+            if (isset($row[$field]) && is_string($row[$field])) {
+                $row[$field] = json_decode($row[$field], true);
+            }
+        }
+        
+        jsonResponse($row);
     }
 
     // --- SMS TEMPLATES ACTIONS ---
