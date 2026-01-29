@@ -644,6 +644,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                             </th>
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
+                                                    <i data-lucide="hash" class="w-4 h-4"></i>
+                                                    <span>რაოდენობა</span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
                                                     <i data-lucide="settings" class="w-4 h-4"></i>
                                                     <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
                                                 </div>
@@ -770,6 +776,14 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                         </div>
                                     </div>
 
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border inline-flex items-center gap-3">
+                                        <div class="p-3 rounded-lg bg-purple-50"><i data-lucide="hash" class="w-5 h-5 text-purple-600"></i></div>
+                                        <div>
+                                            <div class="text-xs text-slate-500">რაოდენობა (filtered)</div>
+                                            <div id="completed-nachrebi-qty" class="text-lg font-bold text-purple-600">0</div>
+                                        </div>
+                                    </div>
+
                                     <!-- Case type earnings (always show across all Completed cases) -->
                                     <div class="bg-white p-4 rounded-xl shadow-sm border inline-flex items-center gap-3">
                                         <div class="p-3 rounded-lg bg-blue-50"><i data-lucide="shield" class="w-5 h-5 text-blue-600"></i></div>
@@ -847,6 +861,12 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                                                 <div class="flex items-center gap-2">
                                                     <i data-lucide="wrench" class="w-4 h-4"></i>
                                                     <span>ნაჭრები</span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="hash" class="w-4 h-4"></i>
+                                                    <span>რაოდენობა</span>
                                                 </div>
                                             </th>
                                             <th class="px-5 py-4">
@@ -2205,6 +2225,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             let completedFilteredIncome = 0.0; // GEL
             let completedSamghebriFiltered = 0; // quantity for filtered set
             let completedSamghebriTotal = 0; // quantity across all transfers
+            let completedNachrebiQtyFiltered = 0; // nachrebi_qty sum for filtered set
             // Earnings per case type (all Completed cases)
             let completedIncomeDazghveva = 0.0; // დაზღვევა total
             let completedIncomeSacalo = 0.0; // საცალო total
@@ -2314,6 +2335,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         completedFilteredIncome += amt;
 
                         completedSamghebriFiltered += computeSamghebriInTransfer(t, 'სამღებრო სამუშაო');
+                        completedNachrebiQtyFiltered += parseInt(t.nachrebi_qty) || 0;
 
                         completedContainer.innerHTML += `
                         <tr class="hover:bg-emerald-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
@@ -2349,6 +2371,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             <td class="px-5 py-4">
                                 <div class="text-sm font-bold text-slate-800">
                                     ${computeSamghebriInTransfer(t, 'სამღებრო სამუშაო')}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm font-bold text-purple-600">
+                                    ${t.nachrebi_qty || 0}
                                 </div>
                             </td>
                             <td class="px-5 py-4">
@@ -2562,6 +2589,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <td class="px-5 py-4">
                             <div class="text-sm text-slate-700">
                                 ${t.assigned_mechanic ? `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">${escapeHtml(t.assigned_mechanic)}</span>` : '<span class="text-slate-400 text-xs">Unassigned</span>'}
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm font-bold text-purple-600">
+                                ${t.nachrebi_qty || 0}
                             </div>
                         </td>
                         <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
@@ -2926,6 +2958,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
 
                 const samTotalEl = document.getElementById('completed-samghebri-total');
                 if (samTotalEl) samTotalEl.textContent = sumSamghebriAcrossAllTransfers('სამღებრო სამუშაო');
+
+                const nachrebiQtyEl = document.getElementById('completed-nachrebi-qty');
+                if (nachrebiQtyEl) nachrebiQtyEl.textContent = completedNachrebiQtyFiltered;
 
                 // Show unfiltered earnings per case type
                 const dazEl = document.getElementById('completed-income-dazghveva');

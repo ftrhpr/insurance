@@ -474,6 +474,7 @@ try {
                 'serviceDate' => 'service_date',
                 'dueDate' => 'due_date',
                 'franchise' => 'franchise',
+                'nachrebi_qty' => 'nachrebi_qty',
                 'internalNotes' => 'internalNotes',
                 'systemLogs' => 'systemLogs',
                 'user_response' => 'user_response',

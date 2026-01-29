@@ -270,6 +270,10 @@ try {
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.franchise', 'Franchise'); ?> (₾)</label>
                                 <input id="input-franchise" type="number" value="<?php echo htmlspecialchars($case['franchise'] ?? 0); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5">ნაჭრების რაოდენობა (Pieces Quantity)</label>
+                                <input id="input-nachrebi-qty" type="number" min="0" value="<?php echo htmlspecialchars($case['nachrebi_qty'] ?? 0); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
+                            </div>
 
                             <!-- Payments Summary -->
                             <div>
@@ -2434,6 +2438,7 @@ try {
                         serviceDate: serviceDate || null,
                         dueDate: dueDate || null,
                         franchise: document.getElementById('input-franchise').value || 0,
+                        nachrebi_qty: document.getElementById('input-nachrebi-qty').value || 0,
                         vehicleMake: document.getElementById('input-vehicle-make')?.value.trim() || null,
                         vehicleModel: document.getElementById('input-vehicle-model')?.value.trim() || null,
                         user_response: this.currentCase.user_response || null,
