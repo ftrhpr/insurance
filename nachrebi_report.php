@@ -26,7 +26,7 @@ try {
 }
 
 // Get filter parameters
-$selected_month = $_GET['month'] ?? date('Y-m');
+$selected_month = $_GET['month'] ?? '';  // Empty by default to show all
 $selected_technician = $_GET['technician'] ?? '';
 
 // Build query for completed cases with nachrebi_qty
@@ -42,8 +42,7 @@ $query = "SELECT
     assigned_mechanic,
     id
 FROM transfers 
-WHERE nachrebi_qty > 0 
-AND status = 'Done'";
+WHERE nachrebi_qty > 0";
 
 $params = [];
 
@@ -75,7 +74,7 @@ $total_amount = array_sum(array_column($records, 'amount'));
 // Get available months for filter dropdown
 $months_query = "SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month 
     FROM transfers 
-    WHERE nachrebi_qty > 0 AND status = 'Done'";
+    WHERE nachrebi_qty > 0";
 
 // Filter months by technician if applicable
 if ($current_user_role === 'technician') {
@@ -91,7 +90,7 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
 // Get list of technicians for admin/manager filter
 $technicians = [];
 if ($current_user_role !== 'technician') {
-    $tech_stmt = $pdo->query("SELECT DISTINCT assigned_mechanic FROM transfers WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != '' AND nachrebi_qty > 0 AND status = 'Done' ORDER BY assigned_mechanic");
+    $tech_stmt = $pdo->query("SELECT DISTINCT assigned_mechanic FROM transfers WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != '' AND nachrebi_qty > 0 ORDER BY assigned_mechanic");
     $technicians = $tech_stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
@@ -103,7 +102,7 @@ if ($current_user_role !== 'technician') {
         COUNT(*) as total_cases,
         SUM(nachrebi_qty) as total_nachrebi
     FROM transfers 
-    WHERE nachrebi_qty > 0 AND status = 'Done' AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
+    WHERE nachrebi_qty > 0 AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
     
     if ($selected_month) {
         $summary_query .= " AND DATE_FORMAT(created_at, '%Y-%m') = ?";
@@ -132,12 +131,7 @@ if ($current_user_role !== 'technician') {
     </style>
 </head>
 <body class="bg-slate-50">
-    div>
-                        <h1 class="text-2xl font-bold text-slate-900">ნაჭრების რაოდენობა - რეპორტი</h1>
-                        <?php if ($current_user_role === 'technician'): ?>
-                            <p class="text-sm text-slate-500 mt-1">ტექნიკოსი: <?= htmlspecialchars($current_user_name) ?></p>
-                        <?php endif; ?>
-                    </div
+    
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -146,7 +140,12 @@ if ($current_user_role !== 'technician') {
                     <a href="index.php" class="text-slate-600 hover:text-slate-900">
                         <i data-lucide="arrow-left" class="w-5 h-5"></i>
                     </a>
-                    <h1 class="text-2xl font-bold text-slate-900">ნაჭრების რაოდენობა - რეპორტი</h1>
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">ნაჭრების რაოდენობა - რეპორტი</h1>
+                        <?php if ($current_user_role === 'technician'): ?>
+                            <p class="text-sm text-slate-500 mt-1">ტექნიკოსი: <?= htmlspecialchars($current_user_name) ?></p>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div class="flex items-center space-x-3">
                     <span class="text-sm text-slate-600"><?= htmlspecialchars($current_user_name) ?></span>
