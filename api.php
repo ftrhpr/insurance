@@ -871,9 +871,26 @@ try {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) jsonResponse(['status' => 'error', 'message' => 'Not found']);
         
-        // Decode JSON fields
-        $row['repair_parts'] = json_decode($row['repair_parts'] ?? '[]', true);
-        $row['repair_labor'] = json_decode($row['repair_labor'] ?? '[]', true);
+        // Robust JSON decoding - handle both string and already-parsed data
+        $row['repair_parts'] = [];
+        if (!empty($row['repair_parts'])) {
+            if (is_string($row['repair_parts'])) {
+                $decoded = json_decode($row['repair_parts'], true);
+                $row['repair_parts'] = is_array($decoded) ? $decoded : [];
+            } elseif (is_array($row['repair_parts'])) {
+                $row['repair_parts'] = $row['repair_parts'];
+            }
+        }
+        
+        $row['repair_labor'] = [];
+        if (!empty($row['repair_labor'])) {
+            if (is_string($row['repair_labor'])) {
+                $decoded = json_decode($row['repair_labor'], true);
+                $row['repair_labor'] = is_array($decoded) ? $decoded : [];
+            } elseif (is_array($row['repair_labor'])) {
+                $row['repair_labor'] = $row['repair_labor'];
+            }
+        }
         
         jsonResponse($row);
     }

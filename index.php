@@ -1519,8 +1519,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             }, 500);
         }
 
-        // Poll for updates every 10 seconds
-        setInterval(loadData, 10000);
+        // Poll for updates every 30 seconds (reduced from 10s to improve performance)
+        setInterval(loadData, 30000);
 
         // Helper function for model suggestions based on make (used in manual create form)
         function updateModelOptions(prefix) {
@@ -2980,7 +2980,8 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 console.warn('Completed summary update failed', e);
             }
 
-            lucide.createIcons();
+            // Call lucide icons only once at the end
+            if (window.lucide) lucide.createIcons();
             updateTabCounts();
         }
 
