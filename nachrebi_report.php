@@ -102,6 +102,7 @@ if ($current_user_role !== 'technician') {
 
 // Get summary by technician (for admin/manager view)
 $technician_summary = [];
+$consumables_costs = [];
 if ($current_user_role !== 'technician') {
     $summary_query = "SELECT 
         assigned_mechanic,
@@ -118,6 +119,20 @@ if ($current_user_role !== 'technician') {
         $summary_stmt = $pdo->query($summary_query . " GROUP BY assigned_mechanic ORDER BY total_nachrebi DESC");
     }
     $technician_summary = $summary_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Load consumables costs for the selected month
+    if ($selected_month) {
+        $cost_stmt = $pdo->prepare("SELECT * FROM consumables_costs WHERE year_month = ?");
+        $cost_stmt->execute([$selected_month]);
+    } else {
+        $cost_stmt = $pdo->query("SELECT * FROM consumables_costs ORDER BY year_month DESC");
+    }
+    $consumables_data = $cost_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Index by technician name for easy lookup
+    foreach ($consumables_data as $cc) {
+        $consumables_costs[$cc['technician_name']] = $cc;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -220,22 +235,51 @@ if ($current_user_role !== 'technician') {
         <!-- Technician Summary (Admin/Manager only) -->
         <?php if ($current_user_role !== 'technician' && count($technician_summary) > 0): ?>
         <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
-                <i data-lucide="users" class="w-5 h-5 mr-2 text-blue-600"></i>
-                ტექნიკოსების შეჯამება
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center">
+                    <i data-lucide="users" class="w-5 h-5 mr-2 text-blue-600"></i>
+                    ტექნიკოსების შეჯამება
+                    <?php if ($selected_month): ?>
+                        <span class="text-sm font-normal text-slate-500 ml-2">(<?= date('F Y', strtotime($selected_month . '-01')) ?>)</span>
+                    <?php endif; ?>
+                </h2>
                 <?php if ($selected_month): ?>
-                    <span class="text-sm font-normal text-slate-500 ml-2">(<?= date('F Y', strtotime($selected_month . '-01')) ?>)</span>
+                <button onclick="openConsumablesModal()" class="px-3 py-1.5 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition flex items-center gap-1">
+                    <i data-lucide="package-plus" class="w-4 h-4"></i>
+                    სახარჯი მასალები
+                </button>
                 <?php endif; ?>
-            </h2>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <?php foreach ($technician_summary as $tech): ?>
+                <?php foreach ($technician_summary as $tech): 
+                    $tech_name = $tech['assigned_mechanic'];
+                    $nachrebi_amount = $tech['total_nachrebi'] * 77;
+                    $consumable_cost = isset($consumables_costs[$tech_name]) ? floatval($consumables_costs[$tech_name]['cost']) : 0;
+                    $net_amount = $nachrebi_amount - $consumable_cost;
+                ?>
                 <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 hover:border-blue-300 transition">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="font-semibold text-slate-800"><?= htmlspecialchars($tech['assigned_mechanic']) ?></span>
+                        <span class="font-semibold text-slate-800"><?= htmlspecialchars($tech_name) ?></span>
                         <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full"><?= $tech['total_cases'] ?> შეკვეთა</span>
                     </div>
-                    <div class="text-2xl font-bold text-emerald-600">
+                    <div class="text-2xl font-bold text-emerald-600 mb-2">
                         <?= number_format($tech['total_nachrebi'], 2) ?> <span class="text-sm font-normal text-slate-500">ნაჭერი</span>
+                    </div>
+                    <div class="text-sm text-slate-600 border-t border-slate-200 pt-2 mt-2 space-y-1">
+                        <div class="flex justify-between">
+                            <span>ნაჭრები (×77):</span>
+                            <span class="font-medium">₾<?= number_format($nachrebi_amount, 2) ?></span>
+                        </div>
+                        <?php if ($selected_month): ?>
+                        <div class="flex justify-between text-orange-600">
+                            <span>სახარჯი მასალა:</span>
+                            <span class="font-medium">- ₾<?= number_format($consumable_cost, 2) ?></span>
+                        </div>
+                        <div class="flex justify-between text-blue-700 font-bold border-t border-slate-200 pt-1">
+                            <span>სულ:</span>
+                            <span>₾<?= number_format($net_amount, 2) ?></span>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -400,6 +444,193 @@ if ($current_user_role !== 'technician') {
                 lucide.createIcons();
             }
         }
+
+        // Consumables Cost Management
+        const selectedMonth = '<?= $selected_month ?>';
+        const allTechnicians = <?= json_encode(array_column($all_technicians, 'full_name')) ?>;
+        let consumablesCosts = <?= json_encode($consumables_costs) ?>;
+
+        function openConsumablesModal() {
+            document.getElementById('consumablesModal').classList.remove('hidden');
+            renderConsumablesTable();
+        }
+
+        function closeConsumablesModal() {
+            document.getElementById('consumablesModal').classList.add('hidden');
+        }
+
+        function renderConsumablesTable() {
+            const tbody = document.getElementById('consumablesTableBody');
+            tbody.innerHTML = '';
+            
+            allTechnicians.forEach(tech => {
+                const existing = consumablesCosts[tech] || { cost: 0, notes: '' };
+                const row = document.createElement('tr');
+                row.className = 'border-b border-slate-100';
+                row.innerHTML = `
+                    <td class="px-4 py-3 text-sm font-medium text-slate-900">${tech}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center">
+                            <span class="text-slate-500 mr-1">₾</span>
+                            <input type="number" step="0.01" min="0" 
+                                class="consumable-cost-input w-28 px-2 py-1 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                data-technician="${tech}"
+                                value="${parseFloat(existing.cost || 0).toFixed(2)}"
+                                placeholder="0.00">
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="text" 
+                            class="consumable-notes-input w-full px-2 py-1 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                            data-technician="${tech}"
+                            value="${existing.notes || ''}"
+                            placeholder="შენიშვნა...">
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="saveConsumableCost('${tech}')" 
+                            class="px-3 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600 transition">
+                            შენახვა
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function saveConsumableCost(technicianName) {
+            const costInput = document.querySelector(`.consumable-cost-input[data-technician="${technicianName}"]`);
+            const notesInput = document.querySelector(`.consumable-notes-input[data-technician="${technicianName}"]`);
+            
+            const cost = Math.round((parseFloat(costInput.value) || 0) * 100) / 100; // Round to 2 decimal places
+            const notes = notesInput.value || '';
+            
+            try {
+                const response = await fetch('api.php?action=save_consumables_cost', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        technician_name: technicianName,
+                        year_month: selectedMonth,
+                        cost: cost,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Update local data
+                    consumablesCosts[technicianName] = { cost: cost, notes: notes };
+                    
+                    // Flash success
+                    costInput.classList.add('bg-green-100');
+                    notesInput.classList.add('bg-green-100');
+                    setTimeout(() => {
+                        costInput.classList.remove('bg-green-100');
+                        notesInput.classList.remove('bg-green-100');
+                    }, 1000);
+                    
+                    alert('შენახულია!');
+                } else {
+                    alert('შეცდომა: ' + (result.message || 'ვერ მოხერხდა შენახვა'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('შეცდომა: ვერ მოხერხდა შენახვა');
+            }
+        }
+
+        async function saveAllConsumables() {
+            const costInputs = document.querySelectorAll('.consumable-cost-input');
+            let saved = 0;
+            
+            for (const costInput of costInputs) {
+                const tech = costInput.dataset.technician;
+                const notesInput = document.querySelector(`.consumable-notes-input[data-technician="${tech}"]`);
+                const cost = Math.round((parseFloat(costInput.value) || 0) * 100) / 100; // Round to 2 decimal places
+                const notes = notesInput.value || '';
+                
+                try {
+                    const response = await fetch('api.php?action=save_consumables_cost', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            technician_name: tech,
+                            year_month: selectedMonth,
+                            cost: cost,
+                            notes: notes
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        consumablesCosts[tech] = { cost: cost, notes: notes };
+                        saved++;
+                    }
+                } catch (error) {
+                    console.error('Error saving for ' + tech + ':', error);
+                }
+            }
+            
+            alert(`შენახულია ${saved} ჩანაწერი!`);
+            closeConsumablesModal();
+            window.location.reload();
+        }
     </script>
+
+    <!-- Consumables Cost Modal -->
+    <?php if ($current_user_role !== 'technician'): ?>
+    <div id="consumablesModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center no-print">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="package" class="w-5 h-5"></i>
+                    სახარჯი მასალების ხარჯი
+                    <?php if ($selected_month): ?>
+                        <span class="text-sm font-normal opacity-90">(<?= date('F Y', strtotime($selected_month . '-01')) ?>)</span>
+                    <?php endif; ?>
+                </h3>
+                <button onclick="closeConsumablesModal()" class="text-white hover:text-orange-200 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <?php if (!$selected_month): ?>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <p class="text-yellow-800 text-sm">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
+                        სახარჯი მასალების დასამატებლად გთხოვთ აირჩიოთ კონკრეტული თვე ფილტრში.
+                    </p>
+                </div>
+                <?php else: ?>
+                <table class="w-full">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase">ტექნიკოსი</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase">ხარჯი</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase">შენიშვნა</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-slate-600 uppercase"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="consumablesTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+                <?php endif; ?>
+            </div>
+            <?php if ($selected_month): ?>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 border-t">
+                <button onclick="closeConsumablesModal()" class="px-4 py-2 text-slate-700 bg-slate-200 rounded-lg hover:bg-slate-300 transition">
+                    გაუქმება
+                </button>
+                <button onclick="saveAllConsumables()" class="px-4 py-2 text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition flex items-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    ყველას შენახვა
+                </button>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 </body>
 </html>

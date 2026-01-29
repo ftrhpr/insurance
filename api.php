@@ -2636,6 +2636,84 @@ try {
         }
     }
 
+    // --- CONSUMABLES COSTS ENDPOINTS ---
+    
+    // Get consumables costs for a month (or all months)
+    if ($action === 'get_consumables_costs' && $method === 'GET') {
+        $year_month = $_GET['month'] ?? '';
+        $technician = $_GET['technician'] ?? '';
+        
+        try {
+            $query = "SELECT * FROM consumables_costs WHERE 1=1";
+            $params = [];
+            
+            if ($year_month) {
+                $query .= " AND year_month = ?";
+                $params[] = $year_month;
+            }
+            if ($technician) {
+                $query .= " AND technician_name = ?";
+                $params[] = $technician;
+            }
+            
+            $query .= " ORDER BY year_month DESC, technician_name ASC";
+            
+            $stmt = $pdo->prepare($query);
+            $stmt->execute($params);
+            $costs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            jsonResponse(['status' => 'success', 'data' => $costs]);
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+    
+    // Save/Update consumables cost
+    if ($action === 'save_consumables_cost' && $method === 'POST') {
+        $data = getJsonInput();
+        
+        $technician_name = $data['technician_name'] ?? '';
+        $year_month = $data['year_month'] ?? '';
+        $cost = round(floatval($data['cost'] ?? 0), 2); // Round to 2 decimal places
+        $notes = $data['notes'] ?? '';
+        
+        if (!$technician_name || !$year_month) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing technician_name or year_month']);
+        }
+        
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO consumables_costs (technician_name, year_month, cost, notes)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE cost = ?, notes = ?
+            ");
+            $stmt->execute([$technician_name, $year_month, $cost, $notes, $cost, $notes]);
+            
+            jsonResponse(['status' => 'success', 'message' => 'Consumables cost saved']);
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+    
+    // Delete consumables cost
+    if ($action === 'delete_consumables_cost' && $method === 'POST') {
+        $data = getJsonInput();
+        $id = intval($data['id'] ?? 0);
+        
+        if (!$id) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing id']);
+        }
+        
+        try {
+            $stmt = $pdo->prepare("DELETE FROM consumables_costs WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            jsonResponse(['status' => 'success', 'message' => 'Consumables cost deleted']);
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
     // Default response if no action matched
     jsonResponse(['error' => 'Unknown action: ' . $action]);
 
