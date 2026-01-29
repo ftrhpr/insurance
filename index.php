@@ -4792,9 +4792,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const response = await fetch(`api.php?action=get_transfer&id=${caseId}`);
                 const data = await response.json();
                 
-                console.log('Quick View Data:', data); // Debug log
-                console.log('Parts:', data.repair_parts); // Debug parts
-                console.log('Labor:', data.repair_labor); // Debug labor
+                console.log('=== Quick View Debug ===');
+                console.log('Full Response:', data);
+                console.log('Parts Type:', typeof data.repair_parts, 'IsArray:', Array.isArray(data.repair_parts));
+                console.log('Parts Value:', data.repair_parts);
+                console.log('Labor Type:', typeof data.repair_labor, 'IsArray:', Array.isArray(data.repair_labor));
+                console.log('Labor Value:', data.repair_labor);
+                console.log('======================');
                 
                 if (!data || !data.id) {
                     showToast('Error', 'Failed to load case', 'error');
@@ -4822,16 +4826,31 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     document.getElementById('qv-service-date').value = '';
                 }
                 
-                // Display Parts
+                // Display Parts - with enhanced debugging
                 const partsListEl = document.getElementById('qv-parts-list');
-                if (data.repair_parts && Array.isArray(data.repair_parts) && data.repair_parts.length > 0) {
+                let parts = data.repair_parts;
+                
+                // Try to parse if it's a string
+                if (typeof parts === 'string' && parts.trim()) {
+                    try {
+                        parts = JSON.parse(parts);
+                        console.log('Parsed parts from string:', parts);
+                    } catch (e) {
+                        console.error('Failed to parse parts JSON:', e);
+                        parts = null;
+                    }
+                }
+                
+                if (parts && Array.isArray(parts) && parts.length > 0) {
+                    console.log('Rendering', parts.length, 'parts');
                     let partsTotal = 0;
-                    const partsHTML = data.repair_parts.map(p => {
+                    const partsHTML = parts.map((p, idx) => {
+                        console.log(`Part ${idx}:`, p);
                         const qty = parseFloat(p.quantity || 0);
                         const price = parseFloat(p.price || 0);
                         const total = qty * price;
                         partsTotal += total;
-                        const partName = p.name || p.part_name || 'Unknown Part';
+                        const partName = p.name || p.part_name || p.description || 'Unknown Part';
                         return `<div class="flex justify-between py-1 border-b text-slate-700">
                             <span class="font-medium">${partName}</span>
                             <span class="text-xs">${qty} × ₾${price.toFixed(2)} = <strong>₾${total.toFixed(2)}</strong></span>
@@ -4842,17 +4861,33 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <span class="text-emerald-600">₾${partsTotal.toFixed(2)}</span>
                     </div>`;
                 } else {
+                    console.log('No parts to display - empty or invalid');
                     partsListEl.innerHTML = '<div class="text-slate-400 italic text-xs">No parts added</div>';
                 }
                 
-                // Display Labor/Services
+                // Display Labor/Services - with enhanced debugging
                 const laborListEl = document.getElementById('qv-labor-list');
-                if (data.repair_labor && Array.isArray(data.repair_labor) && data.repair_labor.length > 0) {
+                let labor = data.repair_labor;
+                
+                // Try to parse if it's a string
+                if (typeof labor === 'string' && labor.trim()) {
+                    try {
+                        labor = JSON.parse(labor);
+                        console.log('Parsed labor from string:', labor);
+                    } catch (e) {
+                        console.error('Failed to parse labor JSON:', e);
+                        labor = null;
+                    }
+                }
+                
+                if (labor && Array.isArray(labor) && labor.length > 0) {
+                    console.log('Rendering', labor.length, 'services');
                     let laborTotal = 0;
-                    const laborHTML = data.repair_labor.map(l => {
+                    const laborHTML = labor.map((l, idx) => {
+                        console.log(`Service ${idx}:`, l);
                         const price = parseFloat(l.price || 0);
                         laborTotal += price;
-                        const laborName = l.name || l.service_name || 'Unknown Service';
+                        const laborName = l.name || l.service_name || l.description || 'Unknown Service';
                         return `<div class="flex justify-between py-1 border-b text-slate-700">
                             <span class="font-medium">${laborName}</span>
                             <span class="text-blue-600 font-semibold">₾${price.toFixed(2)}</span>
@@ -4863,6 +4898,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <span class="text-blue-600">₾${laborTotal.toFixed(2)}</span>
                     </div>`;
                 } else {
+                    console.log('No services to display - empty or invalid');
                     laborListEl.innerHTML = '<div class="text-slate-400 italic text-xs">No services added</div>';
                 }
             } catch (error) {
