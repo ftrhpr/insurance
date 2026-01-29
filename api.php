@@ -132,8 +132,27 @@ function jsonResponse($data) {
 }
 
 function getJsonInput() {
+    // First try to get JSON from php://input
     $input = json_decode(file_get_contents('php://input'), true);
-    return (json_last_error() === JSON_ERROR_NONE) ? $input : [];
+    if (json_last_error() === JSON_ERROR_NONE && !empty($input)) {
+        return $input;
+    }
+    // Fallback to $_POST for FormData submissions
+    if (!empty($_POST)) {
+        // Decode any JSON-encoded values in $_POST
+        $data = [];
+        foreach ($_POST as $key => $value) {
+            // Try to decode JSON strings
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {
+                $data[$key] = $decoded;
+            } else {
+                $data[$key] = $value;
+            }
+        }
+        return $data;
+    }
+    return [];
 }
 
 // --- HELPER: GET ACCESS TOKEN (V1) ---
