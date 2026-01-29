@@ -42,7 +42,7 @@ $query = "SELECT
     assigned_mechanic,
     id
 FROM transfers 
-WHERE nachrebi_qty > 0 AND status = 'Completed';
+WHERE nachrebi_qty > 0 AND status = 'Completed'";
 
 $params = [];
 
