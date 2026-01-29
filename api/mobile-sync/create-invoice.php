@@ -70,6 +70,7 @@ try {
         vat_amount,
         vat_rate,
         subtotal_before_vat,
+        nachrebi_qty,
         slug
     ) VALUES (
         :plate,
@@ -95,6 +96,7 @@ try {
         :vat_amount,
         :vat_rate,
         :subtotal_before_vat,
+        :nachrebi_qty,
         :slug
     )";
     
@@ -317,6 +319,7 @@ try {
         ':vat_amount' => floatval($data['vatAmount'] ?? 0),
         ':vat_rate' => floatval($data['vatRate'] ?? 0),
         ':subtotal_before_vat' => floatval($data['subtotalBeforeVAT'] ?? 0),
+        ':nachrebi_qty' => !empty($data['nachrebi_qty']) ? intval($data['nachrebi_qty']) : null,
         ':slug' => $slug
     ]);
     

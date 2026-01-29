@@ -74,6 +74,7 @@ try {
         'caseType' => 'case_type',
         'assignedMechanic' => 'assigned_mechanic',
         'assigned_mechanic' => 'assigned_mechanic',
+        'nachrebi_qty' => 'nachrebi_qty',
     ];
     
     // Debug: Log all received data keys and image fields
@@ -124,6 +125,10 @@ try {
                 if (in_array($dbField, ['vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
                     error_log("Converted VAT field $dbField to float: $value");
                 }
+            }
+            // Handle integer fields
+            elseif ($dbField === 'nachrebi_qty') {
+                $value = !empty($value) ? intval($value) : null;
             }
             // Handle boolean VAT enabled field
             elseif ($dbField === 'vat_enabled') {

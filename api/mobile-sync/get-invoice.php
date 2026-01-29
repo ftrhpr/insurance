@@ -139,6 +139,7 @@ try {
         'caseType' => $invoice['case_type'] ?? null,
         'assigned_mechanic' => $invoice['assigned_mechanic'] ?? null,
         'assignedMechanic' => $invoice['assigned_mechanic'] ?? null,
+        'nachrebi_qty' => isset($invoice['nachrebi_qty']) ? intval($invoice['nachrebi_qty']) : null,
     ];
     
     error_log("Invoice fetched successfully. ID: " . $invoice['id']);
