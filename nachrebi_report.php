@@ -39,11 +39,18 @@ $query = "SELECT
     status,
     service_date,
     created_at,
+    assigned_mechanic,
     id
 FROM transfers 
 WHERE nachrebi_qty > 0";
 
 $params = [];
+
+// Technician filter - only show their own cases
+if ($current_user_role === 'technician') {
+    $query .= " AND assigned_mechanic = ?";
+    $params[] = $current_user_name;
+}
 
 // Month filter
 if ($selected_month) {
@@ -69,10 +76,19 @@ $total_nachrebi = array_sum(array_column($records, 'nachrebi_qty'));
 $total_amount = array_sum(array_column($records, 'amount'));
 
 // Get available months for filter dropdown
-$months_stmt = $pdo->query("SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month 
+$months_query = "SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month 
     FROM transfers 
-    WHERE nachrebi_qty > 0 
-    ORDER BY month DESC");
+    WHERE nachrebi_qty > 0";
+
+// Filter months by technician if applicable
+if ($current_user_role === 'technician') {
+    $months_query .= " AND assigned_mechanic = ?";
+    $months_stmt = $pdo->prepare($months_query . " ORDER BY month DESC");
+    $months_stmt->execute([$current_user_name]);
+} else {
+    $months_stmt = $pdo->query($months_query . " ORDER BY month DESC");
+}
+
 $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
 ?>
 <!DOCTYPE html>
@@ -92,7 +108,12 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
     </style>
 </head>
 <body class="bg-slate-50">
-    
+    div>
+                        <h1 class="text-2xl font-bold text-slate-900">ნაჭრების რაოდენობა - რეპორტი</h1>
+                        <?php if ($current_user_role === 'technician'): ?>
+                            <p class="text-sm text-slate-500 mt-1">ტექნიკოსი: <?= htmlspecialchars($current_user_name) ?></p>
+                        <?php endif; ?>
+                    </div
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
