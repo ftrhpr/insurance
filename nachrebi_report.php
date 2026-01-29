@@ -69,7 +69,7 @@ $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Calculate totals
 $total_nachrebi = array_sum(array_column($records, 'nachrebi_qty'));
-$total_amount = $total_nachrebi * 75; // Calculate amount as nachrebi_qty × 75
+$total_amount = $total_nachrebi * 77; // Calculate amount as nachrebi_qty × 77
 
 // Get available months for filter dropdown
 $months_query = "SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month 
@@ -326,7 +326,7 @@ if ($current_user_role !== 'technician') {
                                     </td>
                                     <?php endif; ?>
                                     <td class="px-4 py-3 text-sm font-bold text-emerald-600"><?= number_format($record['nachrebi_qty'], 2) ?></td>
-                                    <td class="px-4 py-3 text-sm text-slate-900">₾<?= number_format($record['nachrebi_qty'] * 75, 2) ?></td>
+                                    <td class="px-4 py-3 text-sm text-slate-900">₾<?= number_format($record['nachrebi_qty'] * 77, 2) ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-600">
                                         <?= date('d/m/Y', strtotime($record['created_at'])) ?>
                                     </td>
