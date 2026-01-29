@@ -4846,17 +4846,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     let partsTotal = 0;
                     const partsHTML = parts.map((p, idx) => {
                         console.log(`Part ${idx}:`, p);
-                        const qty = parseFloat(p.quantity || 0);
-                        const price = parseFloat(p.price || 0);
+                        const qty = parseFloat(p.quantity || 1);
+                        const price = parseFloat(p.unit_price || p.price || 0);
                         const total = qty * price;
                         partsTotal += total;
                         const partName = p.name || p.part_name || p.description || 'Unknown Part';
                         return `<div class="flex justify-between py-1 border-b text-slate-700">
-                            <span class="font-medium">${partName}</span>
-                            <span class="text-xs">${qty} × ₾${price.toFixed(2)} = <strong>₾${total.toFixed(2)}</strong></span>
+                            <span class="font-medium text-sm">${partName}</span>
+                            <span class="text-xs text-slate-600">${qty} × ₾${price.toFixed(2)} = <strong class="text-slate-900">₾${total.toFixed(2)}</strong></span>
                         </div>`;
                     }).join('');
-                    partsListEl.innerHTML = partsHTML + `<div class="flex justify-between pt-2 font-bold text-sm">
+                    partsListEl.innerHTML = partsHTML + `<div class="flex justify-between pt-2 font-bold text-sm border-t mt-1">
                         <span>Total Parts:</span>
                         <span class="text-emerald-600">₾${partsTotal.toFixed(2)}</span>
                     </div>`;
@@ -4885,15 +4885,17 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     let laborTotal = 0;
                     const laborHTML = labor.map((l, idx) => {
                         console.log(`Service ${idx}:`, l);
-                        const price = parseFloat(l.price || 0);
-                        laborTotal += price;
-                        const laborName = l.name || l.service_name || l.description || 'Unknown Service';
+                        const qty = parseFloat(l.quantity || l.hours || 1);
+                        const price = parseFloat(l.unit_rate || l.hourly_rate || l.price || 0);
+                        const total = qty * price;
+                        laborTotal += total;
+                        const laborName = l.description || l.name || l.service_name || 'Unknown Service';
                         return `<div class="flex justify-between py-1 border-b text-slate-700">
-                            <span class="font-medium">${laborName}</span>
-                            <span class="text-blue-600 font-semibold">₾${price.toFixed(2)}</span>
+                            <span class="font-medium text-sm">${laborName}</span>
+                            <span class="text-xs text-slate-600">${qty} × ₾${price.toFixed(2)} = <strong class="text-slate-900">₾${total.toFixed(2)}</strong></span>
                         </div>`;
                     }).join('');
-                    laborListEl.innerHTML = laborHTML + `<div class="flex justify-between pt-2 font-bold text-sm">
+                    laborListEl.innerHTML = laborHTML + `<div class="flex justify-between pt-2 font-bold text-sm border-t mt-1">
                         <span>Total Services:</span>
                         <span class="text-blue-600">₾${laborTotal.toFixed(2)}</span>
                     </div>`;
