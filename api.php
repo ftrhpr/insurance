@@ -2683,9 +2683,9 @@ try {
         
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO consumables_costs (technician_name, year_month, cost, notes)
+                INSERT INTO `consumables_costs` (`technician_name`, `year_month`, `cost`, `notes`)
                 VALUES (?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE cost = ?, notes = ?
+                ON DUPLICATE KEY UPDATE `cost` = ?, `notes` = ?
             ");
             $stmt->execute([$technician_name, $year_month, $cost, $notes, $cost, $notes]);
             
