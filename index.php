@@ -4747,6 +4747,10 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const response = await fetch(`api.php?action=get_transfer&id=${caseId}`);
                 const data = await response.json();
                 
+                console.log('Quick View Data:', data); // Debug log
+                console.log('Parts:', data.repair_parts); // Debug parts
+                console.log('Labor:', data.repair_labor); // Debug labor
+                
                 if (!data || !data.id) {
                     showToast('Error', 'Failed to load case', 'error');
                     closeQuickView();
@@ -4777,40 +4781,44 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                 const partsListEl = document.getElementById('qv-parts-list');
                 if (data.repair_parts && Array.isArray(data.repair_parts) && data.repair_parts.length > 0) {
                     let partsTotal = 0;
-                    partsListEl.innerHTML = data.repair_parts.map(p => {
+                    const partsHTML = data.repair_parts.map(p => {
                         const qty = parseFloat(p.quantity || 0);
                         const price = parseFloat(p.price || 0);
                         const total = qty * price;
                         partsTotal += total;
-                        return `<div class="flex justify-between py-1 border-b">
-                            <span class="font-medium">${p.name || 'Unknown'}</span>
-                            <span>${qty} × ₾${price.toFixed(2)} = ₾${total.toFixed(2)}</span>
+                        const partName = p.name || p.part_name || 'Unknown Part';
+                        return `<div class="flex justify-between py-1 border-b text-slate-700">
+                            <span class="font-medium">${partName}</span>
+                            <span class="text-xs">${qty} × ₾${price.toFixed(2)} = <strong>₾${total.toFixed(2)}</strong></span>
                         </div>`;
-                    }).join('') + `<div class="flex justify-between pt-2 font-bold text-sm">
+                    }).join('');
+                    partsListEl.innerHTML = partsHTML + `<div class="flex justify-between pt-2 font-bold text-sm">
                         <span>Total Parts:</span>
                         <span class="text-emerald-600">₾${partsTotal.toFixed(2)}</span>
                     </div>`;
                 } else {
-                    partsListEl.innerHTML = '<div class="text-slate-400 italic">No parts added</div>';
+                    partsListEl.innerHTML = '<div class="text-slate-400 italic text-xs">No parts added</div>';
                 }
                 
                 // Display Labor/Services
                 const laborListEl = document.getElementById('qv-labor-list');
                 if (data.repair_labor && Array.isArray(data.repair_labor) && data.repair_labor.length > 0) {
                     let laborTotal = 0;
-                    laborListEl.innerHTML = data.repair_labor.map(l => {
+                    const laborHTML = data.repair_labor.map(l => {
                         const price = parseFloat(l.price || 0);
                         laborTotal += price;
-                        return `<div class="flex justify-between py-1 border-b">
-                            <span class="font-medium">${l.name || 'Unknown'}</span>
-                            <span class="text-blue-600">₾${price.toFixed(2)}</span>
+                        const laborName = l.name || l.service_name || 'Unknown Service';
+                        return `<div class="flex justify-between py-1 border-b text-slate-700">
+                            <span class="font-medium">${laborName}</span>
+                            <span class="text-blue-600 font-semibold">₾${price.toFixed(2)}</span>
                         </div>`;
-                    }).join('') + `<div class="flex justify-between pt-2 font-bold text-sm">
+                    }).join('');
+                    laborListEl.innerHTML = laborHTML + `<div class="flex justify-between pt-2 font-bold text-sm">
                         <span>Total Services:</span>
                         <span class="text-blue-600">₾${laborTotal.toFixed(2)}</span>
                     </div>`;
                 } else {
-                    laborListEl.innerHTML = '<div class="text-slate-400 italic">No services added</div>';
+                    laborListEl.innerHTML = '<div class="text-slate-400 italic text-xs">No services added</div>';
                 }
             } catch (error) {
                 console.error('Error loading case:', error);
