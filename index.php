@@ -2335,7 +2335,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         completedFilteredIncome += amt;
 
                         completedSamghebriFiltered += computeSamghebriInTransfer(t, 'სამღებრო სამუშაო');
-                        completedNachrebiQtyFiltered += parseInt(t.nachrebi_qty) || 0;
+                        completedNachrebiQtyFiltered += parseFloat(t.nachrebi_qty) || 0;
 
                         completedContainer.innerHTML += `
                         <tr class="hover:bg-emerald-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
