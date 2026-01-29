@@ -1380,7 +1380,26 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         
         // Pagination variables
         const processingPerPage = 10;
-        let currentProcessingPage = 1; 
+        let currentProcessingPage = 1;
+        
+        // Performance: Debounce utility function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // Performance: Data change detection
+        let lastDataHash = '';
+        function getDataHash() {
+            return transfers.length + '_' + transfers.map(t => t.id + t.status).join('');
+        } 
 
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
@@ -1483,7 +1502,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     transfers = Array.from(trMap.values());
                     const dedupLen = transfers.length;
                     if (dedupLen < origLen) console.warn(`Removed ${origLen - dedupLen} duplicate transfer(s) from API response`);
-                    vehicles = response.vehicles;
+                    
+                    // Cache vehicles - only update if provided
+                    if (response.vehicles && response.vehicles.length > 0) {
+                        vehicles = response.vehicles;
+                    }
                 } else if (Array.isArray(response)) {
                     // Fallback for old format
                     const origLen = (response || []).length;
@@ -1494,16 +1517,28 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                     transfers = Array.from(trMap.values());
                     const dedupLen = transfers.length;
                     if (dedupLen < origLen) console.warn(`Removed ${origLen - dedupLen} duplicate transfer(s) from fallback response`);
-                    const newVehicles = await fetchAPI('get_vehicles');
-                    if(Array.isArray(newVehicles)) vehicles = newVehicles;
+                    
+                    // Only fetch vehicles if not cached
+                    if (vehicles.length === 0) {
+                        const newVehicles = await fetchAPI('get_vehicles');
+                        if(Array.isArray(newVehicles)) vehicles = newVehicles;
+                    }
                 }
+
+                // Performance: Check if data actually changed
+                const newHash = getDataHash();
+                const dataChanged = newHash !== lastDataHash;
+                lastDataHash = newHash;
 
                 // Populate repair-status filter dynamically from transfers
                 populateRepairStatusFilter();
 
-                renderTable(currentProcessingPage);
-                updateTabCounts();
-                initializeTabs();
+                // Only re-render if data changed or this is initial load
+                if (dataChanged || !document.getElementById('table-body').hasChildNodes()) {
+                    renderTable(currentProcessingPage);
+                    updateTabCounts();
+                    initializeTabs();
+                }
             } catch(e) {
                 console.error('loadData error:', e);
                 showToast('Error', 'Failed to load data', 'error');
@@ -2212,7 +2247,13 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             const serviceContainer = document.getElementById('service-cases-body');
             const completedContainer = document.getElementById('completed-cases-body');
             const assessmentContainer = document.getElementById('assessment-cases-body');
-            newContainer.innerHTML = ''; activeContainer.innerHTML = ''; serviceContainer.innerHTML = ''; completedContainer.innerHTML = ''; assessmentContainer.innerHTML = '';
+            
+            // Performance: Only clear containers for active tab
+            if (currentTab === 'new' && newContainer) newContainer.innerHTML = '';
+            if (currentTab === 'active' && activeContainer) activeContainer.innerHTML = '';
+            if (currentTab === 'service' && serviceContainer) serviceContainer.innerHTML = '';
+            if (currentTab === 'completed' && completedContainer) completedContainer.innerHTML = '';
+            if (currentTab === 'assessment' && assessmentContainer) assessmentContainer.innerHTML = '';
             
             let newCount = 0;
             let serviceCount = 0;
@@ -2984,6 +3025,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             if (window.lucide) lucide.createIcons();
             updateTabCounts();
         }
+        
+        // Performance: Debounced render for search/filter inputs
+        const debouncedRenderTable = debounce(() => renderTable(1), 300);
 
         // Tab switching functionality
         let currentTab = 'new';
@@ -4562,15 +4606,15 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         
         if (searchInputEl) searchInputEl.addEventListener('input', () => {
             currentProcessingPage = 1;
-            renderTable(1);
+            debouncedRenderTable();
         });
         if (statusFilterEl) statusFilterEl.addEventListener('change', () => {
             currentProcessingPage = 1;
-            renderTable(1);
+            debouncedRenderTable();
         });
         if (replyFilterEl) replyFilterEl.addEventListener('change', () => {
             currentProcessingPage = 1;
-            renderTable(1);
+            debouncedRenderTable();
         });
         if (newNoteInputEl) newNoteInputEl.addEventListener('keypress', (e) => { if(e.key === 'Enter') window.addNote(); });
         window.insertSample = (t) => {
