@@ -888,10 +888,15 @@ try {
     if ($action === 'get_transfer' && $method === 'GET') {
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0) jsonResponse(['status' => 'error', 'message' => 'Invalid id']);
-        $stmt = $pdo->prepare("SELECT id, plate, name, phone, amount, franchise, nachrebi_qty, status, case_type, service_date, vehicle_make, vehicle_model FROM transfers WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT id, plate, name, phone, amount, franchise, nachrebi_qty, status, case_type, service_date, vehicle_make, vehicle_model, repair_parts, repair_labor FROM transfers WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) jsonResponse(['status' => 'error', 'message' => 'Not found']);
+        
+        // Decode JSON fields
+        $row['repair_parts'] = json_decode($row['repair_parts'] ?? '[]', true);
+        $row['repair_labor'] = json_decode($row['repair_labor'] ?? '[]', true);
+        
         jsonResponse($row);
     }
 
