@@ -120,18 +120,23 @@ if ($current_user_role !== 'technician') {
     }
     $technician_summary = $summary_stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Load consumables costs for the selected month
-    if ($selected_month) {
-        $cost_stmt = $pdo->prepare("SELECT * FROM consumables_costs WHERE year_month = ?");
-        $cost_stmt->execute([$selected_month]);
-    } else {
-        $cost_stmt = $pdo->query("SELECT * FROM consumables_costs ORDER BY year_month DESC");
-    }
-    $consumables_data = $cost_stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Index by technician name for easy lookup
-    foreach ($consumables_data as $cc) {
-        $consumables_costs[$cc['technician_name']] = $cc;
+    // Load consumables costs for the selected month (with error handling if table doesn't exist)
+    try {
+        if ($selected_month) {
+            $cost_stmt = $pdo->prepare("SELECT * FROM consumables_costs WHERE year_month = ?");
+            $cost_stmt->execute([$selected_month]);
+        } else {
+            $cost_stmt = $pdo->query("SELECT * FROM consumables_costs ORDER BY year_month DESC");
+        }
+        $consumables_data = $cost_stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Index by technician name for easy lookup
+        foreach ($consumables_data as $cc) {
+            $consumables_costs[$cc['technician_name']] = $cc;
+        }
+    } catch (Exception $e) {
+        // Table might not exist yet - ignore the error
+        $consumables_costs = [];
     }
 }
 ?>
