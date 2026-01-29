@@ -89,9 +89,15 @@ $available_months = $months_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 // Get list of technicians for admin/manager filter
 $technicians = [];
+$all_technicians = [];
 if ($current_user_role !== 'technician') {
+    // Get technicians from filter (those who have cases)
     $tech_stmt = $pdo->query("SELECT DISTINCT assigned_mechanic FROM transfers WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != '' AND nachrebi_qty > 0 ORDER BY assigned_mechanic");
     $technicians = $tech_stmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    // Get all technicians from users table for assignment dropdown
+    $all_tech_stmt = $pdo->query("SELECT id, full_name FROM users WHERE role = 'technician' AND status = 'active' ORDER BY full_name");
+    $all_technicians = $all_tech_stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // Get summary by technician (for admin/manager view)
@@ -296,14 +302,26 @@ if ($current_user_role !== 'technician') {
                     <tbody class="divide-y divide-slate-100">
                         <?php if (count($records) > 0): ?>
                             <?php foreach ($records as $record): ?>
-                                <tr class="hover:bg-slate-50 transition">
+                                <tr class="hover:bg-slate-50 transition" id="row-<?= $record['id'] ?>">
                                     <td class="px-4 py-3 text-sm font-medium text-slate-900">#<?= $record['id'] ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-900"><?= htmlspecialchars($record['customer_name']) ?></td>
                                     <td class="px-4 py-3 text-sm font-mono text-slate-900"><?= htmlspecialchars($record['plate']) ?></td>
                                     <?php if ($current_user_role !== 'technician'): ?>
                                     <td class="px-4 py-3 text-sm text-slate-700">
-                                        <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
-                                            <?= htmlspecialchars($record['assigned_mechanic'] ?? 'Unassigned') ?>
+                                        <select 
+                                            class="technician-select text-xs border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[140px]"
+                                            data-case-id="<?= $record['id'] ?>"
+                                            onchange="assignTechnician(this)"
+                                        >
+                                            <option value="">-- არჩევა --</option>
+                                            <?php foreach ($all_technicians as $tech): ?>
+                                                <option value="<?= htmlspecialchars($tech['full_name']) ?>" <?= ($record['assigned_mechanic'] === $tech['full_name']) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($tech['full_name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <span class="save-indicator hidden text-green-600 ml-2">
+                                            <i data-lucide="check" class="w-4 h-4 inline"></i>
                                         </span>
                                     </td>
                                     <?php endif; ?>
@@ -334,6 +352,54 @@ if ($current_user_role !== 'technician') {
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
+
+        // Assign technician function
+        async function assignTechnician(selectElement) {
+            const caseId = selectElement.dataset.caseId;
+            const technicianName = selectElement.value;
+            const row = document.getElementById('row-' + caseId);
+            const indicator = row.querySelector('.save-indicator');
+            
+            // Disable select during save
+            selectElement.disabled = true;
+            selectElement.classList.add('opacity-50');
+            
+            try {
+                const response = await fetch('api.php?action=update_transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: caseId,
+                        assigned_mechanic: technicianName || null
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Show success indicator
+                    indicator.classList.remove('hidden');
+                    setTimeout(() => {
+                        indicator.classList.add('hidden');
+                    }, 2000);
+                    
+                    // Flash row green
+                    row.classList.add('bg-green-50');
+                    setTimeout(() => {
+                        row.classList.remove('bg-green-50');
+                    }, 1000);
+                } else {
+                    alert('შეცდომა: ' + (result.error || 'ვერ მოხერხდა შენახვა'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('შეცდომა: ვერ მოხერხდა შენახვა');
+            } finally {
+                selectElement.disabled = false;
+                selectElement.classList.remove('opacity-50');
+                lucide.createIcons();
+            }
+        }
     </script>
 </body>
 </html>
