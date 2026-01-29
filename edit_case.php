@@ -2438,7 +2438,7 @@ try {
                         serviceDate: serviceDate || null,
                         dueDate: dueDate || null,
                         franchise: document.getElementById('input-franchise').value || 0,
-                        nachrebi_qty: document.getElementById('input-nachrebi-qty').value || 0,
+                        nachrebi_qty: parseFloat(document.getElementById('input-nachrebi-qty').value) || 0,
                         vehicleMake: document.getElementById('input-vehicle-make')?.value.trim() || null,
                         vehicleModel: document.getElementById('input-vehicle-model')?.value.trim() || null,
                         user_response: this.currentCase.user_response || null,
