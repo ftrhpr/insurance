@@ -2395,6 +2395,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); openQuickView('${t.id}')" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="Quick View">
+                                        <i data-lucide="zap" class="w-4 h-4"></i>
+                                    </button>
                                     <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
                                         <i data-lucide="qr-code" class="w-4 h-4"></i>
                                     </button>
@@ -2471,6 +2474,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); openQuickView('${t.id}')" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="Quick View">
+                                        <i data-lucide="zap" class="w-4 h-4"></i>
+                                    </button>
                                     <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
                                         <i data-lucide="qr-code" class="w-4 h-4"></i>
                                     </button>
@@ -2598,6 +2604,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         </td>
                         <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                             <div class="flex items-center justify-end gap-1">
+                                <button onclick="event.stopPropagation(); openQuickView('${t.id}')" class="text-slate-400 hover:text-orange-600 p-2 hover:bg-orange-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-orange-500/25 active:scale-95" title="Quick View">
+                                    <i data-lucide="zap" class="w-4 h-4"></i>
+                                </button>
                                 <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
                                     <i data-lucide="qr-code" class="w-4 h-4"></i>
                                 </button>
@@ -2837,6 +2846,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
                                 <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); openQuickView('${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Quick View">
+                                        <i data-lucide="zap" class="w-4 h-4"></i>
+                                    </button>
                                     <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
                                         <i data-lucide="qr-code" class="w-4 h-4"></i>
                                     </button>
@@ -4619,7 +4631,293 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         </div>
     </div>
 
+    <!-- Quick View Drawer -->
+    <div id="quick-view-drawer" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl transform transition-transform duration-300 ease-out translate-x-full" id="quick-view-content">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-white/20 rounded-lg">
+                        <i data-lucide="zap" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Quick View</h2>
+                        <p class="text-sm text-white/80" id="qv-case-id">Case #---</p>
+                    </div>
+                </div>
+                <button onclick="closeQuickView()" class="text-white/80 hover:text-white p-2 hover:bg-white/20 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="overflow-y-auto h-[calc(100%-80px-80px)] p-6 custom-scrollbar">
+                <div class="space-y-6">
+                    <!-- Vehicle & Customer Info -->
+                    <div class="bg-gradient-to-br from-slate-50 to-blue-50 p-5 rounded-xl border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i data-lucide="car" class="w-4 h-4"></i>
+                            Vehicle & Customer
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Plate Number</label>
+                                <input id="qv-plate" type="text" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Customer Name</label>
+                                <input id="qv-name" type="text" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Phone</label>
+                                <input id="qv-phone" type="tel" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Case Type</label>
+                                <select id="qv-case-type" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                                    <option value="საცალო">საცალო (Retail)</option>
+                                    <option value="დაზღვევა">დაზღვევა (Insurance)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Info -->
+                    <div class="bg-gradient-to-br from-emerald-50 to-green-50 p-5 rounded-xl border border-emerald-200">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                            Financial Details
+                        </h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Amount (₾)</label>
+                                <input id="qv-amount" type="text" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Franchise (₾)</label>
+                                <input id="qv-franchise" type="number" step="0.01" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">ნაჭრები რაოდენობა</label>
+                                <input id="qv-nachrebi-qty" type="number" step="0.01" min="0" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Info -->
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-200">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            Status & Scheduling
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Status</label>
+                                <select id="qv-status" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                                    <option value="New">🆕 New</option>
+                                    <option value="Processing">⚙️ Processing</option>
+                                    <option value="Called">📞 Called</option>
+                                    <option value="Parts Ordered">📦 Parts Ordered</option>
+                                    <option value="Parts Arrived">✅ Parts Arrived</option>
+                                    <option value="Scheduled">📅 Scheduled</option>
+                                    <option value="Already in service">🔧 Already in Service</option>
+                                    <option value="Completed">✔️ Completed</option>
+                                    <option value="Issue">⚠️ Issue</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Service Date</label>
+                                <input id="qv-service-date" type="datetime-local" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Details -->
+                    <div class="bg-gradient-to-br from-orange-50 to-amber-50 p-5 rounded-xl border border-orange-200">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                            Vehicle Details
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Make</label>
+                                <input id="qv-vehicle-make" type="text" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Model</label>
+                                <input id="qv-vehicle-model" type="text" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between">
+                <button onclick="window.location.href='edit_case.php?id=' + window.currentQuickViewId" class="text-slate-600 hover:text-slate-800 text-sm font-medium flex items-center gap-2">
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                    Open Full Editor
+                </button>
+                <div class="flex gap-3">
+                    <button onclick="closeQuickView()" class="px-4 py-2 text-slate-600 hover:text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-100 transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="saveQuickView()" class="px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-sm font-semibold rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Quick View Functions
+        window.currentQuickViewId = null;
+
+        async function openQuickView(caseId) {
+            window.currentQuickViewId = caseId;
+            const drawer = document.getElementById('quick-view-drawer');
+            const content = document.getElementById('quick-view-content');
+            
+            // Show drawer
+            drawer.classList.remove('hidden');
+            
+            // Trigger animation
+            setTimeout(() => {
+                content.classList.remove('translate-x-full');
+            }, 10);
+            
+            // Fetch case data
+            try {
+                const response = await fetch(`api.php?action=get_transfer&id=${caseId}`);
+                const data = await response.json();
+                
+                if (data && data.id) {
+                    // Populate form fields
+                    document.getElementById('qv-case-id').textContent = `Case #${data.id}`;
+                    document.getElementById('qv-plate').value = data.plate || '';
+                    document.getElementById('qv-name').value = data.name || '';
+                    document.getElementById('qv-phone').value = data.phone || '';
+                    document.getElementById('qv-case-type').value = data.case_type || 'საცალო';
+                    document.getElementById('qv-amount').value = data.amount || '';
+                    document.getElementById('qv-franchise').value = data.franchise || 0;
+                    document.getElementById('qv-nachrebi-qty').value = data.nachrebi_qty || 0;
+                    document.getElementById('qv-status').value = data.status || 'New';
+                    document.getElementById('qv-vehicle-make').value = data.vehicle_make || '';
+                    document.getElementById('qv-vehicle-model').value = data.vehicle_model || '';
+                    
+                    // Format service date
+                    if (data.service_date) {
+                        let dateStr = data.service_date;
+                        if (dateStr.includes(' ')) {
+                            dateStr = dateStr.replace(' ', 'T');
+                        }
+                        if (dateStr.length === 16) {
+                            dateStr += ':00';
+                        }
+                        document.getElementById('qv-service-date').value = dateStr.substring(0, 16);
+                    } else {
+                        document.getElementById('qv-service-date').value = '';
+                    }
+                    
+                    // Re-initialize icons
+                    if (window.lucide) lucide.createIcons();
+                } else {
+                    showToast('Error', 'Failed to load case data', 'error');
+                    closeQuickView();
+                }
+            } catch (error) {
+                console.error('Error loading case:', error);
+                showToast('Error', 'Failed to load case data', 'error');
+                closeQuickView();
+            }
+        }
+
+        function closeQuickView() {
+            const drawer = document.getElementById('quick-view-drawer');
+            const content = document.getElementById('quick-view-content');
+            
+            content.classList.add('translate-x-full');
+            
+            setTimeout(() => {
+                drawer.classList.add('hidden');
+                window.currentQuickViewId = null;
+            }, 300);
+        }
+
+        async function saveQuickView() {
+            if (!window.currentQuickViewId) return;
+            
+            const saveButton = event.target;
+            const originalText = saveButton.innerHTML;
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
+            
+            try {
+                const serviceDate = document.getElementById('qv-service-date').value;
+                let formattedServiceDate = null;
+                if (serviceDate) {
+                    formattedServiceDate = serviceDate.replace('T', ' ');
+                    if (formattedServiceDate.split(':').length === 2) {
+                        formattedServiceDate += ':00';
+                    }
+                }
+                
+                const updates = {
+                    id: window.currentQuickViewId,
+                    plate: document.getElementById('qv-plate').value.trim(),
+                    name: document.getElementById('qv-name').value.trim(),
+                    phone: document.getElementById('qv-phone').value.trim(),
+                    case_type: document.getElementById('qv-case-type').value,
+                    amount: document.getElementById('qv-amount').value.trim(),
+                    franchise: parseFloat(document.getElementById('qv-franchise').value) || 0,
+                    nachrebi_qty: parseFloat(document.getElementById('qv-nachrebi-qty').value) || 0,
+                    status: document.getElementById('qv-status').value,
+                    serviceDate: formattedServiceDate,
+                    vehicleMake: document.getElementById('qv-vehicle-make').value.trim() || null,
+                    vehicleModel: document.getElementById('qv-vehicle-model').value.trim() || null
+                };
+                
+                const response = await fetch('api.php?action=update_transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast('Success', 'Case updated successfully', 'success');
+                    closeQuickView();
+                    loadData(); // Reload table data
+                } else {
+                    showToast('Error', result.error || 'Failed to save changes', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving case:', error);
+                showToast('Error', 'Failed to save changes', 'error');
+            } finally {
+                saveButton.disabled = false;
+                saveButton.innerHTML = originalText;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        // Close drawer on overlay click
+        document.getElementById('quick-view-drawer')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeQuickView();
+            }
+        });
+
+        // Close drawer on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && window.currentQuickViewId) {
+                closeQuickView();
+            }
+        });
+
         // QR Code Functions
         let currentQRPlate = '';
         let currentQRCaseId = '';
