@@ -1,6 +1,13 @@
 <?php
 require_once 'config.php';
 
+// Get database connection
+try {
+    $pdo = getDBConnection();
+} catch (Exception $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
 // Find cases with parts or services
 $query = "SELECT id, plate, name, 
     CASE 
