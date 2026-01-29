@@ -395,7 +395,7 @@ try {
     }
 
     if ($action === 'update_transfer' && $method === 'POST') {
-        $data = $_POST;
+        $data = getJsonInput();
         $id = $data['id'] ?? null;
 
         if (!$id || empty($data)) {
