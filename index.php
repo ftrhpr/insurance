@@ -57,217 +57,82 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
 
+    <!-- Custom CSS (extracted for caching) -->
+    <link rel="stylesheet" href="/assets/custom.css">
+
     <!-- Tailwind CSS: Prefer compiled local CSS in production; fallback to CDN for dev/demo -->
     <?php
         $localTailwindPath = __DIR__ . '/assets/tailwind.css';
         $tailwindCdnFallback = false;
         if (file_exists($localTailwindPath)) {
-            echo '<link rel="stylesheet" href="/assets/tailwind.css">\n';
+            echo '<link rel="stylesheet" href="/assets/tailwind.css">' . "\n";
         } else {
             // CDN fallback (not recommended for production)
             $tailwindCdnFallback = true;
-            echo "<!-- WARNING: Using Tailwind CDN. For production, compile Tailwind locally and include the generated CSS file. See https://tailwindcss.com/docs/installation -->\n";
-            echo "<script>console.warn('Tailwind CDN detected. For production, compile Tailwind locally and include the generated CSS file. See https://tailwindcss.com/docs/installation');</script>\n";
-            echo "<script>window.TAILWIND_CDN_FALLBACK = true;</script>\n";
+            echo "<!-- WARNING: Using Tailwind CDN. For production, compile Tailwind locally. -->\n";
             echo "<script src=\"https://cdn.tailwindcss.com\"></script>\n";
         }
     ?>
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Lucide Icons (deferred for performance) -->
+    <script src="https://unpkg.com/lucide@latest" defer></script>
     
-    <!-- QR Code Library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- QR Code Library (deferred - only needed when generating QR codes) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
     
     <!-- FIREBASE SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
 
+    <!-- Utility Functions (loaded early for dependencies) -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/toast.js"></script>
+    <script src="/js/api.js"></script>
+    
+    <!-- Initialize Configuration from PHP -->
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['BPG Arial Caps', 'BPG Arial', 'Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        primary: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
+        window.OtoConfig = {
+            CSRF_TOKEN: '<?php echo $_SESSION['csrf_token'] ?? ''; ?>',
+            API_URL: 'api.php',
+            USE_MOCK_DATA: false
+        };
+    </script>
+
+    <script>
+        // Tailwind config (only when using CDN)
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['BPG Arial Caps', 'BPG Arial', 'Inter', 'sans-serif'],
                         },
-                        accent: {
-                            50: '#fdf4ff',
-                            100: '#fae8ff',
-                            500: '#d946ef',
-                            600: '#c026d3',
-                        }
-                    },
-                    animation: {
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 3s ease-in-out infinite',
-                        'shimmer': 'shimmer 2s linear infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
+                        colors: {
+                            primary: {
+                                50: '#f0f9ff',
+                                100: '#e0f2fe',
+                                200: '#bae6fd',
+                                300: '#7dd3fc',
+                                400: '#38bdf8',
+                                500: '#0ea5e9',
+                                600: '#0284c7',
+                                700: '#0369a1',
+                                800: '#075985',
+                                900: '#0c4a6e',
+                            },
+                            accent: {
+                                50: '#fdf4ff',
+                                100: '#fae8ff',
+                                500: '#d946ef',
+                                600: '#c026d3',
+                            }
                         },
-                        shimmer: {
-                            '0%': { backgroundPosition: '-200% center' },
-                            '100%': { backgroundPosition: '200% center' },
-                        }
-                    },
-                    backgroundImage: {
-                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-                        'glass': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
                     }
                 }
             }
         }
     </script>
-
-    <style>
-        /* Premium Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { 
-            width: 8px; 
-            height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track { 
-            background: rgba(148, 163, 184, 0.1); 
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb { 
-            background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
-            border-radius: 10px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
-            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
-            background-clip: padding-box;
-        }
-        
-        /* Enhanced Navigation */
-        .nav-item {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-        }
-        .nav-active { 
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            color: #ffffff; 
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3), 0 2px 4px rgba(14, 165, 233, 0.2);
-        }
-        .nav-inactive { 
-            color: #64748b;
-            background: transparent;
-        }
-        .nav-inactive:hover { 
-            color: #0f172a;
-            background: rgba(14, 165, 233, 0.08);
-            transform: translateY(-1px);
-        }
-
-        /* Glass Morphism Effect */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-        }
-
-        /* Gradient Text */
-        .gradient-text {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #c026d3 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Enhanced Card Hover */
-        .card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(14, 165, 233, 0.1);
-        }
-
-        /* Animated Border for Urgent Toasts */
-        @keyframes border-pulse {
-            0% { 
-                border-color: rgba(14, 165, 233, 0.3); 
-                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5), 0 4px 12px rgba(14, 165, 233, 0.2);
-                transform: scale(1); 
-            }
-            50% { 
-                border-color: rgba(14, 165, 233, 1); 
-                box-shadow: 0 0 30px 0 rgba(14, 165, 233, 0.5), 0 8px 20px rgba(14, 165, 233, 0.3);
-                transform: scale(1.02); 
-            }
-            100% { 
-                border-color: rgba(14, 165, 233, 0.3); 
-                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5), 0 4px 12px rgba(14, 165, 233, 0.2);
-                transform: scale(1); 
-            }
-        }
-        .toast-urgent {
-            animation: border-pulse 2s infinite;
-            border-width: 2px;
-        }
-
-        /* Shimmer Effect for Loading States */
-        .shimmer {
-            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.1), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 2s infinite;
-        }
-
-        /* Premium Button Styles */
-        .btn-primary {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4), 0 4px 8px rgba(14, 165, 233, 0.2);
-            transform: translateY(-2px);
-        }
-        .btn-primary:active {
-            transform: translateY(0px) scale(0.98);
-        }
-
-        /* Floating Animation for Icons */
-        .float-icon {
-            animation: float 3s ease-in-out infinite;
-        }
-
-        /* Modern Badge Styles */
-        .badge-modern {
-            position: relative;
-            overflow: hidden;
-        }
-        .badge-modern::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.5s;
-        }
-        .badge-modern:hover::before {
-            left: 100%;
-        }
-    </style>
+    <!-- Inline styles moved to /assets/custom.css for caching -->
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-slate-800 font-sans min-h-screen selection:bg-primary-200 selection:text-primary-900">
 
@@ -1415,7 +1280,7 @@ try {
         const processingPerPage = 10;
         let currentProcessingPage = 1;
         
-        // Performance: Debounce utility function
+        // Performance: Debounce utility function (use OtoUtils.debounce when available)
         function debounce(func, wait) {
             let timeout;
             return function executedFunction(...args) {
@@ -1429,7 +1294,6 @@ try {
         }
         
         // Performance: Data change detection
-        let lastDataHash = '';
         function getDataHash() {
             return transfers.length + '_' + transfers.map(t => t.id + t.status).join('');
         } 
@@ -1437,88 +1301,11 @@ try {
         // Helper
         const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
-        // --- API HELPERS ---
-        const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
-        
-        async function fetchAPI(action, method = 'GET', body = null) {
-            const opts = { 
-                method,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            };
-            
-            // Add CSRF token for POST requests
-            if (method === 'POST' && CSRF_TOKEN) {
-                opts.headers['X-CSRF-Token'] = CSRF_TOKEN;
-            }
-            
-            if (body) opts.body = JSON.stringify(body);
-            
-            // If strictly using Mock Data, skip fetch
-            if (USE_MOCK_DATA) {
-                return getMockData(action, body);
-            }
-
-            try {
-                const res = await fetch(`${API_URL}?action=${action}`, opts);
-                
-                // Check if response is NOT OK (e.g. 500 Error)
-                if (!res.ok) {
-                    // Try to parse the JSON error message from api.php
-                    let errorText = res.statusText;
-                    try {
-                        const errorJson = await res.json();
-                        if (errorJson.error) errorText = errorJson.error;
-                    } catch (parseErr) {
-                        // If parsing fails, use the text body or generic status
-                        const text = await res.text();
-                        if(text) errorText = text.substring(0, 100); // Limit length
-                    }
-                    throw new Error(`Server Error (${res.status}): ${errorText}`);
-                }
-
-                const data = await res.json();
-                
-                // Update UI Connection Status
-                const statusEl = document.getElementById('connection-status');
-                if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> SQL Connected`;
-                
-                return data;
-            } catch (e) {
-                console.warn("Server unavailable:", e);
-                const statusEl = document.getElementById('connection-status');
-                if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-red-500 rounded-full"></span> Connection Failed`;
-                
-                // Show detailed error in toast
-                showToast("Connection Error", e.message, "error");
-                throw e; 
-            }
-        }
-
-        // Mock Data Handler (For Demo/Fallback)
-        function getMockData(action, body) {
-            // Update UI
-            const statusEl = document.getElementById('connection-status');
-            if(statusEl) statusEl.innerHTML = `<span class="w-2 h-2 bg-yellow-500 rounded-full"></span> Demo Mode`;
-
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    if (action === 'get_transfers') resolve(transfers.length ? transfers : []);
-                    else if (action === 'get_vehicles') resolve(vehicles.length ? vehicles : []);
-                    else if (action === 'add_transfer') {
-                        const newId = Math.floor(Math.random()*10000);
-                        resolve({ id: newId, status: 'success' });
-                    }
-                    else if (action === 'save_vehicle') resolve({ status: 'success' });
-                    else resolve({ status: 'mock_success' });
-                }, 100);
-            });
-        }
-
-        // --- CONFIGURATION ---
-        // Set to FALSE to stop using fake data and connect to your SQL Database
-        const USE_MOCK_DATA = false; 
+        // --- API CONFIGURATION ---
+        // fetchAPI is provided by /js/api.js with CSRF support
+        // Configuration is set via window.OtoConfig in the <head>
+        const API_URL = window.OtoConfig?.API_URL || 'api.php';
+        const USE_MOCK_DATA = false; // Set to true for demo mode (requires getMockData implementation)
 
         async function loadData() {
             try {
@@ -1627,87 +1414,7 @@ try {
             modelEl.placeholder = modelSuggestions[make] || 'e.g. Camry, E-Class';
         }
 
-        // Premium Toast Notifications
-        function showToast(title, message = '', type = 'success', duration = 4000) {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            
-            // Handle legacy calls
-            if (typeof type === 'number') { duration = type; type = 'success'; } // fallback
-            if (!message && !type) { type = 'success'; }
-            else if (['success', 'error', 'info', 'urgent'].includes(message)) { type = message; message = ''; }
-            
-            // Create toast
-            const toast = document.createElement('div');
-            
-            const colors = {
-                success: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-emerald-200/60', 
-                    iconBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', 
-                    iconColor: 'text-emerald-600', 
-                    icon: 'check-circle-2',
-                    shadow: 'shadow-emerald-500/20' 
-                },
-                error: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-red-200/60', 
-                    iconBg: 'bg-gradient-to-br from-red-50 to-orange-50', 
-                    iconColor: 'text-red-600', 
-                    icon: 'alert-circle',
-                    shadow: 'shadow-red-500/20' 
-                },
-                info: { 
-                    bg: 'bg-white/95 backdrop-blur-xl', 
-                    border: 'border-primary-200/60', 
-                    iconBg: 'bg-gradient-to-br from-primary-50 to-accent-50', 
-                    iconColor: 'text-primary-600', 
-                    icon: 'info',
-                    shadow: 'shadow-primary-500/20' 
-                },
-                urgent: { 
-                    bg: 'bg-white/95 backdrop-blur-xl toast-urgent', 
-                    border: 'border-primary-300', 
-                    iconBg: 'bg-gradient-to-br from-primary-100 to-accent-100', 
-                    iconColor: 'text-primary-700', 
-                    icon: 'bell-ring',
-                    shadow: 'shadow-primary-500/30' 
-                }
-            };
-            
-            const style = colors[type] || colors.info;
-
-            toast.className = `pointer-events-auto w-80 ${style.bg} border-2 ${style.border} shadow-2xl ${style.shadow} rounded-2xl p-4 flex items-start gap-3 transform transition-all duration-500 translate-y-10 opacity-0`;
-            
-            toast.innerHTML = `
-                <div class="${style.iconBg} p-3 rounded-xl shrink-0 shadow-inner">
-                    <i data-lucide="${style.icon}" class="w-5 h-5 ${style.iconColor}"></i>
-                </div>
-                <div class="flex-1 pt-1">
-                    <h4 class="text-sm font-bold text-slate-900 leading-none mb-1.5">${title}</h4>
-                    ${message ? `<p class="text-xs text-slate-600 leading-relaxed font-medium">${message}</p>` : ''}
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-slate-600 transition-colors -mt-1 -mr-1 p-1.5 hover:bg-slate-100 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            `;
-
-            container.appendChild(toast);
-            if(window.lucide) lucide.createIcons();
-
-            // Animate In
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-10', 'opacity-0');
-            });
-
-            // Auto Dismiss (unless persistent/urgent)
-            if (duration > 0 && type !== 'urgent') {
-                setTimeout(() => {
-                    toast.classList.add('translate-y-4', 'opacity-0');
-                    setTimeout(() => toast.remove(), 500);
-                }, duration);
-            }
-        }
+        // Note: showToast is now provided by /js/toast.js
 
         window.switchView = (v) => {
             // Toggle views (check if element exists before accessing)

@@ -1,0 +1,222 @@
+/**
+ * OTOMOTORS Manager Portal - Custom Styles
+ * Extracted from index.php for better caching and performance
+ */
+
+/* Premium Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { 
+    width: 8px; 
+    height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track { 
+    background: rgba(148, 163, 184, 0.1); 
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb { 
+    background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+    background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+    background-clip: padding-box;
+}
+
+/* Enhanced Navigation */
+.nav-item {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+.nav-active { 
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: #ffffff; 
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3), 0 2px 4px rgba(14, 165, 233, 0.2);
+}
+.nav-inactive { 
+    color: #64748b;
+    background: transparent;
+}
+.nav-inactive:hover { 
+    color: #0f172a;
+    background: rgba(14, 165, 233, 0.08);
+    transform: translateY(-1px);
+}
+
+/* Glass Morphism Effect */
+.glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* Gradient Text */
+.gradient-text {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #c026d3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Enhanced Card Hover */
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(14, 165, 233, 0.1);
+}
+
+/* Animated Border for Urgent Toasts */
+@keyframes border-pulse {
+    0% { 
+        border-color: rgba(14, 165, 233, 0.3); 
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5), 0 4px 12px rgba(14, 165, 233, 0.2);
+        transform: scale(1); 
+    }
+    50% { 
+        border-color: rgba(14, 165, 233, 1); 
+        box-shadow: 0 0 30px 0 rgba(14, 165, 233, 0.5), 0 8px 20px rgba(14, 165, 233, 0.3);
+        transform: scale(1.02); 
+    }
+    100% { 
+        border-color: rgba(14, 165, 233, 0.3); 
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5), 0 4px 12px rgba(14, 165, 233, 0.2);
+        transform: scale(1); 
+    }
+}
+.toast-urgent {
+    animation: border-pulse 2s infinite;
+    border-width: 2px;
+}
+
+/* Shimmer Effect for Loading States */
+@keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+.shimmer {
+    background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* Premium Button Styles */
+.btn-primary {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4), 0 4px 8px rgba(14, 165, 233, 0.2);
+    transform: translateY(-2px);
+}
+.btn-primary:active {
+    transform: translateY(0px) scale(0.98);
+}
+
+/* Floating Animation for Icons */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+.float-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Modern Badge Styles */
+.badge-modern {
+    position: relative;
+    overflow: hidden;
+}
+.badge-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+.badge-modern:hover::before {
+    left: 100%;
+}
+
+/* Tab Styles */
+.tab-button {
+    transition: all 0.2s ease;
+}
+.tab-button.active {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+.tab-button:not(.active):hover {
+    background: rgba(14, 165, 233, 0.1);
+}
+
+/* Loading Spinner */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Table Row Hover Effect */
+.table-row-hover {
+    transition: all 0.2s ease;
+}
+.table-row-hover:hover {
+    background: linear-gradient(90deg, rgba(14, 165, 233, 0.05), rgba(99, 102, 241, 0.05), rgba(14, 165, 233, 0.05));
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+/* Quick View Drawer */
+.drawer-slide {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.drawer-slide.open {
+    transform: translateX(0);
+}
+.drawer-slide.closed {
+    transform: translateX(100%);
+}
+
+/* Status Badge Colors */
+.status-new { background: #DBEAFE; color: #1E40AF; border-color: #93C5FD; }
+.status-processing { background: #FEF3C7; color: #92400E; border-color: #FCD34D; }
+.status-called { background: #EDE9FE; color: #5B21B6; border-color: #C4B5FD; }
+.status-parts-ordered { background: #FCE7F3; color: #9D174D; border-color: #F9A8D4; }
+.status-parts-arrived { background: #CCFBF1; color: #065F46; border-color: #5EEAD4; }
+.status-scheduled { background: #E0E7FF; color: #3730A3; border-color: #A5B4FC; }
+.status-in-service { background: #FFEDD5; color: #9A3412; border-color: #FDBA74; }
+.status-completed { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+.status-issue { background: #FEE2E2; color: #991B1B; border-color: #FCA5A5; }
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+    }
+}
