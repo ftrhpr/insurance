@@ -1283,6 +1283,7 @@ try {
         // Note: debounce, throttle, etc. are provided by /js/utils.js
         
         // Performance: Data change detection
+        let lastDataHash = '';
         function getDataHash() {
             return transfers.length + '_' + transfers.map(t => t.id + t.status).join('');
         } 
