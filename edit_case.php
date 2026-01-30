@@ -35,6 +35,40 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
+// Load statuses from database
+$caseStatuses = [];
+$repairStatuses = [];
+try {
+    $stmt = $pdo->query("SELECT * FROM `statuses` WHERE `is_active` = 1 ORDER BY `type`, `sort_order` ASC");
+    $allStatuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $caseStatuses = array_values(array_filter($allStatuses, fn($s) => $s['type'] === 'case'));
+    $repairStatuses = array_values(array_filter($allStatuses, fn($s) => $s['type'] === 'repair'));
+} catch (Exception $e) {
+    // Fallback to hardcoded defaults if table doesn't exist
+    $caseStatuses = [
+        ['id' => 1, 'name' => 'New', 'color' => '#3B82F6', 'bg_color' => '#DBEAFE'],
+        ['id' => 2, 'name' => 'Processing', 'color' => '#F59E0B', 'bg_color' => '#FEF3C7'],
+        ['id' => 3, 'name' => 'Called', 'color' => '#8B5CF6', 'bg_color' => '#EDE9FE'],
+        ['id' => 4, 'name' => 'Parts Ordered', 'color' => '#EC4899', 'bg_color' => '#FCE7F3'],
+        ['id' => 5, 'name' => 'Parts Arrived', 'color' => '#14B8A6', 'bg_color' => '#CCFBF1'],
+        ['id' => 6, 'name' => 'Scheduled', 'color' => '#6366F1', 'bg_color' => '#E0E7FF'],
+        ['id' => 7, 'name' => 'Already in service', 'color' => '#F97316', 'bg_color' => '#FFEDD5'],
+        ['id' => 8, 'name' => 'Completed', 'color' => '#10B981', 'bg_color' => '#D1FAE5'],
+        ['id' => 9, 'name' => 'Issue', 'color' => '#EF4444', 'bg_color' => '#FEE2E2'],
+    ];
+    $repairStatuses = [
+        ['id' => 10, 'name' => 'წინასწარი შეფასება', 'color' => '#3B82F6', 'bg_color' => '#DBEAFE'],
+        ['id' => 11, 'name' => 'მუშავდება', 'color' => '#F59E0B', 'bg_color' => '#FEF3C7'],
+        ['id' => 12, 'name' => 'იღებება', 'color' => '#8B5CF6', 'bg_color' => '#EDE9FE'],
+        ['id' => 13, 'name' => 'იშლება', 'color' => '#EF4444', 'bg_color' => '#FEE2E2'],
+        ['id' => 14, 'name' => 'აწყობა', 'color' => '#A855F7', 'bg_color' => '#F3E8FF'],
+        ['id' => 15, 'name' => 'თუნუქი', 'color' => '#06B6D4', 'bg_color' => '#CFFAFE'],
+        ['id' => 16, 'name' => 'პლასტმასის აღდგენა', 'color' => '#84CC16', 'bg_color' => '#ECFCCB'],
+        ['id' => 17, 'name' => 'პოლირება', 'color' => '#EC4899', 'bg_color' => '#FCE7F3'],
+        ['id' => 18, 'name' => 'დაშლილი და გასული', 'color' => '#10B981', 'bg_color' => '#D1FAE5'],
+    ];
+}
+
 // Fetch case data
 $stmt = $pdo->prepare("
     SELECT t.*, v.ownerName as vehicle_owner
@@ -616,20 +650,14 @@ try {
                                                 <h4 class="font-semibold text-slate-800 mb-1">Repair Status</h4>
                                                 <select x-model="currentCase.repair_status" @change="updateRepairProgress()" class="w-full text-sm bg-white border border-blue-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                     <option value="">Not Started</option>
-                                                    <option value="წიანსწარი შეფასება">წიანსწარი შეფასება</option>
-                                                    <option value="მუშავდება">მუშავდება</option>
-                                                    <option value="იღებება">იღებება</option>
-                                                    <option value="იშლება">იშლება</option>
-                                                    <option value="აწყობა">აწყობა</option>
-                                                    <option value="თუნუქი">თუნუქი</option>
-                                                    <option value="პლასტმასის აღდგენა">პლასტმასის აღდგენა</option>
-                                                    <option value="პოლირება">პოლირება</option>
-                                                    <option value="დაშლილი და გასული">დაშლილი და გასული</option>
+                                                    <?php foreach ($repairStatuses as $status): ?>
+                                                    <option value="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
+                                                    <?php endforeach; ?>
                                                     <?php 
                                                     // Include the current value from DB if it doesn't match predefined options
-                                                    $predefinedStatuses = ['', 'წიანსწარი შეფასება', 'მუშავდება', 'იღებება', 'იშლება', 'აწყობა', 'თუნუქი', 'პლასტმასის აღდგენა', 'პოლირება', 'დაშლილი და გასული'];
+                                                    $repairStatusNames = array_column($repairStatuses, 'name');
                                                     $currentRepairStatus = $case['repair_status'] ?? '';
-                                                    if ($currentRepairStatus && !in_array($currentRepairStatus, $predefinedStatuses)): ?>
+                                                    if ($currentRepairStatus && !in_array($currentRepairStatus, $repairStatusNames)): ?>
                                                     <option value="<?php echo htmlspecialchars($currentRepairStatus); ?>" selected><?php echo htmlspecialchars($currentRepairStatus); ?></option>
                                                     <?php endif; ?>
                                                 </select>
@@ -1326,17 +1354,27 @@ try {
                 parsedItems: [],
                 showQRCode: false,
                 qrCodeGenerated: false,
-                statuses: [
-                    { id: 'New', name: 'New', icon: 'file-plus-2' },
-                    { id: 'Processing', name: 'Processing', icon: 'loader-circle' },
-                    { id: 'Called', name: 'Contacted', icon: 'phone' },
-                    { id: 'Parts Ordered', name: 'Parts Ordered', icon: 'box-select' },
-                    { id: 'Parts Arrived', name: 'Parts Arrived', icon: 'package-check' },
-                    { id: 'Scheduled', name: 'Scheduled', icon: 'calendar-days' },
-                    { id: 'Already in service', name: 'Already in service', icon: 'wrench' },
-                    { id: 'Completed', name: 'Completed', icon: 'check-circle-2' },
-                    { id: 'Issue', name: 'Issue', icon: 'alert-triangle' },
-                ],
+                statuses: <?= json_encode(array_map(function($s) {
+                    // Map icon names based on status name
+                    $iconMap = [
+                        'New' => 'file-plus-2',
+                        'Processing' => 'loader-circle',
+                        'Called' => 'phone',
+                        'Parts Ordered' => 'box-select',
+                        'Parts Arrived' => 'package-check',
+                        'Scheduled' => 'calendar-days',
+                        'Already in service' => 'wrench',
+                        'Completed' => 'check-circle-2',
+                        'Issue' => 'alert-triangle',
+                    ];
+                    return [
+                        'id' => $s['name'],
+                        'name' => $s['name'],
+                        'icon' => $iconMap[$s['name']] ?? 'circle',
+                        'color' => $s['color'],
+                        'bg_color' => $s['bg_color']
+                    ];
+                }, $caseStatuses)) ?>,
                 get currentStatusIndex() {
                     const index = this.statuses.findIndex(s => s.id === this.currentCase.status);
                     return index > -1 ? index : 0;

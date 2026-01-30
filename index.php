@@ -13,10 +13,36 @@ if (($_SESSION['role'] ?? '') === 'technician') {
     exit();
 }
 
+require_once 'config.php';
 require_once 'language.php';
 
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'] ?? 'viewer';
+
+// Load statuses from database
+$caseStatuses = [];
+$repairStatuses = [];
+try {
+    $pdo = getDBConnection();
+    $stmt = $pdo->query("SELECT * FROM `statuses` WHERE `is_active` = 1 ORDER BY `type`, `sort_order` ASC");
+    $allStatuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $caseStatuses = array_values(array_filter($allStatuses, fn($s) => $s['type'] === 'case'));
+    $repairStatuses = array_values(array_filter($allStatuses, fn($s) => $s['type'] === 'repair'));
+} catch (Exception $e) {
+    // Fallback to hardcoded defaults if table doesn't exist
+    $caseStatuses = [
+        ['id' => 1, 'name' => 'New', 'color' => '#3B82F6', 'bg_color' => '#DBEAFE'],
+        ['id' => 2, 'name' => 'Processing', 'color' => '#F59E0B', 'bg_color' => '#FEF3C7'],
+        ['id' => 3, 'name' => 'Called', 'color' => '#8B5CF6', 'bg_color' => '#EDE9FE'],
+        ['id' => 4, 'name' => 'Parts Ordered', 'color' => '#EC4899', 'bg_color' => '#FCE7F3'],
+        ['id' => 5, 'name' => 'Parts Arrived', 'color' => '#14B8A6', 'bg_color' => '#CCFBF1'],
+        ['id' => 6, 'name' => 'Scheduled', 'color' => '#6366F1', 'bg_color' => '#E0E7FF'],
+        ['id' => 7, 'name' => 'Already in service', 'color' => '#F97316', 'bg_color' => '#FFEDD5'],
+        ['id' => 8, 'name' => 'Completed', 'color' => '#10B981', 'bg_color' => '#D1FAE5'],
+        ['id' => 9, 'name' => 'Issue', 'color' => '#EF4444', 'bg_color' => '#FEE2E2'],
+    ];
+    $repairStatuses = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -370,14 +396,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <div class="relative">
                             <select id="status-filter" class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium cursor-pointer hover:bg-slate-100 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all">
                                 <option value="All"><?php echo __('dashboard.all_active_stages', 'All Active Stages'); ?></option>
-                                <option value="Processing">🟡 <?php echo __('dashboard.processing', 'Processing'); ?></option>
-                                <option value="Called">🟣 <?php echo __('dashboard.called', 'Contacted'); ?></option>
-                                <option value="Parts Ordered">📦 <?php echo __('dashboard.parts_ordered', 'Parts Ordered'); ?></option>
-                                <option value="Parts Arrived">🏁 <?php echo __('dashboard.parts_arrived', 'Parts Arrived'); ?></option>
-                                <option value="Scheduled">🟠 <?php echo __('dashboard.scheduled', 'Scheduled'); ?></option>
-                                <option value="Already in service">🔧 <?php echo __('dashboard.already_in_service', 'Already in Service'); ?></option>
-                                <option value="Completed">🟢 <?php echo __('dashboard.completed', 'Completed'); ?></option>
-                                <option value="Issue">🔴 <?php echo __('dashboard.issue', 'Issue'); ?></option>
+                                <?php foreach ($caseStatuses as $status): ?>
+                                <option value="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
+                                <?php endforeach; ?>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                                 <i data-lucide="chevron-down" class="w-4 h-4"></i>
@@ -1136,9 +1157,11 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             Initial Status
                         </label>
                         <select id="manual-status" class="w-full appearance-none px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-purple-400 focus:ring-4 focus:ring-purple-400/20 outline-none cursor-pointer">
-                            <option value="New">🔵 New Case</option>
-                            <option value="Processing">🟡 Processing</option>
-                            <option value="Called">🟣 Contacted</option>
+                            <?php foreach ($caseStatuses as $status): ?>
+                            <?php if (in_array($status['name'], ['New', 'Processing', 'Called'])): ?>
+                            <option value="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
+                            <?php endif; ?>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 
@@ -1377,6 +1400,16 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
         window.currentEditingId = null;
         let parsedImportData = [];
         const currentUser = { uid: "manager", name: "Manager" }; 
+        
+        // Status definitions from database
+        const caseStatuses = <?= json_encode($caseStatuses) ?>;
+        const repairStatuses = <?= json_encode($repairStatuses) ?>;
+        
+        // Build status color map from database
+        const statusColorMap = {};
+        caseStatuses.forEach(s => {
+            statusColorMap[s.name] = { color: s.color, bg_color: s.bg_color };
+        });
         
         // Pagination variables
         const processingPerPage = 10;
@@ -2686,17 +2719,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
             // Render paginated active transfers
             pageTransfers.forEach(({ transfer: t, dateStr, linkedVehicle, displayPhone }) => {
                     
-                    const statusColors = {
-                        'Processing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                        'Called': 'bg-purple-100 text-purple-800 border-purple-200',
-                        'Parts Ordered': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                        'Parts Arrived': 'bg-teal-100 text-teal-800 border-teal-200',
-                        'Scheduled': 'bg-orange-100 text-orange-800 border-orange-200',
-                        'Already in service': 'bg-orange-100 text-orange-800 border-orange-200',
-                        'Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                        'Issue': 'bg-red-100 text-red-800 border-red-200'
-                    };
-                    const badgeClass = statusColors[t.status] || 'bg-slate-100 text-slate-600 border-slate-200';
+                    // Get status colors from database or use fallback
+                    const statusInfo = statusColorMap[t.status] || { color: '#64748B', bg_color: '#F1F5F9' };
+                    const badgeStyle = `background-color: ${statusInfo.bg_color}; color: ${statusInfo.color}; border-color: ${statusInfo.color}20`;
                     
                     const hasPhone = t.phone ? 
                         `<span class="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(t.phone)}</span>` : 
@@ -2852,7 +2877,7 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex flex-col gap-1">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm ${badgeClass}">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-bold border shadow-sm" style="${badgeStyle}">
                                         <div class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></div>
                                         ${t.status}
                                     </span>
@@ -4704,15 +4729,9 @@ $current_user_role = $_SESSION['role'] ?? 'viewer';
                         <div>
                             <label class="text-xs font-medium text-slate-600">Status</label>
                             <select id="qv-status" class="w-full px-2 py-1.5 border rounded text-sm">
-                                <option value="New">New</option>
-                                <option value="Processing">Processing</option>
-                                <option value="Called">Called</option>
-                                <option value="Parts Ordered">Parts Ordered</option>
-                                <option value="Parts Arrived">Parts Arrived</option>
-                                <option value="Scheduled">Scheduled</option>
-                                <option value="Already in service">In Service</option>
-                                <option value="Completed">Completed</option>
-                                <option value="Issue">Issue</option>
+                                <?php foreach ($caseStatuses as $status): ?>
+                                <option value="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div>
