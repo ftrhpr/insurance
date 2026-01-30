@@ -390,8 +390,36 @@ try {
                 // Ignore vehicle lookup failures - non-fatal
             }
 
-            $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, amount, franchise, rawText, phone, vehicle_make, vehicle_model, status, created_at) 
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'New', NOW())");
+            // Handle status and status_id
+            $status = isset($data['status']) ? trim($data['status']) : 'New';
+            $status_id = isset($data['status_id']) && is_numeric($data['status_id']) ? intval($data['status_id']) : null;
+            
+            // If status_id provided but no status name, look up the name
+            if ($status_id && (!$status || $status === 'New')) {
+                try {
+                    $statusStmt = $pdo->prepare("SELECT name FROM statuses WHERE id = ?");
+                    $statusStmt->execute([$status_id]);
+                    $statusName = $statusStmt->fetchColumn();
+                    if ($statusName) {
+                        $status = $statusName;
+                    }
+                } catch (Exception $e) {}
+            }
+            
+            // If status name provided but no ID, look up the ID
+            if ($status && !$status_id) {
+                try {
+                    $statusStmt = $pdo->prepare("SELECT id FROM statuses WHERE name = ? AND type = 'case'");
+                    $statusStmt->execute([$status]);
+                    $foundId = $statusStmt->fetchColumn();
+                    if ($foundId) {
+                        $status_id = intval($foundId);
+                    }
+                } catch (Exception $e) {}
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, amount, franchise, rawText, phone, vehicle_make, vehicle_model, status, status_id, created_at) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             
             $stmt->execute([
                 $plate,
@@ -399,9 +427,11 @@ try {
                 $amount,
                 isset($data['franchise']) ? trim($data['franchise']) : '',
                 isset($data['rawText']) ? trim($data['rawText']) : '',
-                $phoneFromVehicle,
+                $phoneFromVehicle ?? (isset($data['phone']) ? trim($data['phone']) : null),
                 isset($data['vehicleMake']) ? trim($data['vehicleMake']) : null,
-                isset($data['vehicleModel']) ? trim($data['vehicleModel']) : null
+                isset($data['vehicleModel']) ? trim($data['vehicleModel']) : null,
+                $status,
+                $status_id
             ]);
 
             $newId = $pdo->lastInsertId();
@@ -490,6 +520,7 @@ try {
                 'amount' => 'amount',
                 'case_type' => 'case_type',
                 'status' => 'status',
+                'status_id' => 'status_id',
                 'phone' => 'phone',
                 'serviceDate' => 'service_date',
                 'dueDate' => 'due_date',
@@ -504,6 +535,7 @@ try {
                 'vehicleModel' => 'vehicle_model',
                 'caseImages' => 'case_images',
                 'repair_status' => 'repair_status',
+                'repair_status_id' => 'repair_status_id',
                 'assigned_mechanic' => 'assigned_mechanic',
                 'repair_start_date' => 'repair_start_date',
                 'repair_end_date' => 'repair_end_date',
@@ -521,6 +553,30 @@ try {
 
             $update_fields = [];
             $params = [];
+
+            // If status_id is provided, also update the text status for backward compatibility
+            if (isset($data['status_id']) && is_numeric($data['status_id'])) {
+                try {
+                    $statusStmt = $pdo->prepare("SELECT name FROM statuses WHERE id = ?");
+                    $statusStmt->execute([$data['status_id']]);
+                    $statusName = $statusStmt->fetchColumn();
+                    if ($statusName) {
+                        $data['status'] = $statusName;
+                    }
+                } catch (Exception $e) {}
+            }
+            
+            // If repair_status_id is provided, also update the text repair_status for backward compatibility
+            if (isset($data['repair_status_id']) && is_numeric($data['repair_status_id'])) {
+                try {
+                    $statusStmt = $pdo->prepare("SELECT name FROM statuses WHERE id = ?");
+                    $statusStmt->execute([$data['repair_status_id']]);
+                    $statusName = $statusStmt->fetchColumn();
+                    if ($statusName) {
+                        $data['repair_status'] = $statusName;
+                    }
+                } catch (Exception $e) {}
+            }
 
             foreach ($data as $key => $value) {
                 if (array_key_exists($key, $field_map)) {
@@ -661,7 +717,7 @@ try {
             $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
 
             foreach ($rows as $r) {
-                $pdo->prepare("UPDATE transfers SET status = 'Scheduled', service_date = ?, user_response = 'Pending' WHERE id = ?")
+                $pdo->prepare("UPDATE transfers SET status = 'Scheduled', status_id = (SELECT id FROM statuses WHERE name = 'Scheduled' AND type = 'case' LIMIT 1), service_date = ?, user_response = 'Pending' WHERE id = ?")
                     ->execute([$serviceDate, $r['id']]);
 
                 // send SMS
@@ -823,6 +879,8 @@ try {
                 'work_times' => "JSON DEFAULT NULL",
                 'assignment_history' => "JSON DEFAULT NULL",
                 'operatorComment' => "TEXT DEFAULT NULL",
+                'status_id' => "INT DEFAULT NULL",
+                'repair_status_id' => "INT DEFAULT NULL",
             ];
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
             foreach ($required as $col => $def) {
@@ -835,8 +893,44 @@ try {
             // Continue anyway - columns might already exist or ALTER might fail on some DB versions
         }
 
-        // Includes review columns and reschedule data, now includes completed transfers for processing queue
-        $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment, link_opened_at as linkOpenedAt, operatorComment, repair_status FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed') ORDER BY created_at DESC");
+        // Check if statuses table exists for JOIN
+        $statusesExist = false;
+        try {
+            $tableCheck = $pdo->query("SHOW TABLES LIKE 'statuses'");
+            $statusesExist = $tableCheck->rowCount() > 0;
+        } catch (Exception $e) {}
+
+        if ($statusesExist) {
+            // Use JOIN to get status names from IDs, with fallback to text columns
+            $stmt = $pdo->prepare("
+                SELECT t.*, 
+                    t.service_date as serviceDate, 
+                    t.user_response as user_response, 
+                    t.review_stars as reviewStars, 
+                    t.review_comment as reviewComment, 
+                    t.reschedule_date as rescheduleDate, 
+                    t.reschedule_comment as rescheduleComment, 
+                    t.link_opened_at as linkOpenedAt, 
+                    t.operatorComment,
+                    COALESCE(cs.name, t.status) as status,
+                    t.status_id,
+                    cs.color as status_color,
+                    cs.bg_color as status_bg_color,
+                    COALESCE(rs.name, t.repair_status) as repair_status,
+                    t.repair_status_id,
+                    rs.color as repair_status_color,
+                    rs.bg_color as repair_status_bg_color
+                FROM transfers t
+                LEFT JOIN statuses cs ON t.status_id = cs.id AND cs.type = 'case'
+                LEFT JOIN statuses rs ON t.repair_status_id = rs.id AND rs.type = 'repair'
+                WHERE COALESCE(cs.name, t.status) IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
+                   OR t.status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
+                ORDER BY t.created_at DESC
+            ");
+        } else {
+            // Fallback to old query without JOIN
+            $stmt = $pdo->prepare("SELECT *, service_date as serviceDate, user_response as user_response, review_stars as reviewStars, review_comment as reviewComment, reschedule_date as rescheduleDate, reschedule_comment as rescheduleComment, link_opened_at as linkOpenedAt, operatorComment, repair_status FROM transfers WHERE status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed') ORDER BY created_at DESC");
+        }
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
@@ -885,7 +979,7 @@ try {
     if ($action === 'get_transfer' && $method === 'GET') {
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0) jsonResponse(['status' => 'error', 'message' => 'Invalid id']);
-        $stmt = $pdo->prepare("SELECT id, plate, name, phone, amount, franchise, nachrebi_qty, status, case_type, service_date, vehicle_make, vehicle_model, repair_parts, repair_labor FROM transfers WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT id, plate, name, phone, amount, franchise, nachrebi_qty, status, status_id, case_type, service_date, vehicle_make, vehicle_model, repair_parts, repair_labor, repair_status, repair_status_id FROM transfers WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) jsonResponse(['status' => 'error', 'message' => 'Not found']);
@@ -1490,8 +1584,8 @@ try {
 
         // --- NEW LOGIC: Connect to processing queue ---
         if ($new_status === 'collected' && $old_status !== 'collected' && $transfer_id) {
-            // 1. Update transfer status
-            $update_transfer_stmt = $pdo->prepare("UPDATE transfers SET status = 'Parts Arrived' WHERE id = ?");
+            // 1. Update transfer status with status_id
+            $update_transfer_stmt = $pdo->prepare("UPDATE transfers SET status = 'Parts Arrived', status_id = (SELECT id FROM statuses WHERE name = 'Parts Arrived' AND type = 'case' LIMIT 1) WHERE id = ?");
             $update_transfer_stmt->execute([$transfer_id]);
 
             // 2. Send 'Parts Arrived' SMS

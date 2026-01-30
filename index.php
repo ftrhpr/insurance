@@ -1159,7 +1159,7 @@ try {
                         <select id="manual-status" class="w-full appearance-none px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:border-purple-400 focus:ring-4 focus:ring-purple-400/20 outline-none cursor-pointer">
                             <?php foreach ($caseStatuses as $status): ?>
                             <?php if (in_array($status['name'], ['New', 'Processing', 'Called'])): ?>
-                            <option value="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
+                            <option value="<?= intval($status['id']) ?>" data-name="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
                             <?php endif; ?>
                             <?php endforeach; ?>
                         </select>
@@ -3581,7 +3581,21 @@ try {
             if (phoneInputEl) phoneInputEl.value = phoneToFill;
             if (serviceDateEl) serviceDateEl.value = t.serviceDate ? t.serviceDate.replace(' ', 'T') : '';
             if (franchiseEl) franchiseEl.value = t.franchise || '';
-            if (statusEl) statusEl.value = t.status;
+            // Set status by ID if available, fallback to name matching
+            if (statusEl) {
+                if (t.status_id) {
+                    statusEl.value = t.status_id;
+                } else {
+                    // Find option by name in data-name attribute
+                    const options = statusEl.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].dataset.name === t.status) {
+                            statusEl.value = options[i].value;
+                            break;
+                        }
+                    }
+                }
+            }
             
             // Update workflow progress indicator
             const statusStages = ['New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed', 'Issue'];
@@ -3612,8 +3626,10 @@ try {
             const statusInputEl = document.getElementById('input-status');
             if (statusInputEl) {
                 statusInputEl.addEventListener('change', (e) => {
-                    const newStatus = e.target.value;
-                    const newStageIndex = statusStages.indexOf(newStatus);
+                    // Get status name from selected option's data-name attribute
+                    const selectedOption = e.target.options[e.target.selectedIndex];
+                    const newStatusName = selectedOption?.dataset?.name || '';
+                    const newStageIndex = statusStages.indexOf(newStatusName);
                     const newProgressPercentage = ((newStageIndex + 1) / statusStages.length) * 100;
                     
                     const stageNumberEl = document.getElementById('workflow-stage-number');
@@ -3622,7 +3638,7 @@ try {
                     
                     if (stageNumberEl) stageNumberEl.innerText = newStageIndex + 1;
                     if (progressBarEl) progressBarEl.style.width = `${newProgressPercentage}%`;
-                    if (statusDescEl) statusDescEl.innerText = statusDescriptions[newStatus] || 'Unknown status';
+                    if (statusDescEl) statusDescEl.innerText = statusDescriptions[newStatusName] || 'Unknown status';
                 });
             }
             
@@ -3859,7 +3875,8 @@ try {
             const phone = phoneEl ? phoneEl.value.trim() : '';
             const amount = amountEl ? (parseFloat(amountEl.value) || 0) : 0;
             const franchise = franchiseEl ? (parseFloat(franchiseEl.value) || 0) : 0;
-            const status = statusEl ? statusEl.value : 'New';
+            const status_id = statusEl ? (parseInt(statusEl.value) || null) : null;
+            const statusName = statusEl ? statusEl.options[statusEl.selectedIndex]?.dataset?.name || 'New' : 'New';
             const notes = notesEl ? notesEl.value.trim() : '';
             const vehicleMake = vehicleMakeEl ? vehicleMakeEl.value.trim() : '';
             const vehicleModel = vehicleModelEl ? vehicleModelEl.value.trim() : '';
@@ -3900,7 +3917,8 @@ try {
                 phone: phone,
                 amount: amount,
                 franchise: franchise,
-                status: status,
+                status: statusName,
+                status_id: status_id,
                 vehicleMake: vehicleMake,
                 vehicleModel: vehicleModel,
                 internalNotes: notes ? [{ note: notes, timestamp: new Date().toISOString(), user: '<?php echo $current_user_name; ?>' }] : [],
@@ -3956,17 +3974,22 @@ try {
             const serviceDateEl = document.getElementById('input-service-date');
             const franchiseEl = document.getElementById('input-franchise');
             
-            const status = statusEl ? statusEl.value : t.status;
+            // Get both status ID and name from the dropdown
+            const status_id = statusEl ? (parseInt(statusEl.value) || null) : null;
+            const statusName = statusEl && statusEl.selectedIndex >= 0 
+                ? (statusEl.options[statusEl.selectedIndex]?.dataset?.name || t.status) 
+                : t.status;
             const phone = phoneEl ? phoneEl.value : t.phone;
             const serviceDate = serviceDateEl ? serviceDateEl.value : t.serviceDate;
             
-            // VALIDATION: Parts Arrived requires a date
-            if (status === 'Parts Arrived' && !serviceDate) {
+            // VALIDATION: Parts Arrived requires a date (compare by NAME)
+            if (statusName === 'Parts Arrived' && !serviceDate) {
                 return showToast("Scheduling Required", "Please select a service date to save 'Parts Arrived' status.", "error");
             }
 
             const updates = {
-                status,
+                status: statusName,
+                status_id: status_id,
                 phone,
                 serviceDate: serviceDate || null,
                 franchise: franchiseEl ? franchiseEl.value : t.franchise,
@@ -3985,10 +4008,10 @@ try {
             }
 
             // --- AUTOMATED SMS LOGIC BASED ON WORKFLOW STAGES ---
-            if(status !== t.status) {
-                updates.systemLogs.push({ message: `Status: ${t.status} -> ${status}`, timestamp: new Date().toISOString(), type: 'status' });
+            if(statusName !== t.status) {
+                updates.systemLogs.push({ message: `Status: ${t.status} -> ${statusName}`, timestamp: new Date().toISOString(), type: 'status' });
 
-                if (phone && window.smsWorkflowBindings && window.smsWorkflowBindings[status]) {
+                if (phone && window.smsWorkflowBindings && window.smsWorkflowBindings[statusName]) {
                     const templateData = {
                         id: t.id,
                         name: t.name,
@@ -3998,14 +4021,14 @@ try {
                     };
 
                     // Send SMS for all templates bound to this workflow stage
-                    window.smsWorkflowBindings[status].forEach(template => {
+                    window.smsWorkflowBindings[statusName].forEach(template => {
                         const msg = getFormattedMessage(template.slug, templateData);
                         window.sendSMS(phone, msg, `${template.slug}_sms`);
                     });
                 }
 
                 // Special handling for Processing status - auto-assign schedule
-                if (status === 'Processing') {
+                if (statusName === 'Processing') {
                     // Auto-assign next business day if no date set
                     let assignedDate = serviceDate || t.serviceDate;
                     if (!assignedDate) {
@@ -4730,7 +4753,7 @@ try {
                             <label class="text-xs font-medium text-slate-600">Status</label>
                             <select id="qv-status" class="w-full px-2 py-1.5 border rounded text-sm">
                                 <?php foreach ($caseStatuses as $status): ?>
-                                <option value="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
+                                <option value="<?= intval($status['id']) ?>" data-name="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -4834,7 +4857,22 @@ try {
                 document.getElementById('qv-amount').value = data.amount || '';
                 document.getElementById('qv-franchise').value = data.franchise || 0;
                 document.getElementById('qv-nachrebi-qty').value = data.nachrebi_qty || 0;
-                document.getElementById('qv-status').value = data.status || 'New';
+                
+                // Set status by ID if available, fallback to name matching
+                const statusSelect = document.getElementById('qv-status');
+                if (data.status_id) {
+                    statusSelect.value = data.status_id;
+                } else {
+                    // Find option by name in data-name attribute
+                    const options = statusSelect.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].dataset.name === data.status) {
+                            statusSelect.value = options[i].value;
+                            break;
+                        }
+                    }
+                }
+                
                 document.getElementById('qv-vehicle-make').value = data.vehicle_make || '';
                 document.getElementById('qv-vehicle-model').value = data.vehicle_model || '';
                 
@@ -4957,6 +4995,10 @@ try {
                     }
                 }
                 
+                const statusSelect = document.getElementById('qv-status');
+                const status_id = parseInt(statusSelect.value) || null;
+                const statusName = statusSelect.options[statusSelect.selectedIndex]?.dataset?.name || 'New';
+                
                 const updates = {
                     id: window.currentQuickViewId,
                     plate: document.getElementById('qv-plate').value.trim(),
@@ -4966,7 +5008,8 @@ try {
                     amount: document.getElementById('qv-amount').value.trim(),
                     franchise: parseFloat(document.getElementById('qv-franchise').value) || 0,
                     nachrebi_qty: parseFloat(document.getElementById('qv-nachrebi-qty').value) || 0,
-                    status: document.getElementById('qv-status').value,
+                    status: statusName,
+                    status_id: status_id,
                     serviceDate: formattedServiceDate,
                     vehicleMake: document.getElementById('qv-vehicle-make').value.trim() || null,
                     vehicleModel: document.getElementById('qv-vehicle-model').value.trim() || null

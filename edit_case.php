@@ -648,18 +648,11 @@ try {
                                                     <span class="text-xs font-medium text-blue-700 bg-blue-200 px-2 py-1 rounded-full" id="status-indicator" x-text="currentCase.repair_status || 'Not Started'">Not Started</span>
                                                 </div>
                                                 <h4 class="font-semibold text-slate-800 mb-1">Repair Status</h4>
-                                                <select x-model="currentCase.repair_status" @change="updateRepairProgress()" class="w-full text-sm bg-white border border-blue-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                <select x-model="currentCase.repair_status_id" @change="onRepairStatusChange()" class="w-full text-sm bg-white border border-blue-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                     <option value="">Not Started</option>
                                                     <?php foreach ($repairStatuses as $status): ?>
-                                                    <option value="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
+                                                    <option value="<?= intval($status['id']) ?>" data-name="<?= htmlspecialchars($status['name']) ?>"><?= htmlspecialchars($status['name']) ?></option>
                                                     <?php endforeach; ?>
-                                                    <?php 
-                                                    // Include the current value from DB if it doesn't match predefined options
-                                                    $repairStatusNames = array_column($repairStatuses, 'name');
-                                                    $currentRepairStatus = $case['repair_status'] ?? '';
-                                                    if ($currentRepairStatus && !in_array($currentRepairStatus, $repairStatusNames)): ?>
-                                                    <option value="<?php echo htmlspecialchars($currentRepairStatus); ?>" selected><?php echo htmlspecialchars($currentRepairStatus); ?></option>
-                                                    <?php endif; ?>
                                                 </select>
                                             </div>
 
@@ -1368,15 +1361,27 @@ try {
                         'Issue' => 'alert-triangle',
                     ];
                     return [
-                        'id' => $s['name'],
+                        'id' => intval($s['id']),
                         'name' => $s['name'],
                         'icon' => $iconMap[$s['name']] ?? 'circle',
                         'color' => $s['color'],
                         'bg_color' => $s['bg_color']
                     ];
                 }, $caseStatuses)) ?>,
+                repairStatuses: <?= json_encode(array_map(function($s) {
+                    return [
+                        'id' => intval($s['id']),
+                        'name' => $s['name'],
+                        'color' => $s['color'],
+                        'bg_color' => $s['bg_color']
+                    ];
+                }, $repairStatuses)) ?>,
                 get currentStatusIndex() {
-                    const index = this.statuses.findIndex(s => s.id === this.currentCase.status);
+                    // Match by status_id first, then by name
+                    let index = this.statuses.findIndex(s => s.id === this.currentCase.status_id);
+                    if (index === -1) {
+                        index = this.statuses.findIndex(s => s.name === this.currentCase.status);
+                    }
                     return index > -1 ? index : 0;
                 },
                 init() {
@@ -1508,6 +1513,18 @@ try {
                     showToast('Success', 'QR code downloaded', 'success');
                 },
 
+                // Handler for repair status change - updates both ID and name
+                onRepairStatusChange() {
+                    const select = document.querySelector('select[x-model="currentCase.repair_status_id"]');
+                    if (select && select.selectedIndex >= 0) {
+                        const selectedOption = select.options[select.selectedIndex];
+                        this.currentCase.repair_status = selectedOption.dataset.name || '';
+                    } else {
+                        this.currentCase.repair_status = '';
+                    }
+                    this.updateRepairProgress();
+                },
+
                 // New methods for redesigned UI
                 updateRepairProgress() {
                     const status = this.currentCase.repair_status || '';
@@ -1517,18 +1534,13 @@ try {
 
                     if (!progressBar || !statusBadge || !statusText) return;
 
-                    const statusMap = {
-                        '': { progress: 0, color: 'bg-slate-400', text: 'Not Started' },
-                        'წიანსწარი შეფასება': { progress: 10, color: 'bg-blue-500', text: 'წიანსწარი შეფასება' },
-                        'მუშავდება': { progress: 20, color: 'bg-yellow-500', text: 'მუშავდება' },
-                        'იღებება': { progress: 30, color: 'bg-orange-500', text: 'იღებება' },
-                        'იშლება': { progress: 40, color: 'bg-red-500', text: 'იშლება' },
-                        'აწყობა': { progress: 60, color: 'bg-purple-500', text: 'აწყობა' },
-                        'თუნუქი': { progress: 70, color: 'bg-pink-500', text: 'თუნუქი' },
-                        'პლასტმასის აღდგენა': { progress: 80, color: 'bg-indigo-500', text: 'პლასტმასის აღდგენა' },
-                        'პოლირება': { progress: 90, color: 'bg-teal-500', text: 'პოლირება' },
-                        'დაშლილი და გასული': { progress: 100, color: 'bg-green-500', text: 'დაშლილი და გასული' }
-                    };
+                    // Build statusMap from repairStatuses
+                    const statusMap = { '': { progress: 0, color: 'bg-slate-400', text: 'Not Started' } };
+                    const colors = ['bg-blue-500', 'bg-yellow-500', 'bg-orange-500', 'bg-red-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-green-500'];
+                    this.repairStatuses.forEach((s, i) => {
+                        const progress = Math.round(((i + 1) / this.repairStatuses.length) * 100);
+                        statusMap[s.name] = { progress, color: colors[i % colors.length], text: s.name };
+                    });
 
                     const currentStatus = statusMap[status] || statusMap[''];
                     progressBar.style.width = `${currentStatus.progress}%`;
@@ -2293,7 +2305,11 @@ try {
                     localStorage.setItem('openSections', JSON.stringify(this.openSections));
                 },
                 setStatus(statusId) {
-                    this.currentCase.status = statusId;
+                    // Set the status_id
+                    this.currentCase.status_id = statusId;
+                    // Look up and set the status name for backward compatibility
+                    const statusObj = this.statuses.find(s => s.id === statusId);
+                    this.currentCase.status = statusObj ? statusObj.name : '';
                 },
                 updateSmsPreview() {
                     const selector = document.getElementById('sms-template-selector');
@@ -2472,6 +2488,7 @@ try {
                         amount: calculatedAmount > 0 ? calculatedAmount.toFixed(2) : document.getElementById('input-amount').value.trim(),
                         case_type: document.getElementById('input-case-type').value,
                         status: status,
+                        status_id: this.statuses[this.currentStatusIndex]?.id || null,
                         phone: document.getElementById('input-phone').value.trim(),
                         serviceDate: serviceDate || null,
                         dueDate: dueDate || null,
@@ -2482,6 +2499,7 @@ try {
                         user_response: this.currentCase.user_response || null,
                         internalNotes: this.currentCase.internalNotes || [],
                         repair_status: this.currentCase.repair_status || null,
+                        repair_status_id: this.currentCase.repair_status_id || null,
                         assigned_mechanic: this.currentCase.assigned_mechanic?.trim() || null,
                         repair_start_date: (() => {
 
