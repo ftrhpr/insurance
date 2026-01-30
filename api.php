@@ -900,7 +900,7 @@ try {
                 LEFT JOIN statuses rs ON t.repair_status_id = rs.id AND rs.type = 'repair'
                 WHERE COALESCE(cs.name COLLATE utf8mb4_unicode_ci, t.status COLLATE utf8mb4_unicode_ci) IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
                    OR t.status COLLATE utf8mb4_unicode_ci IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
-                   OR t.status_id = 74
+                   OR t.status_id IN (7, 8, 9, 74)
                 ORDER BY t.created_at DESC
             ");
         } else {
