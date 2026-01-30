@@ -1,17 +1,19 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
+define('API_ACCESS', true);
 require_once 'config.php';
 
+// Verify API key
+verifyAPIKey();
+
+// Only accept GET requests
+if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'OPTIONS') {
+    sendResponse(false, null, 'Method not allowed', 405);
+}
+
 try {
+    // Get database connection
+    $pdo = getDBConnection();
+    
     // Get optional type filter (case_status, repair_status, or null for all)
     $type = isset($_GET['type']) ? $_GET['type'] : null;
     
@@ -60,19 +62,13 @@ try {
         }
     }
     
-    echo json_encode([
-        'success' => true,
-        'data' => [
-            'statuses' => $groupedStatuses,
-            'all' => $statuses,
-            'count' => count($statuses)
-        ]
+    sendResponse(true, [
+        'statuses' => $groupedStatuses,
+        'all' => $statuses,
+        'count' => count($statuses)
     ]);
     
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Failed to fetch statuses: ' . $e->getMessage()
-    ]);
+    error_log('Error fetching statuses: ' . $e->getMessage());
+    sendResponse(false, null, 'Failed to fetch statuses: ' . $e->getMessage(), 500);
 }
