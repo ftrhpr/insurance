@@ -2179,7 +2179,7 @@ try {
                             </td>
                         </tr>`);
                     }
-                } else if(t.repair_status === 'წიანსწარი შეფასება') {
+                } else if(t.repair_status === 'წიანსწარი შეფასება' || t.status_id == 74) {
                     assessmentCount++;
                     assessmentHtml.push(`
                         <tr class="hover:bg-blue-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
@@ -2649,7 +2649,7 @@ try {
             const totalNew = transfers.filter(t => t.status === 'New').length;
             const totalService = transfers.filter(t => t.status === 'Already in service').length;
             const totalCompleted = transfers.filter(t => t.status === 'Completed').length;
-            const totalAssessment = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
+            const totalAssessment = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება' || t.status_id == 74).length;
 
             if (newCountEl) newCountEl.innerText = `${newCount} / ${totalNew}`;
             if (serviceCountEl) serviceCountEl.innerText = `${serviceCount} / ${totalService}`;
@@ -2821,9 +2821,9 @@ try {
         // Update tab counts
         function updateTabCounts() {
             const newCount = transfers.filter(t => t.status === 'New').length;
-            const activeCount = transfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება').length;
+            const activeCount = transfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება' && t.status_id != 74).length;
             const serviceCount = transfers.filter(t => t.status === 'Already in service').length;
-            const assessmentCount = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება').length;
+            const assessmentCount = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება' || t.status_id == 74).length;
             const completedCount = transfers.filter(t => t.status === 'Completed').length;
 
             // Update tab badges
