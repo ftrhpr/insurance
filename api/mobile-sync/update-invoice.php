@@ -75,6 +75,10 @@ try {
         'assignedMechanic' => 'assigned_mechanic',
         'assigned_mechanic' => 'assigned_mechanic',
         'nachrebi_qty' => 'nachrebi_qty',
+        'status_id' => 'status_id',
+        'statusId' => 'status_id',
+        'repair_status_id' => 'repair_status_id',
+        'repairStatusId' => 'repair_status_id',
     ];
     
     // Debug: Log all received data keys and image fields
@@ -104,7 +108,7 @@ try {
         $shouldProcess = false;
         if (in_array($dbField, ['vat_enabled', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
             $shouldProcess = array_key_exists($appField, $data);
-        } elseif (in_array($dbField, ['repair_status', 'user_response', 'status', 'assigned_mechanic'])) {
+        } elseif (in_array($dbField, ['repair_status', 'user_response', 'status', 'assigned_mechanic', 'status_id', 'repair_status_id'])) {
             // These fields should be processed even if they are null (to allow clearing)
             $shouldProcess = array_key_exists($appField, $data);
         } else {
@@ -127,7 +131,7 @@ try {
                 }
             }
             // Handle integer fields
-            elseif ($dbField === 'nachrebi_qty') {
+            elseif (in_array($dbField, ['nachrebi_qty', 'status_id', 'repair_status_id'])) {
                 $value = !empty($value) ? intval($value) : null;
             }
             // Handle boolean VAT enabled field

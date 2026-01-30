@@ -173,6 +173,10 @@ try {
         'assigned_mechanic' => $invoice['assigned_mechanic'] ?? null,
         'assignedMechanic' => $invoice['assigned_mechanic'] ?? null,
         'nachrebi_qty' => isset($invoice['nachrebi_qty']) ? intval($invoice['nachrebi_qty']) : null,
+        'status_id' => isset($invoice['status_id']) ? intval($invoice['status_id']) : null,
+        'statusId' => isset($invoice['status_id']) ? intval($invoice['status_id']) : null,
+        'repair_status_id' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
+        'repairStatusId' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
     ];
     
     error_log("Invoice full data fetched successfully. ID: " . $invoice['id']);
