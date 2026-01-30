@@ -38,6 +38,9 @@ try {
     
     $statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Debug logging
+    error_log('Statuses query returned ' . count($statuses) . ' rows');
+    
     // Group by type for easier consumption
     $groupedStatuses = [
         'case_status' => [],
@@ -61,6 +64,9 @@ try {
             ];
         }
     }
+    
+    // Debug logging
+    error_log('Grouped statuses - case_status: ' . count($groupedStatuses['case_status']) . ', repair_status: ' . count($groupedStatuses['repair_status']));
     
     sendResponse(true, [
         'statuses' => $groupedStatuses,
