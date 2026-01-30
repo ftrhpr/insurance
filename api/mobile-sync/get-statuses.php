@@ -49,10 +49,19 @@ try {
     
     foreach ($statuses as $status) {
         $statusType = $status['type'];
-        if (isset($groupedStatuses[$statusType])) {
-            $groupedStatuses[$statusType][] = [
+        
+        // Map database type values to expected keys
+        $mappedType = null;
+        if ($statusType === 'case' || $statusType === 'case_status') {
+            $mappedType = 'case_status';
+        } elseif ($statusType === 'repair' || $statusType === 'repair_status') {
+            $mappedType = 'repair_status';
+        }
+        
+        if ($mappedType) {
+            $groupedStatuses[$mappedType][] = [
                 'id' => intval($status['id']),
-                'type' => $status['type'],
+                'type' => $statusType,
                 'name' => $status['name'],
                 'color' => $status['color'],
                 'bgColor' => $status['bg_color'],
