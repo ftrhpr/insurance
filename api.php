@@ -902,6 +902,7 @@ try {
 
         if ($statusesExist) {
             // Use JOIN to get status names from IDs, with fallback to text columns
+            // Use COLLATE to handle potential collation mismatches between tables
             $stmt = $pdo->prepare("
                 SELECT t.*, 
                     t.service_date as serviceDate, 
@@ -923,8 +924,8 @@ try {
                 FROM transfers t
                 LEFT JOIN statuses cs ON t.status_id = cs.id AND cs.type = 'case'
                 LEFT JOIN statuses rs ON t.repair_status_id = rs.id AND rs.type = 'repair'
-                WHERE COALESCE(cs.name, t.status) IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
-                   OR t.status IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
+                WHERE COALESCE(cs.name COLLATE utf8mb4_unicode_ci, t.status COLLATE utf8mb4_unicode_ci) IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
+                   OR t.status COLLATE utf8mb4_unicode_ci IN ('New', 'Processing', 'Called', 'Parts Ordered', 'Parts Arrived', 'Scheduled', 'Already in service', 'Completed')
                 ORDER BY t.created_at DESC
             ");
         } else {
