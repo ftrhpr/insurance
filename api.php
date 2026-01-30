@@ -2663,19 +2663,19 @@ try {
         $technician = $_GET['technician'] ?? '';
         
         try {
-            $query = "SELECT * FROM consumables_costs WHERE 1=1";
+            $query = "SELECT * FROM `consumables_costs` WHERE 1=1";
             $params = [];
             
             if ($year_month) {
-                $query .= " AND year_month = ?";
+                $query .= " AND `year_month` = ?";
                 $params[] = $year_month;
             }
             if ($technician) {
-                $query .= " AND technician_name = ?";
+                $query .= " AND `technician_name` = ?";
                 $params[] = $technician;
             }
             
-            $query .= " ORDER BY year_month DESC, technician_name ASC";
+            $query .= " ORDER BY `year_month` DESC, `technician_name` ASC";
             
             $stmt = $pdo->prepare($query);
             $stmt->execute($params);
@@ -2687,8 +2687,14 @@ try {
         }
     }
     
-    // Save/Update consumables cost
+    // Save/Update consumables cost (admin/manager only)
     if ($action === 'save_consumables_cost' && $method === 'POST') {
+        // Check admin or manager role
+        if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Access denied. Admin or manager role required.']);
+        }
+        
         $data = getJsonInput();
         
         $technician_name = $data['technician_name'] ?? '';
@@ -2714,8 +2720,14 @@ try {
         }
     }
     
-    // Delete consumables cost
+    // Delete consumables cost (admin/manager only)
     if ($action === 'delete_consumables_cost' && $method === 'POST') {
+        // Check admin or manager role
+        if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Access denied. Admin or manager role required.']);
+        }
+        
         $data = getJsonInput();
         $id = intval($data['id'] ?? 0);
         
@@ -2724,10 +2736,208 @@ try {
         }
         
         try {
-            $stmt = $pdo->prepare("DELETE FROM consumables_costs WHERE id = ?");
+            $stmt = $pdo->prepare("DELETE FROM `consumables_costs` WHERE `id` = ?");
             $stmt->execute([$id]);
             
             jsonResponse(['status' => 'success', 'message' => 'Consumables cost deleted']);
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
+    // --- STATUS MANAGEMENT ENDPOINTS ---
+    
+    // Get all statuses (filterable by type) - public endpoint for dropdowns
+    if ($action === 'get_statuses' && $method === 'GET') {
+        $type = $_GET['type'] ?? ''; // 'case', 'repair', or empty for all
+        $active_only = isset($_GET['active_only']) ? (bool)$_GET['active_only'] : true;
+        
+        try {
+            // Check if table exists first
+            $tableCheck = $pdo->query("SHOW TABLES LIKE 'statuses'");
+            if ($tableCheck->rowCount() === 0) {
+                jsonResponse(['status' => 'success', 'data' => []]);
+            }
+            
+            $query = "SELECT * FROM `statuses` WHERE 1=1";
+            $params = [];
+            
+            if ($type) {
+                $query .= " AND `type` = ?";
+                $params[] = $type;
+            }
+            if ($active_only) {
+                $query .= " AND `is_active` = 1";
+            }
+            
+            $query .= " ORDER BY `type`, `sort_order` ASC";
+            
+            $stmt = $pdo->prepare($query);
+            $stmt->execute($params);
+            $statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            jsonResponse(['status' => 'success', 'data' => $statuses]);
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+    
+    // Get single status by ID
+    if ($action === 'get_status' && $method === 'GET') {
+        $id = intval($_GET['id'] ?? 0);
+        
+        if (!$id) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing status ID']);
+        }
+        
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM `statuses` WHERE `id` = ?");
+            $stmt->execute([$id]);
+            $status = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($status) {
+                jsonResponse(['status' => 'success', 'data' => $status]);
+            } else {
+                jsonResponse(['status' => 'error', 'message' => 'Status not found']);
+            }
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+    
+    // Save/Update status (admin only)
+    if ($action === 'save_status' && $method === 'POST') {
+        // Check admin role
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Access denied. Admin role required.']);
+        }
+        
+        $data = getJsonInput();
+        
+        $id = intval($data['id'] ?? 0);
+        $type = $data['type'] ?? '';
+        $name = trim($data['name'] ?? '');
+        $color = $data['color'] ?? '#6B7280';
+        $bg_color = $data['bg_color'] ?? '#F3F4F6';
+        $icon = $data['icon'] ?? null;
+        $sort_order = intval($data['sort_order'] ?? 0);
+        $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+        
+        if (!$type || !$name) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing type or name']);
+        }
+        
+        if (!in_array($type, ['case', 'repair'])) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid type. Must be "case" or "repair"']);
+        }
+        
+        try {
+            if ($id > 0) {
+                // Update existing
+                $stmt = $pdo->prepare("
+                    UPDATE `statuses` 
+                    SET `type` = ?, `name` = ?, `color` = ?, `bg_color` = ?, `icon` = ?, `sort_order` = ?, `is_active` = ?
+                    WHERE `id` = ?
+                ");
+                $stmt->execute([$type, $name, $color, $bg_color, $icon, $sort_order, $is_active, $id]);
+                jsonResponse(['status' => 'success', 'message' => 'Status updated', 'id' => $id]);
+            } else {
+                // Insert new - get max sort_order for this type
+                $maxStmt = $pdo->prepare("SELECT COALESCE(MAX(`sort_order`), 0) + 1 FROM `statuses` WHERE `type` = ?");
+                $maxStmt->execute([$type]);
+                $newOrder = $maxStmt->fetchColumn();
+                
+                $stmt = $pdo->prepare("
+                    INSERT INTO `statuses` (`type`, `name`, `color`, `bg_color`, `icon`, `sort_order`, `is_active`)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([$type, $name, $color, $bg_color, $icon, $sort_order ?: $newOrder, $is_active]);
+                $newId = $pdo->lastInsertId();
+                jsonResponse(['status' => 'success', 'message' => 'Status created', 'id' => $newId]);
+            }
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+    
+    // Delete status (admin only)
+    if ($action === 'delete_status' && $method === 'POST') {
+        // Check admin role
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Access denied. Admin role required.']);
+        }
+        
+        $data = getJsonInput();
+        $id = intval($data['id'] ?? 0);
+        
+        if (!$id) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing status ID']);
+        }
+        
+        try {
+            $stmt = $pdo->prepare("DELETE FROM `statuses` WHERE `id` = ?");
+            $stmt->execute([$id]);
+            
+            jsonResponse(['status' => 'success', 'message' => 'Status deleted']);
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+    
+    // Reorder statuses (admin only)
+    if ($action === 'reorder_statuses' && $method === 'POST') {
+        // Check admin role
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Access denied. Admin role required.']);
+        }
+        
+        $data = getJsonInput();
+        $orders = $data['orders'] ?? []; // Array of {id: X, sort_order: Y}
+        
+        if (empty($orders)) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing orders array']);
+        }
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE `statuses` SET `sort_order` = ? WHERE `id` = ?");
+            foreach ($orders as $order) {
+                $stmt->execute([intval($order['sort_order']), intval($order['id'])]);
+            }
+            
+            jsonResponse(['status' => 'success', 'message' => 'Statuses reordered']);
+        } catch (Exception $e) {
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+    
+    // Toggle status active/inactive (admin only)
+    if ($action === 'toggle_status' && $method === 'POST') {
+        // Check admin role
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Access denied. Admin role required.']);
+        }
+        
+        $data = getJsonInput();
+        $id = intval($data['id'] ?? 0);
+        
+        if (!$id) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing status ID']);
+        }
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE `statuses` SET `is_active` = NOT `is_active` WHERE `id` = ?");
+            $stmt->execute([$id]);
+            
+            // Get the new state
+            $stmt2 = $pdo->prepare("SELECT `is_active` FROM `statuses` WHERE `id` = ?");
+            $stmt2->execute([$id]);
+            $newState = $stmt2->fetchColumn();
+            
+            jsonResponse(['status' => 'success', 'message' => 'Status toggled', 'is_active' => (bool)$newState]);
         } catch (Exception $e) {
             jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
         }

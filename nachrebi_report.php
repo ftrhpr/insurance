@@ -248,7 +248,7 @@ if ($current_user_role !== 'technician') {
                         <span class="text-sm font-normal text-slate-500 ml-2">(<?= date('F Y', strtotime($selected_month . '-01')) ?>)</span>
                     <?php endif; ?>
                 </h2>
-                <?php if ($selected_month): ?>
+                <?php if ($selected_month && in_array($current_user_role, ['admin', 'manager'])): ?>
                 <button onclick="openConsumablesModal()" class="px-3 py-1.5 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition flex items-center gap-1">
                     <i data-lucide="package-plus" class="w-4 h-4"></i>
                     სახარჯი მასალები
@@ -583,8 +583,8 @@ if ($current_user_role !== 'technician') {
         }
     </script>
 
-    <!-- Consumables Cost Modal -->
-    <?php if ($current_user_role !== 'technician'): ?>
+    <!-- Consumables Cost Modal (admin/manager only) -->
+    <?php if (in_array($current_user_role, ['admin', 'manager'])): ?>
     <div id="consumablesModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center no-print">
         <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 flex items-center justify-between">
