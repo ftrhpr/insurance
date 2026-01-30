@@ -864,34 +864,8 @@ try {
     // --- MANAGER ACTIONS ---
 
     if ($action === 'get_transfers' && $method === 'GET') {
-        // Ensure transfers table has repair management columns (defensive migration compatible with older MySQL)
-        try {
-            $required = [
-                'repair_status' => "VARCHAR(50) DEFAULT NULL",
-                'repair_start_date' => "DATETIME DEFAULT NULL",
-                'repair_end_date' => "DATETIME DEFAULT NULL",
-                'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
-                'repair_notes' => "TEXT DEFAULT NULL",
-                'repair_parts' => "TEXT DEFAULT NULL",
-                'repair_labor' => "TEXT DEFAULT NULL",
-                'repair_activity_log' => "TEXT DEFAULT NULL",
-                'link_opened_at' => "DATETIME DEFAULT NULL",
-                'work_times' => "JSON DEFAULT NULL",
-                'assignment_history' => "JSON DEFAULT NULL",
-                'operatorComment' => "TEXT DEFAULT NULL",
-                'status_id' => "INT DEFAULT NULL",
-                'repair_status_id' => "INT DEFAULT NULL",
-            ];
-            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
-            foreach ($required as $col => $def) {
-                $checkStmt->execute([DB_NAME, $col]);
-                if ($checkStmt->fetchColumn() == 0) {
-                    $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
-                }
-            }
-        } catch (Exception $alterError) {
-            // Continue anyway - columns might already exist or ALTER might fail on some DB versions
-        }
+        // NOTE: Schema migrations moved to fix_db_all.php for performance
+        // Run fix_db_all.php once after deployment to ensure all columns exist
 
         // Check if statuses table exists for JOIN
         $statusesExist = false;

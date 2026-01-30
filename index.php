@@ -1946,6 +1946,11 @@ try {
         }
 
         function renderTable(page = 1) {
+            // PERFORMANCE: Use requestAnimationFrame to avoid blocking UI
+            requestAnimationFrame(() => renderTableInternal(page));
+        }
+        
+        function renderTableInternal(page = 1) {
             currentProcessingPage = page;
             
             const searchInputEl = document.getElementById('search-input');
@@ -1964,12 +1969,19 @@ try {
             const completedContainer = document.getElementById('completed-cases-body');
             const assessmentContainer = document.getElementById('assessment-cases-body');
             
-            // Performance: Only clear containers for active tab
-            if (currentTab === 'new' && newContainer) newContainer.innerHTML = '';
-            if (currentTab === 'active' && activeContainer) activeContainer.innerHTML = '';
-            if (currentTab === 'service' && serviceContainer) serviceContainer.innerHTML = '';
-            if (currentTab === 'completed' && completedContainer) completedContainer.innerHTML = '';
-            if (currentTab === 'assessment' && assessmentContainer) assessmentContainer.innerHTML = '';
+            // PERFORMANCE: Clear containers once at start
+            if (newContainer) newContainer.innerHTML = '';
+            if (activeContainer) activeContainer.innerHTML = '';
+            if (serviceContainer) serviceContainer.innerHTML = '';
+            if (completedContainer) completedContainer.innerHTML = '';
+            if (assessmentContainer) assessmentContainer.innerHTML = '';
+            
+            // PERFORMANCE: Build HTML as arrays, join once at end
+            const newHtml = [];
+            const activeHtml = [];
+            const serviceHtml = [];
+            const completedHtml = [];
+            const assessmentHtml = [];
             
             let newCount = 0;
             let serviceCount = 0;
@@ -2041,7 +2053,7 @@ try {
 
                 if(t.status === 'New') {
                     newCount++;
-                    newContainer.innerHTML += `
+                    newHtml.push(`
                         <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                             <div class="absolute top-0 left-0 w-1.5 h-full bg-primary-500"></div>
                             <div class="flex justify-between items-start mb-3 pl-3">
@@ -2067,7 +2079,7 @@ try {
                                     </button>
                                 </div>
                             </div>
-                        </div>`;
+                        </div>`);
                 } else if(t.status === 'Already in service') {
                     // Collect service cases for sorting by in-service date
                     serviceCases.push({ transfer: t, displayPhone });
@@ -2091,7 +2103,7 @@ try {
                         completedSamghebriFiltered += computeSamghebriInTransfer(t, 'სამღებრო სამუშაო');
                         completedNachrebiQtyFiltered += parseFloat(t.nachrebi_qty) || 0;
 
-                        completedContainer.innerHTML += `
+                        completedHtml.push(`
                         <tr class="hover:bg-emerald-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
@@ -2165,11 +2177,11 @@ try {
                                     }
                                 </div>
                             </td>
-                        </tr>`;
+                        </tr>`);
                     }
                 } else if(t.repair_status === 'წიანსწარი შეფასება') {
                     assessmentCount++;
-                    assessmentContainer.innerHTML += `
+                    assessmentHtml.push(`
                         <tr class="hover:bg-blue-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
@@ -2244,7 +2256,7 @@ try {
                                     }
                                 </div>
                             </td>
-                        </tr>`;
+                        </tr>`);
                 } else {
                     // Collect active transfers for pagination
                     activeTransfers.push({ transfer: t, dateStr, linkedVehicle, displayPhone });
@@ -2266,7 +2278,7 @@ try {
                 // Calculate days in service
                 const daysInService = Math.floor((new Date() - inServiceDate) / (1000 * 60 * 60 * 24));
                 
-                serviceContainer.innerHTML += `
+                serviceHtml.push(`
                     <tr class="hover:bg-orange-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                         <td class="px-5 py-4">
                             <div class="flex items-center gap-3">
@@ -2374,7 +2386,7 @@ try {
                                 }
                             </div>
                         </td>
-                    </tr>`;
+                    </tr>`);
             });
 
             // Calculate pagination for active transfers
@@ -2525,7 +2537,7 @@ try {
                         </div>`;
                     }
 
-                    activeContainer.innerHTML += `
+                    activeHtml.push(`
                         <tr class="border-b border-slate-50 hover:bg-gradient-to-r hover:from-slate-50/50 hover:via-blue-50/30 hover:to-slate-50/50 transition-all group cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
@@ -2611,8 +2623,15 @@ try {
                                     }
                                 </div>
                             </td>
-                        </tr>`;
+                        </tr>`);
             });
+
+            // PERFORMANCE: Batch DOM update - set innerHTML once per container
+            if (newContainer) newContainer.innerHTML = newHtml.join('');
+            if (activeContainer) activeContainer.innerHTML = activeHtml.join('');
+            if (serviceContainer) serviceContainer.innerHTML = serviceHtml.join('');
+            if (completedContainer) completedContainer.innerHTML = completedHtml.join('');
+            if (assessmentContainer) assessmentContainer.innerHTML = assessmentHtml.join('');
 
             const newCountEl = document.getElementById('new-count');
             const serviceCountEl = document.getElementById('service-count');
