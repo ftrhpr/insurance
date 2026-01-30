@@ -1280,31 +1280,18 @@ try {
         const processingPerPage = 10;
         let currentProcessingPage = 1;
         
-        // Performance: Debounce utility function (use OtoUtils.debounce when available)
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
+        // Note: debounce, throttle, etc. are provided by /js/utils.js
         
         // Performance: Data change detection
         function getDataHash() {
             return transfers.length + '_' + transfers.map(t => t.id + t.status).join('');
         } 
 
-        // Helper
-        const normalizePlate = (p) => p ? p.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+        // Helper: normalizePlate is provided by /js/utils.js
 
         // --- API CONFIGURATION ---
         // fetchAPI is provided by /js/api.js with CSRF support
         // API_URL is declared above with Firebase config
-        // USE_MOCK_DATA not used - always connects to real database
 
         async function loadData() {
             try {
@@ -1710,13 +1697,7 @@ try {
             loadSMSParsingTemplates(); // Load SMS parsing templates from API on start
         });
 
-        // --- HTML ESCAPING FUNCTION ---
-        const escapeHtml = (text) => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = String(text);
-            return div.innerHTML;
-        };
+        // Note: escapeHtml is provided by /js/utils.js
 
         // --- TRANSFERS ---
         window.parseBankText = () => {
@@ -1863,12 +1844,7 @@ try {
                 if (parsedResultEl) parsedResultEl.classList.remove('hidden');
                 if (parsedPlaceholderEl) parsedPlaceholderEl.classList.add('hidden');
                 
-                // Escape HTML to prevent XSS
-                const escapeHtml = (text) => {
-                    const div = document.createElement('div');
-                    div.textContent = text;
-                    return div.innerHTML;
-                };
+                // Note: escapeHtml is provided globally by /js/utils.js
                 
                 if (parsedContentEl) parsedContentEl.innerHTML = parsedImportData.map(i => 
                     `<div class="bg-white p-3 border border-emerald-100 rounded-lg mb-2 text-xs flex justify-between items-center shadow-sm">
