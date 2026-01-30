@@ -1303,9 +1303,8 @@ try {
 
         // --- API CONFIGURATION ---
         // fetchAPI is provided by /js/api.js with CSRF support
-        // Configuration is set via window.OtoConfig in the <head>
-        const API_URL = window.OtoConfig?.API_URL || 'api.php';
-        const USE_MOCK_DATA = false; // Set to true for demo mode (requires getMockData implementation)
+        // API_URL is declared above with Firebase config
+        // USE_MOCK_DATA not used - always connects to real database
 
         async function loadData() {
             try {
