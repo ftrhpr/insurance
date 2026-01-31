@@ -663,7 +663,7 @@ try {
                                                     <span class="text-xs font-medium text-green-700 bg-green-200 px-2 py-1 rounded-full">Assigned</span>
                                                 </div>
                                                 <h4 class="font-semibold text-slate-800 mb-1">Mechanic</h4>
-                                                <select x-model="currentCase.assigned_mechanic" @change="console.log('Mechanic selected:', currentCase.assigned_mechanic)" class="w-full text-sm bg-white border border-green-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                                <select x-model="currentCase.assigned_mechanic" @change="onMechanicChange($event)" class="w-full text-sm bg-white border border-green-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                                     <option value="">-- Select Mechanic --</option>
                                                     <template x-for="tech in technicians" :key="tech.id">
                                                         <option :value="tech.full_name" :selected="currentCase.assigned_mechanic === tech.full_name" x-text="tech.full_name"></option>
@@ -1403,6 +1403,9 @@ try {
                         this.loadCollections();
                         this.renderTimeline();
                         this.renderCollections();
+                        
+                        // Initialize previous mechanic tracker for change detection
+                        this._previousMechanic = this.currentCase.assigned_mechanic || '';
 
                         // Initialize PDF parsing for repair
                         this.initRepairPdfParsing();
@@ -1516,13 +1519,42 @@ try {
                 // Handler for repair status change - updates both ID and name
                 onRepairStatusChange() {
                     const select = document.querySelector('select[x-model="currentCase.repair_status_id"]');
+                    const oldStatus = this.currentCase.repair_status || 'Not Started';
+                    
                     if (select && select.selectedIndex >= 0) {
                         const selectedOption = select.options[select.selectedIndex];
                         this.currentCase.repair_status = selectedOption.dataset.name || '';
                     } else {
                         this.currentCase.repair_status = '';
                     }
+                    
+                    const newStatus = this.currentCase.repair_status || 'Not Started';
+                    
+                    // Log repair status change to timeline
+                    if (oldStatus !== newStatus) {
+                        this.logTimelineEvent('Repair Status Changed', `Status changed from "${oldStatus}" to "${newStatus}"`, 'repair_status', false);
+                    }
+                    
                     this.updateRepairProgress();
+                },
+                
+                // Track previous mechanic for change detection
+                _previousMechanic: null,
+                
+                // Handler for mechanic assignment change
+                onMechanicChange(event) {
+                    const newMechanic = this.currentCase.assigned_mechanic || '';
+                    const oldMechanic = this._previousMechanic || '';
+                    
+                    if (oldMechanic !== newMechanic) {
+                        if (newMechanic) {
+                            this.logTimelineEvent('Mechanic Assigned', `Assigned to: ${newMechanic}${oldMechanic ? ` (was: ${oldMechanic})` : ''}`, 'mechanic_assigned', false);
+                        } else {
+                            this.logTimelineEvent('Mechanic Unassigned', `Removed mechanic: ${oldMechanic}`, 'mechanic_unassigned', false);
+                        }
+                    }
+                    
+                    this._previousMechanic = newMechanic;
                 },
 
                 // New methods for redesigned UI
@@ -1622,6 +1654,8 @@ try {
                     const qty = parseInt(prompt('Enter quantity:', '1')) || 1;
                     const price = parseFloat(prompt('Enter unit price:', '0')) || 0;
                     this.addPart(name.trim(), qty, price);
+                    this.renderItemsList();
+                    this.updateOverviewStats();
                     showToast('Part Added', `${name} added successfully.`, 'success');
                 },
 
@@ -1631,6 +1665,8 @@ try {
                     const quantity = parseFloat(prompt('Enter quantity (pcs):', '1')) || 1;
                     const rate = parseFloat(prompt('Enter unit rate (₾):', '0')) || 0;
                     this.addLabor(description.trim(), quantity, rate);
+                    this.renderItemsList();
+                    this.updateOverviewStats();
                     showToast('Service Added', `${description} added successfully.`, 'success');
                 },
 
@@ -1735,6 +1771,7 @@ try {
                 addSelectedParsedItems(originalItems) {
                     const selectedIndices = Array.from(document.querySelectorAll('.parsed-item-checkbox:checked')).map(cb => parseInt(cb.dataset.index));
                     let addedCount = 0;
+                    const addedNames = [];
 
                     selectedIndices.forEach(index => {
                         const item = originalItems[index];
@@ -1747,18 +1784,22 @@ try {
                         const notes = document.querySelector(`.parsed-notes[data-index="${index}"]`).value;
 
                         if (type === 'labor') {
-                            this.addLabor(name, qty, price);
-                            if (notes && this.currentCase.repair_labor.length > 0) {
-                                this.currentCase.repair_labor[this.currentCase.repair_labor.length - 1].notes = notes;
-                            }
+                            // Add labor without individual timeline logging
+                            if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
+                            this.currentCase.repair_labor.push({ description: name, quantity: qty, unit_rate: price, billable: true, notes: notes || '' });
                         } else {
-                            this.addPart(name, qty, price);
-                            if (notes && this.currentCase.repair_parts.length > 0) {
-                                this.currentCase.repair_parts[this.currentCase.repair_parts.length - 1].notes = notes;
-                            }
+                            // Add part without individual timeline logging
+                            if (!this.currentCase.repair_parts) this.currentCase.repair_parts = [];
+                            this.currentCase.repair_parts.push({ name, quantity: qty, unit_price: price, ordered: false, sku: '', supplier: '', notes: notes || '' });
                         }
+                        addedNames.push(name);
                         addedCount++;
                     });
+
+                    // Log summary event for invoice parsing
+                    if (addedCount > 0) {
+                        this.logTimelineEvent('Invoice Parsed', `Added ${addedCount} item(s) from invoice: ${addedNames.slice(0, 3).join(', ')}${addedNames.length > 3 ? '...' : ''}`, 'invoice_parsed', false);
+                    }
 
                     this.updatePartsList();
                     this.updateLaborList();
@@ -2023,10 +2064,7 @@ try {
                     }
                 },
 
-                updateItemsCostSummary() {
-                    // Delegate to updateRepairSummary for consistent discount handling
-                    this.updateRepairSummary();
-                },
+                // updateItemsCostSummary defined later with full implementation
 
                 renderTimeline() {
                     const container = document.getElementById('timeline-container');
@@ -2034,23 +2072,46 @@ try {
 
                     if (!container) return;
 
+                    // Event type styling configuration
+                    const eventStyles = {
+                        'status': { icon: 'settings', color: 'blue', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', iconColor: 'text-blue-600', textColor: 'text-blue-800', dotColor: 'bg-blue-500' },
+                        'repair_status': { icon: 'wrench', color: 'indigo', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200', iconColor: 'text-indigo-600', textColor: 'text-indigo-800', dotColor: 'bg-indigo-500' },
+                        'part_added': { icon: 'package-plus', color: 'emerald', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', iconColor: 'text-emerald-600', textColor: 'text-emerald-800', dotColor: 'bg-emerald-500' },
+                        'part_removed': { icon: 'package-minus', color: 'red', bgColor: 'bg-red-50', borderColor: 'border-red-200', iconColor: 'text-red-600', textColor: 'text-red-800', dotColor: 'bg-red-500' },
+                        'service_added': { icon: 'plus-circle', color: 'green', bgColor: 'bg-green-50', borderColor: 'border-green-200', iconColor: 'text-green-600', textColor: 'text-green-800', dotColor: 'bg-green-500' },
+                        'service_removed': { icon: 'minus-circle', color: 'orange', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', iconColor: 'text-orange-600', textColor: 'text-orange-800', dotColor: 'bg-orange-500' },
+                        'parts_ordered': { icon: 'shopping-cart', color: 'purple', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', iconColor: 'text-purple-600', textColor: 'text-purple-800', dotColor: 'bg-purple-500' },
+                        'bulk_delete': { icon: 'trash-2', color: 'red', bgColor: 'bg-red-50', borderColor: 'border-red-200', iconColor: 'text-red-600', textColor: 'text-red-800', dotColor: 'bg-red-500' },
+                        'bulk_duplicate': { icon: 'copy', color: 'cyan', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200', iconColor: 'text-cyan-600', textColor: 'text-cyan-800', dotColor: 'bg-cyan-500' },
+                        'mechanic_assigned': { icon: 'user-check', color: 'teal', bgColor: 'bg-teal-50', borderColor: 'border-teal-200', iconColor: 'text-teal-600', textColor: 'text-teal-800', dotColor: 'bg-teal-500' },
+                        'mechanic_unassigned': { icon: 'user-x', color: 'amber', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', iconColor: 'text-amber-600', textColor: 'text-amber-800', dotColor: 'bg-amber-500' },
+                        'collection_import': { icon: 'folder-input', color: 'violet', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', iconColor: 'text-violet-600', textColor: 'text-violet-800', dotColor: 'bg-violet-500' },
+                        'invoice_parsed': { icon: 'file-text', color: 'fuchsia', bgColor: 'bg-fuchsia-50', borderColor: 'border-fuchsia-200', iconColor: 'text-fuchsia-600', textColor: 'text-fuchsia-800', dotColor: 'bg-fuchsia-500' },
+                        'manual': { icon: 'edit-3', color: 'slate', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', iconColor: 'text-slate-600', textColor: 'text-slate-800', dotColor: 'bg-slate-500' },
+                        'activity': { icon: 'activity', color: 'green', bgColor: 'bg-green-50', borderColor: 'border-green-200', iconColor: 'text-green-600', textColor: 'text-green-800', dotColor: 'bg-green-500' }
+                    };
+
                     // Combine activities and status changes into timeline
                     let events = [];
 
-                    // Add status changes
-                    const statusChanges = [
-                        { status: 'New', timestamp: this.currentCase.created_at, type: 'status' },
-                        { status: this.currentCase.repair_status, timestamp: this.currentCase.repair_start_date, type: 'status' }
-                    ].filter(e => e.timestamp);
+                    // Add initial status creation
+                    if (this.currentCase.created_at) {
+                        events.push({ 
+                            action: 'Case Created', 
+                            details: 'Repair status set to: New', 
+                            timestamp: this.currentCase.created_at, 
+                            type: 'status',
+                            user: 'System'
+                        });
+                    }
 
-                    // Add activities
+                    // Add activities from repair_activity_log (these now include all tracked events)
                     const activities = (this.currentCase.repair_activity_log || []).map(activity => ({
                         ...activity,
-                        type: 'activity',
                         timestamp: activity.timestamp
                     }));
 
-                    events = [...statusChanges, ...activities].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    events = [...events, ...activities].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
                     if (events.length === 0) {
                         container.innerHTML = '';
@@ -2060,49 +2121,31 @@ try {
 
                     if (emptyState) emptyState.classList.add('hidden');
 
-                    const html = events.map(event => {
-                        if (event.type === 'status') {
-                            return `
-                                <div class="flex gap-4">
-                                    <div class="flex flex-col items-center">
-                                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                        <div class="w-px h-16 bg-slate-300"></div>
-                                    </div>
-                                    <div class="pb-8">
-                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                            <div class="flex items-center gap-2 mb-2">
-                                                <i data-lucide="settings" class="w-4 h-4 text-blue-600"></i>
-                                                <span class="font-medium text-blue-800">Status Changed</span>
-                                            </div>
-                                            <p class="text-sm text-slate-700">Repair status set to: <strong>${event.status || 'Not Started'}</strong></p>
-                                            <p class="text-xs text-slate-500 mt-2">${new Date(event.timestamp).toLocaleString()}</p>
+                    const html = events.map((event, index) => {
+                        const style = eventStyles[event.type] || eventStyles['activity'];
+                        const isLast = index === events.length - 1;
+                        
+                        return `
+                            <div class="flex gap-4">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-3 h-3 ${style.dotColor} rounded-full"></div>
+                                    ${!isLast ? '<div class="w-px flex-1 bg-slate-300"></div>' : ''}
+                                </div>
+                                <div class="pb-6 flex-1">
+                                    <div class="${style.bgColor} border ${style.borderColor} rounded-lg p-4">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <i data-lucide="${style.icon}" class="w-4 h-4 ${style.iconColor}"></i>
+                                            <span class="font-medium ${style.textColor}">${escapeHtml(event.action || 'Activity')}</span>
+                                        </div>
+                                        ${event.details ? `<p class="text-sm text-slate-700 mb-2">${escapeHtml(event.details)}</p>` : ''}
+                                        <div class="flex items-center justify-between text-xs text-slate-500">
+                                            <span>By ${escapeHtml(event.user || 'Unknown')}</span>
+                                            <span>${new Date(event.timestamp).toLocaleString()}</span>
                                         </div>
                                     </div>
                                 </div>
-                            `;
-                        } else {
-                            return `
-                                <div class="flex gap-4">
-                                    <div class="flex flex-col items-center">
-                                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                                        <div class="w-px h-16 bg-slate-300"></div>
-                                    </div>
-                                    <div class="pb-8">
-                                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                                            <div class="flex items-center gap-2 mb-2">
-                                                <i data-lucide="activity" class="w-4 h-4 text-green-600"></i>
-                                                <span class="font-medium text-green-800">${escapeHtml(event.action || 'Activity')}</span>
-                                            </div>
-                                            ${event.details ? `<p class="text-sm text-slate-700 mb-2">${escapeHtml(event.details)}</p>` : ''}
-                                            <div class="flex items-center justify-between text-xs text-slate-500">
-                                                <span>By ${escapeHtml(event.user || 'Unknown')}</span>
-                                                <span>${new Date(event.timestamp).toLocaleString()}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }
+                            </div>
+                        `;
                     }).join('');
 
                     container.innerHTML = html;
@@ -2115,18 +2158,8 @@ try {
 
                     const details = prompt('Enter activity details (optional):') || '';
 
-                    const event = {
-                        action: action.trim(),
-                        details: details.trim(),
-                        user: '<?php echo addslashes($current_user_name); ?>',
-                        timestamp: new Date().toISOString(),
-                        type: 'activity'
-                    };
-
-                    if (!this.currentCase.repair_activity_log) this.currentCase.repair_activity_log = [];
-                    this.currentCase.repair_activity_log.push(event);
-
-                    this.renderTimeline();
+                    // Use centralized logging function
+                    this.logTimelineEvent(action.trim(), details.trim(), 'manual', true);
                     this.updateOverviewStats();
                     showToast('Activity Added', 'Timeline event added successfully.', 'success');
                 },
@@ -2276,22 +2309,9 @@ try {
                     lucide.createIcons();
                 },
 
-                // Update existing methods to work with new UI
-                updatePartsList() {
-                    this.updateRepairSummary();
-                    this.updateOverviewStats();
-                    this.renderItemsList();
-                    this.renderTimeline();
-                    lucide.createIcons();
-                },
-
-                updateLaborList() {
-                    this.updateRepairSummary();
-                    this.updateOverviewStats();
-                    this.renderItemsList();
-                    this.renderTimeline();
-                    lucide.createIcons();
-                },
+                // Update methods defined in core caseEditor - these simplified versions removed
+                // Primary updatePartsList and updateLaborList are defined later with full implementation
+                
                 isSectionOpen(section) {
                     return this.openSections && Array.isArray(this.openSections) ? this.openSections.includes(section) : false;
                 },
@@ -2545,8 +2565,21 @@ try {
                     };
 
                     const systemLogs = [...(this.currentCase.systemLogs || [])];
+                    
+                    // Track case status change and log to both systemLogs and timeline
                     if (status !== initialCaseData.status) {
                         systemLogs.push({ message: `Status: ${initialCaseData.status} -> ${status}`, timestamp: new Date().toISOString(), type: 'status' });
+                        
+                        // Also log to repair_activity_log for timeline
+                        if (!this.currentCase.repair_activity_log) this.currentCase.repair_activity_log = [];
+                        this.currentCase.repair_activity_log.push({
+                            action: 'Case Status Changed',
+                            details: `Status changed from "${initialCaseData.status || 'None'}" to "${status}"`,
+                            user: '<?php echo addslashes($current_user_name); ?>',
+                            timestamp: new Date().toISOString(),
+                            type: 'status'
+                        });
+                        updates.repair_activity_log = this.currentCase.repair_activity_log;
 
                         if (updates.phone && smsWorkflowBindings && smsWorkflowBindings[status]) {
                             const templateData = this.getTemplateData();
@@ -2563,19 +2596,55 @@ try {
                         initialCaseData = { ...this.currentCase };
                         showToast("Changes Saved", "Case updated successfully.", "success");
                         updateActivityLog(this.currentCase.systemLogs);
+                        this.renderTimeline(); // Re-render timeline after save
                     } catch (error) {
                         showToast("Error", "Failed to save changes.", "error");
                     }
                 },
+                // Centralized timeline logging function
+                logTimelineEvent(action, details = '', type = 'activity', autoSave = true) {
+                    if (!this.currentCase.repair_activity_log) {
+                        this.currentCase.repair_activity_log = [];
+                    }
+                    
+                    const event = {
+                        action: action,
+                        details: details,
+                        user: '<?php echo addslashes($current_user_name); ?>',
+                        timestamp: new Date().toISOString(),
+                        type: type
+                    };
+                    
+                    this.currentCase.repair_activity_log.push(event);
+                    this.renderTimeline();
+                    
+                    if (autoSave) {
+                        this.saveRepairData();
+                    }
+                    
+                    return event;
+                },
+
                 addPart(name = '', quantity = 1, unit_price = 0) {
                     if (!this.currentCase.repair_parts) this.currentCase.repair_parts = [];
                     this.currentCase.repair_parts.push({ name, quantity, unit_price, ordered: false, sku: '', supplier: '', notes: '' });
                     this.updatePartsList();
+                    
+                    // Log to timeline
+                    if (name) {
+                        this.logTimelineEvent('Part Added', `Added part: ${name} (Qty: ${quantity}, Price: ₾${unit_price})`, 'part_added', false);
+                    }
                 },
                 bulkMarkOrdered() {
                     if (!this.currentCase.repair_parts) return;
+                    const unorderedCount = this.currentCase.repair_parts.filter(p => !p.ordered).length;
                     this.currentCase.repair_parts.forEach(p => p.ordered = true);
                     this.updatePartsList();
+                    
+                    // Log to timeline
+                    if (unorderedCount > 0) {
+                        this.logTimelineEvent('Parts Marked Ordered', `Marked ${unorderedCount} part(s) as ordered`, 'parts_ordered', false);
+                    }
                 },
                 updatePart(index, field, value) {
                     if (this.currentCase.repair_parts && this.currentCase.repair_parts[index]) {
@@ -2592,6 +2661,12 @@ try {
                     if (this.lastRemovedTimer) clearTimeout(this.lastRemovedTimer);
                     this.lastRemovedTimer = setTimeout(() => { this.lastRemovedPart = null; }, 10000); // 10s to undo
                     this.updatePartsList();
+                    
+                    // Log to timeline
+                    if (removed && removed.name) {
+                        this.logTimelineEvent('Part Removed', `Removed part: ${removed.name}`, 'part_removed', false);
+                    }
+                    
                     showToast('Part Removed', `<button onclick="window.caseEditor.undoRemovePart()" class="bg-white px-2 py-1 rounded text-sm border">Undo</button>`, 'info', 10000);
                 },
                 undoRemovePart() {
@@ -2601,6 +2676,12 @@ try {
                     this.lastRemovedPart = null;
                     if (this.lastRemovedTimer) { clearTimeout(this.lastRemovedTimer); this.lastRemovedTimer = null; }
                     this.updatePartsList();
+                    
+                    // Log undo action to timeline
+                    if (item && item.name) {
+                        this.logTimelineEvent('Part Restored', `Restored part: ${item.name}`, 'part_added', false);
+                    }
+                    showToast('Part Restored', `${item?.name || 'Part'} has been restored.`, 'success');
                 },
                 updatePartsList() {
                     // Update parts total and ensure combined list refresh
@@ -2621,6 +2702,11 @@ try {
                     if (!this.currentCase.repair_labor) this.currentCase.repair_labor = [];
                     this.currentCase.repair_labor.push({ description, quantity, unit_rate, billable: true, notes: '' });
                     this.updateLaborList();
+                    
+                    // Log to timeline
+                    if (description) {
+                        this.logTimelineEvent('Service Added', `Added service: ${description} (Qty: ${quantity}, Rate: ₾${unit_rate})`, 'service_added', false);
+                    }
                 },
                 updateLabor(index, field, value) {
                     if (this.currentCase.repair_labor && this.currentCase.repair_labor[index]) {
@@ -2631,8 +2717,13 @@ try {
                 },
                 removeLabor(index) {
                     if (this.currentCase.repair_labor) {
-                        this.currentCase.repair_labor.splice(index, 1);
+                        const removed = this.currentCase.repair_labor.splice(index, 1)[0];
                         this.updateLaborList();
+                        
+                        // Log to timeline
+                        if (removed && removed.description) {
+                            this.logTimelineEvent('Service Removed', `Removed service: ${removed.description}`, 'service_removed', false);
+                        }
                     }
                 },
                 updateLaborList() {
@@ -2705,11 +2796,7 @@ try {
                         }
                     } catch (e) { showToast('Error', 'Failed to save collection.', 'error'); }
                 },
-                bulkMarkOrdered() {
-                    if (!this.currentCase.repair_parts) return;
-                    this.currentCase.repair_parts.forEach(p => p.ordered = true);
-                    this.updatePartsList();
-                },
+                // Note: bulkMarkOrdered defined earlier - this duplicate is removed
                 // Drag & Drop handlers for Parts
                 dragStartPart(ev, index) {
                     this.dragPartIndex = index;
@@ -3006,14 +3093,26 @@ try {
                     let parts = [];
                     try { parts = JSON.parse(c.parts_list || '[]'); } catch (e) { parts = []; }
                     let added = 0;
+                    const addedNames = [];
                     parts.forEach(p => {
                         const name = p.name || p.description || '';
                         const qty = parseFloat(p.quantity) || 1;
                         const price = parseFloat(p.price || p.unit_price) || 0;
-                        this.addPart(name, qty, price);
+                        
+                        // Add part without individual logging (we'll log a summary)
+                        if (!this.currentCase.repair_parts) this.currentCase.repair_parts = [];
+                        this.currentCase.repair_parts.push({ name, quantity: qty, unit_price: price, ordered: false, sku: '', supplier: '', notes: '' });
+                        
+                        addedNames.push(name);
                         added++;
                     });
-                    if (added) { this.updatePartsList(); showToast('Added', `${added} parts added from collection.`, 'success'); }
+                    
+                    if (added) { 
+                        this.updatePartsList(); 
+                        // Log collection import as single timeline event
+                        this.logTimelineEvent('Parts Imported from Collection', `Added ${added} part(s) from collection: ${addedNames.slice(0, 3).join(', ')}${addedNames.length > 3 ? '...' : ''}`, 'collection_import', false);
+                        showToast('Added', `${added} parts added from collection.`, 'success'); 
+                    }
                 },
 
                 addCollectionItem(collectionId, index) {
@@ -3122,17 +3221,29 @@ try {
 
                     if (!confirm(`Delete ${selected.parts.length + selected.labor.length} selected items?`)) return;
 
+                    const deletedItems = [];
+                    
                     // Remove parts
                     selected.parts.forEach(item => {
                         const idx = this.currentCase.repair_parts.findIndex(p => p.id === item.id);
-                        if (idx !== -1) this.currentCase.repair_parts.splice(idx, 1);
+                        if (idx !== -1) {
+                            deletedItems.push(item.name || 'Unknown part');
+                            this.currentCase.repair_parts.splice(idx, 1);
+                        }
                     });
 
                     // Remove labor
                     selected.labor.forEach(item => {
                         const idx = this.currentCase.repair_labor.findIndex(l => l.id === item.id);
-                        if (idx !== -1) this.currentCase.repair_labor.splice(idx, 1);
+                        if (idx !== -1) {
+                            deletedItems.push(item.description || 'Unknown service');
+                            this.currentCase.repair_labor.splice(idx, 1);
+                        }
                     });
+
+                    // Log to timeline
+                    const totalDeleted = selected.parts.length + selected.labor.length;
+                    this.logTimelineEvent('Bulk Items Deleted', `Deleted ${totalDeleted} item(s): ${deletedItems.slice(0, 3).join(', ')}${deletedItems.length > 3 ? '...' : ''}`, 'bulk_delete', false);
 
                     this.saveRepairData();
                     this.renderItemsList();
@@ -3147,17 +3258,25 @@ try {
                         return;
                     }
 
+                    const duplicatedItems = [];
+                    
                     // Duplicate parts
                     selected.parts.forEach(item => {
                         const newItem = { ...item, id: Date.now() + Math.random() };
                         this.currentCase.repair_parts.push(newItem);
+                        duplicatedItems.push(item.name || 'part');
                     });
 
                     // Duplicate labor
                     selected.labor.forEach(item => {
                         const newItem = { ...item, id: Date.now() + Math.random() };
                         this.currentCase.repair_labor.push(newItem);
+                        duplicatedItems.push(item.description || 'service');
                     });
+
+                    // Log to timeline
+                    const totalDuplicated = selected.parts.length + selected.labor.length;
+                    this.logTimelineEvent('Items Duplicated', `Duplicated ${totalDuplicated} item(s): ${duplicatedItems.slice(0, 3).join(', ')}${duplicatedItems.length > 3 ? '...' : ''}`, 'bulk_duplicate', false);
 
                     this.saveRepairData();
                     this.renderItemsList();
@@ -3375,235 +3494,18 @@ try {
                     }
                 },
 
-                showParsedItemsModal(items) {
-                    const modal = document.getElementById('parsed-items-modal');
-                    if (!modal) return;
+                // showParsedItemsModal, renderParsedItemsModal, selectAllParsedItems, addSelectedParsedItems 
+                // are defined earlier in the caseEditor object - duplicates removed
+                // exportRepairData is defined earlier - duplicate removed
 
-                    // Render parsed items for selection
-                    this.renderParsedItemsModal(items);
-                    modal.classList.remove('hidden');
-                },
-
-                renderParsedItemsModal(items) {
-                    const container = document.getElementById('parsed-items-container');
-                    if (!container) return;
-
-                    let html = `
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <h3 class="text-lg font-medium">Select Items to Add</h3>
-                                <button onclick="caseEditor.selectAllParsedItems()" class="text-blue-600 hover:text-blue-800 text-sm">
-                                    Select All
-                                </button>
-                            </div>
-                    `;
-
-                    items.forEach((item, index) => {
-                        html += `
-                            <div class="flex items-center p-3 border border-gray-200 rounded-lg">
-                                <input type="checkbox" id="parsed-item-${index}" class="parsed-item-checkbox h-4 w-4 text-blue-600 rounded" data-index="${index}">
-                                <label for="parsed-item-${index}" class="ml-3 flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <span class="font-medium">${escapeHtml(item.name || item.description || 'Unknown Item')}</span>
-                                            <span class="text-sm text-gray-500 ml-2">[${item.type || 'part'}]</span>
-                                        </div>
-                                        <div class="text-sm text-gray-600">
-                                            Qty: ${item.quantity || 1} • ₾${(parseFloat(item.price) || 0).toFixed(2)}
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-                        `;
-                    });
-
-                    html += `
-                    </div>
-                    `;
-
-                    container.innerHTML = html;
-                    lucide.createIcons();
-                },
-
-                selectAllParsedItems() {
-                    const checkboxes = document.querySelectorAll('.parsed-item-checkbox');
-                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                    checkboxes.forEach(cb => cb.checked = !allChecked);
-                },
-
-                addSelectedParsedItems() {
-                    const selectedIndices = [];
-                    document.querySelectorAll('.parsed-item-checkbox:checked').forEach(cb => {
-                        selectedIndices.push(parseInt(cb.dataset.index));
-                    });
-
-                    if (selectedIndices.length === 0) {
-                        showToast('No items selected', 'error');
-                        return;
-                    }
-
-                    // Add selected items to repair data
-                    selectedIndices.forEach(index => {
-                        const item = this.parsedItems[index];
-                        if (!item) return;
-
-                        if (item.type === 'labor') {
-                            this.addLabor(item.name || item.description, item.quantity || 1, item.price || 0);
-                        } else {
-                            this.addPart(item.name || item.description, item.quantity || 1, item.price || 0);
-                        }
-                    });
-
-                    this.saveRepairData();
-                    this.renderItemsList();
-                    this.updateOverviewStats();
-
-                    // Close modal
-                    document.getElementById('parsed-items-modal').classList.add('hidden');
-                    showToast(`${selectedIndices.length} items added successfully`);
-                },
-
-                exportRepairData() {
-                    const data = {
-                        case: this.currentCase,
-                        parts: this.currentCase.repair_parts || [],
-                        labor: this.currentCase.repair_labor || [],
-                        timeline: this.currentCase.repair_activity_log || [],
-                        exported_at: new Date().toISOString()
-                    };
-
-                    const json = JSON.stringify(data, null, 2);
-                    const blob = new Blob([json], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `repair-case-${CASE_ID}-${new Date().toISOString().split('T')[0]}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-
-                    showToast('Repair data exported');
-                },
-
-                // Collection management
-                createNewCollection() {
-                    const name = prompt('Enter collection name:');
-                    if (!name) return;
-
-                    // Create from current repair items
-                    const parts = (this.currentCase.repair_parts || []).map(p => ({
-                        name: p.name,
-                        quantity: p.quantity || 1,
-                        price: p.unit_price || 0
-                    }));
-
-                    if (parts.length === 0) {
-                        showToast('No parts to create collection from', 'error');
-                        return;
-                    }
-
-                    this.savePartsCollectionFromItems(parts, name);
-                },
-
-                async savePartsCollectionFromItems(parts, description) {
-                    try {
-                        const response = await fetch(`${API_URL}?action=create_parts_collection`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                transfer_id: CASE_ID,
-                                parts_list: parts,
-                                description: description,
-                                collection_type: 'local'
-                            })
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showToast('Collection Created', 'Parts collection created successfully.', 'success');
-                            this.loadCollections();
-                        } else {
-                            showToast('Error', result.error || 'Failed to create collection.', 'error');
-                        }
-                    } catch (e) {
-                        showToast('Error', 'Failed to create collection.', 'error');
-                    }
-                },
-
-                viewCollectionDetails(collectionId) {
-                    const collection = this.collections.find(c => c.id == collectionId);
-                    if (!collection) return;
-
-                    // Show collection details modal
-                    const parts = JSON.parse(collection.parts_list || '[]');
-                    let details = `Collection: ${collection.description}\n\nParts:\n`;
-                    parts.forEach((part, index) => {
-                        details += `${index + 1}. ${part.name} (Qty: ${part.quantity}, ₾${part.price})\n`;
-                    });
-
-                    alert(details); // Simple alert for now, could be enhanced with a modal
-                },
+                // Collection management - createNewCollection, savePartsCollectionFromItems, viewCollectionDetails
+                // are defined earlier in the caseEditor object - duplicates removed
 
                 // Cost calculations with discount support (duplicate function - kept for backwards compatibility)
                 // Note: Primary calculateTotalCost is defined earlier in the caseEditor object
 
-                // Quick add methods
-                quickAddPart(name = '', quantity = 1, price = 0) {
-                    if (!name.trim()) {
-                        name = prompt('Enter part name:');
-                        if (!name) return;
-                    }
-                    this.addPart(name, quantity, price);
-                    this.renderItemsList();
-                    this.updateOverviewStats();
-                },
-
-                quickAddLabor(description = '', quantity = 1, rate = 0) {
-                    if (!description.trim()) {
-                        description = prompt('Enter service description:');
-                        if (!description) return;
-                    }
-                    this.addLabor(description, quantity, rate);
-                    this.renderItemsList();
-                    this.updateOverviewStats();
-                },
-
-                // PDF parsing methods
-                parseInvoice() {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.pdf';
-                    input.onchange = (e) => this.processInvoiceFile(e.target.files[0]);
-                    input.click();
-                },
-
-                async processInvoiceFile(file) {
-                    if (!file) return;
-
-                    const formData = new FormData();
-                    formData.append('pdf', file);
-
-                    try {
-                        showToast('Processing PDF...', 'info');
-                        const response = await fetch('api.php?action=parse_invoice_pdf', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        const data = await response.json();
-
-                        if (data.success && data.items && data.items.length > 0) {
-                            this.parsedItems = data.items;
-                            this.showParsedItemsModal(data.items);
-                            showToast(`Found ${data.items.length} items`, 'Select which items to add');
-                        } else {
-                            showToast('No items found', 'Could not parse any items from the PDF', 'error');
-                        }
-                    } catch (error) {
-                        console.error('PDF parsing error:', error);
-                        showToast('Parsing failed', 'Error processing PDF file', 'error');
-                    }
-                },
+                // Quick add methods - removed duplicates, using primary definitions above
+                // PDF parsing methods - removed duplicates, using primary definitions above
 
                 updateItemsCostSummary() {
                     const partsCount = (this.currentCase.repair_parts || []).length;
@@ -3649,80 +3551,8 @@ try {
                     }
                 },
 
-                addTimelineEvent(action, details = '') {
-                    if (!action) {
-                        action = prompt('Enter activity action:');
-                        if (!action) return;
-                    }
-                    if (!details) {
-                        details = prompt('Enter activity details:') || '';
-                    }
-
-                    if (!this.currentCase.repair_activity_log) {
-                        this.currentCase.repair_activity_log = [];
-                    }
-
-                    this.currentCase.repair_activity_log.push({
-                        action: action,
-                        details: details,
-                        user: '<?php echo addslashes($current_user_name); ?>',
-                        timestamp: new Date().toISOString()
-                    });
-
-                    this.saveRepairData();
-                    this.renderTimeline();
-                },
-
-                renderCollections() {
-                    const container = document.getElementById('collections-container');
-                    if (!container) return;
-
-                    if (this.collections.length === 0) {
-                        container.innerHTML = `
-                            <div class="text-center py-8">
-                                <i data-lucide="package" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
-                                <p class="text-gray-500">No collections found</p>
-                                <button onclick="caseEditor.createNewCollection()" class="mt-4 btn-gradient text-white px-4 py-2 rounded-lg">
-                                    Create New Collection
-                                </button>
-                            </div>
-                        `;
-                        lucide.createIcons();
-                        return;
-                    }
-
-                    let html = '<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">';
-                    this.collections.forEach(collection => {
-                        const parts = JSON.parse(collection.parts_list || '[]');
-                        const totalValue = parts.reduce((sum, part) => sum + ((part.quantity || 1) * (part.price || 0)), 0);
-                        
-                        html += `
-                            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="font-medium text-gray-900 truncate">${escapeHtml(collection.description || 'Unnamed Collection')}</h4>
-                                    <span class="text-sm text-gray-500">${parts.length} items</span>
-                                </div>
-                                <div class="text-sm text-gray-600 mb-3">
-                                    Total value: ₾${totalValue.toFixed(2)}
-                                </div>
-                                <div class="flex gap-2">
-                                    <button onclick="caseEditor.addCollectionItems(${collection.id})" 
-                                            class="flex-1 text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
-                                        Add to Case
-                                    </button>
-                                    <button onclick="caseEditor.viewCollectionDetails(${collection.id})" 
-                                            class="text-sm text-gray-600 hover:text-gray-800 px-2 py-1">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-
-                    container.innerHTML = html;
-                    lucide.createIcons();
-                },
+                // Note: addTimelineEvent is defined earlier - removed duplicate here
+                // Note: renderCollections is defined earlier - removed duplicate here
 
                 // Item management
                 editItem(type, index) {
@@ -4037,34 +3867,7 @@ try {
                     }
                 },
 
-                // Bulk actions menu
-                bulkActions() {
-                    const selected = this.getSelectedItems();
-                    if (selected.parts.length === 0 && selected.labor.length === 0) {
-                        showToast('No items selected', 'error');
-                        return;
-                    }
-
-                    // Simple action menu - could be enhanced with a proper dropdown
-                    const action = prompt(`Selected ${selected.parts.length + selected.labor.length} items. Choose action:\n1. Delete\n2. Duplicate\n3. Move to Collection\n4. Request Parts Collection\n\nEnter 1, 2, 3, or 4:`);
-                    
-                    switch(action) {
-                        case '1':
-                            this.bulkDeleteItems();
-                            break;
-                        case '2':
-                            this.bulkDuplicateItems();
-                            break;
-                        case '3':
-                            this.bulkMoveToCollection();
-                            break;
-                        case '4':
-                            this.bulkRequestPartsCollection();
-                            break;
-                        default:
-                            showToast('Cancelled', 'info');
-                    }
-                },
+                // Bulk actions menu - duplicate removed, using earlier definition
 
                 // Data persistence
                 async saveRepairData() {
