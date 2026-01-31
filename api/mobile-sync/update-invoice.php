@@ -124,14 +124,18 @@ try {
             }
             
             // Handle discount and VAT fields as floats - allow empty strings to be 0
-            if (in_array($dbField, ['services_discount_percent', 'parts_discount_percent', 'global_discount_percent', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
+            if (in_array($dbField, ['services_discount_percent', 'parts_discount_percent', 'global_discount_percent', 'vat_amount', 'vat_rate', 'subtotal_before_vat', 'nachrebi_qty'])) {
                 $value = floatval($value ?? 0);
                 if (in_array($dbField, ['vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
                     error_log("Converted VAT field $dbField to float: $value");
                 }
+                // Handle nachrebi_qty - allow null if empty
+                if ($dbField === 'nachrebi_qty' && empty($value)) {
+                    $value = null;
+                }
             }
             // Handle integer fields
-            elseif (in_array($dbField, ['nachrebi_qty', 'status_id', 'repair_status_id'])) {
+            elseif (in_array($dbField, ['status_id', 'repair_status_id'])) {
                 $value = !empty($value) ? intval($value) : null;
             }
             // Handle boolean VAT enabled field
@@ -318,11 +322,19 @@ try {
         sendResponse(false, null, 'No fields to update', 400);
     }
     
-    // Always update the updated_at timestamp when any field changes
-    // NOTE: Requires 'updated_at' column in transfers table:
-    // ALTER TABLE transfers ADD COLUMN updated_at TIMESTAMP NULL DEFAULT NULL;
-    $updateFields[] = "updated_at = :updated_at_timestamp";
-    $bindParams[':updated_at_timestamp'] = date('Y-m-d H:i:s');
+    // Try to update the updated_at timestamp when any field changes
+    // Check if column exists first to avoid errors
+    try {
+        $checkColumn = $pdo->query("SHOW COLUMNS FROM transfers LIKE 'updated_at'");
+        if ($checkColumn && $checkColumn->rowCount() > 0) {
+            $updateFields[] = "updated_at = :updated_at_timestamp";
+            $bindParams[':updated_at_timestamp'] = date('Y-m-d H:i:s');
+        } else {
+            error_log("Warning: updated_at column does not exist in transfers table. Run: ALTER TABLE transfers ADD COLUMN updated_at TIMESTAMP NULL DEFAULT NULL;");
+        }
+    } catch (Exception $colEx) {
+        error_log("Warning: Could not check for updated_at column: " . $colEx->getMessage());
+    }
     
     // Build and execute UPDATE query
     $sql = "UPDATE transfers SET " . implode(", ", $updateFields) . " WHERE id = :id";

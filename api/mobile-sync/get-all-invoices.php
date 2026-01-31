@@ -170,12 +170,13 @@ try {
             'vatRate' => floatval($invoice['vat_rate'] ?? 0),
             'subtotalBeforeVAT' => floatval($invoice['subtotal_before_vat'] ?? 0),
             'createdAt' => $invoice['created_at'] ?? $invoice['serviceDate'] ?? null,
-            'updatedAt' => $invoice['updatedAt'] ?? $invoice['updated_at'] ?? null,
+            'updatedAt' => $invoice['updated_at'] ?? $invoice['updatedAt'] ?? $invoice['created_at'] ?? $invoice['serviceDate'] ?? null,
             'slug' => $invoice['slug'] ?? null,
             'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
             'caseType' => $invoice['case_type'] ?? null,
             'assigned_mechanic' => $invoice['assigned_mechanic'] ?? null,
             'assignedMechanic' => $invoice['assigned_mechanic'] ?? null,
+            'nachrebi_qty' => isset($invoice['nachrebi_qty']) ? floatval($invoice['nachrebi_qty']) : null,
         ];
     }, $invoices);
 
