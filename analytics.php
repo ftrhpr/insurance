@@ -409,6 +409,48 @@ try {
     error_log("Analytics - Conversion Funnel Error: " . $e->getMessage());
 }
 
+// 16. Parts Ordered Cases (status_id = 4)
+$parts_ordered_cases = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT 
+            t.id,
+            t.plate,
+            t.name,
+            t.phone,
+            t.amount,
+            t.vehicle,
+            t.created_at,
+            t.updated_at,
+            t.assigned_mechanic,
+            DATEDIFF(NOW(), t.updated_at) as days_waiting
+        FROM transfers t
+        WHERE t.status_id = 4
+        ORDER BY t.updated_at ASC
+        LIMIT 50
+    ");
+    $stmt->execute();
+    $parts_ordered_cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Parts Ordered Cases Error: " . $e->getMessage());
+}
+
+// Parts Ordered Summary
+$parts_ordered_summary = ['count' => 0, 'total_value' => 0, 'avg_wait_days' => 0];
+try {
+    $result = $pdo->query("
+        SELECT 
+            COUNT(*) as count,
+            COALESCE(SUM(amount), 0) as total_value,
+            COALESCE(AVG(DATEDIFF(NOW(), updated_at)), 0) as avg_wait_days
+        FROM transfers
+        WHERE status_id = 4
+    ")->fetch(PDO::FETCH_ASSOC);
+    if ($result) $parts_ordered_summary = $result;
+} catch (Exception $e) {
+    error_log("Analytics - Parts Ordered Summary Error: " . $e->getMessage());
+}
+
 // Prepare data for JavaScript charts
 $chartData = [
     'monthlyRevenue' => $monthly_revenue ?: [],
@@ -1093,6 +1135,97 @@ $chartData = [
             </div>
             
         </section>
+        
+        <!-- Parts Ordered Cases Section -->
+        <?php if (!empty($parts_ordered_cases)): ?>
+        <section class="mb-8">
+            <div class="glass-card rounded-2xl p-6 shadow-lg border-l-4 border-pink-500">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="p-3 rounded-xl bg-pink-100">
+                            <i data-lucide="package-search" class="w-6 h-6 text-pink-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800">Parts Ordered - Waiting</h3>
+                            <p class="text-sm text-slate-500">Cases awaiting parts delivery</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-center px-4 py-2 bg-pink-50 rounded-xl">
+                            <p class="text-2xl font-bold text-pink-600"><?= $parts_ordered_summary['count'] ?? 0 ?></p>
+                            <p class="text-xs text-pink-500">Cases</p>
+                        </div>
+                        <div class="text-center px-4 py-2 bg-amber-50 rounded-xl">
+                            <p class="text-2xl font-bold text-amber-600"><?= number_format($parts_ordered_summary['avg_wait_days'] ?? 0, 1) ?></p>
+                            <p class="text-xs text-amber-500">Avg Days Waiting</p>
+                        </div>
+                        <div class="text-center px-4 py-2 bg-emerald-50 rounded-xl">
+                            <p class="text-2xl font-bold text-emerald-600">₾<?= number_format($parts_ordered_summary['total_value'] ?? 0) ?></p>
+                            <p class="text-xs text-emerald-500">Total Value</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-xs text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                <th class="pb-3 pl-4">Plate</th>
+                                <th class="pb-3">Customer</th>
+                                <th class="pb-3">Vehicle</th>
+                                <th class="pb-3">Technician</th>
+                                <th class="pb-3 text-center">Days Waiting</th>
+                                <th class="pb-3 text-right">Amount</th>
+                                <th class="pb-3 text-right pr-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <?php foreach ($parts_ordered_cases as $case): 
+                                $days = intval($case['days_waiting']);
+                                $urgency_class = $days >= 7 ? 'bg-red-100 text-red-700' : ($days >= 3 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+                            ?>
+                            <tr class="hover:bg-pink-50/50 transition-colors">
+                                <td class="py-3 pl-4">
+                                    <span class="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded"><?= htmlspecialchars($case['plate']) ?></span>
+                                </td>
+                                <td class="py-3">
+                                    <div>
+                                        <p class="font-medium text-slate-800"><?= htmlspecialchars($case['name']) ?></p>
+                                        <a href="tel:<?= htmlspecialchars($case['phone']) ?>" class="text-xs text-blue-600 hover:underline"><?= htmlspecialchars($case['phone']) ?></a>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <span class="text-sm text-slate-600"><?= htmlspecialchars($case['vehicle'] ?: 'N/A') ?></span>
+                                </td>
+                                <td class="py-3">
+                                    <span class="text-sm text-slate-600"><?= htmlspecialchars($case['assigned_mechanic'] ?: '-') ?></span>
+                                </td>
+                                <td class="py-3 text-center">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium <?= $urgency_class ?>"><?= $days ?> days</span>
+                                </td>
+                                <td class="py-3 text-right">
+                                    <span class="font-bold text-slate-800">₾<?= number_format($case['amount']) ?></span>
+                                </td>
+                                <td class="py-3 text-right pr-4">
+                                    <a href="edit_case.php?id=<?= $case['id'] ?>" class="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
+                                        <i data-lucide="external-link" class="w-3 h-3"></i>
+                                        <span>Open</span>
+                                    </a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <?php if (count($parts_ordered_cases) >= 50): ?>
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-slate-500">Showing first 50 cases. <a href="index.php?status=Parts+Ordered" class="text-blue-600 hover:underline">View all in main dashboard</a></p>
+                </div>
+                <?php endif; ?>
+            </div>
+        </section>
+        <?php endif; ?>
         
         <!-- Quick Stats Footer -->
         <section class="glass-card rounded-2xl p-6 shadow-lg mb-8">
