@@ -409,10 +409,10 @@ try {
     error_log("Analytics - Conversion Funnel Error: " . $e->getMessage());
 }
 
-// 16. Parts Ordered Cases (status_id = 4 or status = 'Parts Ordered')
+// 16. Parts Ordered Cases - join with statuses table for accurate matching
 $parts_ordered_cases = [];
 try {
-    $stmt = $pdo->prepare("
+    $result = $pdo->query("
         SELECT 
             t.id,
             t.plate,
@@ -425,12 +425,14 @@ try {
             t.assigned_mechanic,
             DATEDIFF(NOW(), t.updated_at) as days_waiting
         FROM transfers t
-        WHERE t.status_id = 4 OR t.status = 'Parts Ordered'
+        LEFT JOIN statuses s ON t.status_id = s.id AND s.type = 'case'
+        WHERE s.name = 'Parts Ordered' OR t.status = 'Parts Ordered' OR t.status_id = 4
         ORDER BY t.updated_at ASC
         LIMIT 50
     ");
-    $stmt->execute();
-    $parts_ordered_cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($result) {
+        $parts_ordered_cases = $result->fetchAll(PDO::FETCH_ASSOC);
+    }
 } catch (Exception $e) {
     error_log("Analytics - Parts Ordered Cases Error: " . $e->getMessage());
 }
@@ -441,10 +443,11 @@ try {
     $result = $pdo->query("
         SELECT 
             COUNT(*) as count,
-            COALESCE(SUM(amount), 0) as total_value,
-            COALESCE(AVG(DATEDIFF(NOW(), updated_at)), 0) as avg_wait_days
-        FROM transfers
-        WHERE status_id = 4 OR status = 'Parts Ordered'
+            COALESCE(SUM(t.amount), 0) as total_value,
+            COALESCE(AVG(DATEDIFF(NOW(), t.updated_at)), 0) as avg_wait_days
+        FROM transfers t
+        LEFT JOIN statuses s ON t.status_id = s.id AND s.type = 'case'
+        WHERE s.name = 'Parts Ordered' OR t.status = 'Parts Ordered' OR t.status_id = 4
     ")->fetch(PDO::FETCH_ASSOC);
     if ($result) $parts_ordered_summary = $result;
 } catch (Exception $e) {
