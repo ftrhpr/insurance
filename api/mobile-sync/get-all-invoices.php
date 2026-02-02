@@ -78,14 +78,22 @@ try {
                     $totalPrice = $unitPrice * $quantity;
                 }
 
+                // Include damages (tagged work) if present
+                $damages = [];
+                if (!empty($part['damages']) && is_array($part['damages'])) {
+                    $damages = $part['damages'];
+                }
+
                 return [
                     'name' => $part['name'] ?? $part['name_en'] ?? 'Unknown Part',
                     'nameKa' => $part['name'] ?? $part['name_en'] ?? 'უცნობი ნაწილი',
+                    'partName' => $part['partName'] ?? $part['name'] ?? $part['name_en'] ?? 'Unknown Part',
                     'partNumber' => $part['part_number'] ?? $part['partNumber'] ?? '',
                     'quantity' => $quantity,
                     'unitPrice' => $unitPrice,
                     'totalPrice' => $totalPrice,
                     'notes' => $part['notes'] ?? '',
+                    'damages' => $damages,
                 ];
             }, $rawParts);
         }
