@@ -409,7 +409,7 @@ try {
     error_log("Analytics - Conversion Funnel Error: " . $e->getMessage());
 }
 
-// 16. Parts Ordered Cases (status_id = 4)
+// 16. Parts Ordered Cases (status_id = 4 or status = 'Parts Ordered')
 $parts_ordered_cases = [];
 try {
     $stmt = $pdo->prepare("
@@ -425,7 +425,7 @@ try {
             t.assigned_mechanic,
             DATEDIFF(NOW(), t.updated_at) as days_waiting
         FROM transfers t
-        WHERE t.status_id = 4
+        WHERE t.status_id = 4 OR t.status = 'Parts Ordered'
         ORDER BY t.updated_at ASC
         LIMIT 50
     ");
@@ -444,7 +444,7 @@ try {
             COALESCE(SUM(amount), 0) as total_value,
             COALESCE(AVG(DATEDIFF(NOW(), updated_at)), 0) as avg_wait_days
         FROM transfers
-        WHERE status_id = 4
+        WHERE status_id = 4 OR status = 'Parts Ordered'
     ")->fetch(PDO::FETCH_ASSOC);
     if ($result) $parts_ordered_summary = $result;
 } catch (Exception $e) {
@@ -1137,7 +1137,6 @@ $chartData = [
         </section>
         
         <!-- Parts Ordered Cases Section -->
-        <?php if (!empty($parts_ordered_cases)): ?>
         <section class="mb-8">
             <div class="glass-card rounded-2xl p-6 shadow-lg border-l-4 border-pink-500">
                 <div class="flex items-center justify-between mb-6">
@@ -1180,6 +1179,7 @@ $chartData = [
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
+                            <?php if (!empty($parts_ordered_cases)): ?>
                             <?php foreach ($parts_ordered_cases as $case): 
                                 $days = intval($case['days_waiting']);
                                 $urgency_class = $days >= 7 ? 'bg-red-100 text-red-700' : ($days >= 3 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
@@ -1214,6 +1214,15 @@ $chartData = [
                                 </td>
                             </tr>
                             <?php endforeach; ?>
+                            <?php else: ?>
+                            <tr>
+                                <td colspan="7" class="py-8 text-center text-slate-500">
+                                    <i data-lucide="package-check" class="w-12 h-12 mx-auto mb-3 text-slate-300"></i>
+                                    <p class="font-medium">No cases waiting for parts</p>
+                                    <p class="text-sm">All orders are up to date</p>
+                                </td>
+                            </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -1225,7 +1234,6 @@ $chartData = [
                 <?php endif; ?>
             </div>
         </section>
-        <?php endif; ?>
         
         <!-- Quick Stats Footer -->
         <section class="glass-card rounded-2xl p-6 shadow-lg mb-8">
