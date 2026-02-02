@@ -46,9 +46,50 @@ if (!$pdo) {
 // ===== ANALYTICS DATA QUERIES =====
 
 // Date range filter
-$date_from = $_GET['from'] ?? date('Y-m-01'); // First day of current month
-$date_to = $_GET['to'] ?? date('Y-m-d'); // Today
-$year = $_GET['year'] ?? date('Y');
+$date_range = $_GET['range'] ?? '30'; // Default: last 30 days
+$date_from = $_GET['from'] ?? null;
+$date_to = $_GET['to'] ?? date('Y-m-d');
+
+// Calculate date_from based on range if not explicitly set
+if (!$date_from) {
+    switch ($date_range) {
+        case '7':
+            $date_from = date('Y-m-d', strtotime('-7 days'));
+            break;
+        case '30':
+            $date_from = date('Y-m-d', strtotime('-30 days'));
+            break;
+        case '90':
+            $date_from = date('Y-m-d', strtotime('-90 days'));
+            break;
+        case '365':
+            $date_from = date('Y-m-d', strtotime('-365 days'));
+            break;
+        case 'month':
+            $date_from = date('Y-m-01');
+            break;
+        case 'year':
+            $date_from = date('Y-01-01');
+            break;
+        case 'all':
+            $date_from = '2000-01-01';
+            break;
+        default:
+            $date_from = date('Y-m-d', strtotime('-30 days'));
+    }
+}
+
+// Date range label for display
+$range_labels = [
+    '7' => 'Last 7 Days',
+    '30' => 'Last 30 Days',
+    '90' => 'Last 90 Days',
+    '365' => 'Last Year',
+    'month' => 'This Month',
+    'year' => 'This Year',
+    'all' => 'All Time'
+];
+$current_range_label = $range_labels[$date_range] ?? 'Last 30 Days';
 
 // Default values for all analytics
 $overall_stats = [
@@ -70,7 +111,7 @@ $conversion_funnel = ['stage_new' => 0, 'stage_processing' => 0, 'stage_called' 
 
 // 1. Overall Statistics
 try {
-    $result = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             COUNT(*) as total_cases,
             COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed_cases,
@@ -85,7 +126,10 @@ try {
             COALESCE(SUM(CASE WHEN case_type = 'დაზღვევა' AND status_id = 8 THEN amount ELSE 0 END), 0) as insurance_revenue,
             COALESCE(SUM(CASE WHEN case_type = 'საცალო' AND status_id = 8 THEN amount ELSE 0 END), 0) as retail_revenue
         FROM transfers
-    ")->fetch(PDO::FETCH_ASSOC);
+        WHERE created_at >= :date_from AND created_at <= :date_to
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($result) $overall_stats = $result;
 } catch (Exception $e) {
     error_log("Analytics - Overall Stats Error: " . $e->getMessage());
@@ -114,24 +158,27 @@ try {
 // 3. Status Distribution
 $status_distribution = [];
 try {
-    $status_distribution = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             COALESCE(s.name, t.status) as status_name,
             COALESCE(s.color, '#6B7280') as color,
             COUNT(*) as count,
-            ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM transfers), 0), 1) as percentage
+            ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM transfers WHERE created_at >= :df1 AND created_at <= :dt1), 0), 1) as percentage
         FROM transfers t
         LEFT JOIN statuses s ON t.status_id = s.id AND s.type = 'case'
+        WHERE t.created_at >= :date_from AND t.created_at <= :date_to
         GROUP BY t.status_id, s.name, s.color, t.status
         ORDER BY count DESC
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59', 'df1' => $date_from, 'dt1' => $date_to . ' 23:59:59']);
+    $status_distribution = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $status_distribution = [];
 }
 
 // 4. Technician Performance
 try {
-    $technician_stats = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             assigned_mechanic as technician,
             COUNT(*) as total_assigned,
@@ -141,33 +188,38 @@ try {
             COALESCE(AVG(CASE WHEN status_id = 8 THEN DATEDIFF(updated_at, created_at) END), 0) as avg_completion_days
         FROM transfers
         WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != ''
+          AND created_at >= :date_from AND created_at <= :date_to
         GROUP BY assigned_mechanic
         ORDER BY completed DESC
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
+    $technician_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     error_log("Analytics - Technician Stats Error: " . $e->getMessage());
 }
 
-// 5. Daily Activity (Last 30 days)
+// 5. Daily Activity (based on date filter)
 try {
-    $daily_activity = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             DATE(created_at) as date,
             DATE_FORMAT(created_at, '%d %b') as date_label,
             COUNT(*) as new_cases,
             COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed_cases
         FROM transfers
-        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        WHERE created_at >= :date_from AND created_at <= :date_to
         GROUP BY DATE(created_at)
         ORDER BY date ASC
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
+    $daily_activity = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     error_log("Analytics - Daily Activity Error: " . $e->getMessage());
 }
 
 // 6. Case Type Analysis
 try {
-    $case_type_stats = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             COALESCE(case_type, 'Unknown') as case_type,
             COUNT(*) as total,
@@ -175,8 +227,11 @@ try {
             COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue,
             COALESCE(AVG(CASE WHEN status_id = 8 THEN amount END), 0) as avg_value
         FROM transfers
+        WHERE created_at >= :date_from AND created_at <= :date_to
         GROUP BY case_type
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
+    $case_type_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     error_log("Analytics - Case Type Stats Error: " . $e->getMessage());
 }
@@ -282,38 +337,43 @@ try {
 
 // 12. Hour-by-hour activity pattern
 try {
-    $hourly_pattern = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             HOUR(created_at) as hour,
             COUNT(*) as count
         FROM transfers
-        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        WHERE created_at >= :date_from AND created_at <= :date_to
         GROUP BY HOUR(created_at)
         ORDER BY hour
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
+    $hourly_pattern = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     error_log("Analytics - Hourly Pattern Error: " . $e->getMessage());
 }
 
 // 13. Repair Status Distribution
 try {
-    $repair_status_dist = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             COALESCE(repair_status, 'Not Set') as repair_status,
             COUNT(*) as count
         FROM transfers
         WHERE status_id NOT IN (8, 9)
+          AND created_at >= :date_from AND created_at <= :date_to
         GROUP BY repair_status
         ORDER BY count DESC
         LIMIT 10
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
+    $repair_status_dist = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     error_log("Analytics - Repair Status Error: " . $e->getMessage());
 }
 
 // 14. Nachrebi (Pieces) Analysis
 try {
-    $result = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             COALESCE(SUM(nachrebi_qty), 0) as total_nachrebi,
             COALESCE(SUM(nachrebi_qty * 77), 0) as total_nachrebi_value,
@@ -321,7 +381,10 @@ try {
             COALESCE(AVG(CASE WHEN nachrebi_qty > 0 THEN nachrebi_qty END), 0) as avg_nachrebi
         FROM transfers
         WHERE status_id = 8
-    ")->fetch(PDO::FETCH_ASSOC);
+          AND created_at >= :date_from AND created_at <= :date_to
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($result) $nachrebi_stats = $result;
 } catch (Exception $e) {
     error_log("Analytics - Nachrebi Stats Error: " . $e->getMessage());
@@ -329,7 +392,7 @@ try {
 
 // 15. Conversion Rate by Status
 try {
-    $result = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             COUNT(CASE WHEN status_id >= 1 THEN 1 END) as stage_new,
             COUNT(CASE WHEN status_id >= 2 THEN 1 END) as stage_processing,
@@ -337,7 +400,10 @@ try {
             COUNT(CASE WHEN status_id >= 6 THEN 1 END) as stage_scheduled,
             COUNT(CASE WHEN status_id = 8 THEN 1 END) as stage_completed
         FROM transfers
-    ")->fetch(PDO::FETCH_ASSOC);
+        WHERE created_at >= :date_from AND created_at <= :date_to
+    ");
+    $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($result) $conversion_funnel = $result;
 } catch (Exception $e) {
     error_log("Analytics - Conversion Funnel Error: " . $e->getMessage());
@@ -505,10 +571,22 @@ $chartData = [
                 
                 <div class="flex items-center space-x-4">
                     <!-- Date Range Picker -->
-                    <div class="hidden md:flex items-center space-x-2 bg-slate-100 rounded-xl px-4 py-2">
-                        <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
-                        <span class="text-sm text-slate-600">Last 30 Days</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                    <div class="relative hidden md:block">
+                        <button id="dateRangeBtn" class="flex items-center space-x-2 bg-slate-100 rounded-xl px-4 py-2 hover:bg-slate-200 transition-colors">
+                            <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
+                            <span class="text-sm text-slate-600"><?= htmlspecialchars($current_range_label) ?></span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                        </button>
+                        <div id="dateRangeDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 hidden z-50">
+                            <a href="?range=7" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 <?= $date_range === '7' ? 'bg-blue-50 text-blue-600' : '' ?>">Last 7 Days</a>
+                            <a href="?range=30" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 <?= $date_range === '30' ? 'bg-blue-50 text-blue-600' : '' ?>">Last 30 Days</a>
+                            <a href="?range=90" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 <?= $date_range === '90' ? 'bg-blue-50 text-blue-600' : '' ?>">Last 90 Days</a>
+                            <a href="?range=365" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 <?= $date_range === '365' ? 'bg-blue-50 text-blue-600' : '' ?>">Last Year</a>
+                            <div class="border-t border-slate-200 my-1"></div>
+                            <a href="?range=month" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 <?= $date_range === 'month' ? 'bg-blue-50 text-blue-600' : '' ?>">This Month</a>
+                            <a href="?range=year" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 <?= $date_range === 'year' ? 'bg-blue-50 text-blue-600' : '' ?>">This Year</a>
+                            <a href="?range=all" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 <?= $date_range === 'all' ? 'bg-blue-50 text-blue-600' : '' ?>">All Time</a>
+                        </div>
                     </div>
                     
                     <!-- Export Button -->
@@ -1060,6 +1138,21 @@ $chartData = [
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
+        
+        // Date Range Dropdown Toggle
+        const dateRangeBtn = document.getElementById('dateRangeBtn');
+        const dateRangeDropdown = document.getElementById('dateRangeDropdown');
+        
+        if (dateRangeBtn && dateRangeDropdown) {
+            dateRangeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dateRangeDropdown.classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', () => {
+                dateRangeDropdown.classList.add('hidden');
+            });
+        }
         
         // Chart.js global configuration
         Chart.defaults.font.family = "'Inter', 'system-ui', sans-serif";
