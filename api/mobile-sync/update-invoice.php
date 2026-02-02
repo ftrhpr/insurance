@@ -71,6 +71,7 @@ try {
         'vatRate' => 'vat_rate',
         'subtotalBeforeVAT' => 'subtotal_before_vat',
         'internalNotes' => 'internalNotes',
+        'voiceNotes' => 'voiceNotes',
         'caseType' => 'case_type',
         'assignedMechanic' => 'assigned_mechanic',
         'assigned_mechanic' => 'assigned_mechanic',
@@ -154,6 +155,11 @@ try {
             elseif ($dbField === 'internalNotes' && is_array($value)) {
                 $value = json_encode($value, JSON_UNESCAPED_UNICODE);
                 error_log("Internal notes transformed for update: " . $value);
+            }
+            // Handle voiceNotes as JSON array
+            elseif ($dbField === 'voiceNotes' && is_array($value)) {
+                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+                error_log("Voice notes transformed for update: " . $value);
             }
             // Handle JSON fields for arrays
             elseif (is_array($value) && in_array($dbField, ['repair_labor', 'repair_parts', 'case_images'])) {

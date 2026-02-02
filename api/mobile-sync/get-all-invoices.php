@@ -173,6 +173,7 @@ try {
             'updatedAt' => $invoice['updated_at'] ?? $invoice['updatedAt'] ?? $invoice['created_at'] ?? $invoice['serviceDate'] ?? null,
             'slug' => $invoice['slug'] ?? null,
             'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
+            'voiceNotes' => !empty($invoice['voiceNotes']) ? json_decode($invoice['voiceNotes'], true) : [],
             'caseType' => $invoice['case_type'] ?? null,
             'assigned_mechanic' => $invoice['assigned_mechanic'] ?? null,
             'assignedMechanic' => $invoice['assigned_mechanic'] ?? null,
