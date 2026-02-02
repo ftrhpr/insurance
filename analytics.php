@@ -414,7 +414,7 @@ $parts_ordered_cases = [];
 $parts_ordered_debug = '';
 try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $stmt = $pdo->query("SELECT id, plate, name, phone, amount, vehicle, created_at, updated_at, assigned_mechanic, DATEDIFF(NOW(), updated_at) as days_waiting FROM transfers WHERE status_id = 4 ORDER BY updated_at ASC LIMIT 50");
+    $stmt = $pdo->query("SELECT id, plate, name, phone, amount, CONCAT(COALESCE(vehicle_make,''), ' ', COALESCE(vehicle_model,'')) as vehicle, created_at, updated_at, assigned_mechanic, DATEDIFF(NOW(), updated_at) as days_waiting FROM transfers WHERE status_id = 4 ORDER BY updated_at ASC LIMIT 50");
     $parts_ordered_cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $parts_ordered_debug = 'Query OK, found: ' . count($parts_ordered_cases);
 } catch (PDOException $e) {
