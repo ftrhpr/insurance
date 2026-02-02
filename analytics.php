@@ -148,7 +148,7 @@ try {
             COALESCE(SUM(CASE WHEN status_id = 8 AND case_type = 'დაზღვევა' THEN amount ELSE 0 END), 0) as insurance_rev,
             COALESCE(SUM(CASE WHEN status_id = 8 AND case_type = 'საცალო' THEN amount ELSE 0 END), 0) as retail_rev
         FROM transfers
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b %Y')
         ORDER BY month ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
@@ -209,7 +209,7 @@ try {
             COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed_cases
         FROM transfers
         WHERE created_at >= :date_from AND created_at <= :date_to
-        GROUP BY DATE(created_at)
+        GROUP BY DATE(created_at), DATE_FORMAT(created_at, '%d %b')
         ORDER BY date ASC
     ");
     $stmt->execute(['date_from' => $date_from, 'date_to' => $date_to . ' 23:59:59']);
