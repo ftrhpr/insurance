@@ -630,6 +630,18 @@ $chartData = [
 
     <main class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
         
+        <!-- Debug Section - Remove after testing -->
+        <div class="bg-yellow-100 border border-yellow-400 rounded-xl p-4 mb-6">
+            <h4 class="font-bold text-yellow-800 mb-2">Debug Info (remove after testing)</h4>
+            <p class="text-sm text-yellow-700">Monthly Revenue Count: <?= count($monthly_revenue) ?></p>
+            <p class="text-sm text-yellow-700">Daily Activity Count: <?= count($daily_activity) ?></p>
+            <p class="text-sm text-yellow-700">Status Distribution Count: <?= count($status_distribution) ?></p>
+            <p class="text-sm text-yellow-700">Date Range: <?= htmlspecialchars($date_from) ?> to <?= htmlspecialchars($date_to) ?></p>
+            <?php if (!empty($monthly_revenue)): ?>
+            <p class="text-sm text-yellow-700">First Month: <?= htmlspecialchars($monthly_revenue[0]['month_label'] ?? 'N/A') ?> - Revenue: <?= $monthly_revenue[0]['revenue'] ?? 0 ?></p>
+            <?php endif; ?>
+        </div>
+        
         <!-- Key Metrics Row -->
         <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
             
@@ -1276,6 +1288,11 @@ $chartData = [
         
         // Data from PHP
         const chartData = <?= json_encode($chartData) ?>;
+        
+        // Debug: log chart data to console
+        console.log('Chart Data:', chartData);
+        console.log('Monthly Revenue:', chartData.monthlyRevenue);
+        console.log('Daily Activity:', chartData.dailyActivity);
         
         // CountUp Animation
         document.querySelectorAll('[data-countup]').forEach(el => {
