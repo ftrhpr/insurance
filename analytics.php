@@ -409,46 +409,26 @@ try {
     error_log("Analytics - Conversion Funnel Error: " . $e->getMessage());
 }
 
-// 16. Parts Ordered Cases - join with statuses table for accurate matching
+// 16. Parts Ordered Cases (status_id = 4)
 $parts_ordered_cases = [];
+$parts_ordered_debug = '';
 try {
-    $result = $pdo->query("
-        SELECT 
-            t.id,
-            t.plate,
-            t.name,
-            t.phone,
-            t.amount,
-            t.vehicle,
-            t.created_at,
-            t.updated_at,
-            t.assigned_mechanic,
-            DATEDIFF(NOW(), t.updated_at) as days_waiting
-        FROM transfers t
-        LEFT JOIN statuses s ON t.status_id = s.id AND s.type = 'case'
-        WHERE s.name = 'Parts Ordered' OR t.status = 'Parts Ordered' OR t.status_id = 4
-        ORDER BY t.updated_at ASC
-        LIMIT 50
-    ");
-    if ($result) {
-        $parts_ordered_cases = $result->fetchAll(PDO::FETCH_ASSOC);
-    }
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $stmt = $pdo->query("SELECT id, plate, name, phone, amount, vehicle, created_at, updated_at, assigned_mechanic, DATEDIFF(NOW(), updated_at) as days_waiting FROM transfers WHERE status_id = 4 ORDER BY updated_at ASC LIMIT 50");
+    $parts_ordered_cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $parts_ordered_debug = 'Query OK, found: ' . count($parts_ordered_cases);
+} catch (PDOException $e) {
+    $parts_ordered_debug = 'PDO Error: ' . $e->getMessage();
+    error_log("Analytics - Parts Ordered Cases Error: " . $e->getMessage());
 } catch (Exception $e) {
+    $parts_ordered_debug = 'Error: ' . $e->getMessage();
     error_log("Analytics - Parts Ordered Cases Error: " . $e->getMessage());
 }
 
 // Parts Ordered Summary
 $parts_ordered_summary = ['count' => 0, 'total_value' => 0, 'avg_wait_days' => 0];
 try {
-    $result = $pdo->query("
-        SELECT 
-            COUNT(*) as count,
-            COALESCE(SUM(t.amount), 0) as total_value,
-            COALESCE(AVG(DATEDIFF(NOW(), t.updated_at)), 0) as avg_wait_days
-        FROM transfers t
-        LEFT JOIN statuses s ON t.status_id = s.id AND s.type = 'case'
-        WHERE s.name = 'Parts Ordered' OR t.status = 'Parts Ordered' OR t.status_id = 4
-    ")->fetch(PDO::FETCH_ASSOC);
+    $result = $pdo->query("SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total_value, COALESCE(AVG(DATEDIFF(NOW(), updated_at)), 0) as avg_wait_days FROM transfers WHERE status_id = 4")->fetch(PDO::FETCH_ASSOC);
     if ($result) $parts_ordered_summary = $result;
 } catch (Exception $e) {
     error_log("Analytics - Parts Ordered Summary Error: " . $e->getMessage());
@@ -1150,6 +1130,7 @@ $chartData = [
                         <div>
                             <h3 class="text-xl font-bold text-slate-800">Parts Ordered - Waiting</h3>
                             <p class="text-sm text-slate-500">Cases awaiting parts delivery</p>
+                            <!-- Debug: <?= htmlspecialchars($parts_ordered_debug) ?> | Array count: <?= count($parts_ordered_cases) ?> -->
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
