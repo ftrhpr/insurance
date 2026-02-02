@@ -1073,7 +1073,7 @@ $chartData = [
             const value = parseFloat(el.dataset.countup);
             const decimals = parseInt(el.dataset.decimals) || 0;
             
-            const countUp = new countUp.CountUp(el, value, {
+            const counter = new countUp.CountUp(el, value, {
                 duration: 2,
                 decimalPlaces: decimals,
                 separator: ',',
@@ -1081,8 +1081,8 @@ $chartData = [
                 scrollSpyOnce: true
             });
             
-            if (!countUp.error) {
-                countUp.start();
+            if (!counter.error) {
+                counter.start();
             }
         });
         
