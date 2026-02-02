@@ -136,6 +136,7 @@ try {
 }
 
 // 2. Monthly Revenue Trends
+$monthly_revenue_error = '';
 try {
     $monthly_revenue = $pdo->query("
         SELECT 
@@ -151,6 +152,7 @@ try {
         ORDER BY month ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
+    $monthly_revenue_error = $e->getMessage();
     error_log("Analytics - Monthly Revenue Error: " . $e->getMessage());
 }
 
@@ -633,7 +635,7 @@ $chartData = [
         <!-- Debug Section - Remove after testing -->
         <div class="bg-yellow-100 border border-yellow-400 rounded-xl p-4 mb-6">
             <h4 class="font-bold text-yellow-800 mb-2">Debug Info (remove after testing)</h4>
-            <p class="text-sm text-yellow-700">Monthly Revenue Count: <?= count($monthly_revenue) ?></p>
+            <p class="text-sm text-yellow-700">Monthly Revenue Count: <?= count($monthly_revenue) ?> <?= $monthly_revenue_error ? '<b>ERROR: ' . htmlspecialchars($monthly_revenue_error) . '</b>' : '' ?></p>
             <p class="text-sm text-yellow-700">Daily Activity Count: <?= count($daily_activity) ?></p>
             <p class="text-sm text-yellow-700">Status Distribution Count: <?= count($status_distribution) ?></p>
             <p class="text-sm text-yellow-700">Date Range: <?= htmlspecialchars($date_from) ?> to <?= htmlspecialchars($date_to) ?></p>
