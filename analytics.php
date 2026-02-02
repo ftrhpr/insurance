@@ -46,7 +46,7 @@ if (!$pdo) {
 // ===== ANALYTICS DATA QUERIES =====
 
 // Date range filter
-$date_range = $_GET['range'] ?? '30'; // Default: last 30 days
+$date_range = $_GET['range'] ?? 'all'; // Default: all time
 $date_from = $_GET['from'] ?? null;
 $date_to = $_GET['to'] ?? date('Y-m-d');
 
@@ -135,7 +135,7 @@ try {
     error_log("Analytics - Overall Stats Error: " . $e->getMessage());
 }
 
-// 2. Monthly Revenue Trends (Last 12 months)
+// 2. Monthly Revenue Trends
 try {
     $monthly_revenue = $pdo->query("
         SELECT 
@@ -147,7 +147,6 @@ try {
             COALESCE(SUM(CASE WHEN status_id = 8 AND case_type = 'დაზღვევა' THEN amount ELSE 0 END), 0) as insurance_rev,
             COALESCE(SUM(CASE WHEN status_id = 8 AND case_type = 'საცალო' THEN amount ELSE 0 END), 0) as retail_rev
         FROM transfers
-        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
         GROUP BY DATE_FORMAT(created_at, '%Y-%m')
         ORDER BY month ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
@@ -411,17 +410,10 @@ try {
 
 // 16. Parts Ordered Cases (status_id = 4)
 $parts_ordered_cases = [];
-$parts_ordered_debug = '';
 try {
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $stmt = $pdo->query("SELECT id, plate, name, phone, amount, CONCAT(COALESCE(vehicle_make,''), ' ', COALESCE(vehicle_model,'')) as vehicle, created_at, updated_at, assigned_mechanic, DATEDIFF(NOW(), updated_at) as days_waiting FROM transfers WHERE status_id = 4 ORDER BY updated_at ASC LIMIT 50");
     $parts_ordered_cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $parts_ordered_debug = 'Query OK, found: ' . count($parts_ordered_cases);
-} catch (PDOException $e) {
-    $parts_ordered_debug = 'PDO Error: ' . $e->getMessage();
-    error_log("Analytics - Parts Ordered Cases Error: " . $e->getMessage());
 } catch (Exception $e) {
-    $parts_ordered_debug = 'Error: ' . $e->getMessage();
     error_log("Analytics - Parts Ordered Cases Error: " . $e->getMessage());
 }
 
@@ -1130,7 +1122,6 @@ $chartData = [
                         <div>
                             <h3 class="text-xl font-bold text-slate-800">Parts Ordered - Waiting</h3>
                             <p class="text-sm text-slate-500">Cases awaiting parts delivery</p>
-                            <!-- Debug: <?= htmlspecialchars($parts_ordered_debug) ?> | Array count: <?= count($parts_ordered_cases) ?> -->
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
