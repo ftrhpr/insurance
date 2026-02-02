@@ -7,6 +7,10 @@
  * @version 2.0
  */
 
+// Enable error reporting for debugging (disable in production)
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 require_once 'session_config.php';
 require_once 'config.php';
 require_once 'language.php';
@@ -27,10 +31,16 @@ if (!in_array($_SESSION['role'] ?? '', $allowed_roles)) {
 $current_user_name = $_SESSION['full_name'] ?? 'User';
 $current_user_role = $_SESSION['role'];
 
+$pdo = null;
 try {
     $pdo = getDBConnection();
 } catch (Exception $e) {
-    die("Database connection failed: " . $e->getMessage());
+    error_log("Analytics - DB Connection Error: " . $e->getMessage());
+    die("Database connection failed. Please check the error log.");
+}
+
+if (!$pdo) {
+    die("Database connection not available.");
 }
 
 // ===== ANALYTICS DATA QUERIES =====
@@ -40,109 +50,161 @@ $date_from = $_GET['from'] ?? date('Y-m-01'); // First day of current month
 $date_to = $_GET['to'] ?? date('Y-m-d'); // Today
 $year = $_GET['year'] ?? date('Y');
 
+// Default values for all analytics
+$overall_stats = [
+    'total_cases' => 0, 'completed_cases' => 0, 'new_cases' => 0, 'active_cases' => 0, 
+    'issue_cases' => 0, 'total_revenue' => 0, 'total_franchise' => 0, 'avg_case_value' => 0,
+    'insurance_completed' => 0, 'retail_completed' => 0, 'insurance_revenue' => 0, 'retail_revenue' => 0
+];
+$monthly_revenue = [];
+$technician_stats = [];
+$daily_activity = [];
+$case_type_stats = [];
+$weekly_comparison = [];
+$top_vehicles = [];
+$parts_services = ['cases_with_parts' => 0, 'cases_with_services' => 0, 'total_cases' => 0];
+$hourly_pattern = [];
+$repair_status_dist = [];
+$nachrebi_stats = ['total_nachrebi' => 0, 'total_nachrebi_value' => 0, 'cases_with_nachrebi' => 0, 'avg_nachrebi' => 0];
+$conversion_funnel = ['stage_new' => 0, 'stage_processing' => 0, 'stage_called' => 0, 'stage_scheduled' => 0, 'stage_completed' => 0];
+
 // 1. Overall Statistics
-$overall_stats = $pdo->query("
-    SELECT 
-        COUNT(*) as total_cases,
-        COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed_cases,
-        COUNT(CASE WHEN status_id = 1 THEN 1 END) as new_cases,
-        COUNT(CASE WHEN status_id NOT IN (8, 9) THEN 1 END) as active_cases,
-        COUNT(CASE WHEN status_id = 9 THEN 1 END) as issue_cases,
-        COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as total_revenue,
-        COALESCE(SUM(CASE WHEN status_id = 8 THEN franchise ELSE 0 END), 0) as total_franchise,
-        COALESCE(AVG(CASE WHEN status_id = 8 AND amount > 0 THEN amount END), 0) as avg_case_value,
-        COUNT(CASE WHEN case_type = 'დაზღვევა' AND status_id = 8 THEN 1 END) as insurance_completed,
-        COUNT(CASE WHEN case_type = 'საცალო' AND status_id = 8 THEN 1 END) as retail_completed,
-        COALESCE(SUM(CASE WHEN case_type = 'დაზღვევა' AND status_id = 8 THEN amount ELSE 0 END), 0) as insurance_revenue,
-        COALESCE(SUM(CASE WHEN case_type = 'საცალო' AND status_id = 8 THEN amount ELSE 0 END), 0) as retail_revenue
-    FROM transfers
-")->fetch(PDO::FETCH_ASSOC);
+try {
+    $result = $pdo->query("
+        SELECT 
+            COUNT(*) as total_cases,
+            COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed_cases,
+            COUNT(CASE WHEN status_id = 1 THEN 1 END) as new_cases,
+            COUNT(CASE WHEN status_id NOT IN (8, 9) THEN 1 END) as active_cases,
+            COUNT(CASE WHEN status_id = 9 THEN 1 END) as issue_cases,
+            COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as total_revenue,
+            COALESCE(SUM(CASE WHEN status_id = 8 THEN franchise ELSE 0 END), 0) as total_franchise,
+            COALESCE(AVG(CASE WHEN status_id = 8 AND amount > 0 THEN amount END), 0) as avg_case_value,
+            COUNT(CASE WHEN case_type = 'დაზღვევა' AND status_id = 8 THEN 1 END) as insurance_completed,
+            COUNT(CASE WHEN case_type = 'საცალო' AND status_id = 8 THEN 1 END) as retail_completed,
+            COALESCE(SUM(CASE WHEN case_type = 'დაზღვევა' AND status_id = 8 THEN amount ELSE 0 END), 0) as insurance_revenue,
+            COALESCE(SUM(CASE WHEN case_type = 'საცალო' AND status_id = 8 THEN amount ELSE 0 END), 0) as retail_revenue
+        FROM transfers
+    ")->fetch(PDO::FETCH_ASSOC);
+    if ($result) $overall_stats = $result;
+} catch (Exception $e) {
+    error_log("Analytics - Overall Stats Error: " . $e->getMessage());
+}
 
 // 2. Monthly Revenue Trends (Last 12 months)
-$monthly_revenue = $pdo->query("
-    SELECT 
-        DATE_FORMAT(created_at, '%Y-%m') as month,
-        DATE_FORMAT(created_at, '%b %Y') as month_label,
-        COUNT(*) as total_cases,
-        COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed,
-        COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue,
-        COALESCE(SUM(CASE WHEN status_id = 8 AND case_type = 'დაზღვევა' THEN amount ELSE 0 END), 0) as insurance_rev,
-        COALESCE(SUM(CASE WHEN status_id = 8 AND case_type = 'საცალო' THEN amount ELSE 0 END), 0) as retail_rev
-    FROM transfers
-    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-    ORDER BY month ASC
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $monthly_revenue = $pdo->query("
+        SELECT 
+            DATE_FORMAT(created_at, '%Y-%m') as month,
+            DATE_FORMAT(created_at, '%b %Y') as month_label,
+            COUNT(*) as total_cases,
+            COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed,
+            COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue,
+            COALESCE(SUM(CASE WHEN status_id = 8 AND case_type = 'დაზღვევა' THEN amount ELSE 0 END), 0) as insurance_rev,
+            COALESCE(SUM(CASE WHEN status_id = 8 AND case_type = 'საცალო' THEN amount ELSE 0 END), 0) as retail_rev
+        FROM transfers
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        ORDER BY month ASC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Monthly Revenue Error: " . $e->getMessage());
+}
 
 // 3. Status Distribution
-$status_distribution = $pdo->query("
-    SELECT 
-        COALESCE(s.name, t.status) as status_name,
-        COALESCE(s.color, '#6B7280') as color,
-        COUNT(*) as count,
-        ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM transfers), 1) as percentage
-    FROM transfers t
-    LEFT JOIN statuses s ON t.status_id = s.id AND s.type = 'case'
-    GROUP BY t.status_id, s.name, s.color, t.status
-    ORDER BY count DESC
-")->fetchAll(PDO::FETCH_ASSOC);
+$status_distribution = [];
+try {
+    $status_distribution = $pdo->query("
+        SELECT 
+            COALESCE(s.name, t.status) as status_name,
+            COALESCE(s.color, '#6B7280') as color,
+            COUNT(*) as count,
+            ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM transfers), 0), 1) as percentage
+        FROM transfers t
+        LEFT JOIN statuses s ON t.status_id = s.id AND s.type = 'case'
+        GROUP BY t.status_id, s.name, s.color, t.status
+        ORDER BY count DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $status_distribution = [];
+}
 
 // 4. Technician Performance
-$technician_stats = $pdo->query("
-    SELECT 
-        assigned_mechanic as technician,
-        COUNT(*) as total_assigned,
-        COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed,
-        COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue_generated,
-        COALESCE(SUM(nachrebi_qty), 0) as total_nachrebi,
-        COALESCE(AVG(CASE WHEN status_id = 8 THEN DATEDIFF(updated_at, created_at) END), 0) as avg_completion_days
-    FROM transfers
-    WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != ''
-    GROUP BY assigned_mechanic
-    ORDER BY completed DESC
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $technician_stats = $pdo->query("
+        SELECT 
+            assigned_mechanic as technician,
+            COUNT(*) as total_assigned,
+            COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed,
+            COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue_generated,
+            COALESCE(SUM(nachrebi_qty), 0) as total_nachrebi,
+            COALESCE(AVG(CASE WHEN status_id = 8 THEN DATEDIFF(updated_at, created_at) END), 0) as avg_completion_days
+        FROM transfers
+        WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != ''
+        GROUP BY assigned_mechanic
+        ORDER BY completed DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Technician Stats Error: " . $e->getMessage());
+}
 
 // 5. Daily Activity (Last 30 days)
-$daily_activity = $pdo->query("
-    SELECT 
-        DATE(created_at) as date,
-        DATE_FORMAT(created_at, '%d %b') as date_label,
-        COUNT(*) as new_cases,
-        COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed_cases
-    FROM transfers
-    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-    GROUP BY DATE(created_at)
-    ORDER BY date ASC
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $daily_activity = $pdo->query("
+        SELECT 
+            DATE(created_at) as date,
+            DATE_FORMAT(created_at, '%d %b') as date_label,
+            COUNT(*) as new_cases,
+            COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed_cases
+        FROM transfers
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Daily Activity Error: " . $e->getMessage());
+}
 
 // 6. Case Type Analysis
-$case_type_stats = $pdo->query("
-    SELECT 
-        COALESCE(case_type, 'Unknown') as case_type,
-        COUNT(*) as total,
-        COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed,
-        COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue,
-        COALESCE(AVG(CASE WHEN status_id = 8 THEN amount END), 0) as avg_value
-    FROM transfers
-    GROUP BY case_type
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $case_type_stats = $pdo->query("
+        SELECT 
+            COALESCE(case_type, 'Unknown') as case_type,
+            COUNT(*) as total,
+            COUNT(CASE WHEN status_id = 8 THEN 1 END) as completed,
+            COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue,
+            COALESCE(AVG(CASE WHEN status_id = 8 THEN amount END), 0) as avg_value
+        FROM transfers
+        GROUP BY case_type
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Case Type Stats Error: " . $e->getMessage());
+}
 
 // 7. Customer Response Analysis
-$response_stats = $pdo->query("
-    SELECT 
-        COALESCE(user_response, 'No Response') as response,
-        COUNT(*) as count,
-        ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM transfers WHERE user_response IS NOT NULL), 1) as percentage
-    FROM transfers
-    WHERE user_response IS NOT NULL
-    GROUP BY user_response
-    ORDER BY count DESC
-")->fetchAll(PDO::FETCH_ASSOC);
+$response_stats = [];
+try {
+    $response_stats = $pdo->query("
+        SELECT 
+            COALESCE(user_response, 'No Response') as response,
+            COUNT(*) as count,
+            ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM transfers WHERE user_response IS NOT NULL), 0), 1) as percentage
+        FROM transfers
+        WHERE user_response IS NOT NULL
+        GROUP BY user_response
+        ORDER BY count DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $response_stats = [];
+}
 
 // 8. Reviews Analysis
-$reviews_stats = [];
+$reviews_stats = [
+    'total_reviews' => 0, 'avg_rating' => 0, 'five_star' => 0, 'four_star' => 0,
+    'three_star' => 0, 'two_star' => 0, 'one_star' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0
+];
 try {
-    $reviews_stats = $pdo->query("
+    $result = $pdo->query("
         SELECT 
             COUNT(*) as total_reviews,
             COALESCE(AVG(rating), 0) as avg_rating,
@@ -156,108 +218,139 @@ try {
             COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected
         FROM customer_reviews
     ")->fetch(PDO::FETCH_ASSOC);
+    if ($result) {
+        $reviews_stats = $result;
+    }
 } catch (Exception $e) {
-    $reviews_stats = [
-        'total_reviews' => 0, 'avg_rating' => 0, 'five_star' => 0, 'four_star' => 0,
-        'three_star' => 0, 'two_star' => 0, 'one_star' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0
-    ];
+    error_log("Analytics - Reviews Stats Error: " . $e->getMessage());
 }
 
 // 9. Weekly Comparison
-$weekly_comparison = $pdo->query("
-    SELECT 
-        'This Week' as period,
-        COUNT(*) as cases,
-        COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue
-    FROM transfers
-    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)
-    UNION ALL
-    SELECT 
-        'Last Week' as period,
-        COUNT(*) as cases,
-        COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue
-    FROM transfers
-    WHERE created_at >= DATE_SUB(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 7 DAY)
-      AND created_at < DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $weekly_comparison = $pdo->query("
+        SELECT 
+            'This Week' as period,
+            COUNT(*) as cases,
+            COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue
+        FROM transfers
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)
+        UNION ALL
+        SELECT 
+            'Last Week' as period,
+            COUNT(*) as cases,
+            COALESCE(SUM(CASE WHEN status_id = 8 THEN amount ELSE 0 END), 0) as revenue
+        FROM transfers
+        WHERE created_at >= DATE_SUB(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 7 DAY)
+          AND created_at < DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Weekly Comparison Error: " . $e->getMessage());
+}
 
 // 10. Top Vehicles by Amount
-$top_vehicles = $pdo->query("
-    SELECT 
-        CONCAT(COALESCE(vehicle_make, ''), ' ', COALESCE(vehicle_model, '')) as vehicle,
-        plate,
-        name as customer,
-        amount,
-        status,
-        created_at
-    FROM transfers
-    WHERE amount > 0
-    ORDER BY amount DESC
-    LIMIT 10
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $top_vehicles = $pdo->query("
+        SELECT 
+            CONCAT(COALESCE(vehicle_make, ''), ' ', COALESCE(vehicle_model, '')) as vehicle,
+            plate,
+            name as customer,
+            amount,
+            status,
+            created_at
+        FROM transfers
+        WHERE amount > 0
+        ORDER BY amount DESC
+        LIMIT 10
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Top Vehicles Error: " . $e->getMessage());
+}
 
 // 11. Parts & Services Analysis
-$parts_services = $pdo->query("
-    SELECT 
-        COUNT(CASE WHEN repair_parts IS NOT NULL AND repair_parts != '' AND repair_parts != '[]' THEN 1 END) as cases_with_parts,
-        COUNT(CASE WHEN repair_labor IS NOT NULL AND repair_labor != '' AND repair_labor != '[]' THEN 1 END) as cases_with_services,
-        COUNT(*) as total_cases
-    FROM transfers
-")->fetch(PDO::FETCH_ASSOC);
+try {
+    $result = $pdo->query("
+        SELECT 
+            COUNT(CASE WHEN repair_parts IS NOT NULL AND repair_parts != '' AND repair_parts != '[]' THEN 1 END) as cases_with_parts,
+            COUNT(CASE WHEN repair_labor IS NOT NULL AND repair_labor != '' AND repair_labor != '[]' THEN 1 END) as cases_with_services,
+            COUNT(*) as total_cases
+        FROM transfers
+    ")->fetch(PDO::FETCH_ASSOC);
+    if ($result) $parts_services = $result;
+} catch (Exception $e) {
+    error_log("Analytics - Parts Services Error: " . $e->getMessage());
+}
 
 // 12. Hour-by-hour activity pattern
-$hourly_pattern = $pdo->query("
-    SELECT 
-        HOUR(created_at) as hour,
-        COUNT(*) as count
-    FROM transfers
-    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-    GROUP BY HOUR(created_at)
-    ORDER BY hour
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $hourly_pattern = $pdo->query("
+        SELECT 
+            HOUR(created_at) as hour,
+            COUNT(*) as count
+        FROM transfers
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        GROUP BY HOUR(created_at)
+        ORDER BY hour
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Hourly Pattern Error: " . $e->getMessage());
+}
 
 // 13. Repair Status Distribution
-$repair_status_dist = $pdo->query("
-    SELECT 
-        COALESCE(repair_status, 'Not Set') as repair_status,
-        COUNT(*) as count
-    FROM transfers
-    WHERE status_id NOT IN (8, 9)
-    GROUP BY repair_status
-    ORDER BY count DESC
-    LIMIT 10
-")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $repair_status_dist = $pdo->query("
+        SELECT 
+            COALESCE(repair_status, 'Not Set') as repair_status,
+            COUNT(*) as count
+        FROM transfers
+        WHERE status_id NOT IN (8, 9)
+        GROUP BY repair_status
+        ORDER BY count DESC
+        LIMIT 10
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Analytics - Repair Status Error: " . $e->getMessage());
+}
 
 // 14. Nachrebi (Pieces) Analysis
-$nachrebi_stats = $pdo->query("
-    SELECT 
-        COALESCE(SUM(nachrebi_qty), 0) as total_nachrebi,
-        COALESCE(SUM(nachrebi_qty * 77), 0) as total_nachrebi_value,
-        COUNT(CASE WHEN nachrebi_qty > 0 THEN 1 END) as cases_with_nachrebi,
-        COALESCE(AVG(CASE WHEN nachrebi_qty > 0 THEN nachrebi_qty END), 0) as avg_nachrebi
-    FROM transfers
-    WHERE status_id = 8
-")->fetch(PDO::FETCH_ASSOC);
+try {
+    $result = $pdo->query("
+        SELECT 
+            COALESCE(SUM(nachrebi_qty), 0) as total_nachrebi,
+            COALESCE(SUM(nachrebi_qty * 77), 0) as total_nachrebi_value,
+            COUNT(CASE WHEN nachrebi_qty > 0 THEN 1 END) as cases_with_nachrebi,
+            COALESCE(AVG(CASE WHEN nachrebi_qty > 0 THEN nachrebi_qty END), 0) as avg_nachrebi
+        FROM transfers
+        WHERE status_id = 8
+    ")->fetch(PDO::FETCH_ASSOC);
+    if ($result) $nachrebi_stats = $result;
+} catch (Exception $e) {
+    error_log("Analytics - Nachrebi Stats Error: " . $e->getMessage());
+}
 
 // 15. Conversion Rate by Status
-$conversion_funnel = $pdo->query("
-    SELECT 
-        COUNT(CASE WHEN status_id >= 1 THEN 1 END) as stage_new,
-        COUNT(CASE WHEN status_id >= 2 THEN 1 END) as stage_processing,
-        COUNT(CASE WHEN status_id >= 3 THEN 1 END) as stage_called,
-        COUNT(CASE WHEN status_id >= 6 THEN 1 END) as stage_scheduled,
-        COUNT(CASE WHEN status_id = 8 THEN 1 END) as stage_completed
-    FROM transfers
-")->fetch(PDO::FETCH_ASSOC);
+try {
+    $result = $pdo->query("
+        SELECT 
+            COUNT(CASE WHEN status_id >= 1 THEN 1 END) as stage_new,
+            COUNT(CASE WHEN status_id >= 2 THEN 1 END) as stage_processing,
+            COUNT(CASE WHEN status_id >= 3 THEN 1 END) as stage_called,
+            COUNT(CASE WHEN status_id >= 6 THEN 1 END) as stage_scheduled,
+            COUNT(CASE WHEN status_id = 8 THEN 1 END) as stage_completed
+        FROM transfers
+    ")->fetch(PDO::FETCH_ASSOC);
+    if ($result) $conversion_funnel = $result;
+} catch (Exception $e) {
+    error_log("Analytics - Conversion Funnel Error: " . $e->getMessage());
+}
 
 // Prepare data for JavaScript charts
 $chartData = [
-    'monthlyRevenue' => $monthly_revenue,
-    'statusDistribution' => $status_distribution,
-    'technicianStats' => $technician_stats,
-    'dailyActivity' => $daily_activity,
-    'hourlyPattern' => $hourly_pattern,
-    'repairStatusDist' => $repair_status_dist
+    'monthlyRevenue' => $monthly_revenue ?: [],
+    'statusDistribution' => $status_distribution ?: [],
+    'technicianStats' => $technician_stats ?: [],
+    'dailyActivity' => $daily_activity ?: [],
+    'hourlyPattern' => $hourly_pattern ?: [],
+    'repairStatusDist' => $repair_status_dist ?: []
 ];
 ?>
 <!DOCTYPE html>
@@ -271,7 +364,7 @@ $chartData = [
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <?php include __DIR__ . '/fonts/include_fonts.php'; ?>
+    <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -520,9 +613,9 @@ $chartData = [
                     <span class="text-xs font-medium text-pink-600 bg-pink-50 px-2 py-1 rounded-full">Pieces</span>
                 </div>
                 <div class="text-2xl font-bold text-slate-800 tabular-nums">
-                    ₾<span data-countup="<?= round($nachrebi_stats['total_nachrebi_value']) ?>" data-decimals="0">0</span>
+                    ₾<span data-countup="<?= round($nachrebi_stats['total_nachrebi_value'] ?? 0) ?>" data-decimals="0">0</span>
                 </div>
-                <p class="text-sm text-slate-500 mt-1"><?= number_format($nachrebi_stats['total_nachrebi'], 1) ?> Nachrebi</p>
+                <p class="text-sm text-slate-500 mt-1"><?= number_format($nachrebi_stats['total_nachrebi'] ?? 0, 1) ?> Nachrebi</p>
             </div>
             
         </section>
@@ -705,28 +798,28 @@ $chartData = [
                 
                 <!-- Average Rating -->
                 <div class="text-center mb-6">
-                    <div class="text-5xl font-bold text-slate-800 mb-2"><?= number_format($reviews_stats['avg_rating'], 1) ?></div>
+                    <div class="text-5xl font-bold text-slate-800 mb-2"><?= number_format($reviews_stats['avg_rating'] ?? 0, 1) ?></div>
                     <div class="flex justify-center text-yellow-400 text-xl mb-1">
                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                            <?php if ($i <= round($reviews_stats['avg_rating'])): ?>
+                            <?php if ($i <= round($reviews_stats['avg_rating'] ?? 0)): ?>
                                 <i data-lucide="star" class="w-5 h-5 fill-current"></i>
                             <?php else: ?>
                                 <i data-lucide="star" class="w-5 h-5"></i>
                             <?php endif; ?>
                         <?php endfor; ?>
                     </div>
-                    <p class="text-sm text-slate-500"><?= $reviews_stats['total_reviews'] ?> total reviews</p>
+                    <p class="text-sm text-slate-500"><?= $reviews_stats['total_reviews'] ?? 0 ?> total reviews</p>
                 </div>
                 
                 <!-- Rating Breakdown -->
                 <div class="space-y-2">
                     <?php 
                     $rating_bars = [
-                        5 => $reviews_stats['five_star'],
-                        4 => $reviews_stats['four_star'],
-                        3 => $reviews_stats['three_star'],
-                        2 => $reviews_stats['two_star'],
-                        1 => $reviews_stats['one_star']
+                        5 => $reviews_stats['five_star'] ?? 0,
+                        4 => $reviews_stats['four_star'] ?? 0,
+                        3 => $reviews_stats['three_star'] ?? 0,
+                        2 => $reviews_stats['two_star'] ?? 0,
+                        1 => $reviews_stats['one_star'] ?? 0
                     ];
                     $max_reviews = max($rating_bars) ?: 1;
                     foreach ($rating_bars as $stars => $count): 
@@ -746,15 +839,15 @@ $chartData = [
                 <!-- Review Status -->
                 <div class="grid grid-cols-3 gap-2 mt-6 pt-4 border-t border-slate-200">
                     <div class="text-center">
-                        <div class="text-lg font-bold text-emerald-600"><?= $reviews_stats['approved'] ?></div>
+                        <div class="text-lg font-bold text-emerald-600"><?= $reviews_stats['approved'] ?? 0 ?></div>
                         <div class="text-xs text-slate-500">Approved</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-lg font-bold text-amber-600"><?= $reviews_stats['pending'] ?></div>
+                        <div class="text-lg font-bold text-amber-600"><?= $reviews_stats['pending'] ?? 0 ?></div>
                         <div class="text-xs text-slate-500">Pending</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-lg font-bold text-red-600"><?= $reviews_stats['rejected'] ?></div>
+                        <div class="text-lg font-bold text-red-600"><?= $reviews_stats['rejected'] ?? 0 ?></div>
                         <div class="text-xs text-slate-500">Rejected</div>
                     </div>
                 </div>
@@ -775,12 +868,12 @@ $chartData = [
                 </div>
                 <div class="space-y-4">
                     <?php foreach ($response_stats as $response): 
-                        $color = match($response['response']) {
-                            'Confirmed' => 'emerald',
-                            'Reschedule Requested' => 'amber',
-                            'Pending' => 'blue',
-                            default => 'slate'
-                        };
+                        switch($response['response']) {
+                            case 'Confirmed': $color = 'emerald'; break;
+                            case 'Reschedule Requested': $color = 'amber'; break;
+                            case 'Pending': $color = 'blue'; break;
+                            default: $color = 'slate';
+                        }
                     ?>
                     <div class="flex items-center justify-between p-4 bg-<?= $color ?>-50 rounded-xl">
                         <div class="flex items-center">
@@ -795,7 +888,7 @@ $chartData = [
                             </div>
                             <div>
                                 <p class="font-medium text-slate-800"><?= htmlspecialchars($response['response']) ?></p>
-                                <p class="text-sm text-slate-500"><?= $response['percentage'] ?>% of responses</p>
+                                <p class="text-sm text-slate-500"><?= $response['percentage'] ?? 0 ?>% of responses</p>
                             </div>
                         </div>
                         <span class="text-2xl font-bold text-<?= $color ?>-600"><?= $response['count'] ?></span>
