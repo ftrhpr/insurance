@@ -201,9 +201,12 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
                                 <span class="font-medium"><?php echo $service_date; ?></span>
                             </div>
                             <?php if ($due_date !== '-'): ?>
-                            <div class="flex items-center gap-2">
-                                <span class="text-gray-500 w-28">ვადა:</span>
-                                <span class="font-medium text-red-600"><?php echo $due_date; ?></span>
+                            <div class="flex items-center gap-2 mt-2 p-3 bg-red-50 border-2 border-red-300 rounded-lg">
+                                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                                <div>
+                                    <span class="text-red-600 text-sm font-medium block">ვადა / Due Date:</span>
+                                    <span class="font-bold text-red-700 text-xl"><?php echo $due_date; ?></span>
+                                </div>
                             </div>
                             <?php endif; ?>
                         </div>
