@@ -344,7 +344,17 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
                 if (strpos($operator_comment, 'Created from mobile app') === 0) {
                     $operator_comment = '';
                 }
+                $repair_notes = $case['repair_notes'] ?? '';
                 ?>
+                <?php if (!empty($repair_notes)): ?>
+                <div class="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                    <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2 text-lg">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                        სარემონტო შენიშვნები / Repair Notes
+                    </h4>
+                    <p class="text-gray-800 whitespace-pre-wrap text-base leading-relaxed"><?php echo htmlspecialchars($repair_notes); ?></p>
+                </div>
+                <?php endif; ?>
                 <?php if (!empty($operator_comment)): ?>
                 <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <h4 class="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
