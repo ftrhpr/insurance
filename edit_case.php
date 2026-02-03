@@ -207,7 +207,31 @@ try {
                             <i data-lucide="share-2" class="w-4 h-4"></i>
                             <span class="hidden sm:inline">Share</span>
                         </button>
-                        <button @click="printCase()" class="text-slate-600 h-10 px-4 inline-flex items-center justify-center rounded-lg border bg-white hover:bg-slate-50 font-semibold text-sm"><?php echo __('case.print', 'Print'); ?></button>
+                        <!-- Print Dropdown -->
+                        <div class="relative" x-data="{ printMenuOpen: false }">
+                            <button @click="printMenuOpen = !printMenuOpen" class="text-slate-600 h-10 px-4 inline-flex items-center justify-center rounded-lg border bg-white hover:bg-slate-50 font-semibold text-sm gap-2">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                                <?php echo __('case.print', 'Print'); ?>
+                                <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                            </button>
+                            <div x-show="printMenuOpen" @click.away="printMenuOpen = false" x-cloak
+                                 class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                <button @click="printCase(); printMenuOpen = false" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
+                                    <i data-lucide="file-text" class="w-4 h-4 text-gray-400"></i>
+                                    <div>
+                                        <div class="font-medium"><?php echo __('case.print_full', 'Full Case Print'); ?></div>
+                                        <div class="text-xs text-gray-500">ფასებით</div>
+                                    </div>
+                                </button>
+                                <a href="print_technician.php?id=<?php echo $case_id; ?>" target="_blank" @click="printMenuOpen = false" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
+                                    <i data-lucide="clipboard-list" class="w-4 h-4 text-gray-400"></i>
+                                    <div>
+                                        <div class="font-medium"><?php echo __('case.print_technician', 'Work Order'); ?></div>
+                                        <div class="text-xs text-gray-500">ტექნიკოსებისთვის (ფასების გარეშე)</div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
                         <button @click="saveChanges()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-6 rounded-lg flex items-center gap-2 text-sm shadow-sm">
                             <i data-lucide="save" class="w-4 h-4"></i>
                             <span><?php echo __('case.save_changes', 'Save Changes'); ?></span>

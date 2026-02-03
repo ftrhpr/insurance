@@ -2755,6 +2755,9 @@ try {
                                     <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
                                         <i data-lucide="qr-code" class="w-4 h-4"></i>
                                     </button>
+                                    <a href="print_technician.php?id=${t.id}" target="_blank" onclick="event.stopPropagation()" class="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-slate-500/25 active:scale-95" title="Print Work Order (No Prices)">
+                                        <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                                    </a>
                                     <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="View Invoice">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
                                     </button>

@@ -151,7 +151,13 @@ if (in_array($_SESSION['role'] ?? '', ['admin'])) {
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex-1 min-w-0">
                             <div class="text-lg font-bold truncate" x-text="caseGroup.title"></div>
-                            <div class="text-sm text-slate-500 mt-1 truncate" x-text="`#${caseGroup.id}`"></div>
+                            <div class="text-sm text-slate-500 mt-1 truncate flex items-center gap-2">
+                                <span x-text="`#${caseGroup.id}`"></span>
+                                <a :href="`print_technician.php?id=${caseGroup.id}`" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs" @click.stop>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>
+                                    Print
+                                </a>
+                            </div>
                             <div class="mt-3 flex gap-2 flex-wrap">
                                 <template x-for="stage in caseGroup.stages" :key="stage.stage">
                                     <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 rounded-full px-3 py-1 text-sm font-semibold">
