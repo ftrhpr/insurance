@@ -101,7 +101,7 @@ $stages = $defaultStages;
 workflowDebug('fetching cases');
 try {
     $stmt = $pdo->query("
-        SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent
+        SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent, due_date
         FROM transfers
         WHERE status NOT IN ('Completed', 'Issue')
         ORDER BY 
@@ -253,6 +253,14 @@ foreach ($cases as $case) {
                                             <span x-show="stage.id !== 'backlog' && hasTimer(caseItem.id, stage.id)" class="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200" x-text="getTimerDisplay(caseItem.id, stage.id)"></span>
                                             <span x-show="stage.id !== 'backlog' && !hasTimer(caseItem.id, stage.id)" class="ml-2 text-xs text-slate-400">—</span>
                                         </div>
+                                        <!-- Due Date Display -->
+                                        <template x-if="caseItem.due_date">
+                                            <div class="mt-2 text-xs flex items-center gap-1" :class="isDueDateOverdue(caseItem.due_date) ? 'text-red-600 font-semibold' : isDueDateSoon(caseItem.due_date) ? 'text-orange-600' : 'text-slate-500'">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span x-text="formatDueDate(caseItem.due_date)"></span>
+                                                <span x-show="isDueDateOverdue(caseItem.due_date)" class="ml-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">OVERDUE</span>
+                                            </div>
+                                        </template>
                                         <div class="flex items-center gap-2 mt-2">
                                             <input type="checkbox" :checked="caseItem.urgent" @change="updateUrgent(caseItem.id, $event.target.checked)" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500">
                                             <label class="text-sm font-medium text-gray-700">სასწრაფო 🔥</label>
@@ -653,6 +661,46 @@ foreach ($cases as $case) {
                     if (hasAssignment && !hasTimer) return 'Starting…';
 
                     return '';
+                },
+                
+                // Due date helper functions
+                formatDueDate(dueDate) {
+                    if (!dueDate) return '';
+                    try {
+                        let dateStr = dueDate;
+                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                        if (dateStr.length === 16) dateStr += ':00';
+                        const date = new Date(dateStr);
+                        return date.toLocaleDateString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    } catch (e) {
+                        return dueDate;
+                    }
+                },
+                isDueDateOverdue(dueDate) {
+                    if (!dueDate) return false;
+                    try {
+                        let dateStr = dueDate;
+                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                        if (dateStr.length === 16) dateStr += ':00';
+                        const date = new Date(dateStr);
+                        return date < new Date();
+                    } catch (e) {
+                        return false;
+                    }
+                },
+                isDueDateSoon(dueDate) {
+                    if (!dueDate) return false;
+                    try {
+                        let dateStr = dueDate;
+                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                        if (dateStr.length === 16) dateStr += ':00';
+                        const date = new Date(dateStr);
+                        const now = new Date();
+                        const diffHours = (date - now) / (1000 * 60 * 60);
+                        return diffHours > 0 && diffHours <= 24; // Due within 24 hours
+                    } catch (e) {
+                        return false;
+                    }
                 },
 
 

@@ -36,7 +36,7 @@ try {
 
 // If JSON requested, return the cases grouped by stage (for polling)
 if (isset($_GET['json'])) {
-    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage != 'backlog' AND status NOT IN ('Completed', 'Issue') ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent, due_date FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage != 'backlog' AND status NOT IN ('Completed', 'Issue') ORDER BY id DESC");
     $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $casesByStage = [];
     foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -55,7 +55,7 @@ if (isset($_GET['json'])) {
 }
 
 // Initial page render data
-$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage != 'backlog' AND status NOT IN ('Completed', 'Issue') ORDER BY id DESC");
+$stmt = $pdo->query("SELECT id, plate, vehicle_make, vehicle_model, repair_stage, repair_assignments, stage_timers, stage_statuses, urgent, due_date FROM transfers WHERE repair_stage IS NOT NULL AND repair_stage != 'backlog' AND status NOT IN ('Completed', 'Issue') ORDER BY id DESC");
 $cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $casesByStage = [];
 foreach ($stages as $stage) $casesByStage[$stage['id']] = [];
@@ -148,6 +148,29 @@ foreach ($cases as $case) {
                 getTechName(id) {
                     const t = this.technicians.find(x => x.id == id);
                     return t ? t.full_name : null;
+                },
+                formatDueDate(dueDate) {
+                    if (!dueDate) return '';
+                    try {
+                        let dateStr = dueDate;
+                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                        if (dateStr.length === 16) dateStr += ':00';
+                        const date = new Date(dateStr);
+                        return date.toLocaleDateString('ka-GE', { month: 'short', day: 'numeric' });
+                    } catch (e) {
+                        return dueDate;
+                    }
+                },
+                isDueDateOverdue(dueDate) {
+                    if (!dueDate) return false;
+                    try {
+                        let dateStr = dueDate;
+                        if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                        if (dateStr.length === 16) dateStr += ':00';
+                        return new Date(dateStr) < new Date();
+                    } catch (e) {
+                        return false;
+                    }
                 }
             }
         }
@@ -210,6 +233,13 @@ foreach ($cases as $case) {
                                     </div>
                                     <div class="timer-badge" x-text="getTimerDisplay(caseItem.id, stage.id)"></div>
                                 </div>
+                                <template x-if="caseItem.due_date">
+                                    <div class="text-[10px] mt-1 flex items-center gap-1" :class="isDueDateOverdue(caseItem.due_date) ? 'text-red-600 font-bold' : 'text-gray-500'">
+                                        <span>⏰</span>
+                                        <span x-text="formatDueDate(caseItem.due_date)"></span>
+                                        <span x-show="isDueDateOverdue(caseItem.due_date)" class="bg-red-500 text-white px-1 rounded text-[8px]">!</span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                         <template x-if="(cases[stage.id] || []).length === 0">
