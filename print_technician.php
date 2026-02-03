@@ -118,13 +118,62 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
                 background: white !important; 
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                font-size: 10px !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
             .print-break { page-break-after: always; }
             .shadow-xl, .shadow-lg, .shadow { box-shadow: none !important; }
+            .rounded-2xl, .rounded-xl, .rounded-lg { border-radius: 4px !important; }
             @page {
-                margin: 1cm;
+                margin: 0.5cm;
                 size: A4;
             }
+            /* Compact header */
+            .print-header { padding: 8px 16px !important; }
+            .print-header h1 { font-size: 16px !important; }
+            .print-header .text-3xl { font-size: 18px !important; }
+            /* Compact info section */
+            .print-info { padding: 8px 16px !important; }
+            .print-info .text-2xl { font-size: 16px !important; }
+            .print-info .text-lg { font-size: 12px !important; }
+            .print-info .text-sm { font-size: 9px !important; }
+            /* Compact work items */
+            .print-content { padding: 8px 16px !important; }
+            .print-content h3 { font-size: 11px !important; margin-bottom: 4px !important; padding-bottom: 2px !important; }
+            .print-content .space-y-3 > * { margin-top: 4px !important; margin-bottom: 0 !important; }
+            .checklist-item { padding: 6px 8px !important; }
+            .checklist-item .text-base { font-size: 10px !important; }
+            .checklist-item .w-6 { width: 16px !important; height: 16px !important; }
+            .checklist-item .w-8 { width: 18px !important; height: 18px !important; }
+            /* Compact table */
+            .print-content table { font-size: 9px !important; }
+            .print-content table th, .print-content table td { padding: 4px 6px !important; }
+            /* Compact notes */
+            .print-notes { padding: 6px 10px !important; margin-bottom: 8px !important; }
+            .print-notes h4 { font-size: 10px !important; margin-bottom: 4px !important; }
+            .print-notes p { font-size: 9px !important; line-height: 1.3 !important; }
+            /* Due date compact */
+            .print-due { padding: 4px 8px !important; }
+            .print-due .text-xl { font-size: 12px !important; }
+            .print-due .w-6 { width: 14px !important; height: 14px !important; }
+            /* Hide photos on print to save space */
+            .print-photos { display: none !important; }
+            /* Compact signature */
+            .print-signature { padding: 8px 16px !important; }
+            .print-signature .h-16 { height: 24px !important; }
+            .print-signature .grid { gap: 16px !important; }
+            /* Compact footer */
+            .print-footer { padding: 4px 16px !important; }
+            .print-footer .text-sm { font-size: 8px !important; }
+            /* Reduce margins */
+            .mb-8 { margin-bottom: 8px !important; }
+            .mb-6 { margin-bottom: 6px !important; }
+            .mb-4 { margin-bottom: 4px !important; }
+            .py-6 { padding-top: 8px !important; padding-bottom: 8px !important; }
+            .px-8 { padding-left: 16px !important; padding-right: 16px !important; }
+            .gap-6 { gap: 8px !important; }
+            .gap-4 { gap: 6px !important; }
         }
         @media screen {
             body { background: #f3f4f6; }
@@ -151,7 +200,7 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
         <!-- Work Order Card -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
             <!-- Header -->
-            <div class="bg-gradient-to-r from-slate-700 to-slate-800 text-white px-8 py-6">
+            <div class="print-header bg-gradient-to-r from-slate-700 to-slate-800 text-white px-8 py-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <h1 class="text-2xl font-bold">OTOMOTORS</h1>
@@ -165,7 +214,7 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
             </div>
             
             <!-- Vehicle & Customer Info -->
-            <div class="px-8 py-6 border-b border-gray-200 bg-gray-50">
+            <div class="print-info px-8 py-6 border-b border-gray-200 bg-gray-50">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Vehicle Info - Prominent -->
                     <div class="md:col-span-2">
@@ -201,7 +250,7 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
                                 <span class="font-medium"><?php echo $service_date; ?></span>
                             </div>
                             <?php if ($due_date !== '-'): ?>
-                            <div class="flex items-center gap-2 mt-2 p-3 bg-red-50 border-2 border-red-300 rounded-lg">
+                            <div class="print-due flex items-center gap-2 mt-2 p-3 bg-red-50 border-2 border-red-300 rounded-lg">
                                 <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
                                 <div>
                                     <span class="text-red-600 text-sm font-medium block">ვადა / Due Date:</span>
@@ -228,7 +277,7 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
             </div>
             
             <!-- Work Items Section -->
-            <div class="px-8 py-6">
+            <div class="print-content px-8 py-6">
                 <?php if (count($repair_labor) > 0): ?>
                 <!-- Services/Work to be done -->
                 <div class="mb-8">
@@ -347,7 +396,7 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
                 $repair_notes = $case['repair_notes'] ?? '';
                 ?>
                 <?php if (!empty($repair_notes)): ?>
-                <div class="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                <div class="print-notes mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
                     <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2 text-lg">
                         <i data-lucide="file-text" class="w-5 h-5"></i>
                         სარემონტო შენიშვნები / Repair Notes
@@ -356,7 +405,7 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($operator_comment)): ?>
-                <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div class="print-notes mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <h4 class="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
                         <i data-lucide="message-square" class="w-4 h-4"></i>
                         შენიშვნები
@@ -367,8 +416,8 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
             </div>
             
             <?php if (count($case_images) > 0): ?>
-            <!-- Photos Section - Useful for identifying damage -->
-            <div class="px-8 py-6 border-t border-gray-200">
+            <!-- Photos Section - Hidden on print to fit A4 -->
+            <div class="print-photos px-8 py-6 border-t border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <i data-lucide="camera" class="w-5 h-5 text-purple-600"></i>
                     ფოტოები (<?php echo count($case_images); ?>)
@@ -390,7 +439,7 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
             <?php endif; ?>
             
             <!-- Signature Section for Print -->
-            <div class="px-8 py-6 border-t border-gray-200">
+            <div class="print-signature px-8 py-6 border-t border-gray-200">
                 <div class="grid grid-cols-2 gap-8">
                     <div>
                         <div class="border-b-2 border-gray-400 h-16 mb-2"></div>
@@ -404,7 +453,7 @@ $vehicle_info = trim(($case['vehicle_make'] ?? '') . ' ' . ($case['vehicle_model
             </div>
             
             <!-- Footer -->
-            <div class="px-8 py-4 bg-gray-100 border-t border-gray-200">
+            <div class="print-footer px-8 py-4 bg-gray-100 border-t border-gray-200">
                 <div class="flex items-center justify-between text-sm text-gray-500">
                     <div>
                         დაბეჭდილია: <?php echo date('d.m.Y H:i'); ?>
