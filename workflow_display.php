@@ -223,7 +223,7 @@ foreach ($cases as $case) {
                         <div class="stage-title" x-text="stage.title"></div>
                         <div class="stage-count" x-text="(cases[stage.id]||[]).length"></div>
                     </div>
-                    <div class="space-y-1 overflow-y-auto max-h-80">
+                    <div class="space-y-1">
                         <template x-for="caseItem in (cases[stage.id] || [])" :key="caseItem.id">
                             <div class="card" :class="{'blink-finished': caseItem.stage_statuses && caseItem.stage_statuses[stage.id] && caseItem.stage_statuses[stage.id].status === 'finished', 'opacity-50': caseItem.status === 'Completed'}">
                                 <div class="flex items-center justify-between gap-2">
