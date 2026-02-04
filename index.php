@@ -2078,6 +2078,8 @@ try {
             let activeTransfers = [];
             // Service cases list for sorting by in-service date
             let serviceCases = [];
+            // Completed cases list for sorting by completion date (newest first)
+            let completedCases = [];
 
             // Use a sorted copy for iteration so sorting toggles affect all lists
             let iterTransfers = transfers.slice();
@@ -2172,7 +2174,7 @@ try {
                     // Apply Completed tab filters (case type + period)
                     const completedFilters = completedFiltersGlobal;
                     if (isTransferInCompletedFilter(t, completedFilters)) {
-                        // This transfer is visible under current filters — accumulate stats & render
+                        // This transfer is visible under current filters — accumulate stats & collect for sorting
                         completedFilteredCount++;
                         const amt = parseNumber(t.amount);
                         completedFilteredIncome += amt;
@@ -2180,81 +2182,8 @@ try {
                         completedSamghebriFiltered += computeSamghebriInTransfer(t, 'სამღებრო სამუშაო');
                         completedNachrebiQtyFiltered += parseFloat(t.nachrebi_qty) || 0;
 
-                        completedHtml.push(`
-                        <tr class="hover:bg-emerald-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl flex items-center justify-center shadow-sm">
-                                        <i data-lucide="car" class="w-5 h-5 text-emerald-600"></i>
-                                    </div>
-                                    <div>
-                                        <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
-                                        <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="text-sm text-slate-700 font-medium">${displayPhone ? escapeHtml(displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="text-sm font-bold text-emerald-600">${escapeHtml(t.amount)} ₾</div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="text-sm text-slate-700">
-                                    ${t.case_type === 'დაზღვევა' ? 
-                                        `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
-                                            <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
-                                        </span>` : 
-                                        `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
-                                            <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
-                                        </span>`
-                                    }
-                                </div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="text-sm font-bold text-slate-800">
-                                    ${computeSamghebriInTransfer(t, 'სამღებრო სამუშაო')}
-                                </div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="text-sm font-bold text-purple-600">
-                                    ${t.nachrebi_qty || 0}
-                                </div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="text-sm text-slate-700">
-                                    ${t.serviceDate ? (() => {
-                                        try {
-                                            let dateStr = t.serviceDate;
-                                            if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
-                                            if (dateStr.length === 16) dateStr += ':00';
-                                            const svcDate = new Date(dateStr);
-                                            return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                        } catch(e) {
-                                            return 'Invalid date';
-                                        }
-                                    })() : '<span class="text-slate-400">Not scheduled</span>'}
-                                </div>
-                            </td>
-                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
-                                <div class="flex items-center justify-end gap-1">
-                                    <button onclick="event.stopPropagation(); openQuickView('${t.id}')" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="Quick View">
-                                        <i data-lucide="zap" class="w-4 h-4"></i>
-                                    </button>
-                                    <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
-                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
-                                    </button>
-                                    <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-emerald-600 p-2 hover:bg-emerald-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95" title="View Details">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                    </button>
-                                    ${CAN_EDIT ? 
-                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-emerald-600 p-2 hover:bg-emerald-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95">
-                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                        </button>` : ''
-                                    }
-                                </div>
-                            </td>
-                        </tr>`);
+                        // Collect completed cases for sorting by completion date (newest first)
+                        completedCases.push({ transfer: t, displayPhone });
                     }
                 } else if(t.repair_status === 'წიანსწარი შეფასება' || t.status_id == 74) {
                     assessmentCount++;
@@ -2535,6 +2464,92 @@ try {
                             </div>
                         </td>
                     </tr>`);
+            });
+
+            // Sort completed cases by updated_at date (newest first)
+            completedCases.sort((a, b) => {
+                const dateA = new Date(a.transfer.updated_at || a.transfer.created_at || 0);
+                const dateB = new Date(b.transfer.updated_at || b.transfer.created_at || 0);
+                return dateB - dateA; // Newest first
+            });
+
+            // Render sorted completed cases
+            completedCases.forEach(({ transfer: t, displayPhone }) => {
+                completedHtml.push(`
+                        <tr class="hover:bg-emerald-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl flex items-center justify-center shadow-sm">
+                                        <i data-lucide="car" class="w-5 h-5 text-emerald-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
+                                        <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700 font-medium">${displayPhone ? escapeHtml(displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm font-bold text-emerald-600">${escapeHtml(t.amount)} ₾</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.case_type === 'დაზღვევა' ? 
+                                        `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
+                                        </span>` : 
+                                        `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
+                                        </span>`
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm font-bold text-slate-800">
+                                    ${computeSamghebriInTransfer(t, 'სამღებრო სამუშაო')}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm font-bold text-purple-600">
+                                    ${t.nachrebi_qty || 0}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.serviceDate ? (() => {
+                                        try {
+                                            let dateStr = t.serviceDate;
+                                            if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                                            if (dateStr.length === 16) dateStr += ':00';
+                                            const svcDate = new Date(dateStr);
+                                            return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                        } catch(e) {
+                                            return 'Invalid date';
+                                        }
+                                    })() : '<span class="text-slate-400">Not scheduled</span>'}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); openQuickView('${t.id}')" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95" title="Quick View">
+                                        <i data-lucide="zap" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-primary-500/25 active:scale-95" title="Show QR Code">
+                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-emerald-600 p-2 hover:bg-emerald-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95" title="View Details">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>
+                                    ${CAN_EDIT ? 
+                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-emerald-600 p-2 hover:bg-emerald-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95">
+                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                        </button>` : ''
+                                    }
+                                </div>
+                            </td>
+                        </tr>`);
             });
 
             // Calculate pagination for active transfers
