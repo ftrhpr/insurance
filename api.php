@@ -161,10 +161,19 @@ function getAccessToken($keyFile) {
 }
 
 // --- HELPER: GET ACCESS TOKEN WITH CUSTOM SCOPE ---
-function getAccessTokenWithScope($keyFile, $scope) {
-    if (!file_exists($keyFile)) return null;
+// Returns ['token' => string] on success, or ['error' => string, 'details' => string] on failure
+function getAccessTokenWithScope($keyFile, $scope, $returnDetails = false) {
+    if (!file_exists($keyFile)) {
+        if ($returnDetails) return ['error' => 'Key file not found', 'details' => $keyFile];
+        return null;
+    }
     
     $keyData = json_decode(file_get_contents($keyFile), true);
+    if (!$keyData || empty($keyData['private_key']) || empty($keyData['client_email'])) {
+        if ($returnDetails) return ['error' => 'Invalid key file format', 'details' => 'Missing private_key or client_email'];
+        return null;
+    }
+    
     $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
     $now = time();
     $claim = json_encode([
@@ -180,7 +189,13 @@ function getAccessTokenWithScope($keyFile, $scope) {
     $signatureInput = $base64UrlHeader . "." . $base64UrlClaim;
     
     $signature = '';
-    openssl_sign($signatureInput, $signature, $keyData['private_key'], 'SHA256');
+    $signResult = openssl_sign($signatureInput, $signature, $keyData['private_key'], 'SHA256');
+    if (!$signResult) {
+        $opensslError = openssl_error_string();
+        if ($returnDetails) return ['error' => 'OpenSSL signing failed', 'details' => $opensslError];
+        return null;
+    }
+    
     $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
     $jwt = $signatureInput . "." . $base64UrlSignature;
 
@@ -193,10 +208,27 @@ function getAccessTokenWithScope($keyFile, $scope) {
     ]));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     
+    if ($curlError) {
+        if ($returnDetails) return ['error' => 'cURL error', 'details' => $curlError];
+        return null;
+    }
+    
     $tokenData = json_decode($response, true);
-    return $tokenData['access_token'] ?? null;
+    
+    if (isset($tokenData['access_token'])) {
+        if ($returnDetails) return ['token' => $tokenData['access_token']];
+        return $tokenData['access_token'];
+    }
+    
+    // Error case
+    $errorMsg = $tokenData['error_description'] ?? $tokenData['error'] ?? $response;
+    error_log("OAuth token error (HTTP $httpCode): $errorMsg");
+    if ($returnDetails) return ['error' => 'OAuth failed', 'details' => $errorMsg, 'http_code' => $httpCode];
+    return null;
 }
 
 function sendFCM_V1($pdo, $keyFile, $title, $body) {
@@ -3085,16 +3117,19 @@ try {
         // Firebase Storage bucket name
         $storageBucket = $projectId . '.firebasestorage.app';
         
-        // Get access token using the helper function with storage scope
-        $accessToken = getAccessTokenWithScope($keyFile, 'https://www.googleapis.com/auth/devstorage.full_control');
+        // Get access token using the helper function with storage scope (with detailed error info)
+        $authResult = getAccessTokenWithScope($keyFile, 'https://www.googleapis.com/auth/devstorage.full_control', true);
         
-        if (!$accessToken) {
-            error_log("Firebase Storage token error - could not get access token");
+        if (!isset($authResult['token'])) {
+            error_log("Firebase Storage token error: " . json_encode($authResult));
             jsonResponse([
                 'status' => 'error', 
-                'message' => 'Failed to authenticate with Firebase Storage'
+                'message' => 'Failed to authenticate with Firebase Storage',
+                'debug' => $authResult
             ]);
         }
+        
+        $accessToken = $authResult['token'];
         
         // Upload to Firebase Storage
         $uploadUrl = "https://storage.googleapis.com/upload/storage/v1/b/{$storageBucket}/o?uploadType=media&name=" . urlencode($filename);
