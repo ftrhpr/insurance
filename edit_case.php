@@ -1370,7 +1370,11 @@ try {
                         progressBar.style.width = overallProgress + '%';
                     } else {
                         console.error('Upload error:', result);
-                        showToast('Upload Failed', result.message || `Failed to upload ${file.name}`, 'error');
+                        if (result.debug) {
+                            console.error('Debug info:', result.debug);
+                        }
+                        const errorMsg = result.debug?.error_description || result.message || `Failed to upload ${file.name}`;
+                        showToast('Upload Failed', errorMsg, 'error');
                     }
                 } catch (error) {
                     console.error('Upload failed:', error);

@@ -3077,14 +3077,16 @@ try {
         
         $keyData = json_decode(file_get_contents($keyFile), true);
         $projectId = $keyData['project_id'];
+        // Firebase Storage bucket name
         $storageBucket = $projectId . '.firebasestorage.app';
         
-        // Create JWT for Firebase Storage access
+        // Create JWT for Google Cloud Storage access (Firebase Storage uses GCS under the hood)
         $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
         $now = time();
         $claim = json_encode([
             'iss' => $keyData['client_email'],
-            'scope' => 'https://www.googleapis.com/auth/devstorage.read_write https://www.googleapis.com/auth/firebase.storage',
+            'sub' => $keyData['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/cloud-platform',
             'aud' => 'https://oauth2.googleapis.com/token',
             'exp' => $now + 3600,
             'iat' => $now
@@ -3109,15 +3111,29 @@ try {
         ]));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $response = curl_exec($ch);
+        $curlError = curl_error($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+        
+        if ($curlError) {
+            error_log("Firebase token curl error: " . $curlError);
+            jsonResponse(['status' => 'error', 'message' => 'Network error connecting to Firebase', 'debug' => $curlError]);
+        }
         
         $tokenData = json_decode($response, true);
         $accessToken = $tokenData['access_token'] ?? null;
         
         if (!$accessToken) {
-            error_log("Firebase token error: " . $response);
-            jsonResponse(['status' => 'error', 'message' => 'Failed to authenticate with Firebase']);
+            error_log("Firebase token error (HTTP $httpCode): " . $response);
+            jsonResponse([
+                'status' => 'error', 
+                'message' => 'Failed to authenticate with Firebase',
+                'debug' => [
+                    'http_code' => $httpCode,
+                    'error' => $tokenData['error'] ?? 'unknown',
+                    'error_description' => $tokenData['error_description'] ?? $response
+                ]
+            ]);
         }
         
         // Upload to Firebase Storage
@@ -3211,12 +3227,13 @@ try {
         $projectId = $keyData['project_id'];
         $storageBucket = $projectId . '.firebasestorage.app';
         
-        // Create JWT for Firebase Storage access
+        // Create JWT for Google Cloud Storage access
         $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
         $now = time();
         $claim = json_encode([
             'iss' => $keyData['client_email'],
-            'scope' => 'https://www.googleapis.com/auth/devstorage.read_write https://www.googleapis.com/auth/firebase.storage',
+            'sub' => $keyData['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/cloud-platform',
             'aud' => 'https://oauth2.googleapis.com/token',
             'exp' => $now + 3600,
             'iat' => $now
