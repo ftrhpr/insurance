@@ -157,6 +157,11 @@ function getJsonInput() {
 
 // --- HELPER: GET ACCESS TOKEN (V1) ---
 function getAccessToken($keyFile) {
+    return getAccessTokenWithScope($keyFile, 'https://www.googleapis.com/auth/firebase.messaging');
+}
+
+// --- HELPER: GET ACCESS TOKEN WITH CUSTOM SCOPE ---
+function getAccessTokenWithScope($keyFile, $scope) {
     if (!file_exists($keyFile)) return null;
     
     $keyData = json_decode(file_get_contents($keyFile), true);
@@ -164,7 +169,7 @@ function getAccessToken($keyFile) {
     $now = time();
     $claim = json_encode([
         'iss' => $keyData['client_email'],
-        'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
+        'scope' => $scope,
         'aud' => 'https://oauth2.googleapis.com/token',
         'exp' => $now + 3600,
         'iat' => $now
@@ -3080,59 +3085,14 @@ try {
         // Firebase Storage bucket name
         $storageBucket = $projectId . '.firebasestorage.app';
         
-        // Create JWT for Google Cloud Storage access (Firebase Storage uses GCS under the hood)
-        $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
-        $now = time();
-        $claim = json_encode([
-            'iss' => $keyData['client_email'],
-            'sub' => $keyData['client_email'],
-            'scope' => 'https://www.googleapis.com/auth/cloud-platform',
-            'aud' => 'https://oauth2.googleapis.com/token',
-            'exp' => $now + 3600,
-            'iat' => $now
-        ]);
-        
-        $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
-        $base64UrlClaim = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($claim));
-        $signatureInput = $base64UrlHeader . "." . $base64UrlClaim;
-        
-        $signature = '';
-        openssl_sign($signatureInput, $signature, $keyData['private_key'], 'SHA256');
-        $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
-        $jwt = $signatureInput . "." . $base64UrlSignature;
-        
-        // Get access token
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-            'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-            'assertion' => $jwt
-        ]));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-        $curlError = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($curlError) {
-            error_log("Firebase token curl error: " . $curlError);
-            jsonResponse(['status' => 'error', 'message' => 'Network error connecting to Firebase', 'debug' => $curlError]);
-        }
-        
-        $tokenData = json_decode($response, true);
-        $accessToken = $tokenData['access_token'] ?? null;
+        // Get access token using the helper function with storage scope
+        $accessToken = getAccessTokenWithScope($keyFile, 'https://www.googleapis.com/auth/devstorage.full_control');
         
         if (!$accessToken) {
-            error_log("Firebase token error (HTTP $httpCode): " . $response);
+            error_log("Firebase Storage token error - could not get access token");
             jsonResponse([
                 'status' => 'error', 
-                'message' => 'Failed to authenticate with Firebase',
-                'debug' => [
-                    'http_code' => $httpCode,
-                    'error' => $tokenData['error'] ?? 'unknown',
-                    'error_description' => $tokenData['error_description'] ?? $response
-                ]
+                'message' => 'Failed to authenticate with Firebase Storage'
             ]);
         }
         
@@ -3227,41 +3187,8 @@ try {
         $projectId = $keyData['project_id'];
         $storageBucket = $projectId . '.firebasestorage.app';
         
-        // Create JWT for Google Cloud Storage access
-        $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
-        $now = time();
-        $claim = json_encode([
-            'iss' => $keyData['client_email'],
-            'sub' => $keyData['client_email'],
-            'scope' => 'https://www.googleapis.com/auth/cloud-platform',
-            'aud' => 'https://oauth2.googleapis.com/token',
-            'exp' => $now + 3600,
-            'iat' => $now
-        ]);
-        
-        $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
-        $base64UrlClaim = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($claim));
-        $signatureInput = $base64UrlHeader . "." . $base64UrlClaim;
-        
-        $signature = '';
-        openssl_sign($signatureInput, $signature, $keyData['private_key'], 'SHA256');
-        $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
-        $jwt = $signatureInput . "." . $base64UrlSignature;
-        
-        // Get access token
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-            'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-            'assertion' => $jwt
-        ]));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-        curl_close($ch);
-        
-        $tokenData = json_decode($response, true);
-        $accessToken = $tokenData['access_token'] ?? null;
+        // Get access token using the helper function
+        $accessToken = getAccessTokenWithScope($keyFile, 'https://www.googleapis.com/auth/devstorage.full_control');
         
         if (!$accessToken) {
             jsonResponse(['status' => 'error', 'message' => 'Failed to authenticate with Firebase']);
