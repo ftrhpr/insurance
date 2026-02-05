@@ -3013,6 +3013,267 @@ try {
         }
     }
 
+    // ============ UPLOAD CASE IMAGE TO FIREBASE STORAGE ============
+    if ($action === 'upload_case_image' && $method === 'POST') {
+        // Check authentication
+        if (empty($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['status' => 'error', 'message' => 'Unauthorized']);
+        }
+        
+        // Check if file was uploaded
+        if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+            $errorMessages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds server size limit',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form size limit',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+            ];
+            $errorCode = $_FILES['image']['error'] ?? UPLOAD_ERR_NO_FILE;
+            jsonResponse(['status' => 'error', 'message' => $errorMessages[$errorCode] ?? 'Upload error']);
+        }
+        
+        $file = $_FILES['image'];
+        $caseId = intval($_POST['case_id'] ?? 0);
+        
+        if (!$caseId) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing case ID']);
+        }
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($mimeType, $allowedTypes)) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid file type. Allowed: JPG, PNG, WEBP, GIF']);
+        }
+        
+        // Validate file size (10MB max)
+        if ($file['size'] > 10 * 1024 * 1024) {
+            jsonResponse(['status' => 'error', 'message' => 'File too large. Maximum size: 10MB']);
+        }
+        
+        // Generate unique filename
+        $timestamp = time();
+        $randomStr = bin2hex(random_bytes(4));
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
+        $filename = "cases/{$caseId}/{$timestamp}_{$randomStr}.{$ext}";
+        
+        // Read file contents
+        $fileContents = file_get_contents($file['tmp_name']);
+        if ($fileContents === false) {
+            jsonResponse(['status' => 'error', 'message' => 'Failed to read uploaded file']);
+        }
+        
+        // Get Firebase Storage access token
+        $keyFile = __DIR__ . '/service-account.json';
+        if (!file_exists($keyFile)) {
+            jsonResponse(['status' => 'error', 'message' => 'Firebase service account not configured']);
+        }
+        
+        $keyData = json_decode(file_get_contents($keyFile), true);
+        $projectId = $keyData['project_id'];
+        $storageBucket = $projectId . '.firebasestorage.app';
+        
+        // Create JWT for Firebase Storage access
+        $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
+        $now = time();
+        $claim = json_encode([
+            'iss' => $keyData['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/devstorage.read_write https://www.googleapis.com/auth/firebase.storage',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'exp' => $now + 3600,
+            'iat' => $now
+        ]);
+        
+        $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+        $base64UrlClaim = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($claim));
+        $signatureInput = $base64UrlHeader . "." . $base64UrlClaim;
+        
+        $signature = '';
+        openssl_sign($signatureInput, $signature, $keyData['private_key'], 'SHA256');
+        $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+        $jwt = $signatureInput . "." . $base64UrlSignature;
+        
+        // Get access token
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+            'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            'assertion' => $jwt
+        ]));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        $tokenData = json_decode($response, true);
+        $accessToken = $tokenData['access_token'] ?? null;
+        
+        if (!$accessToken) {
+            error_log("Firebase token error: " . $response);
+            jsonResponse(['status' => 'error', 'message' => 'Failed to authenticate with Firebase']);
+        }
+        
+        // Upload to Firebase Storage
+        $uploadUrl = "https://storage.googleapis.com/upload/storage/v1/b/{$storageBucket}/o?uploadType=media&name=" . urlencode($filename);
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $uploadUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContents);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: ' . $mimeType,
+            'Content-Length: ' . strlen($fileContents)
+        ]);
+        
+        $uploadResponse = curl_exec($ch);
+        $uploadHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+        
+        if ($uploadHttpCode !== 200) {
+            error_log("Firebase Storage upload failed. HTTP: {$uploadHttpCode}, Error: {$curlError}, Response: {$uploadResponse}");
+            jsonResponse(['status' => 'error', 'message' => 'Failed to upload to Firebase Storage', 'debug' => $uploadResponse]);
+        }
+        
+        $uploadData = json_decode($uploadResponse, true);
+        
+        // Construct the public download URL
+        $downloadUrl = "https://firebasestorage.googleapis.com/v0/b/{$storageBucket}/o/" . urlencode($filename) . "?alt=media";
+        
+        // Optionally make the file public (set metadata)
+        $metadataUrl = "https://storage.googleapis.com/storage/v1/b/{$storageBucket}/o/" . urlencode($filename);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $metadataUrl);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+            'metadata' => [
+                'caseId' => (string)$caseId,
+                'uploadedBy' => $_SESSION['user_id'] ?? 'unknown',
+                'uploadedAt' => date('c')
+            ]
+        ]));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: application/json'
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+        
+        jsonResponse([
+            'status' => 'success',
+            'message' => 'Image uploaded successfully',
+            'url' => $downloadUrl,
+            'filename' => $filename
+        ]);
+    }
+
+    // ============ DELETE CASE IMAGE FROM FIREBASE STORAGE ============
+    if ($action === 'delete_case_image' && $method === 'POST') {
+        // Check authentication
+        if (empty($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['status' => 'error', 'message' => 'Unauthorized']);
+        }
+        
+        $data = getJsonInput();
+        $imageUrl = $data['url'] ?? '';
+        
+        if (empty($imageUrl)) {
+            jsonResponse(['status' => 'error', 'message' => 'Missing image URL']);
+        }
+        
+        // Extract the filename from the URL
+        // URL format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encodedFilename}?alt=media
+        if (preg_match('/\/o\/([^?]+)/', $imageUrl, $matches)) {
+            $encodedFilename = $matches[1];
+            $filename = urldecode($encodedFilename);
+        } else {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid image URL format']);
+        }
+        
+        // Get Firebase Storage access token
+        $keyFile = __DIR__ . '/service-account.json';
+        if (!file_exists($keyFile)) {
+            jsonResponse(['status' => 'error', 'message' => 'Firebase service account not configured']);
+        }
+        
+        $keyData = json_decode(file_get_contents($keyFile), true);
+        $projectId = $keyData['project_id'];
+        $storageBucket = $projectId . '.firebasestorage.app';
+        
+        // Create JWT for Firebase Storage access
+        $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
+        $now = time();
+        $claim = json_encode([
+            'iss' => $keyData['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/devstorage.read_write https://www.googleapis.com/auth/firebase.storage',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'exp' => $now + 3600,
+            'iat' => $now
+        ]);
+        
+        $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+        $base64UrlClaim = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($claim));
+        $signatureInput = $base64UrlHeader . "." . $base64UrlClaim;
+        
+        $signature = '';
+        openssl_sign($signatureInput, $signature, $keyData['private_key'], 'SHA256');
+        $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+        $jwt = $signatureInput . "." . $base64UrlSignature;
+        
+        // Get access token
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+            'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            'assertion' => $jwt
+        ]));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        
+        $tokenData = json_decode($response, true);
+        $accessToken = $tokenData['access_token'] ?? null;
+        
+        if (!$accessToken) {
+            jsonResponse(['status' => 'error', 'message' => 'Failed to authenticate with Firebase']);
+        }
+        
+        // Delete from Firebase Storage
+        $deleteUrl = "https://storage.googleapis.com/storage/v1/b/{$storageBucket}/o/" . urlencode($filename);
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $deleteUrl);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $accessToken
+        ]);
+        
+        $deleteResponse = curl_exec($ch);
+        $deleteHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        // 204 = success, 404 = already deleted (treat as success)
+        if ($deleteHttpCode === 204 || $deleteHttpCode === 404) {
+            jsonResponse(['status' => 'success', 'message' => 'Image deleted successfully']);
+        } else {
+            error_log("Firebase Storage delete failed. HTTP: {$deleteHttpCode}, Response: {$deleteResponse}");
+            jsonResponse(['status' => 'error', 'message' => 'Failed to delete from Firebase Storage']);
+        }
+    }
+
     // Default response if no action matched
     jsonResponse(['error' => 'Unknown action: ' . $action]);
 

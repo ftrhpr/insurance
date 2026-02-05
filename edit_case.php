@@ -127,9 +127,6 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
     <!-- QR Code Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <script>
         // Provide initialCaseData early so Alpine has it when initializing
         let initialCaseData = {};
@@ -1320,38 +1317,15 @@ try {
         const CASE_ID = <?php echo $case_id; ?>;
         const CAN_EDIT = <?php echo $CAN_EDIT ? 'true' : 'false'; ?>;
         
-        // Firebase Configuration for Storage
-        const firebaseConfig = {
-            apiKey: "AIzaSyBRvdcvgMsOiVzeUQdSMYZFQ1GKkHZUWYI",
-            authDomain: "otm-portal-312a5.firebaseapp.com",
-            projectId: "otm-portal-312a5",
-            storageBucket: "otm-portal-312a5.firebasestorage.app",
-            messagingSenderId: "917547807534",
-            appId: "1:917547807534:web:9021c744b7b0f62b4e80bf"
-        };
-
-        // Initialize Firebase
-        let firebaseStorage = null;
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            firebaseStorage = firebase.storage();
-            console.log('Firebase Storage initialized successfully');
-        } catch (e) {
-            console.error('Firebase Storage init failed:', e);
-        }
+        // Note: Firebase Storage operations are handled server-side to avoid CORS issues
+        // The upload_case_image and delete_case_image API endpoints handle Firebase Storage
 
         // Track uploaded images for this session
         let caseImages = <?php echo json_encode($caseImages) ?: '[]'; ?>;
 
-        // Handle photo upload
+        // Handle photo upload - uses server-side upload to avoid CORS issues
         async function handlePhotoUpload(files) {
             if (!files || files.length === 0) return;
-            if (!firebaseStorage) {
-                showToast('Error', 'Firebase Storage not initialized', 'error');
-                return;
-            }
 
             const progressContainer = document.getElementById('upload-progress');
             const progressBar = document.getElementById('upload-progress-bar');
@@ -1377,37 +1351,27 @@ try {
                 try {
                     progressText.textContent = `Uploading ${file.name}... (${uploaded + 1}/${totalFiles})`;
                     
-                    // Create a unique filename
-                    const timestamp = Date.now();
-                    const randomStr = Math.random().toString(36).substring(2, 8);
-                    const ext = file.name.split('.').pop().toLowerCase();
-                    const filename = `cases/${CASE_ID}/${timestamp}_${randomStr}.${ext}`;
+                    // Upload via server-side API to avoid CORS issues
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    formData.append('case_id', CASE_ID);
 
-                    // Upload to Firebase Storage
-                    const storageRef = firebaseStorage.ref(filename);
-                    const uploadTask = storageRef.put(file);
-
-                    // Monitor upload progress
-                    await new Promise((resolve, reject) => {
-                        uploadTask.on('state_changed',
-                            (snapshot) => {
-                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                                const overallProgress = ((uploaded + progress / 100) / totalFiles) * 100;
-                                progressBar.style.width = overallProgress + '%';
-                            },
-                            (error) => {
-                                console.error('Upload error:', error);
-                                reject(error);
-                            },
-                            async () => {
-                                // Get download URL
-                                const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                                caseImages.push(downloadURL);
-                                uploaded++;
-                                resolve();
-                            }
-                        );
+                    const response = await fetch(`${API_URL}?action=upload_case_image`, {
+                        method: 'POST',
+                        body: formData
                     });
+
+                    const result = await response.json();
+
+                    if (result.status === 'success' && result.url) {
+                        caseImages.push(result.url);
+                        uploaded++;
+                        const overallProgress = (uploaded / totalFiles) * 100;
+                        progressBar.style.width = overallProgress + '%';
+                    } else {
+                        console.error('Upload error:', result);
+                        showToast('Upload Failed', result.message || `Failed to upload ${file.name}`, 'error');
+                    }
                 } catch (error) {
                     console.error('Upload failed:', error);
                     showToast('Upload Failed', `Failed to upload ${file.name}`, 'error');
@@ -1429,7 +1393,7 @@ try {
             document.getElementById('photo-upload-input').value = '';
         }
 
-        // Delete a photo
+        // Delete a photo - uses server-side API
         async function deletePhoto(index) {
             if (!confirm('Delete this photo? This action cannot be undone.')) return;
 
@@ -1437,12 +1401,20 @@ try {
             if (!imageUrl) return;
 
             try {
-                // Try to delete from Firebase Storage
-                if (firebaseStorage && imageUrl.includes('firebasestorage.googleapis.com')) {
+                // Delete from Firebase Storage via server API
+                if (imageUrl.includes('firebasestorage.googleapis.com')) {
                     try {
-                        const storageRef = firebaseStorage.refFromURL(imageUrl);
-                        await storageRef.delete();
-                        console.log('Deleted from Firebase Storage');
+                        const response = await fetch(`${API_URL}?action=delete_case_image`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ url: imageUrl })
+                        });
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            console.log('Deleted from Firebase Storage via API');
+                        } else {
+                            console.warn('Could not delete from storage:', result.message);
+                        }
                     } catch (storageError) {
                         console.warn('Could not delete from storage (may already be deleted):', storageError);
                     }
