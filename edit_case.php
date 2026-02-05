@@ -127,6 +127,9 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.js"></script>
     <!-- QR Code Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <script>
         // Provide initialCaseData early so Alpine has it when initializing
         let initialCaseData = {};
@@ -519,11 +522,40 @@ try {
 
                     <div x-show="isSectionOpen('photos')" x-cloak x-transition class="border-t border-slate-200">
                         <div class="p-6">
-                            <?php if (count($caseImages) > 0): ?>
+                            <!-- Upload Section -->
+                            <?php if ($CAN_EDIT): ?>
+                            <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                                        <i data-lucide="upload" class="w-4 h-4 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-slate-800">Upload Photos</h4>
+                                        <p class="text-xs text-slate-500">Add vehicle damage photos (max 10MB each)</p>
+                                    </div>
+                                </div>
+                                <div id="upload-dropzone" class="relative border-2 border-dashed border-purple-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors cursor-pointer bg-white/50">
+                                    <input type="file" id="photo-upload-input" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handlePhotoUpload(this.files)">
+                                    <i data-lucide="image-plus" class="w-10 h-10 text-purple-400 mx-auto mb-2"></i>
+                                    <p class="text-sm text-slate-600 font-medium">Click to upload or drag & drop</p>
+                                    <p class="text-xs text-slate-400 mt-1">PNG, JPG, WEBP up to 10MB</p>
+                                </div>
+                                <div id="upload-progress" class="hidden mt-3">
+                                    <div class="flex items-center gap-2 text-sm text-purple-600">
+                                        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <span id="upload-progress-text">Uploading...</span>
+                                    </div>
+                                    <div class="mt-2 h-2 bg-purple-100 rounded-full overflow-hidden">
+                                        <div id="upload-progress-bar" class="h-full bg-purple-600 transition-all duration-300" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            
                             <!-- Image Gallery Grid -->
                             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="photo-gallery">
                                 <?php foreach ($caseImages as $index => $imageUrl): ?>
-                                <div class="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer" onclick="openImageModal('<?php echo htmlspecialchars($imageUrl, ENT_QUOTES); ?>', <?php echo $index; ?>)">
+                                <div class="photo-item relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer" data-url="<?php echo htmlspecialchars($imageUrl, ENT_QUOTES); ?>" onclick="openImageModal('<?php echo htmlspecialchars($imageUrl, ENT_QUOTES); ?>', <?php echo $index; ?>)">
                                     <img src="<?php echo htmlspecialchars($imageUrl); ?>" 
                                          alt="Case photo <?php echo $index + 1; ?>" 
                                          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
@@ -533,6 +565,11 @@ try {
                                         <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                                             <span class="text-white text-sm font-medium">Photo <?php echo $index + 1; ?></span>
                                             <div class="flex gap-2">
+                                                <?php if ($CAN_EDIT): ?>
+                                                <button onclick="event.stopPropagation(); deletePhoto(<?php echo $index; ?>)" class="p-2 bg-red-500/80 backdrop-blur-sm rounded-lg hover:bg-red-600 transition-colors" title="Delete photo">
+                                                    <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
+                                                </button>
+                                                <?php endif; ?>
                                                 <a href="<?php echo htmlspecialchars($imageUrl); ?>" target="_blank" class="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors" onclick="event.stopPropagation()">
                                                     <i data-lucide="external-link" class="w-4 h-4 text-white"></i>
                                                 </a>
@@ -546,6 +583,7 @@ try {
                                 <?php endforeach; ?>
                             </div>
                             
+                            <?php if (count($caseImages) > 0): ?>
                             <!-- Download All Button -->
                             <div class="mt-4 flex justify-end">
                                 <button onclick="downloadAllImages()" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
@@ -553,16 +591,10 @@ try {
                                     Download All Photos
                                 </button>
                             </div>
-                            <?php else: ?>
-                            <!-- Empty State -->
-                            <div class="text-center py-12">
-                                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <i data-lucide="image-off" class="w-8 h-8 text-slate-400"></i>
-                                </div>
-                                <h3 class="text-lg font-semibold text-slate-700 mb-2">No Photos Uploaded</h3>
-                                <p class="text-sm text-slate-500 max-w-sm mx-auto">
-                                    Photos will appear here when uploaded from the mobile app during vehicle inspection.
-                                </p>
+                            <?php elseif (count($caseImages) === 0): ?>
+                            <!-- Empty State (only show if upload section not visible OR no photos after upload section) -->
+                            <div id="empty-photos-state" class="text-center py-8">
+                                <p class="text-sm text-slate-500">No photos uploaded yet. Use the upload section above to add vehicle photos.</p>
                             </div>
                             <?php endif; ?>
                         </div>
@@ -1287,6 +1319,270 @@ try {
         const API_URL = 'api.php';
         const CASE_ID = <?php echo $case_id; ?>;
         const CAN_EDIT = <?php echo $CAN_EDIT ? 'true' : 'false'; ?>;
+        
+        // Firebase Configuration for Storage
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRvdcvgMsOiVzeUQdSMYZFQ1GKkHZUWYI",
+            authDomain: "otm-portal-312a5.firebaseapp.com",
+            projectId: "otm-portal-312a5",
+            storageBucket: "otm-portal-312a5.firebasestorage.app",
+            messagingSenderId: "917547807534",
+            appId: "1:917547807534:web:9021c744b7b0f62b4e80bf"
+        };
+
+        // Initialize Firebase
+        let firebaseStorage = null;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            firebaseStorage = firebase.storage();
+            console.log('Firebase Storage initialized successfully');
+        } catch (e) {
+            console.error('Firebase Storage init failed:', e);
+        }
+
+        // Track uploaded images for this session
+        let caseImages = <?php echo json_encode($caseImages) ?: '[]'; ?>;
+
+        // Handle photo upload
+        async function handlePhotoUpload(files) {
+            if (!files || files.length === 0) return;
+            if (!firebaseStorage) {
+                showToast('Error', 'Firebase Storage not initialized', 'error');
+                return;
+            }
+
+            const progressContainer = document.getElementById('upload-progress');
+            const progressBar = document.getElementById('upload-progress-bar');
+            const progressText = document.getElementById('upload-progress-text');
+            progressContainer.classList.remove('hidden');
+
+            let uploaded = 0;
+            const totalFiles = files.length;
+
+            for (const file of files) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showToast('Invalid File', `${file.name} is not an image`, 'error');
+                    continue;
+                }
+
+                // Validate file size (10MB max)
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast('File Too Large', `${file.name} exceeds 10MB limit`, 'error');
+                    continue;
+                }
+
+                try {
+                    progressText.textContent = `Uploading ${file.name}... (${uploaded + 1}/${totalFiles})`;
+                    
+                    // Create a unique filename
+                    const timestamp = Date.now();
+                    const randomStr = Math.random().toString(36).substring(2, 8);
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    const filename = `cases/${CASE_ID}/${timestamp}_${randomStr}.${ext}`;
+
+                    // Upload to Firebase Storage
+                    const storageRef = firebaseStorage.ref(filename);
+                    const uploadTask = storageRef.put(file);
+
+                    // Monitor upload progress
+                    await new Promise((resolve, reject) => {
+                        uploadTask.on('state_changed',
+                            (snapshot) => {
+                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                const overallProgress = ((uploaded + progress / 100) / totalFiles) * 100;
+                                progressBar.style.width = overallProgress + '%';
+                            },
+                            (error) => {
+                                console.error('Upload error:', error);
+                                reject(error);
+                            },
+                            async () => {
+                                // Get download URL
+                                const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                                caseImages.push(downloadURL);
+                                uploaded++;
+                                resolve();
+                            }
+                        );
+                    });
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    showToast('Upload Failed', `Failed to upload ${file.name}`, 'error');
+                }
+            }
+
+            progressContainer.classList.add('hidden');
+            progressBar.style.width = '0%';
+
+            if (uploaded > 0) {
+                // Save to database
+                await saveCaseImages();
+                showToast('Photos Uploaded', `${uploaded} photo(s) uploaded successfully`, 'success');
+                // Refresh the gallery
+                refreshPhotoGallery();
+            }
+
+            // Clear the file input
+            document.getElementById('photo-upload-input').value = '';
+        }
+
+        // Delete a photo
+        async function deletePhoto(index) {
+            if (!confirm('Delete this photo? This action cannot be undone.')) return;
+
+            const imageUrl = caseImages[index];
+            if (!imageUrl) return;
+
+            try {
+                // Try to delete from Firebase Storage
+                if (firebaseStorage && imageUrl.includes('firebasestorage.googleapis.com')) {
+                    try {
+                        const storageRef = firebaseStorage.refFromURL(imageUrl);
+                        await storageRef.delete();
+                        console.log('Deleted from Firebase Storage');
+                    } catch (storageError) {
+                        console.warn('Could not delete from storage (may already be deleted):', storageError);
+                    }
+                }
+
+                // Remove from array
+                caseImages.splice(index, 1);
+
+                // Save to database
+                await saveCaseImages();
+                showToast('Photo Deleted', 'Photo removed successfully', 'success');
+
+                // Refresh gallery
+                refreshPhotoGallery();
+            } catch (error) {
+                console.error('Delete failed:', error);
+                showToast('Delete Failed', 'Failed to delete photo', 'error');
+            }
+        }
+
+        // Save case images to database
+        async function saveCaseImages() {
+            try {
+                await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', {
+                    id: CASE_ID,
+                    caseImages: caseImages
+                });
+                // Update the global initialCaseData
+                initialCaseData.case_images = JSON.stringify(caseImages);
+            } catch (error) {
+                console.error('Failed to save images:', error);
+                throw error;
+            }
+        }
+
+        // Refresh the photo gallery UI
+        function refreshPhotoGallery() {
+            const gallery = document.getElementById('photo-gallery');
+            const emptyState = document.getElementById('empty-photos-state');
+
+            if (caseImages.length === 0) {
+                gallery.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('hidden');
+                // Hide download all button if exists
+                const downloadAllBtn = gallery.parentElement.querySelector('button[onclick="downloadAllImages()"]');
+                if (downloadAllBtn) downloadAllBtn.parentElement.classList.add('hidden');
+            } else {
+                if (emptyState) emptyState.classList.add('hidden');
+                
+                gallery.innerHTML = caseImages.map((url, index) => `
+                    <div class="photo-item relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer" data-url="${escapeHtml(url)}" onclick="openImageModal('${escapeHtml(url)}', ${index})">
+                        <img src="${escapeHtml(url)}" 
+                             alt="Case photo ${index + 1}" 
+                             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                             loading="lazy"
+                             onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23e2e8f0%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%2394a3b8%22 font-size=%2212%22>No Image</text></svg>';">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                                <span class="text-white text-sm font-medium">Photo ${index + 1}</span>
+                                <div class="flex gap-2">
+                                    ${CAN_EDIT ? `<button onclick="event.stopPropagation(); deletePhoto(${index})" class="p-2 bg-red-500/80 backdrop-blur-sm rounded-lg hover:bg-red-600 transition-colors" title="Delete photo">
+                                        <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
+                                    </button>` : ''}
+                                    <a href="${escapeHtml(url)}" target="_blank" class="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors" onclick="event.stopPropagation()">
+                                        <i data-lucide="external-link" class="w-4 h-4 text-white"></i>
+                                    </a>
+                                    <a href="${escapeHtml(url)}" download class="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors" onclick="event.stopPropagation()">
+                                        <i data-lucide="download" class="w-4 h-4 text-white"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Update download all button visibility
+                let downloadAllContainer = gallery.parentElement.querySelector('.mt-4.flex.justify-end');
+                if (!downloadAllContainer && caseImages.length > 0) {
+                    downloadAllContainer = document.createElement('div');
+                    downloadAllContainer.className = 'mt-4 flex justify-end';
+                    downloadAllContainer.innerHTML = `
+                        <button onclick="downloadAllImages()" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            Download All Photos
+                        </button>
+                    `;
+                    gallery.parentElement.appendChild(downloadAllContainer);
+                } else if (downloadAllContainer) {
+                    downloadAllContainer.classList.remove('hidden');
+                }
+
+                // Re-initialize Lucide icons
+                lucide.createIcons();
+            }
+
+            // Update photo count badge in section header
+            const photoBadge = document.querySelector('.bg-purple-100.text-purple-700, .bg-slate-100.text-slate-500');
+            if (photoBadge) {
+                if (caseImages.length > 0) {
+                    photoBadge.className = 'px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium';
+                    photoBadge.textContent = `${caseImages.length} ${caseImages.length === 1 ? 'photo' : 'photos'}`;
+                } else {
+                    photoBadge.className = 'px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-medium';
+                    photoBadge.textContent = 'No photos';
+                }
+            }
+
+            // Update currentCase.case_images for Alpine
+            if (window.caseEditor && window.caseEditor.currentCase) {
+                window.caseEditor.currentCase.case_images = JSON.stringify(caseImages);
+            }
+        }
+
+        // Setup drag & drop for the upload zone
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropzone = document.getElementById('upload-dropzone');
+            if (dropzone) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, preventDefaults, false);
+                });
+
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, () => dropzone.classList.add('border-purple-500', 'bg-purple-50'), false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, () => dropzone.classList.remove('border-purple-500', 'bg-purple-50'), false);
+                });
+
+                dropzone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    handlePhotoUpload(files);
+                }, false);
+            }
+        });
         
         initialCaseData = initialCaseData || {};
         try {
@@ -3988,7 +4284,7 @@ try {
         }
 
         // ============ IMAGE GALLERY FUNCTIONS ============
-        const caseImages = <?php echo json_encode($caseImages); ?>;
+        // caseImages is defined at the top of the script
         let currentImageIndex = 0;
         
         function openImageModal(imageUrl, index) {
