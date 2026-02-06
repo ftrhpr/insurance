@@ -57,13 +57,13 @@ if ($current_user_role === 'technician') {
     $params[] = $selected_technician;
 }
 
-// Month filter
+// Month filter - use service_date (when completed) instead of created_at
 if ($selected_month) {
-    $query .= " AND DATE_FORMAT(created_at, '%Y-%m') = ?";
+    $query .= " AND DATE_FORMAT(service_date, '%Y-%m') = ?";
     $params[] = $selected_month;
 }
 
-$query .= " ORDER BY created_at DESC";
+$query .= " ORDER BY service_date DESC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
@@ -73,10 +73,10 @@ $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $total_nachrebi = array_sum(array_column($records, 'nachrebi_qty'));
 $total_amount = $total_nachrebi * 77; // Calculate amount as nachrebi_qty × 77
 
-// Get available months for filter dropdown
-$months_query = "SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month 
+// Get available months for filter dropdown (based on service_date)
+$months_query = "SELECT DISTINCT DATE_FORMAT(service_date, '%Y-%m') as month 
     FROM transfers 
-    WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed')";
+    WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') AND service_date IS NOT NULL";
 
 // Filter months by technician if applicable
 if ($current_user_role === 'technician') {
@@ -114,7 +114,7 @@ if ($current_user_role !== 'technician') {
     WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
     
     if ($selected_month) {
-        $summary_query .= " AND DATE_FORMAT(created_at, '%Y-%m') = ?";
+        $summary_query .= " AND DATE_FORMAT(service_date, '%Y-%m') = ?";
         $summary_stmt = $pdo->prepare($summary_query . " GROUP BY assigned_mechanic ORDER BY total_nachrebi DESC");
         $summary_stmt->execute([$selected_month]);
     } else {
