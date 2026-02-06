@@ -2278,14 +2278,22 @@ try {
                         return `
                             <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                 <div class="flex items-start justify-between mb-3">
-                                    <div class="flex items-center gap-3">
-                                        <input type="checkbox" class="select-item w-4 h-4 text-blue-600 rounded" data-type="part" data-index="${item.originalIndex}">
-                                        <div>
-                                            <h5 class="font-medium text-slate-800">${escapeHtml(item.displayName)}</h5>
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                                        <input type="checkbox" class="select-item w-4 h-4 text-blue-600 rounded flex-shrink-0" data-type="part" data-index="${item.originalIndex}">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <input type="text" value="${escapeHtml(item.name || '')}" 
+                                                    onchange="updatePart(${item.originalIndex}, 'name', this.value)"
+                                                    class="flex-1 min-w-0 font-medium text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors"
+                                                    placeholder="Part name">
+                                                <button onclick="this.previousElementSibling.focus()" class="p-1 text-slate-400 hover:text-blue-600 transition-colors flex-shrink-0" title="Edit name">
+                                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </div>
                                             ${item.sku ? `<p class="text-sm text-slate-600">SKU: ${escapeHtml(item.sku)}</p>` : ''}
                                         </div>
                                     </div>
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor}">${item.status || 'Pending'}</span>
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor} flex-shrink-0 ml-2">${item.status || 'Pending'}</span>
                                 </div>
                                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                                     <div>
@@ -2321,14 +2329,22 @@ try {
                         return `
                             <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                 <div class="flex items-start justify-between mb-3">
-                                    <div class="flex items-center gap-3">
-                                        <input type="checkbox" class="select-item w-4 h-4 text-green-600 rounded" data-type="labor" data-index="${item.originalIndex}">
-                                        <div>
-                                            <h5 class="font-medium text-slate-800">${escapeHtml(item.displayName)}</h5>
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                                        <input type="checkbox" class="select-item w-4 h-4 text-green-600 rounded flex-shrink-0" data-type="labor" data-index="${item.originalIndex}">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <input type="text" value="${escapeHtml(item.description || '')}" 
+                                                    onchange="updateLabor(${item.originalIndex}, 'description', this.value)"
+                                                    class="flex-1 min-w-0 font-medium text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-green-500 focus:outline-none px-1 py-0.5 transition-colors"
+                                                    placeholder="Service name">
+                                                <button onclick="this.previousElementSibling.focus()" class="p-1 text-slate-400 hover:text-green-600 transition-colors flex-shrink-0" title="Edit name">
+                                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </div>
                                             ${item.completed_by ? `<p class="text-sm text-slate-600">Completed by: ${escapeHtml(item.completed_by)}</p>` : ''}
                                         </div>
                                     </div>
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor}">${item.status || 'Pending'}</span>
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor} flex-shrink-0 ml-2">${item.status || 'Pending'}</span>
                                 </div>
                                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                                     <div>
