@@ -30,6 +30,7 @@ $selected_month = $_GET['month'] ?? '';  // Empty by default to show all
 $selected_technician = $_GET['technician'] ?? '';
 
 // Build query for completed cases with nachrebi_qty
+// Check both status_id = 8 (Completed) OR status = 'Completed' for compatibility
 $query = "SELECT 
     name as customer_name,
     plate,
@@ -43,7 +44,7 @@ $query = "SELECT
     assigned_mechanic,
     id
 FROM transfers 
-WHERE nachrebi_qty > 0 AND status_id = 8";
+WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed')";
 
 $params = [];
 
@@ -75,7 +76,7 @@ $total_amount = $total_nachrebi * 77; // Calculate amount as nachrebi_qty × 77
 // Get available months for filter dropdown
 $months_query = "SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month 
     FROM transfers 
-    WHERE nachrebi_qty > 0 AND status_id = 8";
+    WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed')";
 
 // Filter months by technician if applicable
 if ($current_user_role === 'technician') {
@@ -93,7 +94,7 @@ $technicians = [];
 $all_technicians = [];
 if ($current_user_role !== 'technician') {
     // Get technicians from filter (those who have completed cases)
-    $tech_stmt = $pdo->query("SELECT DISTINCT assigned_mechanic FROM transfers WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != '' AND nachrebi_qty > 0 AND status_id = 8 ORDER BY assigned_mechanic");
+    $tech_stmt = $pdo->query("SELECT DISTINCT assigned_mechanic FROM transfers WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != '' AND nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') ORDER BY assigned_mechanic");
     $technicians = $tech_stmt->fetchAll(PDO::FETCH_COLUMN);
     
     // Get all technicians from users table for assignment dropdown
@@ -110,7 +111,7 @@ if ($current_user_role !== 'technician') {
         COUNT(*) as total_cases,
         SUM(nachrebi_qty) as total_nachrebi
     FROM transfers 
-    WHERE nachrebi_qty > 0 AND status_id = 8 AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
+    WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
     
     if ($selected_month) {
         $summary_query .= " AND DATE_FORMAT(created_at, '%Y-%m') = ?";
