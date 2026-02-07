@@ -2,9 +2,21 @@
 require_once 'session_config.php';
 
 header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *");
+
+// CORS: restrict to production domain
+$allowed_origins = ['https://portal.otoexpress.ge', 'https://www.portal.otoexpress.ge'];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowed_origins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header("Access-Control-Allow-Credentials: true");
+} else {
+    // Same-origin requests have no Origin header — allow those
+    if (!empty($origin)) {
+        header("Access-Control-Allow-Origin: https://portal.otoexpress.ge");
+    }
+}
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Headers: Content-Type, X-CSRF-Token");
 
 // --- CONFIGURATION ---
 require_once 'config.php';
@@ -17,7 +29,8 @@ try {
     $pdo = getDBConnection();
 } catch (Exception $e) {
     http_response_code(500); 
-    die(json_encode(['error' => 'DB Connection failed: ' . $e->getMessage()]));
+    error_log('DB Connection failed: ' . $e->getMessage());
+    die(json_encode(['error' => 'Database connection failed. Please try again later.']));
 }
 
 $action = $_GET['action'] ?? '';
@@ -100,26 +113,29 @@ if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
 }
 
 // CSRF protection for state-changing operations (POST/DELETE)
-// Temporarily disabled for smooth transition - will be re-enabled after testing
-// Only validate CSRF for authenticated, non-public endpoints
-/*
 if ($method === 'POST' && !in_array($action, $publicEndpoints) && !empty($_SESSION['user_id'])) {
-    $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? getallheaders()['X-CSRF-Token'] ?? '';
-    
+    $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    // Also check getallheaders() for case-insensitive header names
+    if (empty($csrfToken)) {
+        $headers = getallheaders();
+        foreach ($headers as $k => $v) {
+            if (strtolower($k) === 'x-csrf-token') { $csrfToken = $v; break; }
+        }
+    }
     if (empty($csrfToken) || $csrfToken !== $_SESSION['csrf_token']) {
         error_log("CSRF token mismatch for action: $action, user: " . ($_SESSION['user_id'] ?? 'unknown'));
         http_response_code(403);
-        die(json_encode(['error' => 'Invalid CSRF token', 'debug' => 'Token validation failed']));
+        die(json_encode(['error' => 'Invalid CSRF token']));
     }
 }
-*/
 
 // Check role permissions
 function checkPermission($required_role) {
-    global $pdo;
     $user_role = $_SESSION['role'] ?? 'viewer';
-    $hierarchy = ['viewer' => 1, 'manager' => 2, 'admin' => 3];
-    return $hierarchy[$user_role] >= $hierarchy[$required_role];
+    $hierarchy = ['viewer' => 1, 'technician' => 2, 'manager' => 3, 'admin' => 4];
+    $userLevel = $hierarchy[$user_role] ?? 0;
+    $requiredLevel = $hierarchy[$required_role] ?? 99;
+    return $userLevel >= $requiredLevel;
 }
 
 function getCurrentUserId() {
@@ -282,41 +298,50 @@ function sendFCM_V1($pdo, $keyFile, $title, $body) {
 try {
 
     if ($action === 'get_public_transfer' && $method === 'GET') {
+        // Support both slug (preferred, secure) and legacy integer ID
+        $slug = trim($_GET['slug'] ?? '');
         $id = intval($_GET['id'] ?? 0);
-        if ($id <= 0) {
+        
+        if (empty($slug) && $id <= 0) {
             http_response_code(400);
-            jsonResponse(['error' => 'Invalid ID parameter']);
+            jsonResponse(['error' => 'Invalid request']);
         }
         
-        // Ensure link_opened_at column exists
-        try {
-            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = 'link_opened_at'");
-            $checkStmt->execute([DB_NAME]);
-            if ($checkStmt->fetchColumn() == 0) {
-                $pdo->exec("ALTER TABLE transfers ADD COLUMN `link_opened_at` DATETIME DEFAULT NULL");
+        // Note: Column migrations moved to fix_db_all.php
+        
+        // Fetch by slug (preferred) or by id (legacy fallback)
+        if (!empty($slug)) {
+            // Validate slug format (32-char hex)
+            if (!preg_match('/^[a-f0-9]{32}$/', $slug)) {
+                http_response_code(400);
+                jsonResponse(['error' => 'Invalid request']);
             }
-        } catch (Exception $e) {
-            // Column might already exist
+            $stmt = $pdo->prepare("SELECT id, name, plate, status, service_date as serviceDate, user_response as userResponse, review_stars as reviewStars, review_comment as reviewComment, slug FROM transfers WHERE slug = ?");
+            $stmt->execute([$slug]);
+        } else {
+            $stmt = $pdo->prepare("SELECT id, name, plate, status, service_date as serviceDate, user_response as userResponse, review_stars as reviewStars, review_comment as reviewComment, slug FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
         }
-        
-        // Record link open (only first time)
-        $pdo->prepare("UPDATE transfers SET link_opened_at = COALESCE(link_opened_at, NOW()) WHERE id = ? AND link_opened_at IS NULL")->execute([$id]);
-        
-        // Fetch status and review data
-        $stmt = $pdo->prepare("SELECT id, name, plate, status, service_date as serviceDate, user_response as userResponse, review_stars as reviewStars, review_comment as reviewComment FROM transfers WHERE id = ?");
-        $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$row) {
             http_response_code(404);
-            jsonResponse(['error' => 'Transfer not found', 'id' => $id]);
+            jsonResponse(['error' => 'Not found']);
         }
+        
+        // Record link open (only first time)
+        $pdo->prepare("UPDATE transfers SET link_opened_at = COALESCE(link_opened_at, NOW()) WHERE id = ? AND link_opened_at IS NULL")->execute([$row['id']]);
+        
+        // Don't expose sequential ID to client - use slug
+        $row['slug'] = $row['slug'] ?? '';
+        unset($row['id']);
         
         jsonResponse($row);
     }
 
     if ($action === 'user_respond' && $method === 'POST') {
         $data = getJsonInput();
+        $slug = trim($data['slug'] ?? '');
         $id = intval($data['id'] ?? 0);
         $response = $data['response'] ?? 'Confirmed';
         $rescheduleDate = $data['reschedule_date'] ?? null;
@@ -328,26 +353,34 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Invalid response value']);
         }
         
-        if($id > 0) {
+        // Resolve transfer by slug (preferred) or id (legacy)
+        $transfer = null;
+        if (!empty($slug) && preg_match('/^[a-f0-9]{32}$/', $slug)) {
+            $stmt = $pdo->prepare("SELECT id, name, plate FROM transfers WHERE slug = ?");
+            $stmt->execute([$slug]);
+            $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
+        } elseif ($id > 0) {
+            $stmt = $pdo->prepare("SELECT id, name, plate FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+            $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+        
+        if ($transfer) {
+            $transferId = $transfer['id'];
             // Update user response
-            $pdo->prepare("UPDATE transfers SET user_response = ? WHERE id = ?")->execute([$response, $id]);
+            $pdo->prepare("UPDATE transfers SET user_response = ? WHERE id = ?")->execute([$response, $transferId]);
             
             // If reschedule request, store the desired date and comment
             if ($response === 'Reschedule Requested' && $rescheduleDate) {
                 $pdo->prepare("UPDATE transfers SET reschedule_date = ?, reschedule_comment = ? WHERE id = ?")
-                    ->execute([$rescheduleDate, $rescheduleComment, $id]);
+                    ->execute([$rescheduleDate, $rescheduleComment, $transferId]);
             }
             
-            $stmt = $pdo->prepare("SELECT name, plate FROM transfers WHERE id = ?");
-            $stmt->execute([$id]);
-            $tr = $stmt->fetch();
-            if($tr) {
-                $notificationBody = "{$tr['name']} ({$tr['plate']}) marked as: $response";
-                if ($rescheduleDate) {
-                    $notificationBody .= " - Requested: " . date('M d, Y H:i', strtotime($rescheduleDate));
-                }
-                sendFCM_V1($pdo, $service_account_file, "Customer Responded", $notificationBody);
+            $notificationBody = "{$transfer['name']} ({$transfer['plate']}) marked as: $response";
+            if ($rescheduleDate) {
+                $notificationBody .= " - Requested: " . date('M d, Y H:i', strtotime($rescheduleDate));
             }
+            sendFCM_V1($pdo, $service_account_file, "Customer Responded", $notificationBody);
         }
         jsonResponse(['status' => 'success']);
     }
@@ -355,6 +388,7 @@ try {
     // --- NEW: SUBMIT REVIEW ---
     if ($action === 'submit_review' && $method === 'POST') {
         $data = getJsonInput();
+        $slug = trim($data['slug'] ?? '');
         $id = intval($data['id'] ?? 0);
         $stars = intval($data['stars'] ?? 5);
         $comment = trim($data['comment'] ?? '');
@@ -369,28 +403,39 @@ try {
             $comment = substr($comment, 0, 1000);
         }
 
-        if($id > 0) {
+        // Resolve transfer by slug (preferred) or id (legacy)
+        $transfer = null;
+        if (!empty($slug) && preg_match('/^[a-f0-9]{32}$/', $slug)) {
+            $stmt = $pdo->prepare("SELECT id, name, plate, review_stars FROM transfers WHERE slug = ?");
+            $stmt->execute([$slug]);
+            $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
+        } elseif ($id > 0) {
+            $stmt = $pdo->prepare("SELECT id, name, plate, review_stars FROM transfers WHERE id = ?");
+            $stmt->execute([$id]);
+            $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if ($transfer) {
+            // Duplicate check: prevent re-review
+            if (!empty($transfer['review_stars'])) {
+                jsonResponse(['status' => 'error', 'message' => 'Review already submitted']);
+            }
+            
+            $transferId = $transfer['id'];
             try {
-                // Get transfer details
-                $stmt = $pdo->prepare("SELECT name, plate FROM transfers WHERE id = ?");
-                $stmt->execute([$id]);
-                $tr = $stmt->fetch();
+                // Save to customer_reviews table
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $pdo->prepare("INSERT INTO customer_reviews (order_id, customer_name, rating, comment, status, ip_address) VALUES (?, ?, ?, ?, 'pending', ?)")
+                    ->execute([$transferId, $transfer['name'], $stars, $comment, $ip]);
                 
-                if($tr) {
-                    // Save to customer_reviews table
-                    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-                    $pdo->prepare("INSERT INTO customer_reviews (order_id, customer_name, rating, comment, status, ip_address) VALUES (?, ?, ?, ?, 'pending', ?)")
-                        ->execute([$id, $tr['name'], $stars, $comment, $ip]);
-                    
-                    // Also update transfers table for backward compatibility
-                    $pdo->prepare("UPDATE transfers SET review_stars = ?, review_comment = ? WHERE id = ?")->execute([$stars, $comment, $id]);
-                    
-                    // Notify Manager
-                    sendFCM_V1($pdo, $service_account_file, "New Customer Review!", "{$tr['name']} ({$tr['plate']}) rated: $stars Stars");
-                }
+                // Also update transfers table for backward compatibility
+                $pdo->prepare("UPDATE transfers SET review_stars = ?, review_comment = ? WHERE id = ?")->execute([$stars, $comment, $transferId]);
+                
+                // Notify Manager
+                sendFCM_V1($pdo, $service_account_file, "New Customer Review!", "{$transfer['name']} ({$transfer['plate']}) rated: $stars Stars");
             } catch (PDOException $e) {
                 // Table might not exist, just save to transfers table
-                $pdo->prepare("UPDATE transfers SET review_stars = ?, review_comment = ? WHERE id = ?")->execute([$stars, $comment, $id]);
+                $pdo->prepare("UPDATE transfers SET review_stars = ?, review_comment = ? WHERE id = ?")->execute([$stars, $comment, $transferId]);
             }
         }
         jsonResponse(['status' => 'success']);
@@ -476,11 +521,16 @@ try {
             jsonResponse(['status' => 'success', 'id' => $newId, 'message' => 'Transfer added successfully']);
         } catch (Exception $e) {
             error_log("Add transfer error: " . $e->getMessage());
-            jsonResponse(['status' => 'error', 'message' => 'Failed to add transfer: ' . $e->getMessage()]);
+            jsonResponse(['status' => 'error', 'message' => 'Failed to add transfer']);
         }
     }
 
     if ($action === 'update_transfer' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+            return;
+        }
         $data = getJsonInput();
         $id = $data['id'] ?? null;
 
@@ -490,65 +540,7 @@ try {
             return;
         }
 
-        // Ensure transfers table has repair management columns (defensive migration compatible with older MySQL)
-        try {
-            $required = [
-                'repair_status' => "VARCHAR(50) DEFAULT NULL",
-                'repair_start_date' => "DATETIME DEFAULT NULL",
-                'repair_end_date' => "DATETIME DEFAULT NULL",
-                'assigned_mechanic' => "VARCHAR(100) DEFAULT NULL",
-                'repair_notes' => "TEXT DEFAULT NULL",
-                'repair_parts' => "TEXT DEFAULT NULL",
-                'repair_labor' => "TEXT DEFAULT NULL",
-                'repair_activity_log' => "TEXT DEFAULT NULL",
-                'vehicle_make' => "VARCHAR(100) DEFAULT NULL",
-                'vehicle_model' => "VARCHAR(100) DEFAULT NULL",
-                'case_images' => "TEXT DEFAULT NULL",
-                'parts_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
-                'services_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
-                'global_discount_percent' => "DECIMAL(5,2) DEFAULT 0",
-                'slug' => "VARCHAR(32) UNIQUE DEFAULT NULL",
-                'vat_enabled' => "TINYINT(1) DEFAULT 0",
-                'vat_amount' => "DECIMAL(10,2) DEFAULT 0.00",
-                'case_type' => "ENUM('საცალო', 'დაზღვევა') DEFAULT 'საცალო'",
-                'nachrebi_qty' => "DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Pieces quantity (ნაჭრების რაოდენობა)'"
-            ];
-            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
-            foreach ($required as $col => $def) {
-                try {
-                    $checkStmt->execute([DB_NAME, $col]);
-                    $exists = $checkStmt->fetchColumn();
-                    if ($exists == 0) {
-                        try {
-                            $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
-                            error_log("Successfully added column: $col");
-                        } catch (PDOException $alterError) {
-                            error_log("Failed to add column $col: " . $alterError->getMessage());
-                            // Try alternative syntax for some MySQL versions
-                            try {
-                                $pdo->exec("ALTER TABLE transfers ADD `$col` $def");
-                                error_log("Successfully added column with alternative syntax: $col");
-                            } catch (PDOException $altError) {
-                                error_log("Alternative syntax also failed for column $col: " . $altError->getMessage());
-                            }
-                        }
-                    }
-                } catch (PDOException $checkError) {
-                    error_log("Failed to check column $col: " . $checkError->getMessage());
-                    // If we can't check, try to add anyway (will fail silently if exists)
-                    try {
-                        $pdo->exec("ALTER TABLE transfers ADD COLUMN `$col` $def");
-                        error_log("Added column without checking: $col");
-                    } catch (PDOException $e) {
-                        // Column probably already exists, ignore
-                        error_log("Column $col already exists or add failed: " . $e->getMessage());
-                    }
-                }
-            }
-        } catch (Exception $alterError) {
-            error_log("Error in defensive column migration: " . $alterError->getMessage());
-            // Continue anyway - columns might already exist or ALTER might fail on some DB versions
-        }
+        // Note: Column migrations have been moved to fix_db_all.php (run once on deployment)
 
         try {
             $field_map = [
@@ -646,7 +638,7 @@ try {
                 } catch (PDOException $e) {
                     error_log("Database error in update_transfer: " . $e->getMessage() . " SQL: $sql Params: " . json_encode($params));
                     http_response_code(500);
-                    jsonResponse(['error' => 'Database error during update: ' . $e->getMessage()]);
+                    jsonResponse(['error' => 'Database error during update']);
                     return;
                 }
             }
@@ -984,7 +976,8 @@ try {
             }
             jsonResponse(['cases' => $cases]);
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Get cases error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
 
@@ -1095,7 +1088,7 @@ try {
                 $testResult = $testStmt->fetch(PDO::FETCH_ASSOC);
             } catch (Exception $testError) {
                 http_response_code(500);
-                jsonResponse(['error' => 'Cannot access SMS templates table: ' . $testError->getMessage()]);
+                jsonResponse(['error' => 'Cannot access SMS templates table']);
                 exit;
             }
 
@@ -1158,7 +1151,7 @@ try {
             }
             error_log("Database error in save_templates: " . $e->getMessage());
             http_response_code(500);
-            jsonResponse(['error' => 'Failed to save templates: ' . $e->getMessage()]);
+            jsonResponse(['error' => 'Failed to save templates']);
         }
     }
 
@@ -1178,7 +1171,7 @@ try {
         } catch (Exception $e) {
             error_log("Database error in get_parsing_templates: " . $e->getMessage());
             http_response_code(500);
-            jsonResponse(['error' => 'Database error: ' . $e->getMessage()]);
+            jsonResponse(['error' => 'Database error']);
         }
     }
 
@@ -1675,68 +1668,10 @@ try {
         if (!$transfer_id || $amount <= 0) {
             error_log('create_payment validation failed - data: ' . json_encode(['data' => $data, '_POST' => $_POST, 'raw_input' => file_get_contents('php://input')]));
             http_response_code(400);
-            // Include helpful debug in response for admins
-            jsonResponse(['error' => 'transfer_id and positive amount are required', 'debug' => ['data' => $data, '_POST' => $_POST]]);
+            jsonResponse(['error' => 'transfer_id and positive amount are required']);
         }
 
-        // Ensure payments table exists (defensive)
-        try {
-            $pdo->exec("CREATE TABLE IF NOT EXISTS payments (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                transfer_id INT NOT NULL,
-                amount DECIMAL(10,2) NOT NULL,
-                method ENUM('cash','transfer') NOT NULL DEFAULT 'cash',
-                reference VARCHAR(255) DEFAULT NULL,
-                recorded_by INT DEFAULT NULL,
-                notes TEXT DEFAULT NULL,
-                currency VARCHAR(3) DEFAULT 'GEL',
-                paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (transfer_id) REFERENCES transfers(id) ON DELETE CASCADE,
-                FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE SET NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        } catch (Exception $e) { /* ignore */ }
-
-        // Defensive: ensure payments table has expected columns (for older DBs)
-        try {
-            $colCheck = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payments' AND COLUMN_NAME = ?");
-            $schema = DB_NAME;
-            $paymentsCols = [
-                'method' => "ENUM('cash','transfer') NOT NULL DEFAULT 'cash'",
-                'reference' => "VARCHAR(255) DEFAULT NULL",
-                'recorded_by' => "INT DEFAULT NULL",
-                'notes' => "TEXT DEFAULT NULL",
-                'currency' => "VARCHAR(3) DEFAULT 'GEL'",
-                'paid_at' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-                'payment_date' => "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"  // For legacy schemas
-            ];
-            foreach ($paymentsCols as $col => $def) {
-                $colCheck->execute([$schema, $col]);
-                if ($colCheck->fetchColumn() == 0) {
-                    try {
-                        $pdo->exec("ALTER TABLE payments ADD COLUMN $col $def");
-                        error_log("Added missing payments column: $col");
-                    } catch (Exception $e) {
-                        error_log("Failed to add payments column $col: " . $e->getMessage());
-                    }
-                }
-            }
-        } catch (Exception $e) {
-            // ignore
-        }
-
-        // Special handling for legacy payment_date column
-        try {
-            $checkDefault = $pdo->prepare("SELECT COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'payment_date'");
-            $checkDefault->execute([DB_NAME]);
-            $default = $checkDefault->fetchColumn();
-            if ($default === null || $default === '') {
-                $pdo->exec("ALTER TABLE payments MODIFY COLUMN payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                error_log("Modified payment_date column to have default timestamp");
-            }
-        } catch (Exception $e) {
-            error_log("Failed to check/modify payment_date default: " . $e->getMessage());
-        }
+        // Note: Table/column migrations have been moved to fix_db_all.php
 
         $stmt = $pdo->prepare("SELECT id, amount, COALESCE(amount_paid,0) as amount_paid FROM transfers WHERE id = ? LIMIT 1");
         $stmt->execute([$transfer_id]);
@@ -1745,66 +1680,30 @@ try {
             http_response_code(404);
             jsonResponse(['error' => 'Transfer not found']);
         }
-        // Build a dynamic insert to support legacy DBs (payment_date vs paid_at, missing recorded_by etc.)
         $recorded_by = getCurrentUserId();
 
-        // Ensure method column exists
+        // Use transaction to keep payment insert and transfer update atomic
+        $pdo->beginTransaction();
         try {
-            $pdo->exec("ALTER TABLE payments ADD COLUMN method ENUM('cash','transfer') NOT NULL DEFAULT 'cash'");
-        } catch (Exception $e) { /* ignore */ }
+            $sql = "INSERT INTO payments (transfer_id, amount, method, reference, recorded_by, notes, currency, paid_at) VALUES (?, ?, ?, ?, ?, ?, 'GEL', NOW())";
+            $insert = $pdo->prepare($sql);
+            $insert->execute([$transfer_id, $amount, $methodType, $reference, $recorded_by, $notes]);
+            $payment_id = $pdo->lastInsertId();
 
-        // Find existing payments columns
-        $colsStmt = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payments'");
-        $colsStmt->execute([DB_NAME]);
-        $existingCols = array_column($colsStmt->fetchAll(PDO::FETCH_COLUMN), 0);
+            // Update transfer paid totals
+            $new_paid = floatval($tr['amount_paid']) + $amount;
+            $status = (!is_null($tr['amount']) && floatval($new_paid) >= floatval($tr['amount'])) ? 'paid' : ($new_paid > 0 ? 'partial' : 'unpaid');
+            $updateStmt = $pdo->prepare("UPDATE transfers SET amount_paid = ?, payment_status = ?, last_payment_at = NOW() WHERE id = ?");
+            $updateStmt->execute([number_format($new_paid,2,'.',''), $status, $transfer_id]);
 
-        $insertCols = ['transfer_id', 'amount', 'method'];
-        $insertParams = [$transfer_id, $amount, $methodType];
-
-        if (in_array('reference', $existingCols)) { $insertCols[] = 'reference'; $insertParams[] = $reference; }
-        if (in_array('recorded_by', $existingCols)) { $insertCols[] = 'recorded_by'; $insertParams[] = $recorded_by; }
-        if (in_array('notes', $existingCols)) { $insertCols[] = 'notes'; $insertParams[] = $notes; }
-        if (in_array('currency', $existingCols)) { $insertCols[] = 'currency'; $insertParams[] = 'GEL'; }
-        // handle payment timestamp column variations
-        if (in_array('paid_at', $existingCols)) { $insertCols[] = 'paid_at'; $insertParams[] = date('Y-m-d H:i:s'); }
-        // Always include payment_date if present to avoid NOT NULL without default errors on legacy schemas
-        if (in_array('payment_date', $existingCols)) { $insertCols[] = 'payment_date'; $insertParams[] = date('Y-m-d H:i:s'); }
-        // created_at as a fallback (if no explicit paid date columns exist)
-        if (in_array('created_at', $existingCols) && !in_array('paid_at', $existingCols) && !in_array('payment_date', $existingCols)) { $insertCols[] = 'created_at'; $insertParams[] = date('Y-m-d H:i:s'); }
-
-        $placeholders = rtrim(str_repeat('?,', count($insertCols)), ',');
-        $sql = "INSERT INTO payments (" . implode(', ', $insertCols) . ") VALUES (" . $placeholders . ")";
-        $insert = $pdo->prepare($sql);
-
-        // Log SQL and params for debugging
-        error_log('create_payment about to execute SQL: ' . $sql . ' Params: ' . json_encode($insertParams));
-        try {
-            $insert->execute($insertParams);
+            $pdo->commit();
         } catch (Exception $e) {
-            $errMsg = $e->getMessage();
-            error_log('create_payment insert failed: ' . $errMsg . ' SQL: ' . $sql . ' Params: ' . json_encode($insertParams));
+            $pdo->rollBack();
+            error_log('create_payment failed: ' . $e->getMessage());
             http_response_code(500);
-            jsonResponse(['error' => 'Failed to save payment', 'debug' => $errMsg, 'sql' => $sql, 'params' => $insertParams]);
+            jsonResponse(['error' => 'Failed to save payment']);
+            return;
         }
-
-        $payment_id = $pdo->lastInsertId();
-
-        // Update transfer paid totals
-        $new_paid = floatval($tr['amount_paid']) + $amount;
-        $status = (!is_null($tr['amount']) && floatval($new_paid) >= floatval($tr['amount'])) ? 'paid' : ($new_paid > 0 ? 'partial' : 'unpaid');
-        // Ensure transfer columns exist
-        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfers' AND COLUMN_NAME = ?");
-        $schema = DB_NAME;
-        foreach (['amount_paid','payment_status','last_payment_at'] as $col) {
-            $checkStmt->execute([$schema, $col]);
-            if ($checkStmt->fetchColumn() == 0) {
-                if ($col === 'amount_paid') $pdo->exec("ALTER TABLE transfers ADD COLUMN amount_paid DECIMAL(10,2) DEFAULT 0.00");
-                if ($col === 'payment_status') $pdo->exec("ALTER TABLE transfers ADD COLUMN payment_status ENUM('unpaid','partial','paid') DEFAULT 'unpaid'");
-                if ($col === 'last_payment_at') $pdo->exec("ALTER TABLE transfers ADD COLUMN last_payment_at DATETIME DEFAULT NULL");
-            }
-        }
-        $updateStmt = $pdo->prepare("UPDATE transfers SET amount_paid = ?, payment_status = ?, last_payment_at = NOW() WHERE id = ?");
-        $updateStmt->execute([number_format($new_paid,2,'.',''), $status, $transfer_id]);
 
         $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
         $log_stmt->execute([json_encode(['timestamp' => date('Y-m-d H:i:s'), 'type' => 'payment', 'amount' => floatval($amount), 'method' => $methodType, 'reference' => $reference, 'user' => $recorded_by, 'message' => "Payment recorded: {$amount} via {$methodType}"]), $transfer_id]);
@@ -1871,19 +1770,30 @@ try {
         $transfer_id = $payment['transfer_id'];
         $deleted_amount = floatval($payment['amount']);
 
-        // Delete the payment
-        $deleteStmt = $pdo->prepare("DELETE FROM payments WHERE id = ?");
-        $deleteStmt->execute([$payment_id]);
+        // Use transaction for atomic delete + update
+        $pdo->beginTransaction();
+        try {
+            $deleteStmt = $pdo->prepare("DELETE FROM payments WHERE id = ?");
+            $deleteStmt->execute([$payment_id]);
 
-        // Update transfer paid totals
-        $stmt = $pdo->prepare("SELECT amount, COALESCE(amount_paid,0) as amount_paid FROM transfers WHERE id = ?");
-        $stmt->execute([$transfer_id]);
-        $tr = $stmt->fetch(PDO::FETCH_ASSOC);
-        $new_paid = floatval($tr['amount_paid']) - $deleted_amount;
-        $status = (!is_null($tr['amount']) && floatval($new_paid) >= floatval($tr['amount'])) ? 'paid' : ($new_paid > 0 ? 'partial' : 'unpaid');
+            // Update transfer paid totals
+            $stmt = $pdo->prepare("SELECT amount, COALESCE(amount_paid,0) as amount_paid FROM transfers WHERE id = ?");
+            $stmt->execute([$transfer_id]);
+            $tr = $stmt->fetch(PDO::FETCH_ASSOC);
+            $new_paid = max(0, floatval($tr['amount_paid']) - $deleted_amount);
+            $status = (!is_null($tr['amount']) && floatval($new_paid) >= floatval($tr['amount'])) ? 'paid' : ($new_paid > 0 ? 'partial' : 'unpaid');
 
-        $updateStmt = $pdo->prepare("UPDATE transfers SET amount_paid = ?, payment_status = ? WHERE id = ?");
-        $updateStmt->execute([number_format($new_paid,2,'.',''), $status, $transfer_id]);
+            $updateStmt = $pdo->prepare("UPDATE transfers SET amount_paid = ?, payment_status = ? WHERE id = ?");
+            $updateStmt->execute([number_format($new_paid,2,'.',''), $status, $transfer_id]);
+
+            $pdo->commit();
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            error_log('delete_payment failed: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Failed to delete payment']);
+            return;
+        }
 
         // Log the deletion
         $log_stmt = $pdo->prepare("UPDATE transfers SET system_logs = JSON_ARRAY_APPEND(COALESCE(system_logs, '[]'), '$', CAST(? AS JSON)) WHERE id = ?");
@@ -1900,7 +1810,7 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Manager access required to delete transfers']);
         }
 
-        $id = $_GET['id'] ?? null;
+        $id = intval($_GET['id'] ?? 0);
 
         if (!$id) {
             http_response_code(400);
@@ -1923,7 +1833,7 @@ try {
             jsonResponse(['status' => 'deleted', 'message' => 'Transfer deleted successfully']);
         } catch (Exception $e) {
             error_log("Delete transfer error: " . $e->getMessage());
-            jsonResponse(['status' => 'error', 'message' => 'Failed to delete transfer: ' . $e->getMessage()]);
+            jsonResponse(['status' => 'error', 'message' => 'Failed to delete transfer']);
         }
     }
 
@@ -1980,7 +1890,7 @@ try {
             jsonResponse(['status' => 'success', 'message' => 'Vehicle synced successfully']);
         } catch (Exception $e) {
             error_log("Sync vehicle error: " . $e->getMessage());
-            jsonResponse(['status' => 'error', 'message' => 'Failed to sync vehicle: ' . $e->getMessage()]);
+            jsonResponse(['status' => 'error', 'message' => 'Failed to sync vehicle']);
         }
     }
 
@@ -2011,7 +1921,7 @@ try {
             jsonResponse(['status' => 'deleted', 'message' => 'Vehicle deleted successfully']);
         } catch (Exception $e) {
             error_log("Delete vehicle error: " . $e->getMessage());
-            jsonResponse(['status' => 'error', 'message' => 'Failed to delete vehicle: ' . $e->getMessage()]);
+            jsonResponse(['status' => 'error', 'message' => 'Failed to delete vehicle']);
         }
     }
 
@@ -2329,13 +2239,14 @@ try {
             }
 
         } catch (Exception $e) {
-            jsonResponse(['success' => false, 'error' => 'Failed to parse PDF: ' . $e->getMessage()]);
+            error_log("Parse PDF error: " . $e->getMessage());
+            jsonResponse(['success' => false, 'error' => 'Failed to parse PDF']);
         }
     }
 
     // --- SEND SMS ENDPOINT ---
     if ($action === 'send_sms' && $method === 'POST') {
-        $data = $_POST;
+        $data = getJsonInput();
         $to = $data['to'] ?? $data['phone'] ?? '';
         $text = $data['text'] ?? '';
 
@@ -2461,7 +2372,8 @@ try {
                 jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);
             }
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Assign manager error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
 
@@ -2556,7 +2468,8 @@ try {
                 jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);
             }
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Assign technician error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
 
@@ -2579,7 +2492,8 @@ try {
                 jsonResponse(['status' => 'error', 'message' => 'Case not found or no changes made']);
             }
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Update urgent error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
 
@@ -2676,7 +2590,8 @@ try {
                 jsonResponse(['status' => 'error', 'message' => 'Failed to move to next stage']);
             }
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Move to next stage error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
 
@@ -2758,7 +2673,8 @@ try {
                 jsonResponse(['status' => 'error', 'message' => 'Failed to mark finished']);
             }
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Finish stage error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
 
@@ -2790,7 +2706,8 @@ try {
             
             jsonResponse(['status' => 'success', 'data' => $costs]);
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Get consumables costs error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
     
@@ -2800,6 +2717,7 @@ try {
         if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
             http_response_code(403);
             jsonResponse(['status' => 'error', 'message' => 'Access denied. Admin or manager role required.']);
+            return;
         }
         
         $data = getJsonInput();
@@ -2823,7 +2741,8 @@ try {
             
             jsonResponse(['status' => 'success', 'message' => 'Consumables cost saved']);
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Save consumables cost error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
     
@@ -2833,6 +2752,7 @@ try {
         if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
             http_response_code(403);
             jsonResponse(['status' => 'error', 'message' => 'Access denied. Admin or manager role required.']);
+            return;
         }
         
         $data = getJsonInput();
@@ -2848,7 +2768,8 @@ try {
             
             jsonResponse(['status' => 'success', 'message' => 'Consumables cost deleted']);
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Delete consumables cost error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
 
@@ -2885,7 +2806,8 @@ try {
             
             jsonResponse(['status' => 'success', 'data' => $statuses]);
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Get statuses error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
     
@@ -2908,7 +2830,8 @@ try {
                 jsonResponse(['status' => 'error', 'message' => 'Status not found']);
             }
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log("Get status error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
         }
     }
     
@@ -2964,7 +2887,8 @@ try {
                 jsonResponse(['status' => 'success', 'message' => 'Status created', 'id' => $newId]);
             }
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log('Status save error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to save status']);
         }
     }
     
@@ -2989,7 +2913,8 @@ try {
             
             jsonResponse(['status' => 'success', 'message' => 'Status deleted']);
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log('Status delete error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to delete status']);
         }
     }
     
@@ -3016,7 +2941,8 @@ try {
             
             jsonResponse(['status' => 'success', 'message' => 'Statuses reordered']);
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log('Statuses reorder error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to reorder statuses']);
         }
     }
     
@@ -3046,7 +2972,8 @@ try {
             
             jsonResponse(['status' => 'success', 'message' => 'Status toggled', 'is_active' => (bool)$newState]);
         } catch (Exception $e) {
-            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+            error_log('Status toggle error: ' . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to toggle status']);
         }
     }
 
@@ -3257,8 +3184,9 @@ try {
     jsonResponse(['error' => 'Unknown action: ' . $action]);
 
 } catch (Exception $e) {
+    error_log('Unhandled API error: ' . $e->getMessage());
     http_response_code(400);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => 'An unexpected error occurred']);
 }
 
 // --- HELPER FUNCTION FOR SUGGESTIONS ---

@@ -3500,10 +3500,14 @@ try {
             const statusDescEl = document.getElementById('status-description');
             if (statusDescEl) statusDescEl.innerText = statusDescriptions[t.status] || 'Unknown status';
             
-            // Add status change listener for progress updates
+            // Add status change listener for progress updates (replace old listener to prevent leak)
             const statusInputEl = document.getElementById('input-status');
             if (statusInputEl) {
-                statusInputEl.addEventListener('change', (e) => {
+                // Use a named handler stored on the element to prevent duplicate listeners
+                if (statusInputEl._statusChangeHandler) {
+                    statusInputEl.removeEventListener('change', statusInputEl._statusChangeHandler);
+                }
+                statusInputEl._statusChangeHandler = (e) => {
                     // Get status name from selected option's data-name attribute
                     const selectedOption = e.target.options[e.target.selectedIndex];
                     const newStatusName = selectedOption?.dataset?.name || '';
@@ -3517,7 +3521,8 @@ try {
                     if (stageNumberEl) stageNumberEl.innerText = newStageIndex + 1;
                     if (progressBarEl) progressBarEl.style.width = `${newProgressPercentage}%`;
                     if (statusDescEl) statusDescEl.innerText = statusDescriptions[newStatusName] || 'Unknown status';
-                });
+                };
+                statusInputEl.addEventListener('change', statusInputEl._statusChangeHandler);
             }
             
             // Format and display created date
@@ -3886,6 +3891,8 @@ try {
             }
 
             // --- AUTOMATED SMS LOGIC BASED ON WORKFLOW STAGES ---
+            // Collect SMS messages to send AFTER successful save
+            const pendingSms = [];
             if(statusName !== t.status) {
                 updates.systemLogs.push({ message: `Status: ${t.status} -> ${statusName}`, timestamp: new Date().toISOString(), type: 'status' });
 
@@ -3898,10 +3905,10 @@ try {
                         serviceDate: serviceDate || t.serviceDate // Use new date if set, else old
                     };
 
-                    // Send SMS for all templates bound to this workflow stage
+                    // Queue SMS for all templates bound to this workflow stage
                     window.smsWorkflowBindings[statusName].forEach(template => {
                         const msg = getFormattedMessage(template.slug, templateData);
-                        window.sendSMS(phone, msg, `${template.slug}_sms`);
+                        pendingSms.push({ phone, msg, logType: `${template.slug}_sms` });
                     });
                 }
 
@@ -3940,6 +3947,11 @@ try {
                 Object.assign(t, updates);
             } else {
                 await fetchAPI(`update_transfer&id=${window.currentEditingId}`, 'POST', updates);
+                
+                // Send queued SMS only after successful save
+                for (const sms of pendingSms) {
+                    window.sendSMS(sms.phone, sms.msg, sms.logType);
+                }
             }
             
             loadData();
@@ -3951,7 +3963,7 @@ try {
             const text = newNoteInputEl ? newNoteInputEl.value : '';
             if(!text) return;
             const t = transfers.find(i => i.id == window.currentEditingId);
-            const newNote = { text, authorName: 'Manager', timestamp: new Date().toISOString() };
+            const newNote = { text, authorName: '<?php echo addslashes($current_user_name); ?>', timestamp: new Date().toISOString() };
             
             const statusEl = document.getElementById('connection-status');
             if (statusEl && statusEl.innerText.includes('Offline')) {
@@ -4893,13 +4905,7 @@ try {
                     vehicleModel: document.getElementById('qv-vehicle-model').value.trim() || null
                 };
                 
-                const response = await fetch('api.php?action=update_transfer', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updates)
-                });
-                
-                const result = await response.json();
+                const result = await fetchAPI(`update_transfer&id=${window.currentQuickViewId}`, 'POST', updates);
                 
                 if (result.status === 'success') {
                     showToast('Success', 'Case updated successfully', 'success');

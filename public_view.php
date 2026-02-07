@@ -222,28 +222,34 @@
     <script>
         const API_URL = 'api.php'; 
         const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
+        // Support slug (preferred) and legacy id for backward compatibility
+        const slug = urlParams.get('slug') || '';
+        const legacyId = urlParams.get('id') || '';
+        let transferSlug = slug; // Will be updated from API response
         let currentStars = 0;
 
         async function init() {
-            if(!id || !/^\d+$/.test(id)) {
-                console.error('Invalid or missing ID in URL');
+            // Validate: need either a valid slug (32 hex chars) or a legacy integer id
+            const hasSlug = /^[a-f0-9]{32}$/.test(slug);
+            const hasId = /^\d+$/.test(legacyId);
+            
+            if (!hasSlug && !hasId) {
+                console.error('Invalid or missing identifier in URL');
                 return showError();
             }
 
-            console.log('Fetching transfer ID:', id);
-
             try {
-                const res = await fetch(`${API_URL}?action=get_public_transfer&id=${id}`);
-                console.log('Response status:', res.status);
+                const param = hasSlug ? `slug=${encodeURIComponent(slug)}` : `id=${encodeURIComponent(legacyId)}`;
+                const res = await fetch(`${API_URL}?action=get_public_transfer&${param}`);
                 
                 const data = await res.json();
-                console.log('Response data:', data);
 
-                if(data.error || !data.id) {
-                    console.error('Error in response:', data.error || 'No ID in data');
+                if(data.error || (!data.slug && !data.id)) {
                     return showError();
                 }
+
+                // Store slug for subsequent requests
+                if (data.slug) transferSlug = data.slug;
 
                 renderData(data);
             } catch(e) {
@@ -268,7 +274,7 @@
             // Sanitize and set text content (prevents XSS)
             document.getElementById('user-name').textContent = String(data.name || 'Valued Customer').substring(0, 100);
             document.getElementById('plate').textContent = String(data.plate || '---').substring(0, 20);
-            document.getElementById('order-id').textContent = '#' + (parseInt(data.id) || '0');
+            document.getElementById('order-id').textContent = data.slug ? data.slug.substring(0, 8).toUpperCase() : '---';
 
             // SCENARIO CHECK: If Completed, show Review. Else show Appointment logic.
             if (data.status === 'Completed') {
@@ -370,7 +376,8 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        id: id, 
+                        slug: transferSlug,
+                        id: legacyId, 
                         response: 'Reschedule Requested',
                         reschedule_date: desiredDate,
                         reschedule_comment: comment
@@ -396,7 +403,7 @@
                 await fetch(`${API_URL}?action=user_respond`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id, response: status })
+                    body: JSON.stringify({ slug: transferSlug, id: legacyId, response: status })
                 });
                 showSuccess(status);
             } catch(e) {
@@ -445,7 +452,7 @@
                 await fetch(`${API_URL}?action=submit_review`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id, stars: currentStars, comment: comment })
+                    body: JSON.stringify({ slug: transferSlug, id: legacyId, stars: currentStars, comment: comment })
                 });
                 document.getElementById('review-form').classList.add('hidden');
                 document.getElementById('review-success').classList.remove('hidden');

@@ -380,7 +380,7 @@ if ($current_user_role !== 'technician') {
                                     <td class="px-4 py-3 text-sm font-bold text-emerald-600"><?= number_format($record['nachrebi_qty'], 2) ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-900">₾<?= number_format($record['nachrebi_qty'] * 77, 2) ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-600">
-                                        <?= date('d/m/Y', strtotime($record['created_at'])) ?>
+                                        <?= date('d/m/Y', strtotime($record['updated_at'] ?? $record['created_at'])) ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -419,7 +419,7 @@ if ($current_user_role !== 'technician') {
             try {
                 const response = await fetch('api.php?action=update_transfer', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                     body: JSON.stringify({
                         id: caseId,
                         assigned_mechanic: technicianName || null
@@ -454,9 +454,15 @@ if ($current_user_role !== 'technician') {
         }
 
         // Consumables Cost Management
-        const selectedMonth = '<?= $selected_month ?>';
+        const CSRF_TOKEN = '<?= $_SESSION["csrf_token"] ?? "" ?>';
+        const selectedMonth = '<?= htmlspecialchars($selected_month, ENT_QUOTES, 'UTF-8') ?>';
         const allTechnicians = <?= json_encode(array_column($all_technicians, 'full_name')) ?>;
         let consumablesCosts = <?= json_encode($consumables_costs) ?>;
+
+        // HTML escape helper to prevent XSS
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+        }
 
         function openConsumablesModal() {
             document.getElementById('consumablesModal').classList.remove('hidden');
@@ -473,16 +479,18 @@ if ($current_user_role !== 'technician') {
             
             allTechnicians.forEach(tech => {
                 const existing = consumablesCosts[tech] || { cost: 0, notes: '' };
+                const safeTech = escHtml(tech);
+                const safeNotes = escHtml(existing.notes || '');
                 const row = document.createElement('tr');
                 row.className = 'border-b border-slate-100';
                 row.innerHTML = `
-                    <td class="px-4 py-3 text-sm font-medium text-slate-900">${tech}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-slate-900">${safeTech}</td>
                     <td class="px-4 py-3">
                         <div class="flex items-center">
                             <span class="text-slate-500 mr-1">₾</span>
                             <input type="number" step="0.01" min="0" 
                                 class="consumable-cost-input w-28 px-2 py-1 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                data-technician="${tech}"
+                                data-technician="${safeTech}"
                                 value="${parseFloat(existing.cost || 0).toFixed(2)}"
                                 placeholder="0.00">
                         </div>
@@ -490,12 +498,12 @@ if ($current_user_role !== 'technician') {
                     <td class="px-4 py-3">
                         <input type="text" 
                             class="consumable-notes-input w-full px-2 py-1 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                            data-technician="${tech}"
-                            value="${existing.notes || ''}"
+                            data-technician="${safeTech}"
+                            value="${safeNotes}"
                             placeholder="შენიშვნა...">
                     </td>
                     <td class="px-4 py-3 text-center">
-                        <button onclick="saveConsumableCost('${tech}')" 
+                        <button onclick="saveConsumableCost(decodeURIComponent('${encodeURIComponent(tech)}'))" 
                             class="px-3 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600 transition">
                             შენახვა
                         </button>
@@ -515,7 +523,7 @@ if ($current_user_role !== 'technician') {
             try {
                 const response = await fetch('api.php?action=save_consumables_cost', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                     body: JSON.stringify({
                         technician_name: technicianName,
                         year_month: selectedMonth,
@@ -561,7 +569,7 @@ if ($current_user_role !== 'technician') {
                 try {
                     const response = await fetch('api.php?action=save_consumables_cost', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                         body: JSON.stringify({
                             technician_name: tech,
                             year_month: selectedMonth,

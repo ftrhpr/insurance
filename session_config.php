@@ -6,9 +6,9 @@
 if (session_status() === PHP_SESSION_NONE) {
     // Configure secure session settings
     ini_set('session.cookie_httponly', 1);  // Prevent JavaScript access to session cookie
-    ini_set('session.cookie_secure', 0);    // Set to 1 if using HTTPS
+    ini_set('session.cookie_secure', 1);    // HTTPS only (production uses HTTPS)
     ini_set('session.use_strict_mode', 1);  // Reject uninitialized session IDs
-    ini_set('session.cookie_samesite', 'Lax'); // CSRF protection - changed from Lax to allow AJAX
+    ini_set('session.cookie_samesite', 'Lax'); // CSRF protection
     ini_set('session.use_only_cookies', 1); // Don't accept session IDs in URLs
     
     // Set session timeout (2 hours)
@@ -20,21 +20,24 @@ if (session_status() === PHP_SESSION_NONE) {
     // Regenerate session ID periodically to prevent fixation
     if (!isset($_SESSION['created'])) {
         $_SESSION['created'] = time();
-    } else if (time() - $_SESSION['created'] > 7200) {
-        // Session older than 2 hours, regenerate ID
+    } else if (time() - $_SESSION['created'] > 1800) {
+        // Session older than 30 minutes, regenerate ID
         session_regenerate_id(true);
         $_SESSION['created'] = time();
     }
     
-    // Check for session hijacking - validate IP and user agent
+    // Check for session hijacking - validate user agent and accept-language
     if (isset($_SESSION['user_id'])) {
+        // Build fingerprint from multiple browser characteristics
+        $fp_parts = ($_SERVER['HTTP_USER_AGENT'] ?? '') . '|' . ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '');
+        
         // Store fingerprint on first login
         if (!isset($_SESSION['fingerprint'])) {
-            $_SESSION['fingerprint'] = md5($_SERVER['HTTP_USER_AGENT'] ?? '');
+            $_SESSION['fingerprint'] = hash('sha256', $fp_parts);
         }
         
         // Verify fingerprint matches
-        $current_fingerprint = md5($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $current_fingerprint = hash('sha256', $fp_parts);
         if ($_SESSION['fingerprint'] !== $current_fingerprint) {
             // Possible session hijacking - destroy session and return JSON error
             session_unset();

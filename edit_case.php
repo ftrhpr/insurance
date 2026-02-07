@@ -1357,6 +1357,7 @@ try {
                     formData.append('case_id', CASE_ID);
 
                     const response = await fetch(`${API_URL}?action=upload_case_image`, {
+                        headers: { 'X-CSRF-Token': CSRF_TOKEN },
                         method: 'POST',
                         body: formData
                     });
@@ -1410,7 +1411,7 @@ try {
                     try {
                         const response = await fetch(`${API_URL}?action=delete_case_image`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify({ url: imageUrl })
                         });
                         const result = await response.json();
@@ -1716,8 +1717,7 @@ try {
                     loadData('api.php?action=get_item_suggestions&type=part', 'partSuggestions');
                     loadData('api.php?action=get_item_suggestions&type=labor', 'laborSuggestions');
 
-                    // Initialize new features (only call methods that exist)
-                    if (typeof this.initSearchAndFilter === 'function') this.initSearchAndFilter();
+                    // Initialize new features (only call methods that exist, skip initSearchAndFilter as it was called in $nextTick above)
                     if (typeof this.loadCollections === 'function') this.loadCollections();
                     if (typeof this.updateOverviewStats === 'function') this.updateOverviewStats();
                     if (typeof this.renderTimeline === 'function') this.renderTimeline();
@@ -1985,7 +1985,7 @@ try {
                     formData.append('pdf', file);
 
                     try {
-                        const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', body: formData });
+                        const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', headers: { 'X-CSRF-Token': CSRF_TOKEN }, body: formData });
                         const data = await response.json();
 
                         if (data.success && Array.isArray(data.items) && data.items.length > 0) {
@@ -2547,7 +2547,7 @@ try {
                     try {
                         const response = await fetch(`${API_URL}?action=create_parts_collection`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify({
                                 transfer_id: CASE_ID,
                                 parts_list: partsList,
@@ -2810,14 +2810,15 @@ try {
                         }
                     }
 
-                    // Calculate discounted amount from parts and labor
-                    const calculatedAmount = this.calculateTotalCost();
+                    // Use the manually entered amount field — calculatedTotalCost updates the display only.
+                    // Do NOT silently overwrite user-entered amount.
+                    const manualAmount = document.getElementById('input-amount').value.trim();
                     
                     const updates = {
                         id: CASE_ID,
                         name: document.getElementById('input-name').value.trim(),
                         plate: document.getElementById('input-plate').value.trim(),
-                        amount: calculatedAmount > 0 ? calculatedAmount.toFixed(2) : document.getElementById('input-amount').value.trim(),
+                        amount: manualAmount,
                         case_type: document.getElementById('input-case-type').value,
                         status: status,
                         status_id: this.statuses[this.currentStatusIndex]?.id || null,
@@ -3096,7 +3097,7 @@ try {
                     try {
                         const response = await fetch(`${API_URL}?action=create_parts_collection`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify({ transfer_id: CASE_ID, parts_list: items, description: this.collectionNote, collection_type: 'local' })
                         });
                         const result = await response.json();
@@ -3457,10 +3458,10 @@ try {
                         const type = cb.dataset.type;
                         const idx = parseInt(cb.dataset.index, 10);
                         if (type === 'part' && this.currentCase.repair_parts && this.currentCase.repair_parts[idx]) {
-                            parts.push({ ...this.currentCase.repair_parts[idx] });
+                            parts.push({ _index: idx, ...this.currentCase.repair_parts[idx] });
                         }
                         if (type === 'labor' && this.currentCase.repair_labor && this.currentCase.repair_labor[idx]) {
-                            labor.push({ ...this.currentCase.repair_labor[idx] });
+                            labor.push({ _index: idx, ...this.currentCase.repair_labor[idx] });
                         }
                     });
                     return { parts, labor };
@@ -3471,7 +3472,7 @@ try {
                     if (!sel.parts || sel.parts.length === 0) return showToast('No parts selected', 'Select parts to create a collection.', 'info');
                     const items = sel.parts.map(p => ({ name: p.name, quantity: p.quantity || 1, price: p.unit_price || 0 }));
                     try {
-                        const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: items, description: this.collectionNote }) });
+                        const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: items, description: this.collectionNote }) });
                         const result = await resp.json();
                         if (result.success) { showToast('Collection Created', 'Selected parts saved to new collection.', 'success'); if (typeof this.loadCollections === 'function') this.loadCollections(); } else { showToast('Error', result.error || 'Failed to create collection.', 'error'); }
                     } catch (e) { showToast('Error', 'Failed to create collection.', 'error'); }
@@ -3535,20 +3536,22 @@ try {
 
                     const deletedItems = [];
                     
-                    // Remove parts
-                    selected.parts.forEach(item => {
-                        const idx = this.currentCase.repair_parts.findIndex(p => p.id === item.id);
-                        if (idx !== -1) {
-                            deletedItems.push(item.name || 'Unknown part');
+                    // Collect indices to remove (in reverse order to preserve correctness)
+                    const partIndices = selected.parts.map(item => item._index).sort((a, b) => b - a);
+                    const laborIndices = selected.labor.map(item => item._index).sort((a, b) => b - a);
+
+                    // Remove parts (reverse order so indices remain valid)
+                    partIndices.forEach(idx => {
+                        if (this.currentCase.repair_parts[idx]) {
+                            deletedItems.push(this.currentCase.repair_parts[idx].name || 'Unknown part');
                             this.currentCase.repair_parts.splice(idx, 1);
                         }
                     });
 
-                    // Remove labor
-                    selected.labor.forEach(item => {
-                        const idx = this.currentCase.repair_labor.findIndex(l => l.id === item.id);
-                        if (idx !== -1) {
-                            deletedItems.push(item.description || 'Unknown service');
+                    // Remove labor (reverse order)
+                    laborIndices.forEach(idx => {
+                        if (this.currentCase.repair_labor[idx]) {
+                            deletedItems.push(this.currentCase.repair_labor[idx].description || 'Unknown service');
                             this.currentCase.repair_labor.splice(idx, 1);
                         }
                     });
@@ -3666,7 +3669,7 @@ try {
                         
                         const response = await fetch(`${API_URL}?action=create_parts_collection`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify({
                                 transfer_id: CASE_ID,
                                 parts_list: apiPartsList,
@@ -3790,7 +3793,7 @@ try {
                     try {
                         const response = await fetch('api.php?action=update_parts_collection', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify({
                                 id: collection.id,
                                 parts_list: collection.parts_list,
@@ -3922,7 +3925,7 @@ try {
                     const items = (sel.parts || []).map(p => ({ name: p.name, quantity: p.quantity || 1, price: p.unit_price || 0 }));
                     if (items.length === 0) return showToast('No parts selected', 'Select parts to create a collection.', 'info');
                     try {
-                        const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: items, description: document.getElementById('collectionModalDesc')?.value || this.collectionNote }) });
+                        const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: items, description: document.getElementById('collectionModalDesc')?.value || this.collectionNote }) });
                         const result = await resp.json();
                         if (result.success) { showToast('Collection Created', 'Selected parts saved to new collection.', 'success'); if (typeof this.loadCollections === 'function') this.loadCollections(); }
                         else { showToast('Error', result.error || 'Failed to create collection.', 'error'); }
@@ -3997,7 +4000,7 @@ try {
                         formData.append('pdf', pdfInput.files[0]);
 
                         try {
-                            const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', body: formData });
+                            const response = await fetch('api.php?action=parse_invoice_pdf', { method: 'POST', headers: { 'X-CSRF-Token': CSRF_TOKEN }, body: formData });
                             const data = await response.json();
 
                             if (data.success && Array.isArray(data.items) && data.items.length > 0) {
@@ -4119,7 +4122,7 @@ try {
                             if (parts.length === 0) { showToast('No parts selected', '', 'info'); return; }
 
                             try {
-                                const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: parts, description: this.collectionNote }) });
+                                const resp = await fetch('api.php?action=create_parts_collection', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN }, body: JSON.stringify({ transfer_id: CASE_ID, parts_list: parts, description: this.collectionNote }) });
                                 const result = await resp.json();
                                 if (result.success) {
                                     showToast('Parts Collection Created', 'Collection created successfully.', 'success');
@@ -4158,7 +4161,7 @@ try {
                         
                         const response = await fetch(`${API_URL}?action=create_parts_collection`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify({
                                 transfer_id: CASE_ID,
                                 parts_list: partsList,
@@ -4186,7 +4189,7 @@ try {
                     try {
                         const response = await fetch('api.php?action=update_transfer&id=' + CASE_ID, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify({
                                 id: CASE_ID,
                                 repair_parts: this.currentCase.repair_parts || [],
@@ -4254,6 +4257,10 @@ try {
         function showToast(title, message = '', type = 'success', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
+            
+            // Escape HTML to prevent XSS
+            const escHtml = (str) => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            
             const toast = document.createElement('div');
             const colors = {
                 success: { border: 'border-emerald-200', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', icon: 'check-circle-2' },
@@ -4264,7 +4271,7 @@ try {
             toast.className = `pointer-events-auto w-96 bg-white border ${style.border} shadow-lg rounded-xl p-4 flex items-start gap-4 transform transition-all duration-300 translate-x-full`;
             toast.innerHTML = `
                 <div class="${style.iconBg} p-2 rounded-full"><i data-lucide="${style.icon}" class="w-6 h-6 ${style.iconColor}"></i></div>
-                <div class="flex-1"><h4 class="text-md font-bold text-slate-800">${title}</h4>${message ? `<p class="text-sm text-slate-600 mt-1">${message}</p>` : ''}</div>
+                <div class="flex-1"><h4 class="text-md font-bold text-slate-800">${escHtml(title)}</h4>${message ? `<p class="text-sm text-slate-600 mt-1">${escHtml(message)}</p>` : ''}</div>
                 <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1 -mt-1 -mr-1"><i data-lucide="x" class="w-5 h-5"></i></button>`;
             container.appendChild(toast);
             lucide.createIcons();
@@ -4305,10 +4312,12 @@ try {
             currentImageIndex = (currentImageIndex + direction + caseImages.length) % caseImages.length;
             const img = document.getElementById('modal-image');
             const counter = document.getElementById('image-counter');
+            const downloadLink = document.getElementById('modal-download-link');
             
             if (img && caseImages[currentImageIndex]) {
                 img.src = caseImages[currentImageIndex];
                 counter.textContent = `${currentImageIndex + 1} / ${caseImages.length}`;
+                if (downloadLink) downloadLink.href = caseImages[currentImageIndex];
             }
         }
         
@@ -4340,8 +4349,14 @@ try {
         // ============ END IMAGE GALLERY FUNCTIONS ============
 
         function initializeIcons() { if (window.lucide) { lucide.createIcons(); } }
+        const CSRF_TOKEN = '<?php echo $_SESSION["csrf_token"] ?? ""; ?>';
+
         async function fetchAPI(endpoint, method = 'GET', data = null) {
-            const config = { method };
+            const config = { method, headers: {} };
+            // Always include CSRF token for POST requests
+            if (method === 'POST' && CSRF_TOKEN) {
+                config.headers['X-CSRF-Token'] = CSRF_TOKEN;
+            }
             if (data) {
                 const formData = new FormData();
                 for (const key in data) {
@@ -4600,6 +4615,9 @@ try {
                 const notes = [...(initialCaseData.internalNotes || []), newNote];
                 await fetchAPI(`update_transfer&id=${CASE_ID}`, 'POST', { internalNotes: notes, id: CASE_ID });
                 initialCaseData.internalNotes = notes;
+                // Also sync to Alpine component's currentCase
+                const comp = document.querySelector('[x-data]')?.__x?.$data;
+                if (comp && comp.currentCase) comp.currentCase.internalNotes = notes;
                 updateNotesDisplay(notes);
                 input.value = '';
                 showToast("Note Added", "", "success");

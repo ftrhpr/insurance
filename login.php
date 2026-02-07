@@ -25,24 +25,26 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once 'config.php';
     
-    // Rate limiting - prevent brute force attacks
+    // Rate limiting - prevent brute force attacks (IP-based, not session-based)
     $max_attempts = 5;
     $lockout_time = 900; // 15 minutes in seconds
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     
-    if (!isset($_SESSION['login_attempts'])) {
-        $_SESSION['login_attempts'] = [];
+    // Use file-based rate limiting per IP (more reliable than session-based)
+    $rate_limit_dir = sys_get_temp_dir() . '/otomotors_login_limits';
+    if (!is_dir($rate_limit_dir)) @mkdir($rate_limit_dir, 0700, true);
+    $rate_file = $rate_limit_dir . '/' . md5($ip) . '.json';
+    
+    $attempts = [];
+    if (file_exists($rate_file)) {
+        $attempts = json_decode(file_get_contents($rate_file), true) ?: [];
+        // Clean old attempts
+        $attempts = array_values(array_filter($attempts, fn($time) => (time() - $time) < $lockout_time));
     }
     
-    // Clean old attempts
-    $_SESSION['login_attempts'] = array_filter(
-        $_SESSION['login_attempts'],
-        fn($time) => (time() - $time) < $lockout_time
-    );
-    
     // Check if locked out
-    if (count($_SESSION['login_attempts']) >= $max_attempts) {
-        $wait_time = ceil(($lockout_time - (time() - min($_SESSION['login_attempts']))) / 60);
+    if (count($attempts) >= $max_attempts) {
+        $wait_time = ceil(($lockout_time - (time() - min($attempts))) / 60);
         $error = "Too many failed attempts. Please try again in {$wait_time} minutes.";
     } else {
         $username = $_POST['username'] ?? '';
@@ -61,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
                 
                 // Clear failed login attempts on success
-                $_SESSION['login_attempts'] = [];
+                if (file_exists($rate_file)) @unlink($rate_file);
                 
                 // Update last login
                 $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
@@ -81,9 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 exit();
             } else {
-                // Track failed attempt
-                $_SESSION['login_attempts'][] = time();
-                $remaining = $max_attempts - count($_SESSION['login_attempts']);
+                // Track failed attempt (IP-based)
+                $attempts[] = time();
+                file_put_contents($rate_file, json_encode($attempts));
+                $remaining = $max_attempts - count($attempts);
                 $error = "Invalid username or password. {$remaining} attempts remaining.";
             }
         } catch (PDOException $e) {
@@ -155,13 +158,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
-+    <script>
-+        document.getElementById('togglePwd')?.addEventListener('click', function(){
-+            const pwd = document.getElementById('password');
-+            if (!pwd) return;
-+            if (pwd.type === 'password') { pwd.type = 'text'; this.textContent = 'Hide'; } else { pwd.type = 'password'; this.textContent = 'Show'; }
-+        });
-+        document.getElementById('username')?.focus();
-+    </script>
+    <script>
+        document.getElementById('togglePwd')?.addEventListener('click', function(){
+            const pwd = document.getElementById('password');
+            if (!pwd) return;
+            if (pwd.type === 'password') { pwd.type = 'text'; this.textContent = 'Hide'; } else { pwd.type = 'password'; this.textContent = 'Show'; }
+        });
+        document.getElementById('username')?.focus();
+    </script>
 </body>
 </html>
