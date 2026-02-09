@@ -1357,8 +1357,7 @@ try {
             'new': 'new',
             'already in service': 'service',
             'completed': 'completed',
-            'issue': 'issue',
-            'წიანსწარი შეფასება': 'assessment'
+            'issue': 'issue'
         };
         caseStatuses.forEach(s => {
             const id = Number(s.id);
@@ -1372,10 +1371,29 @@ try {
         if (!_statusIdToTab[7]) _statusIdToTab[7] = 'service';
         if (!_statusIdToTab[8]) _statusIdToTab[8] = 'completed';
         if (!_statusIdToTab[9]) _statusIdToTab[9] = 'issue';
-        if (!_statusIdToTab[10]) _statusIdToTab[10] = 'assessment';
+
+        // Assessment is determined by repair_status (it's a repair type status, not case status)
+        // Build set of repair status IDs/names that mean "assessment"
+        const _assessmentRepairIds = new Set();
+        const _assessmentRepairNames = new Set();
+        repairStatuses.forEach(s => {
+            const name = (s.name || '').trim().toLowerCase();
+            if (name === 'წიანსწარი შეფასება') {
+                _assessmentRepairIds.add(Number(s.id));
+                _assessmentRepairNames.add(name);
+            }
+        });
+        // Hardcoded fallback: repair_status_id 10 = assessment
+        _assessmentRepairIds.add(10);
 
         // Determine which tab a transfer belongs to
         function _getTab(t) {
+            // Assessment check FIRST — based on repair_status_id / repair_status name
+            const rId = Number(t.repair_status_id) || 0;
+            if (_assessmentRepairIds.has(rId)) return 'assessment';
+            const rName = (t.repair_status || '').trim().toLowerCase();
+            if (_assessmentRepairNames.has(rName)) return 'assessment';
+
             const sId = Number(t.status_id) || 0;
             // Check by case status ID (most reliable — direct DB lookup + fallbacks)
             if (_statusIdToTab[sId]) return _statusIdToTab[sId];
