@@ -29,42 +29,45 @@ try {
 $selected_month = $_GET['month'] ?? '';  // Empty by default to show all
 $selected_technician = $_GET['technician'] ?? '';
 
-// Build query for completed cases with nachrebi_qty
-// Check both status_id = 8 (Completed) OR status = 'Completed' for compatibility
+// Build query for cases with nachrebi_qty (all statuses)
 $query = "SELECT 
-    name as customer_name,
-    plate,
-    nachrebi_qty,
-    amount,
-    franchise,
-    status,
-    status_id,
-    service_date,
-    created_at,
-    updated_at,
-    assigned_mechanic,
-    id
-FROM transfers 
-WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed')";
+    t.name as customer_name,
+    t.plate,
+    t.nachrebi_qty,
+    t.amount,
+    t.franchise,
+    t.status,
+    t.status_id,
+    t.service_date,
+    t.created_at,
+    t.updated_at,
+    t.assigned_mechanic,
+    t.id,
+    COALESCE(s.name, t.status, 'Unknown') as status_name,
+    COALESCE(s.color, '#64748b') as status_color,
+    COALESCE(s.bg_color, '#f1f5f9') as status_bg
+FROM transfers t
+LEFT JOIN statuses s ON t.status_id = s.id
+WHERE t.nachrebi_qty > 0";
 
 $params = [];
 
 // Technician filter - technicians only see their own, admins can filter by technician
 if ($current_user_role === 'technician') {
-    $query .= " AND assigned_mechanic = ?";
+    $query .= " AND t.assigned_mechanic = ?";
     $params[] = $current_user_name;
 } elseif ($selected_technician) {
-    $query .= " AND assigned_mechanic = ?";
+    $query .= " AND t.assigned_mechanic = ?";
     $params[] = $selected_technician;
 }
 
-// Month filter - use updated_at (when status was changed to Completed)
+// Month filter - use updated_at (when status was changed)
 if ($selected_month) {
-    $query .= " AND DATE_FORMAT(updated_at, '%Y-%m') = ?";
+    $query .= " AND DATE_FORMAT(t.updated_at, '%Y-%m') = ?";
     $params[] = $selected_month;
 }
 
-$query .= " ORDER BY updated_at DESC";
+$query .= " ORDER BY t.updated_at DESC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
@@ -74,10 +77,10 @@ $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $total_nachrebi = array_sum(array_column($records, 'nachrebi_qty'));
 $total_amount = $total_nachrebi * 77; // Calculate amount as nachrebi_qty × 77
 
-// Get available months for filter dropdown (based on updated_at - when completed)
+// Get available months for filter dropdown (based on updated_at)
 $months_query = "SELECT DISTINCT DATE_FORMAT(updated_at, '%Y-%m') as month 
     FROM transfers 
-    WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') AND updated_at IS NOT NULL";
+    WHERE nachrebi_qty > 0 AND updated_at IS NOT NULL";
 
 // Filter months by technician if applicable
 if ($current_user_role === 'technician') {
@@ -95,7 +98,7 @@ $technicians = [];
 $all_technicians = [];
 if ($current_user_role !== 'technician') {
     // Get technicians from filter (those who have completed cases)
-    $tech_stmt = $pdo->query("SELECT DISTINCT assigned_mechanic FROM transfers WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != '' AND nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') ORDER BY assigned_mechanic");
+    $tech_stmt = $pdo->query("SELECT DISTINCT assigned_mechanic FROM transfers WHERE assigned_mechanic IS NOT NULL AND assigned_mechanic != '' AND nachrebi_qty > 0 ORDER BY assigned_mechanic");
     $technicians = $tech_stmt->fetchAll(PDO::FETCH_COLUMN);
     
     // Get all technicians from users table for assignment dropdown
@@ -112,7 +115,7 @@ if ($current_user_role !== 'technician') {
         COUNT(*) as total_cases,
         SUM(nachrebi_qty) as total_nachrebi
     FROM transfers 
-    WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
+    WHERE nachrebi_qty > 0 AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
     
     if ($selected_month) {
         $summary_query .= " AND DATE_FORMAT(updated_at, '%Y-%m') = ?";
@@ -300,7 +303,7 @@ if ($current_user_role !== 'technician') {
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-slate-600 mb-1">დასრულებული შეკვეთები</p>
+                        <p class="text-sm text-slate-600 mb-1">სულ შეკვეთები</p>
                         <p class="text-3xl font-bold text-slate-900"><?= count($records) ?></p>
                     </div>
                     <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -346,6 +349,7 @@ if ($current_user_role !== 'technician') {
                             <?php if ($current_user_role !== 'technician'): ?>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">ტექნიკოსი</th>
                             <?php endif; ?>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">სტატუსი</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">ნაჭრების რაოდ.</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">თანხა</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">თარიღი</th>
@@ -377,6 +381,11 @@ if ($current_user_role !== 'technician') {
                                         </span>
                                     </td>
                                     <?php endif; ?>
+                                    <td class="px-4 py-3 text-sm">
+                                        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium" style="color: <?= htmlspecialchars($record['status_color']) ?>; background-color: <?= htmlspecialchars($record['status_bg']) ?>">
+                                            <?= htmlspecialchars($record['status_name']) ?>
+                                        </span>
+                                    </td>
                                     <td class="px-4 py-3 text-sm font-bold text-emerald-600"><?= number_format($record['nachrebi_qty'], 2) ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-900">₾<?= number_format($record['nachrebi_qty'] * 77, 2) ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-600">
@@ -386,10 +395,10 @@ if ($current_user_role !== 'technician') {
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="<?= $current_user_role !== 'technician' ? '7' : '6' ?>" class="px-4 py-12 text-center">
+                                <td colspan="<?= $current_user_role !== 'technician' ? '8' : '7' ?>" class="px-4 py-12 text-center">
                                     <div class="flex flex-col items-center justify-center text-slate-400">
                                         <i data-lucide="inbox" class="w-12 h-12 mb-3"></i>
-                                        <p class="text-sm">დასრულებული შეკვეთები არ მოიძებნა</p>
+                                        <p class="text-sm">შეკვეთები არ მოიძებნა</p>
                                     </div>
                                 </td>
                             </tr>
