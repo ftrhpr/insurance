@@ -227,12 +227,16 @@
                 document.getElementById('discount-label').textContent = 'უფასო სერვისი';
             }
 
+            // Georgian month names
+            const georgianMonths = ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'];
+
             // Validity
             if (data.valid_until) {
                 const d = new Date(data.valid_until.replace(' ', 'T'));
-                document.getElementById('offer-validity').textContent = d.toLocaleDateString('ka-GE', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                });
+                const day = d.getDate();
+                const month = georgianMonths[d.getMonth()];
+                const year = d.getFullYear();
+                document.getElementById('offer-validity').textContent = `${day} ${month}, ${year}`;
             }
 
             // Min order
