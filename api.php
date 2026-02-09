@@ -3430,7 +3430,7 @@ try {
 
         $link = "https://portal.otoexpress.ge/redeem_offer.php?code=" . $offer['code'] . "&t=" . $trackingSlug;
 
-        $smsText = "გამარჯობა {$name}, OTOMOTORS გთავაზობთ: {$offer['title']}! {$discountText}. გამოიყენეთ: {$link}";
+        $smsText = "გამარჯობა, როგორც ჩვენი კომპანიის მომხმარებელს, კომპანიისგან გადმოგეცათ ვაუჩერი. ვაუჩერის დეტალების სანახავად მიყევით ბმულს: {$link}";
 
         try {
             $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
@@ -3570,7 +3570,7 @@ try {
             $slugStmt->execute([$offer_id, $phone, $trackingSlug]);
 
             $link = $baseLink . "&t=" . $trackingSlug;
-            $smsText = "გამარჯობა {$customerName}, OTOMOTORS გთავაზობთ: {$offer['title']}! {$discountText}. დეტალები: {$link}";
+            $smsText = "გამარჯობა, როგორც ჩვენი კომპანიის მომხმარებელს, კომპანიისგან გადმოგეცათ ვაუჩერი. ვაუჩერის დეტალების სანახავად მიყევით ბმულს: {$link}";
 
             try {
                 $url = "https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$phone&from=OTOMOTORS&text=" . urlencode($smsText);
