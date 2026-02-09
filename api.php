@@ -1279,7 +1279,7 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Username, password, and full name are required']);
         }
         
-        if (!in_array($role, ['admin', 'manager', 'viewer', 'technician'])) {
+        if (!in_array($role, ['admin', 'manager', 'viewer', 'technician', 'operator'])) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid role']);
         }
         
@@ -1327,7 +1327,7 @@ try {
             $updates[] = "email = ?";
             $params[] = $email;
         }
-        if ($role && in_array($role, ['admin', 'manager', 'viewer', 'technician'])) {
+        if ($role && in_array($role, ['admin', 'manager', 'viewer', 'technician', 'operator'])) {
             $updates[] = "role = ?";
             $params[] = $role;
         }
