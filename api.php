@@ -3411,7 +3411,24 @@ try {
         }
 
         $name = $offer['target_name'] ?: 'მომხმარებელო';
-        $link = "https://portal.otoexpress.ge/redeem_offer.php?code=" . $offer['code'];
+
+        // Ensure tracking slugs table exists
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `offer_tracking_slugs` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `offer_id` INT NOT NULL,
+            `phone` VARCHAR(20) NOT NULL,
+            `slug` VARCHAR(16) NOT NULL UNIQUE,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_offer_phone` (`offer_id`, `phone`),
+            INDEX `idx_slug` (`slug`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Generate unique tracking slug for this phone
+        $trackingSlug = substr(bin2hex(random_bytes(6)), 0, 12);
+        $slugStmt = $pdo->prepare("INSERT INTO offer_tracking_slugs (offer_id, phone, slug) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE slug = VALUES(slug), created_at = NOW()");
+        $slugStmt->execute([$offer_id, $phone, $trackingSlug]);
+
+        $link = "https://portal.otoexpress.ge/redeem_offer.php?code=" . $offer['code'] . "&t=" . $trackingSlug;
 
         $smsText = "გამარჯობა {$name}, OTOMOTORS გთავაზობთ: {$offer['title']}! {$discountText}. გამოიყენეთ: {$link}";
 
@@ -3521,8 +3538,19 @@ try {
             $discountText = 'უფასო სერვისი';
         }
 
-        $link = "https://portal.otoexpress.ge/redeem_offer.php?code=" . $offer['code'];
+        $baseLink = "https://portal.otoexpress.ge/redeem_offer.php?code=" . $offer['code'];
         $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+
+        // Ensure tracking slugs table exists
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `offer_tracking_slugs` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `offer_id` INT NOT NULL,
+            `phone` VARCHAR(20) NOT NULL,
+            `slug` VARCHAR(16) NOT NULL UNIQUE,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_offer_phone` (`offer_id`, `phone`),
+            INDEX `idx_slug` (`slug`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         $sent_count = 0;
         $failed_count = 0;
@@ -3536,6 +3564,12 @@ try {
             $nameStmt->execute([$phone]);
             $customerName = $nameStmt->fetchColumn() ?: 'მომხმარებელო';
 
+            // Generate unique tracking slug for this phone
+            $trackingSlug = substr(bin2hex(random_bytes(6)), 0, 12);
+            $slugStmt = $pdo->prepare("INSERT INTO offer_tracking_slugs (offer_id, phone, slug) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE slug = VALUES(slug), created_at = NOW()");
+            $slugStmt->execute([$offer_id, $phone, $trackingSlug]);
+
+            $link = $baseLink . "&t=" . $trackingSlug;
             $smsText = "გამარჯობა {$customerName}, OTOMOTORS გთავაზობთ: {$offer['title']}! {$discountText}. დეტალები: {$link}";
 
             try {
@@ -3574,28 +3608,45 @@ try {
     if ($action === 'track_offer_view' && $method === 'POST') {
         $data = getJsonInput();
         $offer_id = intval($data['offer_id'] ?? 0);
+        $trackingSlug = trim($data['tracking_slug'] ?? '');
 
         if ($offer_id <= 0) {
             jsonResponse(['status' => 'error']);
         }
 
         try {
-            // Ensure table exists
+            // Ensure table exists with phone column
             $pdo->exec("CREATE TABLE IF NOT EXISTS `offer_views` (
                 `id` INT AUTO_INCREMENT PRIMARY KEY,
                 `offer_id` INT NOT NULL,
+                `phone` VARCHAR(20) DEFAULT NULL,
                 `viewed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 `ip_address` VARCHAR(45) DEFAULT NULL,
                 `user_agent` VARCHAR(500) DEFAULT NULL,
                 INDEX `idx_offer_id` (`offer_id`),
-                INDEX `idx_viewed_at` (`viewed_at`)
+                INDEX `idx_viewed_at` (`viewed_at`),
+                INDEX `idx_phone` (`phone`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // Add phone column if missing (for existing tables)
+            try {
+                $pdo->exec("ALTER TABLE offer_views ADD COLUMN `phone` VARCHAR(20) DEFAULT NULL AFTER `offer_id`");
+                $pdo->exec("ALTER TABLE offer_views ADD INDEX `idx_phone` (`phone`)");
+            } catch (Exception $e) { /* column exists */ }
 
             $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
             $ua = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
 
-            $stmt = $pdo->prepare("INSERT INTO offer_views (offer_id, ip_address, user_agent) VALUES (?, ?, ?)");
-            $stmt->execute([$offer_id, $ip, $ua]);
+            // Lookup phone from tracking slug
+            $phone = null;
+            if (!empty($trackingSlug)) {
+                $slugStmt = $pdo->prepare("SELECT phone FROM offer_tracking_slugs WHERE slug = ? AND offer_id = ?");
+                $slugStmt->execute([$trackingSlug, $offer_id]);
+                $phone = $slugStmt->fetchColumn() ?: null;
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO offer_views (offer_id, phone, ip_address, user_agent) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$offer_id, $phone, $ip, $ua]);
 
             jsonResponse(['status' => 'success']);
         } catch (Exception $e) {
@@ -3627,8 +3678,20 @@ try {
             $stmt->execute([$offer_id]);
             $views = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Get counts
-            $countStmt = $pdo->prepare("SELECT COUNT(*) as total, COUNT(DISTINCT ip_address) as unique_views FROM offer_views WHERE offer_id = ?");
+            // Lookup customer names for views with phone numbers
+            foreach ($views as &$view) {
+                if (!empty($view['phone'])) {
+                    $nameStmt = $pdo->prepare("SELECT name FROM transfers WHERE phone = ? ORDER BY id DESC LIMIT 1");
+                    $nameStmt->execute([$view['phone']]);
+                    $view['customer_name'] = $nameStmt->fetchColumn() ?: null;
+                } else {
+                    $view['customer_name'] = null;
+                }
+            }
+            unset($view);
+
+            // Get counts - unique by phone if available, otherwise by IP
+            $countStmt = $pdo->prepare("SELECT COUNT(*) as total, COUNT(DISTINCT COALESCE(phone, ip_address)) as unique_views FROM offer_views WHERE offer_id = ?");
             $countStmt->execute([$offer_id]);
             $counts = $countStmt->fetch(PDO::FETCH_ASSOC);
 

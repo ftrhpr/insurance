@@ -449,8 +449,8 @@ require_once 'language.php';
                         <thead>
                             <tr class="text-left text-xs text-slate-500 uppercase">
                                 <th class="pb-3 font-semibold">#</th>
+                                <th class="pb-3 font-semibold">Customer</th>
                                 <th class="pb-3 font-semibold">Device</th>
-                                <th class="pb-3 font-semibold">IP Address</th>
                                 <th class="pb-3 font-semibold">Viewed At</th>
                             </tr>
                         </thead>
@@ -605,18 +605,20 @@ require_once 'language.php';
                         tableContainer.classList.remove('hidden');
                         tableBody.innerHTML = data.views.map((v, i) => {
                             const device = parseUserAgent(v.user_agent || '');
-                            const ip = maskIP(v.ip_address || '');
                             const viewedAt = formatDateTime(v.viewed_at);
+                            const customerInfo = v.phone 
+                                ? `<div class="font-medium text-slate-700">${escapeHtml(v.customer_name || 'Unknown')}</div><div class="text-xs text-slate-400">${formatPhone(v.phone)}</div>`
+                                : `<div class="text-slate-400 italic text-sm">No tracking link</div><div class="text-xs text-slate-300 font-mono">${maskIP(v.ip_address || '')}</div>`;
                             return `
                                 <tr class="hover:bg-slate-50">
                                     <td class="py-3 text-slate-400 text-sm">${i + 1}</td>
+                                    <td class="py-3">${customerInfo}</td>
                                     <td class="py-3">
                                         <div class="flex items-center gap-2">
                                             <i data-lucide="${device.icon}" class="w-4 h-4 text-slate-400"></i>
                                             <span class="text-sm text-slate-600">${device.name}</span>
                                         </div>
                                     </td>
-                                    <td class="py-3 text-sm text-slate-500 font-mono">${ip}</td>
                                     <td class="py-3 text-sm text-slate-500">${viewedAt}</td>
                                 </tr>
                             `;
@@ -662,6 +664,19 @@ require_once 'language.php';
                 return `${parts[0]}.${parts[1]}.*.*`;
             }
             return ip.substring(0, Math.min(8, ip.length)) + '...';
+        }
+
+        function formatPhone(phone) {
+            if (!phone) return '';
+            // Format Georgian phone number
+            const clean = phone.replace(/\D/g, '');
+            if (clean.startsWith('995') && clean.length === 12) {
+                return `+995 ${clean.slice(3, 6)} ${clean.slice(6, 8)} ${clean.slice(8, 10)} ${clean.slice(10)}`;
+            }
+            if (clean.length === 9) {
+                return `${clean.slice(0, 3)} ${clean.slice(3, 5)} ${clean.slice(5, 7)} ${clean.slice(7)}`;
+            }
+            return phone;
         }
 
         function formatDateTime(dateStr) {

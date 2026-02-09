@@ -171,6 +171,7 @@
         const API_URL = 'api.php';
         const urlParams = new URLSearchParams(window.location.search);
         const offerCode = (urlParams.get('code') || '').toUpperCase().trim();
+        const trackingSlug = urlParams.get('t') || '';
         let currentOffer = null;
 
         function escapeHtml(text) {
@@ -195,11 +196,11 @@
                 currentOffer = data;
                 renderOffer(data);
 
-                // Track view (fire and forget)
+                // Track view with tracking slug (fire and forget)
                 fetch(`${API_URL}?action=track_offer_view`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ offer_id: data.id })
+                    body: JSON.stringify({ offer_id: data.id, tracking_slug: trackingSlug })
                 }).catch(() => {});
             } catch (e) {
                 console.error('Fetch error:', e);
