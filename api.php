@@ -3524,16 +3524,20 @@ try {
 
         $data = getJsonInput();
         $offer_id = intval($data['offer_id'] ?? 0);
-        $customer_name = trim($data['customer_name'] ?? '');
         $customer_phone = trim($data['customer_phone'] ?? '');
         $notes = trim($data['notes'] ?? '');
 
         if ($offer_id <= 0) {
             jsonResponse(['status' => 'error', 'message' => 'Invalid offer ID']);
         }
-        if (empty($customer_name) || empty($customer_phone)) {
-            jsonResponse(['status' => 'error', 'message' => 'Name and phone number are required']);
+        if (empty($customer_phone)) {
+            jsonResponse(['status' => 'error', 'message' => 'Phone number is required']);
         }
+
+        // Lookup customer name from transfers table by phone
+        $customerStmt = $pdo->prepare("SELECT name FROM transfers WHERE phone = ? ORDER BY id DESC LIMIT 1");
+        $customerStmt->execute([$customer_phone]);
+        $customer_name = $customerStmt->fetchColumn() ?: 'Customer';
 
         // Auto-expire old offers
         $pdo->exec("UPDATE offers SET status = 'expired' WHERE status = 'active' AND valid_until < NOW()");
@@ -3573,7 +3577,7 @@ try {
         // Increment counter
         $pdo->prepare("UPDATE offers SET times_redeemed = times_redeemed + 1 WHERE id = ?")->execute([$offer_id]);
 
-        jsonResponse(['status' => 'success', 'message' => 'Offer redeemed successfully']);
+        jsonResponse(['status' => 'success', 'message' => 'Offer redeemed for ' . $customer_name]);
     }
 
     // GET OFFER REDEMPTIONS (Manager — auth required)

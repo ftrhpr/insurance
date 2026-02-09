@@ -309,12 +309,9 @@ require_once 'language.php';
                     <code class="text-xs text-emerald-700 font-bold mt-1 block" id="redeem-offer-code">CODE</code>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Customer Name *</label>
-                    <input type="text" id="redeem-customer-name" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 focus:border-emerald-500 focus:outline-none transition" placeholder="სახელი გვარი">
-                </div>
-                <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Customer Phone *</label>
                     <input type="text" id="redeem-customer-phone" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 focus:border-emerald-500 focus:outline-none transition" placeholder="5XXXXXXXX">
+                    <p id="redeem-customer-info" class="text-xs text-slate-500 mt-1 hidden"></p>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Notes (optional)</label>
@@ -780,13 +777,13 @@ require_once 'language.php';
             document.getElementById('redeem-offer-title').textContent = o.title;
             document.getElementById('redeem-offer-code').textContent = o.code;
             document.getElementById('redeem-offer-discount').textContent = 'Discount: ' + getDiscountDisplay(o);
-            document.getElementById('redeem-customer-name').value = o.target_name || '';
             document.getElementById('redeem-customer-phone').value = o.target_phone || '';
             document.getElementById('redeem-notes').value = '';
+            document.getElementById('redeem-customer-info').classList.add('hidden');
             
             document.getElementById('redeem-modal').classList.remove('hidden');
             lucide.createIcons();
-            document.getElementById('redeem-customer-name').focus();
+            document.getElementById('redeem-customer-phone').focus();
         }
 
         function closeRedeemModal() {
@@ -795,15 +792,9 @@ require_once 'language.php';
 
         async function submitRedemption() {
             const offer_id = parseInt(document.getElementById('redeem-offer-id').value);
-            const customer_name = document.getElementById('redeem-customer-name').value.trim();
             const customer_phone = document.getElementById('redeem-customer-phone').value.trim();
             const notes = document.getElementById('redeem-notes').value.trim();
 
-            if (!customer_name) {
-                showToast('Customer name is required', 'error');
-                document.getElementById('redeem-customer-name').focus();
-                return;
-            }
             if (!customer_phone) {
                 showToast('Customer phone is required', 'error');
                 document.getElementById('redeem-customer-phone').focus();
@@ -818,7 +809,6 @@ require_once 'language.php';
             try {
                 const data = await fetchAPI('admin_redeem_offer', 'POST', {
                     offer_id,
-                    customer_name,
                     customer_phone,
                     notes
                 });
