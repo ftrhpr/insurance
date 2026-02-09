@@ -10,8 +10,10 @@
     <script>
         tailwind.config = {
             theme: {
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif']
+                },
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         primary: '#a855f7',
                         success: '#10b981',
@@ -23,6 +25,7 @@
         }
     </script>
     <style>
+        * { font-family: 'Inter', sans-serif !important; }
         body { background: linear-gradient(135deg, #faf5ff 0%, #f0e7fe 50%, #ede9fe 100%); min-height: 100vh; text-transform: uppercase; }
         .card-enter { animation: cardEnter 0.5s ease forwards; }
         @keyframes cardEnter {
