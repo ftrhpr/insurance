@@ -310,6 +310,14 @@ try {
                                 <i data-lucide="clipboard-check" class="w-4 h-4"></i>
                                 Assessment <span id="assessment-count-tab" class="ml-1 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">(0)</span>
                             </button>
+                            <button id="tab-parts_ordered" onclick="switchTab('parts_ordered')" class="tab-button flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                                შეკვეთილი ნაწილები <span id="parts_ordered-count-tab" class="ml-1 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">(0)</span>
+                            </button>
+                            <button id="tab-parts_arrived" onclick="switchTab('parts_arrived')" class="tab-button flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                                <i data-lucide="package-check" class="w-4 h-4"></i>
+                                ჩამოსული ნაწილები <span id="parts_arrived-count-tab" class="ml-1 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">(0)</span>
+                            </button>
                             <button id="tab-issue" onclick="switchTab('issue')" class="tab-button flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
                                 <i data-lucide="alert-triangle" class="w-4 h-4"></i>
                                 Issue <span id="issue-count-tab" class="ml-1 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">(0)</span>
@@ -626,6 +634,146 @@ try {
                                     <div class="bg-blue-50 p-4 rounded-full mb-4 ring-8 ring-blue-50/50"><i data-lucide="clipboard-check" class="w-8 h-8 text-blue-300"></i></div>
                                     <h3 class="text-slate-900 font-medium">No cases under assessment</h3>
                                     <p class="text-slate-400 text-sm mt-1 max-w-xs">Cases in preliminary assessment will appear here.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parts Ordered Tab -->
+                        <div id="tab-content-parts_ordered" class="tab-content hidden">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <div class="p-2 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl shadow-lg shadow-purple-500/30">
+                                        <i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    შეკვეთილი ნაწილები <span id="parts_ordered-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                                </h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold bg-purple-100 text-purple-600 border border-purple-200 px-3 py-1 rounded-full shadow-sm">Parts Ordered</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                        <tr>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="car" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="phone" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="tag" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.case_type', 'Case Type'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="settings" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="parts-ordered-cases-body" class="divide-y divide-slate-200">
+                                        <!-- Populated by JavaScript -->
+                                    </tbody>
+                                </table>
+
+                                <!-- Empty State -->
+                                <div id="parts_ordered-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                    <div class="bg-purple-50 p-4 rounded-full mb-4 ring-8 ring-purple-50/50"><i data-lucide="shopping-cart" class="w-8 h-8 text-purple-300"></i></div>
+                                    <h3 class="text-slate-900 font-medium">No cases with ordered parts</h3>
+                                    <p class="text-slate-400 text-sm mt-1 max-w-xs">Cases with parts on order will appear here.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parts Arrived Tab -->
+                        <div id="tab-content-parts_arrived" class="tab-content hidden">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <div class="p-2 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl shadow-lg shadow-teal-500/30">
+                                        <i data-lucide="package-check" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    ჩამოსული ნაწილები <span id="parts_arrived-count" class="text-slate-400 font-medium text-sm ml-2 bg-slate-100 px-2 py-0.5 rounded-full">(0)</span>
+                                </h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold bg-teal-100 text-teal-600 border border-teal-200 px-3 py-1 rounded-full shadow-sm">Parts Arrived</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-600 text-white text-xs uppercase tracking-wider font-bold shadow-lg">
+                                        <tr>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="car" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.vehicle_owner', 'Vehicle & Owner'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="phone" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.contact', 'Contact'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.amount', 'Amount'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="tag" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.case_type', 'Case Type'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
+                                                </div>
+                                            </th>
+                                            <th class="px-5 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="settings" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.actions', 'Actions'); ?></span>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="parts-arrived-cases-body" class="divide-y divide-slate-200">
+                                        <!-- Populated by JavaScript -->
+                                    </tbody>
+                                </table>
+
+                                <!-- Empty State -->
+                                <div id="parts_arrived-empty-state" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                                    <div class="bg-teal-50 p-4 rounded-full mb-4 ring-8 ring-teal-50/50"><i data-lucide="package-check" class="w-8 h-8 text-teal-300"></i></div>
+                                    <h3 class="text-slate-900 font-medium">No cases with arrived parts</h3>
+                                    <p class="text-slate-400 text-sm mt-1 max-w-xs">Cases with parts that have arrived will appear here.</p>
                                 </div>
                             </div>
                         </div>
@@ -1359,7 +1507,9 @@ try {
             'completed': 'completed',
             'issue': 'issue',
             'წიანსწარი შეფასება': 'assessment',
-            'წინასწარი შეფასება': 'assessment'
+            'წინასწარი შეფასება': 'assessment',
+            'შეკვეთილი ნაწილები': 'parts_ordered',
+            'ჩამოსული ნაწილები': 'parts_arrived'
         };
         caseStatuses.forEach(s => {
             const id = Number(s.id);
@@ -1371,9 +1521,18 @@ try {
             if (name.includes('შეფასება')) {
                 _statusIdToTab[id] = 'assessment';
             }
+            // Catch parts statuses by keyword
+            if (name.includes('შეკვეთილი') && name.includes('ნაწილ')) {
+                _statusIdToTab[id] = 'parts_ordered';
+            }
+            if (name.includes('ჩამოსული') && name.includes('ნაწილ')) {
+                _statusIdToTab[id] = 'parts_arrived';
+            }
         });
         // Hardcoded fallback IDs (default installation) — only set if not already mapped
         if (!_statusIdToTab[1]) _statusIdToTab[1] = 'new';
+        if (!_statusIdToTab[4]) _statusIdToTab[4] = 'parts_ordered';
+        if (!_statusIdToTab[5]) _statusIdToTab[5] = 'parts_arrived';
         if (!_statusIdToTab[7]) _statusIdToTab[7] = 'service';
         if (!_statusIdToTab[8]) _statusIdToTab[8] = 'completed';
         if (!_statusIdToTab[9]) _statusIdToTab[9] = 'issue';
@@ -1389,6 +1548,8 @@ try {
             if (_knownTabs[sName]) return _knownTabs[sName];
             // Text fallback for assessment: any status name containing 'შეფასება'
             if (sName.includes('შეფასება')) return 'assessment';
+            if (sName.includes('შეკვეთილი') && sName.includes('ნაწილ')) return 'parts_ordered';
+            if (sName.includes('ჩამოსული') && sName.includes('ნაწილ')) return 'parts_arrived';
             // Default: active tab
             return 'active';
         }
@@ -1397,6 +1558,8 @@ try {
         function _isCompletedTab(t) { return _getTab(t) === 'completed'; }
         function _isIssueTab(t) { return _getTab(t) === 'issue'; }
         function _isAssessmentTab(t) { return _getTab(t) === 'assessment'; }
+        function _isPartsOrderedTab(t) { return _getTab(t) === 'parts_ordered'; }
+        function _isPartsArrivedTab(t) { return _getTab(t) === 'parts_arrived'; }
         
         // Pagination variables
         const processingPerPage = 10;
@@ -2090,6 +2253,8 @@ try {
             const serviceContainer = document.getElementById('service-cases-body');
             const completedContainer = document.getElementById('completed-cases-body');
             const assessmentContainer = document.getElementById('assessment-cases-body');
+            const partsOrderedContainer = document.getElementById('parts-ordered-cases-body');
+            const partsArrivedContainer = document.getElementById('parts-arrived-cases-body');
             const issueContainer = document.getElementById('issue-cases-body');
             
             // PERFORMANCE: Clear containers once at start
@@ -2098,6 +2263,8 @@ try {
             if (serviceContainer) serviceContainer.innerHTML = '';
             if (completedContainer) completedContainer.innerHTML = '';
             if (assessmentContainer) assessmentContainer.innerHTML = '';
+            if (partsOrderedContainer) partsOrderedContainer.innerHTML = '';
+            if (partsArrivedContainer) partsArrivedContainer.innerHTML = '';
             if (issueContainer) issueContainer.innerHTML = '';
             
             // PERFORMANCE: Build HTML as arrays, join once at end
@@ -2106,6 +2273,8 @@ try {
             const serviceHtml = [];
             const completedHtml = [];
             const assessmentHtml = [];
+            const partsOrderedHtml = [];
+            const partsArrivedHtml = [];
             const issueHtml = [];
             
             let newCount = 0;
@@ -2122,6 +2291,9 @@ try {
             let completedIncomeSacalo = 0.0; // საცალო total
             // Assessment tab counter
             let assessmentCount = 0; // number of cases with preliminary assessment
+            // Parts tabs counters
+            let partsOrderedCount = 0;
+            let partsArrivedCount = 0;
             // Active transfers list used for pagination (must be declared to avoid ReferenceError)
             let activeTransfers = [];
             // Service cases list for sorting by in-service date
@@ -2305,6 +2477,142 @@ try {
                                     </button>
                                     ${CAN_EDIT ? 
                                         `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-blue-500/25 active:scale-95">
+                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                        </button>` : ''
+                                    }
+                                </div>
+                            </td>
+                        </tr>`);
+                } else if(_isPartsOrderedTab(t)) {
+                    partsOrderedCount++;
+                    partsOrderedHtml.push(`
+                        <tr class="hover:bg-purple-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-purple-100 to-violet-100 rounded-xl flex items-center justify-center shadow-sm">
+                                        <i data-lucide="shopping-cart" class="w-5 h-5 text-purple-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
+                                        <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
+                                        <div class="text-[10px] text-purple-600 font-medium mt-1">შეკვეთილი ნაწილები</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700 font-medium">${displayPhone ? escapeHtml(displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm font-bold text-purple-600">${escapeHtml(t.amount)} ₾</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.case_type === 'დაზღვევა' ? 
+                                        `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
+                                        </span>` : 
+                                        `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
+                                        </span>`
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.serviceDate ? (() => {
+                                        try {
+                                            let dateStr = t.serviceDate;
+                                            if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                                            if (dateStr.length === 16) dateStr += ':00';
+                                            const svcDate = new Date(dateStr);
+                                            return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+                                        } catch(e) {
+                                            return 'Invalid date';
+                                        }
+                                    })() : '<span class="text-slate-400">Not scheduled</span>'}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); openQuickView('${t.id}')" class="text-slate-400 hover:text-purple-600 p-2 hover:bg-purple-50 rounded-xl transition-all shadow-sm" title="Quick View">
+                                        <i data-lucide="zap" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm" title="Show QR Code">
+                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-purple-600 p-2 hover:bg-purple-50 rounded-xl transition-all shadow-sm" title="View Details">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>
+                                    ${CAN_EDIT ? 
+                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-purple-600 p-2 hover:bg-purple-50 rounded-xl transition-all shadow-sm">
+                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                        </button>` : ''
+                                    }
+                                </div>
+                            </td>
+                        </tr>`);
+                } else if(_isPartsArrivedTab(t)) {
+                    partsArrivedCount++;
+                    partsArrivedHtml.push(`
+                        <tr class="hover:bg-teal-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-teal-100 to-emerald-100 rounded-xl flex items-center justify-center shadow-sm">
+                                        <i data-lucide="package-check" class="w-5 h-5 text-teal-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-sm">${escapeHtml(t.plate)}</div>
+                                        <div class="text-xs text-slate-500 font-medium">${escapeHtml(t.name)}</div>
+                                        <div class="text-[10px] text-teal-600 font-medium mt-1">ჩამოსული ნაწილები</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700 font-medium">${displayPhone ? escapeHtml(displayPhone) : '<span class="text-red-400 text-xs">Missing</span>'}</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm font-bold text-teal-600">${escapeHtml(t.amount)} ₾</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.case_type === 'დაზღვევა' ? 
+                                        `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shield" class="w-3 h-3"></i> დაზღვევა
+                                        </span>` : 
+                                        `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                            <i data-lucide="shopping-cart" class="w-3 h-3"></i> საცალო
+                                        </span>`
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="text-sm text-slate-700">
+                                    ${t.serviceDate ? (() => {
+                                        try {
+                                            let dateStr = t.serviceDate;
+                                            if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
+                                            if (dateStr.length === 16) dateStr += ':00';
+                                            const svcDate = new Date(dateStr);
+                                            return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+                                        } catch(e) {
+                                            return 'Invalid date';
+                                        }
+                                    })() : '<span class="text-slate-400">Not scheduled</span>'}
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="event.stopPropagation(); openQuickView('${t.id}')" class="text-slate-400 hover:text-teal-600 p-2 hover:bg-teal-50 rounded-xl transition-all shadow-sm" title="Quick View">
+                                        <i data-lucide="zap" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); showQRCode('${escapeHtml(t.plate)}', '${t.id}')" class="text-slate-400 hover:text-primary-600 p-2 hover:bg-primary-50 rounded-xl transition-all shadow-sm" title="Show QR Code">
+                                        <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-teal-600 p-2 hover:bg-teal-50 rounded-xl transition-all shadow-sm" title="View Details">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>
+                                    ${CAN_EDIT ? 
+                                        `<button onclick="event.stopPropagation(); window.location.href='edit_case.php?id=${t.id}'" class="text-slate-400 hover:text-teal-600 p-2 hover:bg-teal-50 rounded-xl transition-all shadow-sm">
                                             <i data-lucide="edit-2" class="w-4 h-4"></i>
                                         </button>` : ''
                                     }
@@ -2846,18 +3154,24 @@ try {
             if (serviceContainer) serviceContainer.innerHTML = serviceHtml.join('');
             if (completedContainer) completedContainer.innerHTML = completedHtml.join('');
             if (assessmentContainer) assessmentContainer.innerHTML = assessmentHtml.join('');
+            if (partsOrderedContainer) partsOrderedContainer.innerHTML = partsOrderedHtml.join('');
+            if (partsArrivedContainer) partsArrivedContainer.innerHTML = partsArrivedHtml.join('');
             if (issueContainer) issueContainer.innerHTML = issueHtml.join('');
 
             const newCountEl = document.getElementById('new-count');
             const serviceCountEl = document.getElementById('service-count');
             const completedCountEl = document.getElementById('completed-count');
             const assessmentCountEl = document.getElementById('assessment-count');
+            const partsOrderedCountEl = document.getElementById('parts_ordered-count');
+            const partsArrivedCountEl = document.getElementById('parts_arrived-count');
             const issueCountEl = document.getElementById('issue-count');
             const recordCountEl = document.getElementById('record-count');
             const newCasesEmptyEl = document.getElementById('new-cases-empty');
             const serviceEmptyEl = document.getElementById('service-empty-state');
             const completedEmptyEl = document.getElementById('completed-empty-state');
             const assessmentEmptyEl = document.getElementById('assessment-empty-state');
+            const partsOrderedEmptyEl = document.getElementById('parts_ordered-empty-state');
+            const partsArrivedEmptyEl = document.getElementById('parts_arrived-empty-state');
             const issueEmptyEl = document.getElementById('issue-empty-state');
             const emptyStateEl = document.getElementById('empty-state');
             const paginationContainerEl = document.getElementById('processing-pagination-container');
@@ -2867,6 +3181,8 @@ try {
             const totalService = transfers.filter(t => _isServiceTab(t)).length;
             const totalCompleted = transfers.filter(t => _isCompletedTab(t)).length;
             const totalAssessment = transfers.filter(t => _isAssessmentTab(t)).length;
+            const totalPartsOrdered = transfers.filter(t => _isPartsOrderedTab(t)).length;
+            const totalPartsArrived = transfers.filter(t => _isPartsArrivedTab(t)).length;
             const totalIssue = transfers.filter(t => _isIssueTab(t)).length;
             const issueCount = issueHtml.length;
 
@@ -2874,6 +3190,8 @@ try {
             if (serviceCountEl) serviceCountEl.innerText = `${serviceCount} / ${totalService}`;
             if (completedCountEl) completedCountEl.innerText = `${completedCount} / ${totalCompleted}`;
             if (assessmentCountEl) assessmentCountEl.innerText = `${assessmentCount} / ${totalAssessment}`;
+            if (partsOrderedCountEl) partsOrderedCountEl.innerText = `${partsOrderedCount} / ${totalPartsOrdered}`;
+            if (partsArrivedCountEl) partsArrivedCountEl.innerText = `${partsArrivedCount} / ${totalPartsArrived}`;
             if (issueCountEl) issueCountEl.innerText = `${issueCount} / ${totalIssue}`;
             if (recordCountEl) recordCountEl.innerText = `${totalActive} active`;
 
@@ -2882,6 +3200,8 @@ try {
             if (serviceEmptyEl) serviceEmptyEl.classList.toggle('hidden', serviceCount > 0);
             if (completedEmptyEl) completedEmptyEl.classList.toggle('hidden', completedFilteredCount > 0);
             if (assessmentEmptyEl) assessmentEmptyEl.classList.toggle('hidden', assessmentCount > 0);
+            if (partsOrderedEmptyEl) partsOrderedEmptyEl.classList.toggle('hidden', partsOrderedCount > 0);
+            if (partsArrivedEmptyEl) partsArrivedEmptyEl.classList.toggle('hidden', partsArrivedCount > 0);
             if (issueEmptyEl) issueEmptyEl.classList.toggle('hidden', issueCount > 0);
             if (emptyStateEl) emptyStateEl.classList.toggle('hidden', totalActive > 0);
             
@@ -3042,9 +3362,11 @@ try {
         // Update tab counts
         function updateTabCounts() {
             const newCount = transfers.filter(t => _isNewTab(t)).length;
-            const activeCount = transfers.filter(t => !_isNewTab(t) && !_isServiceTab(t) && !_isCompletedTab(t) && !_isAssessmentTab(t) && !_isIssueTab(t)).length;
+            const activeCount = transfers.filter(t => !_isNewTab(t) && !_isServiceTab(t) && !_isCompletedTab(t) && !_isAssessmentTab(t) && !_isPartsOrderedTab(t) && !_isPartsArrivedTab(t) && !_isIssueTab(t)).length;
             const serviceCount = transfers.filter(t => _isServiceTab(t)).length;
             const assessmentCount = transfers.filter(t => _isAssessmentTab(t)).length;
+            const partsOrderedCount = transfers.filter(t => _isPartsOrderedTab(t)).length;
+            const partsArrivedCount = transfers.filter(t => _isPartsArrivedTab(t)).length;
             const issueCount = transfers.filter(t => _isIssueTab(t)).length;
             const completedCount = transfers.filter(t => _isCompletedTab(t)).length;
 
@@ -3053,6 +3375,8 @@ try {
             const activeTabEl = document.getElementById('active-count-tab');
             const serviceTabEl = document.getElementById('service-count-tab');
             const assessmentTabEl = document.getElementById('assessment-count-tab');
+            const partsOrderedTabEl = document.getElementById('parts_ordered-count-tab');
+            const partsArrivedTabEl = document.getElementById('parts_arrived-count-tab');
             const issueTabEl = document.getElementById('issue-count-tab');
             const completedTabEl = document.getElementById('completed-count-tab');
 
@@ -3060,6 +3384,8 @@ try {
             if (activeTabEl) activeTabEl.textContent = `(${activeCount})`;
             if (serviceTabEl) serviceTabEl.textContent = `(${serviceCount})`;
             if (assessmentTabEl) assessmentTabEl.textContent = `(${assessmentCount})`;
+            if (partsOrderedTabEl) partsOrderedTabEl.textContent = `(${partsOrderedCount})`;
+            if (partsArrivedTabEl) partsArrivedTabEl.textContent = `(${partsArrivedCount})`;
             if (issueTabEl) issueTabEl.textContent = `(${issueCount})`;
             if (completedTabEl) completedTabEl.textContent = `(${completedCount})`;
         }
