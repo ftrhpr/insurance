@@ -117,8 +117,8 @@
                     <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                         <i data-lucide="phone-call" class="w-7 h-7 text-purple-600"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-800 mb-2">შეთავაზების გამოსაყენებლად</h3>
-                    <p class="text-sm text-slate-600 mb-3">ეწვიეთ ჩვენს სერვისს</p>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">ვაუჩერის გამოსაყენებლად</h3>
+                    <p class="text-sm text-slate-600 mb-3">ეწვიეთ ჩვენს სერვისცენტრს</p>
                     <div class="bg-white/80 rounded-xl p-3 border border-purple-100">
                         <p class="text-xs text-purple-600 font-semibold uppercase tracking-wider mb-1">კითხვები გაქვს?</p>
                         <a href="tel:+9950322052626" class="text-xl font-bold text-purple-700 hover:text-purple-800">+995 032 2 05 26 26</a>
