@@ -106,7 +106,7 @@ function getStageProgression() {
 }
 
 // Check authentication for protected endpoints
-$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond'];
+$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond', 'get_public_offer', 'redeem_offer'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode(['error' => 'Unauthorized']));

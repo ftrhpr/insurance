@@ -1,10 +1,15 @@
 <?php
-session_start();
+require_once 'session_config.php';
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
+}
+
+// Generate CSRF token if not exists
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 $current_user_name = $_SESSION['full_name'] ?? 'User';
@@ -326,14 +331,28 @@ require_once 'language.php';
             return div.innerHTML;
         }
 
+        const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
+
         // ===========================
         // API HELPER
         // ===========================
         async function fetchAPI(action, method = 'GET', body = null) {
-            const opts = { method, headers: { 'Content-Type': 'application/json' } };
+            const opts = { 
+                method, 
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
+            };
+            // Add CSRF token for POST requests
+            if (method === 'POST' && CSRF_TOKEN) {
+                opts.headers['X-CSRF-Token'] = CSRF_TOKEN;
+            }
             if (body) opts.body = JSON.stringify(body);
-            const url = method === 'GET' && body === null ? `${API_URL}?action=${action}` : `${API_URL}?action=${action}`;
+            const url = `${API_URL}?action=${action}`;
             const res = await fetch(url, opts);
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || errorData.message || `HTTP ${res.status}`);
+            }
             return res.json();
         }
 
