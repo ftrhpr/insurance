@@ -934,10 +934,36 @@ try {
         }
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Build name→id maps for resolving missing IDs from text columns
+        $repairNameToId = [];
+        $caseNameToId = [];
+        try {
+            $mapStmt = $pdo->query("SELECT id, type, name FROM statuses WHERE is_active = 1");
+            foreach ($mapStmt->fetchAll(PDO::FETCH_ASSOC) as $s) {
+                if ($s['type'] === 'repair') $repairNameToId[trim($s['name'])] = intval($s['id']);
+                if ($s['type'] === 'case') $caseNameToId[trim($s['name'])] = intval($s['id']);
+            }
+        } catch (Exception $e) {}
+
         foreach ($rows as &$row) {
             $row['internalNotes'] = json_decode($row['internalNotes'] ?? '[]');
             $row['systemLogs'] = json_decode($row['systemLogs'] ?? '[]');
-            // serviceDate is already correctly named in the database
+
+            // Resolve missing repair_status_id from text repair_status
+            if (empty($row['repair_status_id']) && !empty($row['repair_status'])) {
+                $rText = trim($row['repair_status']);
+                if (isset($repairNameToId[$rText])) {
+                    $row['repair_status_id'] = $repairNameToId[$rText];
+                }
+            }
+            // Resolve missing status_id from text status
+            if (empty($row['status_id']) && !empty($row['status'])) {
+                $sText = trim($row['status']);
+                if (isset($caseNameToId[$sText])) {
+                    $row['status_id'] = $caseNameToId[$sText];
+                }
+            }
         }
         
         // Also get vehicles for vehicle DB page

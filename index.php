@@ -1373,14 +1373,13 @@ try {
         if (!_statusIdToTab[9]) _statusIdToTab[9] = 'issue';
 
         // Assessment is determined by repair_status (it's a repair type status, not case status)
-        // Build set of repair status IDs/names that mean "assessment"
+        // Build set of repair status IDs that mean "assessment"
         const _assessmentRepairIds = new Set();
-        const _assessmentRepairNames = new Set();
         repairStatuses.forEach(s => {
-            const name = (s.name || '').trim().toLowerCase();
-            if (name === 'წიანსწარი შეფასება') {
+            const name = (s.name || '').trim();
+            // Match any repair status containing 'შეფასება' (assessment)
+            if (name.includes('შეფასება')) {
                 _assessmentRepairIds.add(Number(s.id));
-                _assessmentRepairNames.add(name);
             }
         });
         // Hardcoded fallback: repair_status_id 10 = assessment
@@ -1388,11 +1387,12 @@ try {
 
         // Determine which tab a transfer belongs to
         function _getTab(t) {
-            // Assessment check FIRST — based on repair_status_id / repair_status name
+            // Assessment check FIRST — based on repair_status_id or repair_status text
             const rId = Number(t.repair_status_id) || 0;
             if (_assessmentRepairIds.has(rId)) return 'assessment';
-            const rName = (t.repair_status || '').trim().toLowerCase();
-            if (_assessmentRepairNames.has(rName)) return 'assessment';
+            // Text fallback: match any spelling variant containing 'შეფასება'
+            const rName = (t.repair_status || '').trim();
+            if (rName.includes('შეფასება')) return 'assessment';
 
             const sId = Number(t.status_id) || 0;
             // Check by case status ID (most reliable — direct DB lookup + fallbacks)
