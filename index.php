@@ -1357,7 +1357,9 @@ try {
             'new': 'new',
             'already in service': 'service',
             'completed': 'completed',
-            'issue': 'issue'
+            'issue': 'issue',
+            'წიანსწარი შეფასება': 'assessment',
+            'წინასწარი შეფასება': 'assessment'
         };
         caseStatuses.forEach(s => {
             const id = Number(s.id);
@@ -1365,41 +1367,28 @@ try {
             if (_knownTabs[name]) {
                 _statusIdToTab[id] = _knownTabs[name];
             }
+            // Also catch any case status containing 'შეფასება'
+            if (name.includes('შეფასება')) {
+                _statusIdToTab[id] = 'assessment';
+            }
         });
         // Hardcoded fallback IDs (default installation) — only set if not already mapped
         if (!_statusIdToTab[1]) _statusIdToTab[1] = 'new';
         if (!_statusIdToTab[7]) _statusIdToTab[7] = 'service';
         if (!_statusIdToTab[8]) _statusIdToTab[8] = 'completed';
         if (!_statusIdToTab[9]) _statusIdToTab[9] = 'issue';
-
-        // Assessment is determined by repair_status (it's a repair type status, not case status)
-        // Build set of repair status IDs that mean "assessment"
-        const _assessmentRepairIds = new Set();
-        repairStatuses.forEach(s => {
-            const name = (s.name || '').trim();
-            // Match any repair status containing 'შეფასება' (assessment)
-            if (name.includes('შეფასება')) {
-                _assessmentRepairIds.add(Number(s.id));
-            }
-        });
-        // Hardcoded fallback: repair_status_id 10 = assessment
-        _assessmentRepairIds.add(10);
+        if (!_statusIdToTab[10]) _statusIdToTab[10] = 'assessment';
 
         // Determine which tab a transfer belongs to
         function _getTab(t) {
-            // Assessment check FIRST — based on repair_status_id or repair_status text
-            const rId = Number(t.repair_status_id) || 0;
-            if (_assessmentRepairIds.has(rId)) return 'assessment';
-            // Text fallback: match any spelling variant containing 'შეფასება'
-            const rName = (t.repair_status || '').trim();
-            if (rName.includes('შეფასება')) return 'assessment';
-
             const sId = Number(t.status_id) || 0;
             // Check by case status ID (most reliable — direct DB lookup + fallbacks)
             if (_statusIdToTab[sId]) return _statusIdToTab[sId];
             // Check by resolved case status name (case-insensitive)
             const sName = (t.status || '').trim().toLowerCase();
             if (_knownTabs[sName]) return _knownTabs[sName];
+            // Text fallback for assessment: any status name containing 'შეფასება'
+            if (sName.includes('შეფასება')) return 'assessment';
             // Default: active tab
             return 'active';
         }
