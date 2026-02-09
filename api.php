@@ -3890,6 +3890,24 @@ try {
         $pdo->exec("UPDATE offers SET status = 'expired' WHERE status = 'active' AND valid_until < NOW()");
 
         try {
+            // Check if tracking slugs table exists
+            $tableCheck = $pdo->query("SHOW TABLES LIKE 'offer_tracking_slugs'");
+            if ($tableCheck->rowCount() === 0) {
+                // Table doesn't exist - no offers have been sent yet
+                // Lookup customer name anyway
+                $nameStmt = $pdo->prepare("SELECT name FROM transfers WHERE phone = ? ORDER BY id DESC LIMIT 1");
+                $nameStmt->execute([$phone]);
+                $customerName = $nameStmt->fetchColumn() ?: null;
+
+                jsonResponse([
+                    'status' => 'success',
+                    'offers' => [],
+                    'customer_name' => $customerName,
+                    'total_found' => 0,
+                    'available' => 0
+                ]);
+            }
+
             // Find offers that were sent to this phone via tracking slugs
             $stmt = $pdo->prepare("
                 SELECT DISTINCT o.*, ots.slug as tracking_slug,
@@ -3924,7 +3942,7 @@ try {
             ]);
         } catch (Exception $e) {
             error_log("Get offers for phone error: " . $e->getMessage());
-            jsonResponse(['status' => 'error', 'message' => 'Database error']);
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
         }
     }
 
