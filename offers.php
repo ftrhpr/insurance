@@ -914,15 +914,9 @@ require_once 'language.php';
         }
 
         function updateSmsPreview(o) {
-            const name = o.target_name || 'მომხმარებელო';
-            let discountText = '';
-            if (o.discount_type === 'percentage') discountText = `${parseFloat(o.discount_value)}% ფასდაკლება`;
-            else if (o.discount_type === 'fixed') discountText = `${parseFloat(o.discount_value)}₾ ფასდაკლება`;
-            else discountText = 'უფასო სერვისი';
-
             const link = `https://portal.otoexpress.ge/redeem_offer.php?code=${o.code}`;
             document.getElementById('sms-preview').textContent =
-                `გამარჯობა ${name}, OTOMOTORS გთავაზობთ: ${o.title}! ${discountText}. გამოიყენეთ: ${link}`;
+                `გამარჯობა, როგორც ჩვენი კომპანიის მომხმარებელს, კომპანიისგან გადმოგეცათ ვაუჩერი. ვაუჩერის დეტალების სანახავად მიყევით ბმულს: ${link}`;
         }
 
         function closeSmsModal() {
