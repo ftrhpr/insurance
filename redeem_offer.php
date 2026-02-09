@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Special Offer | OTOMOTORS</title>
+    <title>შეთავაზება | OTOMOTORS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -65,7 +65,7 @@
                 <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm" id="header-icon-container">
                     <i data-lucide="ticket" class="w-8 h-8"></i>
                 </div>
-                <h1 id="header-title" class="text-2xl font-bold mb-1">Special Offer</h1>
+                <h1 id="header-title" class="text-2xl font-bold mb-1">შეთავაზება</h1>
                 <p class="opacity-80 text-sm">OTOMOTORS</p>
             </div>
         </div>
@@ -91,21 +91,21 @@
                 <div id="offer-code-row" class="flex items-center justify-between bg-purple-50 border border-purple-100 rounded-xl px-4 py-3">
                     <div class="flex items-center gap-2 text-sm text-purple-700">
                         <i data-lucide="hash" class="w-4 h-4"></i>
-                        <span class="font-medium">Offer Code</span>
+                        <span class="font-medium">კოდი</span>
                     </div>
                     <code id="offer-code" class="bg-white border border-purple-200 px-3 py-1 rounded-lg text-sm font-bold text-purple-700 tracking-wider">—</code>
                 </div>
                 <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
                     <div class="flex items-center gap-2 text-sm text-slate-600">
                         <i data-lucide="calendar" class="w-4 h-4"></i>
-                        <span class="font-medium">Valid Until</span>
+                        <span class="font-medium">ძალაშია</span>
                     </div>
                     <span id="offer-validity" class="text-sm font-bold text-slate-700">—</span>
                 </div>
                 <div id="min-order-row" class="hidden flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
                     <div class="flex items-center gap-2 text-sm text-slate-600">
                         <i data-lucide="banknote" class="w-4 h-4"></i>
-                        <span class="font-medium">Minimum Order</span>
+                        <span class="font-medium">მინ. შენაძენი</span>
                     </div>
                     <span id="offer-min-order" class="text-sm font-bold text-slate-700">—</span>
                 </div>
@@ -118,9 +118,9 @@
                         <i data-lucide="phone-call" class="w-7 h-7 text-purple-600"></i>
                     </div>
                     <h3 class="text-lg font-bold text-slate-800 mb-2">შეთავაზების გამოსაყენებლად</h3>
-                    <p class="text-sm text-slate-600 mb-3">დაგვიკავშირდით ან ეწვიეთ ჩვენს სერვისს</p>
+                    <p class="text-sm text-slate-600 mb-3">ეწვიეთ ჩვენს სერვისს</p>
                     <div class="bg-white/80 rounded-xl p-3 border border-purple-100">
-                        <p class="text-xs text-purple-600 font-semibold uppercase tracking-wider mb-1">დაურეკეთ</p>
+                        <p class="text-xs text-purple-600 font-semibold uppercase tracking-wider mb-1">კითხვები გაქვს?</p>
                         <a href="tel:+995511144486" class="text-xl font-bold text-purple-700 hover:text-purple-800">+995 511 144 486</a>
                     </div>
                 </div>
