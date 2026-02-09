@@ -1372,16 +1372,32 @@ try {
         if (!_statusIdToTab[8]) _statusIdToTab[8] = 'completed';
         if (!_statusIdToTab[9]) _statusIdToTab[9] = 'issue';
 
+        // Build assessment routing from repair statuses
+        // The first repair status (sort_order=1) is the "preliminary assessment" status
+        const _assessmentRepairIds = new Set();
+        const _assessmentRepairNames = new Set();
+        repairStatuses.forEach(s => {
+            const name = (s.name || '').trim().toLowerCase();
+            // Match the known assessment repair status name (case-insensitive)
+            if (name === 'წიანსწარი შეფასება') {
+                _assessmentRepairIds.add(Number(s.id));
+                _assessmentRepairNames.add(name);
+            }
+        });
+
         // Determine which tab a transfer belongs to
         function _getTab(t) {
+            // Assessment check FIRST — repair_status overrides case status for tab routing
+            const rId = Number(t.repair_status_id) || 0;
+            const rName = (t.repair_status || '').trim().toLowerCase();
+            if (_assessmentRepairIds.has(rId) || _assessmentRepairNames.has(rName)) return 'assessment';
+
             const sId = Number(t.status_id) || 0;
-            // Check by ID first (most reliable — direct DB lookup + fallbacks)
+            // Check by case status ID (most reliable — direct DB lookup + fallbacks)
             if (_statusIdToTab[sId]) return _statusIdToTab[sId];
-            // Check by resolved name (case-insensitive) from COALESCE in API
+            // Check by resolved case status name (case-insensitive)
             const sName = (t.status || '').trim().toLowerCase();
             if (_knownTabs[sName]) return _knownTabs[sName];
-            // Assessment: special check via repair_status
-            if ((t.repair_status || '').trim() === 'წიანსწარი შეფასება') return 'assessment';
             // Default: active tab
             return 'active';
         }
