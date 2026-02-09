@@ -147,6 +147,19 @@
                 <h3 class="text-xl font-bold text-slate-800 mb-2">შეთავაზება ამოწურულია</h3>
                 <p class="text-slate-500 text-sm">ეს შეთავაზება მაქსიმალურ რაოდენობას მიაღწია.</p>
             </div>
+
+            <!-- Already Redeemed By This Customer State -->
+            <div id="already-redeemed-state" class="hidden text-center py-4">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-green-50">
+                    <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">ვაუჩერი უკვე გამოყენებულია</h3>
+                <p class="text-slate-500 text-sm">თქვენ უკვე გამოიყენეთ ეს შეთავაზება.</p>
+                <div class="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
+                    <p class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">კითხვები გაქვს?</p>
+                    <a href="tel:+9950322052626" class="text-lg font-bold text-green-700 hover:text-green-800">+995 032 2 05 26 26</a>
+                </div>
+            </div>
         </div>
 
         <!-- Footer -->
@@ -186,7 +199,11 @@
             }
 
             try {
-                const res = await fetch(`${API_URL}?action=get_public_offer&code=${encodeURIComponent(offerCode)}`);
+                let url = `${API_URL}?action=get_public_offer&code=${encodeURIComponent(offerCode)}`;
+                if (trackingSlug) {
+                    url += `&t=${encodeURIComponent(trackingSlug)}`;
+                }
+                const res = await fetch(url);
                 const data = await res.json();
 
                 if (data.error) {
@@ -253,8 +270,12 @@
                 document.getElementById('offer-min-order').textContent = `${parseFloat(data.min_order_amount)}₾`;
             }
 
-            // State checks
-            if (data.status === 'expired') {
+            // State checks - order matters: already redeemed by viewer takes priority
+            if (data.is_redeemed_by_viewer) {
+                document.getElementById('redeem-form').classList.add('hidden');
+                document.getElementById('already-redeemed-state').classList.remove('hidden');
+                document.getElementById('header').className = 'bg-gradient-to-br from-green-500 to-emerald-600 text-white px-6 py-10 text-center relative overflow-hidden';
+            } else if (data.status === 'expired') {
                 document.getElementById('redeem-form').classList.add('hidden');
                 document.getElementById('inactive-state').classList.remove('hidden');
                 // Change header to gray

@@ -3710,6 +3710,7 @@ try {
     // GET PUBLIC OFFER (No auth — public customer page)
     if ($action === 'get_public_offer' && $method === 'GET') {
         $code = strtoupper(trim($_GET['code'] ?? ''));
+        $trackingSlug = trim($_GET['t'] ?? '');
 
         if (empty($code) || !preg_match('/^[A-Z0-9]{6,12}$/', $code)) {
             http_response_code(400);
@@ -3733,6 +3734,28 @@ try {
             $offer['is_exhausted'] = true;
         } else {
             $offer['is_exhausted'] = false;
+        }
+
+        // Check if this specific customer (via tracking slug) has already redeemed
+        $offer['is_redeemed_by_viewer'] = false;
+        if (!empty($trackingSlug)) {
+            try {
+                // Lookup phone from tracking slug
+                $slugStmt = $pdo->prepare("SELECT phone FROM offer_tracking_slugs WHERE slug = ? AND offer_id = ?");
+                $slugStmt->execute([$trackingSlug, $offer['id']]);
+                $viewerPhone = $slugStmt->fetchColumn();
+                
+                if ($viewerPhone) {
+                    // Check if this phone has redeemed the offer
+                    $redeemCheck = $pdo->prepare("SELECT COUNT(*) FROM offer_redemptions WHERE offer_id = ? AND customer_phone = ?");
+                    $redeemCheck->execute([$offer['id'], $viewerPhone]);
+                    if ($redeemCheck->fetchColumn() > 0) {
+                        $offer['is_redeemed_by_viewer'] = true;
+                    }
+                }
+            } catch (Exception $e) {
+                // Ignore errors, just don't show redeemed status
+            }
         }
 
         jsonResponse($offer);
