@@ -1350,32 +1350,46 @@ try {
             statusColorMap[s.name] = { color: s.color, bg_color: s.bg_color };
         });
 
-        // Build dynamic status ID sets for tab routing (resilient to name/ID changes)
-        const _newStatusIds = new Set();
-        const _serviceStatusIds = new Set();
-        const _completedStatusIds = new Set();
-        const _issueStatusIds = new Set();
-        const _statusIdToName = {};
+        // Build tab routing from database statuses
+        // Maps status ID → tab name, using the actual DB names (case-insensitive)
+        const _statusIdToTab = {};
+        const _knownTabs = {
+            'new': 'new',
+            'already in service': 'service',
+            'completed': 'completed',
+            'issue': 'issue'
+        };
         caseStatuses.forEach(s => {
             const id = Number(s.id);
-            const name = (s.name || '').trim();
-            _statusIdToName[id] = name;
-            if (name === 'New') _newStatusIds.add(id);
-            else if (name === 'Already in service') _serviceStatusIds.add(id);
-            else if (name === 'Completed') _completedStatusIds.add(id);
-            else if (name === 'Issue') _issueStatusIds.add(id);
+            const name = (s.name || '').trim().toLowerCase();
+            if (_knownTabs[name]) {
+                _statusIdToTab[id] = _knownTabs[name];
+            }
         });
-        // Helper: check if a transfer matches a tab by status name or dynamic ID
-        function _isTab(t, names, idSet) {
-            const sName = (t.status || '').trim();
+        // Hardcoded fallback IDs (default installation) — only set if not already mapped
+        if (!_statusIdToTab[1]) _statusIdToTab[1] = 'new';
+        if (!_statusIdToTab[7]) _statusIdToTab[7] = 'service';
+        if (!_statusIdToTab[8]) _statusIdToTab[8] = 'completed';
+        if (!_statusIdToTab[9]) _statusIdToTab[9] = 'issue';
+
+        // Determine which tab a transfer belongs to
+        function _getTab(t) {
             const sId = Number(t.status_id) || 0;
-            return names.includes(sName) || idSet.has(sId);
+            // Check by ID first (most reliable — direct DB lookup + fallbacks)
+            if (_statusIdToTab[sId]) return _statusIdToTab[sId];
+            // Check by resolved name (case-insensitive) from COALESCE in API
+            const sName = (t.status || '').trim().toLowerCase();
+            if (_knownTabs[sName]) return _knownTabs[sName];
+            // Assessment: special check via repair_status
+            if ((t.repair_status || '').trim() === 'წიანსწარი შეფასება') return 'assessment';
+            // Default: active tab
+            return 'active';
         }
-        function _isNewTab(t) { return _isTab(t, ['New'], _newStatusIds); }
-        function _isServiceTab(t) { return _isTab(t, ['Already in service'], _serviceStatusIds); }
-        function _isCompletedTab(t) { return _isTab(t, ['Completed'], _completedStatusIds); }
-        function _isIssueTab(t) { return _isTab(t, ['Issue'], _issueStatusIds); }
-        function _isAssessmentTab(t) { return t.repair_status === 'წიანსწარი შეფასება' || Number(t.status_id) === 74; }
+        function _isNewTab(t) { return _getTab(t) === 'new'; }
+        function _isServiceTab(t) { return _getTab(t) === 'service'; }
+        function _isCompletedTab(t) { return _getTab(t) === 'completed'; }
+        function _isIssueTab(t) { return _getTab(t) === 'issue'; }
+        function _isAssessmentTab(t) { return _getTab(t) === 'assessment'; }
         
         // Pagination variables
         const processingPerPage = 10;
