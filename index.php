@@ -1349,6 +1349,33 @@ try {
         caseStatuses.forEach(s => {
             statusColorMap[s.name] = { color: s.color, bg_color: s.bg_color };
         });
+
+        // Build dynamic status ID sets for tab routing (resilient to name/ID changes)
+        const _newStatusIds = new Set();
+        const _serviceStatusIds = new Set();
+        const _completedStatusIds = new Set();
+        const _issueStatusIds = new Set();
+        const _statusIdToName = {};
+        caseStatuses.forEach(s => {
+            const id = Number(s.id);
+            const name = (s.name || '').trim();
+            _statusIdToName[id] = name;
+            if (name === 'New') _newStatusIds.add(id);
+            else if (name === 'Already in service') _serviceStatusIds.add(id);
+            else if (name === 'Completed') _completedStatusIds.add(id);
+            else if (name === 'Issue') _issueStatusIds.add(id);
+        });
+        // Helper: check if a transfer matches a tab by status name or dynamic ID
+        function _isTab(t, names, idSet) {
+            const sName = (t.status || '').trim();
+            const sId = Number(t.status_id) || 0;
+            return names.includes(sName) || idSet.has(sId);
+        }
+        function _isNewTab(t) { return _isTab(t, ['New'], _newStatusIds); }
+        function _isServiceTab(t) { return _isTab(t, ['Already in service'], _serviceStatusIds); }
+        function _isCompletedTab(t) { return _isTab(t, ['Completed'], _completedStatusIds); }
+        function _isIssueTab(t) { return _isTab(t, ['Issue'], _issueStatusIds); }
+        function _isAssessmentTab(t) { return t.repair_status === 'წიანსწარი შეფასება' || Number(t.status_id) === 74; }
         
         // Pagination variables
         const processingPerPage = 10;
@@ -2130,7 +2157,7 @@ try {
                 const linkedVehicle = vehicles.find(v => normalizePlate(v.plate) === normalizePlate(t.plate));
                 const displayPhone = t.phone || (linkedVehicle ? linkedVehicle.phone : null);
 
-                if(t.status === 'New') {
+                if(_isNewTab(t)) {
                     newCount++;
                     newHtml.push(`
                         <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
@@ -2159,10 +2186,10 @@ try {
                                 </div>
                             </div>
                         </div>`);
-                } else if(t.status === 'Already in service' || t.status_id == 7) {
+                } else if(_isServiceTab(t)) {
                     // Collect service cases for sorting by in-service date
                     serviceCases.push({ transfer: t, displayPhone });
-                } else if(t.status === 'Completed' || t.status_id == 8) {
+                } else if(_isCompletedTab(t)) {
                     // Total completed count (unfiltered)
                     completedCount++;
 
@@ -2185,7 +2212,7 @@ try {
                         // Collect completed cases for sorting by completion date (newest first)
                         completedCases.push({ transfer: t, displayPhone });
                     }
-                } else if(t.repair_status === 'წიანსწარი შეფასება' || t.status_id == 74) {
+                } else if(_isAssessmentTab(t)) {
                     assessmentCount++;
                     assessmentHtml.push(`
                         <tr class="hover:bg-blue-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
@@ -2263,7 +2290,7 @@ try {
                                 </div>
                             </td>
                         </tr>`);
-                } else if(t.status_id == 9) {
+                } else if(_isIssueTab(t)) {
                     // Issue cases
                     issueHtml.push(`
                         <tr class="hover:bg-red-50/50 transition-colors cursor-pointer" onclick="window.location.href='edit_case.php?id=${t.id}'">
@@ -2815,11 +2842,11 @@ try {
             const paginationContainerEl = document.getElementById('processing-pagination-container');
             
             // Calculate totals for each tab (unfiltered)
-            const totalNew = transfers.filter(t => t.status === 'New').length;
-            const totalService = transfers.filter(t => t.status === 'Already in service' || t.status_id == 7).length;
-            const totalCompleted = transfers.filter(t => t.status === 'Completed' || t.status_id == 8).length;
-            const totalAssessment = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება' || t.status_id == 74).length;
-            const totalIssue = transfers.filter(t => t.status_id == 9).length;
+            const totalNew = transfers.filter(t => _isNewTab(t)).length;
+            const totalService = transfers.filter(t => _isServiceTab(t)).length;
+            const totalCompleted = transfers.filter(t => _isCompletedTab(t)).length;
+            const totalAssessment = transfers.filter(t => _isAssessmentTab(t)).length;
+            const totalIssue = transfers.filter(t => _isIssueTab(t)).length;
             const issueCount = issueHtml.length;
 
             if (newCountEl) newCountEl.innerText = `${newCount} / ${totalNew}`;
@@ -2981,7 +3008,7 @@ try {
             const hash = window.location.hash;
             if (hash && hash.startsWith('#tab-')) {
                 const tabName = hash.replace('#tab-', '');
-                if (['new', 'active', 'service', 'assessment', 'completed'].includes(tabName)) {
+                if (['new', 'active', 'service', 'assessment', 'issue', 'completed'].includes(tabName)) {
                     switchTab(tabName);
                     return;
                 }
@@ -2993,12 +3020,12 @@ try {
 
         // Update tab counts
         function updateTabCounts() {
-            const newCount = transfers.filter(t => t.status === 'New').length;
-            const activeCount = transfers.filter(t => !['New', 'Already in service', 'Completed'].includes(t.status) && t.repair_status !== 'წიანსწარი შეფასება' && ![7, 8, 9, 74].includes(t.status_id)).length;
-            const serviceCount = transfers.filter(t => t.status === 'Already in service' || t.status_id == 7).length;
-            const assessmentCount = transfers.filter(t => t.repair_status === 'წიანსწარი შეფასება' || t.status_id == 74).length;
-            const issueCount = transfers.filter(t => t.status_id == 9).length;
-            const completedCount = transfers.filter(t => t.status === 'Completed' || t.status_id == 8).length;
+            const newCount = transfers.filter(t => _isNewTab(t)).length;
+            const activeCount = transfers.filter(t => !_isNewTab(t) && !_isServiceTab(t) && !_isCompletedTab(t) && !_isAssessmentTab(t) && !_isIssueTab(t)).length;
+            const serviceCount = transfers.filter(t => _isServiceTab(t)).length;
+            const assessmentCount = transfers.filter(t => _isAssessmentTab(t)).length;
+            const issueCount = transfers.filter(t => _isIssueTab(t)).length;
+            const completedCount = transfers.filter(t => _isCompletedTab(t)).length;
 
             // Update tab badges
             const newTabEl = document.getElementById('new-count-tab');
@@ -5021,7 +5048,7 @@ try {
 
         function printAllServiceQRCodes() {
             // Get all service cases
-            const serviceCases = transfers.filter(t => t.status === 'Already in service');
+            const serviceCases = transfers.filter(t => _isServiceTab(t));
             
             if (serviceCases.length === 0) {
                 showToast('Info', 'No cases in service to print', 'info');
