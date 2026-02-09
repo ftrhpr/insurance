@@ -78,6 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Redirect based on role
                 if ($userData['role'] === 'technician') {
                     header('Location: https://portal.otoexpress.ge/technician_dashboard.php');
+                } elseif ($userData['role'] === 'operator') {
+                    header('Location: redeem.php');
                 } else {
                     header('Location: index.php');
                 }

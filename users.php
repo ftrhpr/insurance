@@ -225,6 +225,7 @@ if (!isset($users) || !is_array($users)) {
                 <select name="role" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                     <option value="viewer">Viewer</option>
                     <option value="manager">Manager</option>
+                    <option value="operator">Operator (Vouchers)</option>
                     <option value="technician">Technician</option>
                     <option value="admin">Admin</option>
                 </select>
@@ -270,6 +271,8 @@ function renderUsersTable() {
                 <span class="px-2 py-1 text-xs font-semibold rounded-full ${
                     user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
                     user.role === 'manager' ? 'bg-blue-100 text-blue-800' :
+                    user.role === 'operator' ? 'bg-orange-100 text-orange-800' :
+                    user.role === 'technician' ? 'bg-teal-100 text-teal-800' :
                     'bg-green-100 text-green-800'
                 }">
                     ${user.role}
@@ -432,6 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select id="user-role" class="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none">
                             <option value="viewer">Viewer (Read-only)</option>
                             <option value="manager" selected>Manager (Edit cases)</option>
+                            <option value="operator">Operator (Vouchers only)</option>
                             <option value="technician">Technician (Workshop)</option>
                             <option value="admin">Admin (Full access)</option>
                         </select>

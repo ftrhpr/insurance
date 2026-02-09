@@ -47,7 +47,12 @@ if (!isset($_SESSION['user_id'])) {
             ];
             
             // Filter navigation items based on role
-            if ($current_user_role === 'technician') {
+            if ($current_user_role === 'operator') {
+                // Operators can only access the voucher redemption page
+                $nav_items = [
+                    'redeem' => ['icon' => 'ticket', 'label' => 'Redeem Vouchers', 'url' => 'redeem.php']
+                ];
+            } elseif ($current_user_role === 'technician') {
                 // Technicians see their dashboard and basic info pages
                 $nav_items = [
                     'technician_dashboard' => ['icon' => 'users', 'label' => 'My Dashboard', 'url' => 'https://portal.otoexpress.ge/technician_dashboard.php'],

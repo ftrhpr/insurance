@@ -10,6 +10,13 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_role = $_SESSION['role'] ?? 'viewer';
 $user_name = $_SESSION['username'] ?? 'User';
+
+// Only allow admin, manager, and operator roles to access this page
+$allowed_roles = ['admin', 'manager', 'operator'];
+if (!in_array($user_role, $allowed_roles)) {
+    header('Location: index.php');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="ka">
@@ -45,10 +52,20 @@ $user_name = $_SESSION['username'] ?? 'User';
     <div class="w-full max-w-md">
         <!-- Header -->
         <div class="text-center mb-6">
+            <?php if ($user_role !== 'operator'): ?>
             <a href="index.php" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm mb-4">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 უკან დაბრუნება
             </a>
+            <?php else: ?>
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-sm text-slate-500"><?php echo htmlspecialchars($user_name); ?> (ოპერატორი)</span>
+                <a href="logout.php" class="inline-flex items-center gap-1 text-red-500 hover:text-red-700 text-sm">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    გასვლა
+                </a>
+            </div>
+            <?php endif; ?>
             <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/30">
                 <i data-lucide="ticket-check" class="w-8 h-8 text-white"></i>
             </div>
