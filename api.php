@@ -3202,6 +3202,337 @@ try {
         }
     }
 
+    // =============================================
+    // --- OFFERS SYSTEM ENDPOINTS ---
+    // =============================================
+
+    // GET ALL OFFERS (Manager — auth required)
+    if ($action === 'get_offers' && $method === 'GET') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        // Auto-expire offers past their valid_until date
+        $pdo->exec("UPDATE offers SET status = 'expired' WHERE status = 'active' AND valid_until < NOW()");
+
+        $stmt = $pdo->query("
+            SELECT o.*, 
+                   u.full_name AS created_by_name,
+                   (SELECT COUNT(*) FROM offer_redemptions WHERE offer_id = o.id) AS redemption_count
+            FROM offers o
+            LEFT JOIN users u ON o.created_by = u.id
+            ORDER BY o.created_at DESC
+        ");
+        $offers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        jsonResponse(['status' => 'success', 'offers' => $offers]);
+    }
+
+    // CREATE OFFER (Manager — auth required)
+    if ($action === 'create_offer' && $method === 'POST') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $data = getJsonInput();
+        $title = trim($data['title'] ?? '');
+        $description = trim($data['description'] ?? '');
+        $discount_type = $data['discount_type'] ?? 'percentage';
+        $discount_value = floatval($data['discount_value'] ?? 0);
+        $min_order_amount = isset($data['min_order_amount']) && $data['min_order_amount'] !== '' ? floatval($data['min_order_amount']) : null;
+        $valid_from = $data['valid_from'] ?? date('Y-m-d H:i:s');
+        $valid_until = $data['valid_until'] ?? '';
+        $max_redemptions = isset($data['max_redemptions']) && $data['max_redemptions'] !== '' ? intval($data['max_redemptions']) : null;
+        $target_phone = trim($data['target_phone'] ?? '') ?: null;
+        $target_name = trim($data['target_name'] ?? '') ?: null;
+
+        if (empty($title)) {
+            jsonResponse(['status' => 'error', 'message' => 'Offer title is required']);
+        }
+        if (empty($valid_until)) {
+            jsonResponse(['status' => 'error', 'message' => 'Expiry date is required']);
+        }
+        if (!in_array($discount_type, ['percentage', 'fixed', 'free_service'])) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid discount type']);
+        }
+        if ($discount_type === 'percentage' && ($discount_value <= 0 || $discount_value > 100)) {
+            jsonResponse(['status' => 'error', 'message' => 'Percentage must be between 1 and 100']);
+        }
+        if ($discount_type === 'fixed' && $discount_value <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Fixed discount must be greater than 0']);
+        }
+
+        // Generate unique 8-char alphanumeric code
+        $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+        // Ensure uniqueness
+        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM offers WHERE code = ?");
+        $checkStmt->execute([$code]);
+        while ($checkStmt->fetchColumn() > 0) {
+            $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+            $checkStmt->execute([$code]);
+        }
+
+        $stmt = $pdo->prepare("
+            INSERT INTO offers (code, title, description, discount_type, discount_value, min_order_amount, valid_from, valid_until, max_redemptions, target_phone, target_name, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $code, $title, $description, $discount_type, $discount_value,
+            $min_order_amount, $valid_from, $valid_until, $max_redemptions,
+            $target_phone, $target_name, $_SESSION['user_id']
+        ]);
+
+        jsonResponse(['status' => 'success', 'message' => 'Offer created', 'offer_id' => $pdo->lastInsertId(), 'code' => $code]);
+    }
+
+    // UPDATE OFFER (Manager — auth required)
+    if ($action === 'update_offer' && $method === 'POST') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $data = getJsonInput();
+        $id = intval($data['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid offer ID']);
+        }
+
+        $title = trim($data['title'] ?? '');
+        $description = trim($data['description'] ?? '');
+        $discount_type = $data['discount_type'] ?? 'percentage';
+        $discount_value = floatval($data['discount_value'] ?? 0);
+        $min_order_amount = isset($data['min_order_amount']) && $data['min_order_amount'] !== '' ? floatval($data['min_order_amount']) : null;
+        $valid_from = $data['valid_from'] ?? '';
+        $valid_until = $data['valid_until'] ?? '';
+        $max_redemptions = isset($data['max_redemptions']) && $data['max_redemptions'] !== '' ? intval($data['max_redemptions']) : null;
+        $target_phone = trim($data['target_phone'] ?? '') ?: null;
+        $target_name = trim($data['target_name'] ?? '') ?: null;
+
+        if (empty($title) || empty($valid_until)) {
+            jsonResponse(['status' => 'error', 'message' => 'Title and expiry date are required']);
+        }
+
+        $stmt = $pdo->prepare("
+            UPDATE offers SET title = ?, description = ?, discount_type = ?, discount_value = ?, 
+                   min_order_amount = ?, valid_from = ?, valid_until = ?, max_redemptions = ?,
+                   target_phone = ?, target_name = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([
+            $title, $description, $discount_type, $discount_value,
+            $min_order_amount, $valid_from, $valid_until, $max_redemptions,
+            $target_phone, $target_name, $id
+        ]);
+
+        jsonResponse(['status' => 'success', 'message' => 'Offer updated']);
+    }
+
+    // TOGGLE OFFER STATUS (pause/activate)
+    if ($action === 'toggle_offer_status' && $method === 'POST') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $data = getJsonInput();
+        $id = intval($data['id'] ?? 0);
+        $new_status = $data['status'] ?? '';
+
+        if ($id <= 0 || !in_array($new_status, ['active', 'paused', 'expired'])) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid parameters']);
+        }
+
+        $stmt = $pdo->prepare("UPDATE offers SET status = ? WHERE id = ?");
+        $stmt->execute([$new_status, $id]);
+        jsonResponse(['status' => 'success', 'message' => 'Offer status updated']);
+    }
+
+    // DELETE OFFER
+    if ($action === 'delete_offer' && $method === 'POST') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $data = getJsonInput();
+        $id = intval($data['id'] ?? 0);
+        if ($id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid offer ID']);
+        }
+
+        $stmt = $pdo->prepare("DELETE FROM offers WHERE id = ?");
+        $stmt->execute([$id]);
+        jsonResponse(['status' => 'success', 'message' => 'Offer deleted']);
+    }
+
+    // SEND OFFER SMS
+    if ($action === 'send_offer_sms' && $method === 'POST') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $data = getJsonInput();
+        $offer_id = intval($data['offer_id'] ?? 0);
+        $phone = trim($data['phone'] ?? '');
+
+        if ($offer_id <= 0 || empty($phone)) {
+            jsonResponse(['status' => 'error', 'message' => 'Offer ID and phone number are required']);
+        }
+
+        // Clean phone number
+        $to = preg_replace('/\D/', '', $phone);
+        if (!preg_match('/^995/', $to)) {
+            $to = '995' . $to;
+        }
+        if (strlen($to) < 11) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid phone number']);
+        }
+
+        // Fetch offer
+        $stmt = $pdo->prepare("SELECT * FROM offers WHERE id = ? AND status = 'active'");
+        $stmt->execute([$offer_id]);
+        $offer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$offer) {
+            jsonResponse(['status' => 'error', 'message' => 'Offer not found or not active']);
+        }
+
+        // Build discount text
+        $discountText = '';
+        if ($offer['discount_type'] === 'percentage') {
+            $discountText = intval($offer['discount_value']) . '% ფასდაკლება';
+        } elseif ($offer['discount_type'] === 'fixed') {
+            $discountText = number_format($offer['discount_value'], 0) . '₾ ფასდაკლება';
+        } else {
+            $discountText = 'უფასო სერვისი';
+        }
+
+        $name = $offer['target_name'] ?: 'მომხმარებელო';
+        $link = "https://portal.otoexpress.ge/redeem_offer.php?code=" . $offer['code'];
+
+        $smsText = "გამარჯობა {$name}, OTOMOTORS გთავაზობთ: {$offer['title']}! {$discountText}. გამოიყენეთ: {$link}";
+
+        try {
+            $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+            $url = "https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$to&from=OTOMOTORS&text=" . urlencode($smsText);
+
+            $context = stream_context_create(['http' => ['timeout' => 10, 'user_agent' => 'OTOMOTORS Portal']]);
+            $response = @file_get_contents($url, false, $context);
+
+            // Update offer record
+            $pdo->prepare("UPDATE offers SET sms_sent_at = NOW(), target_phone = ? WHERE id = ?")->execute([$phone, $offer_id]);
+
+            if ($response !== false) {
+                jsonResponse(['status' => 'success', 'message' => 'SMS sent successfully']);
+            } else {
+                jsonResponse(['status' => 'error', 'message' => 'SMS sending failed — network error']);
+            }
+        } catch (Exception $e) {
+            error_log("Offer SMS error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'SMS sending failed']);
+        }
+    }
+
+    // GET PUBLIC OFFER (No auth — public customer page)
+    if ($action === 'get_public_offer' && $method === 'GET') {
+        $code = strtoupper(trim($_GET['code'] ?? ''));
+
+        if (empty($code) || !preg_match('/^[A-Z0-9]{6,12}$/', $code)) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Invalid offer code']);
+        }
+
+        // Auto-expire
+        $pdo->exec("UPDATE offers SET status = 'expired' WHERE status = 'active' AND valid_until < NOW()");
+
+        $stmt = $pdo->prepare("SELECT id, code, title, description, discount_type, discount_value, min_order_amount, valid_from, valid_until, max_redemptions, times_redeemed, status, target_name FROM offers WHERE code = ?");
+        $stmt->execute([$code]);
+        $offer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$offer) {
+            http_response_code(404);
+            jsonResponse(['error' => 'Offer not found']);
+        }
+
+        // Check if max redemptions reached
+        if ($offer['max_redemptions'] !== null && $offer['times_redeemed'] >= $offer['max_redemptions']) {
+            $offer['is_exhausted'] = true;
+        } else {
+            $offer['is_exhausted'] = false;
+        }
+
+        jsonResponse($offer);
+    }
+
+    // REDEEM OFFER (Public — no auth)
+    if ($action === 'redeem_offer' && $method === 'POST') {
+        $data = getJsonInput();
+        $code = strtoupper(trim($data['code'] ?? ''));
+        $customer_name = trim($data['customer_name'] ?? '');
+        $customer_phone = trim($data['customer_phone'] ?? '');
+
+        if (empty($code)) {
+            jsonResponse(['status' => 'error', 'message' => 'Offer code is required']);
+        }
+        if (empty($customer_name) || empty($customer_phone)) {
+            jsonResponse(['status' => 'error', 'message' => 'Name and phone number are required']);
+        }
+
+        // Auto-expire
+        $pdo->exec("UPDATE offers SET status = 'expired' WHERE status = 'active' AND valid_until < NOW()");
+
+        $stmt = $pdo->prepare("SELECT * FROM offers WHERE code = ?");
+        $stmt->execute([$code]);
+        $offer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$offer) {
+            jsonResponse(['status' => 'error', 'message' => 'Offer not found']);
+        }
+        if ($offer['status'] !== 'active') {
+            jsonResponse(['status' => 'error', 'message' => 'This offer is no longer active']);
+        }
+        if ($offer['max_redemptions'] !== null && $offer['times_redeemed'] >= $offer['max_redemptions']) {
+            jsonResponse(['status' => 'error', 'message' => 'This offer has been fully redeemed']);
+        }
+
+        // Check duplicate redemption by phone
+        $dupStmt = $pdo->prepare("SELECT COUNT(*) FROM offer_redemptions WHERE offer_id = ? AND customer_phone = ?");
+        $dupStmt->execute([$offer['id'], $customer_phone]);
+        if ($dupStmt->fetchColumn() > 0) {
+            jsonResponse(['status' => 'error', 'message' => 'You have already redeemed this offer']);
+        }
+
+        // Record redemption
+        $pdo->prepare("INSERT INTO offer_redemptions (offer_id, customer_name, customer_phone) VALUES (?, ?, ?)")
+            ->execute([$offer['id'], $customer_name, $customer_phone]);
+
+        // Increment counter
+        $pdo->prepare("UPDATE offers SET times_redeemed = times_redeemed + 1 WHERE id = ?")->execute([$offer['id']]);
+
+        jsonResponse(['status' => 'success', 'message' => 'Offer redeemed successfully!']);
+    }
+
+    // GET OFFER REDEMPTIONS (Manager — auth required)
+    if ($action === 'get_offer_redemptions' && $method === 'GET') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $offer_id = intval($_GET['offer_id'] ?? 0);
+        if ($offer_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid offer ID']);
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM offer_redemptions WHERE offer_id = ? ORDER BY redeemed_at DESC");
+        $stmt->execute([$offer_id]);
+        $redemptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        jsonResponse(['status' => 'success', 'redemptions' => $redemptions]);
+    }
+
     // Default response if no action matched
     jsonResponse(['error' => 'Unknown action: ' . $action]);
 
