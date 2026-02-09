@@ -3910,12 +3910,12 @@ try {
 
             // Find offers that were sent to this phone via tracking slugs
             $stmt = $pdo->prepare("
-                SELECT DISTINCT o.*, ots.slug as tracking_slug,
+                SELECT DISTINCT o.*, ots.slug as tracking_slug, ots.created_at as sent_at,
                     (SELECT COUNT(*) FROM offer_redemptions r WHERE r.offer_id = o.id AND r.customer_phone = ?) as already_redeemed
                 FROM offers o
                 INNER JOIN offer_tracking_slugs ots ON ots.offer_id = o.id AND ots.phone = ?
                 WHERE o.status = 'active'
-                ORDER BY ots.created_at DESC
+                ORDER BY sent_at DESC
             ");
             $stmt->execute([$phone, $phone]);
             $offers = $stmt->fetchAll(PDO::FETCH_ASSOC);

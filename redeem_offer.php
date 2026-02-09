@@ -157,7 +157,7 @@
                 <p class="text-slate-500 text-sm">თქვენ უკვე გამოიყენეთ ეს შეთავაზება.</p>
                 <div class="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
                     <p class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">კითხვები გაქვს?</p>
-                    <a href="tel:+9950322052626" class="text-lg font-bold text-green-700 hover:text-green-800">+995 032 2 05 26 26</a>
+                    <a href="tel:0322052626" class="text-lg font-bold text-green-700 hover:text-green-800">032 2 05 26 26</a>
                 </div>
             </div>
         </div>
