@@ -12,7 +12,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['BPG Arial Caps', 'BPG Arial', 'Inter', 'sans-serif'] },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         primary: '#a855f7',
                         success: '#10b981',
@@ -24,7 +24,7 @@
         }
     </script>
     <style>
-        body { background: linear-gradient(135deg, #faf5ff 0%, #f0e7fe 50%, #ede9fe 100%); min-height: 100vh; }
+        body { background: linear-gradient(135deg, #faf5ff 0%, #f0e7fe 50%, #ede9fe 100%); min-height: 100vh; text-transform: uppercase; }
         .card-enter { animation: cardEnter 0.5s ease forwards; }
         @keyframes cardEnter {
             from { opacity: 0; transform: scale(0.95) translateY(10px); }
