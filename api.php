@@ -3436,6 +3436,140 @@ try {
         }
     }
 
+    // GET CUSTOMERS FOR BULK SMS (Manager — auth required)
+    if ($action === 'get_customers_for_bulk_sms' && $method === 'GET') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $status_id = $_GET['status_id'] ?? '';
+
+        try {
+            $query = "SELECT DISTINCT t.phone, t.name, t.status, s.name as status_name 
+                      FROM transfers t 
+                      LEFT JOIN statuses s ON t.status_id = s.id
+                      WHERE t.phone IS NOT NULL AND t.phone != '' AND LENGTH(t.phone) >= 9";
+            $params = [];
+
+            if ($status_id === 'all_active') {
+                // All active cases (not completed status)
+                $query .= " AND (t.status NOT IN ('Completed', 'Done', 'Issue') OR t.status IS NULL)";
+            } elseif (is_numeric($status_id) && intval($status_id) > 0) {
+                // Specific status
+                $query .= " AND t.status_id = ?";
+                $params[] = intval($status_id);
+            }
+
+            $query .= " ORDER BY t.name ASC";
+
+            $stmt = $pdo->prepare($query);
+            $stmt->execute($params);
+            $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Deduplicate by phone number
+            $unique = [];
+            foreach ($customers as $c) {
+                $phone = preg_replace('/[^0-9]/', '', $c['phone']);
+                if (!isset($unique[$phone])) {
+                    $unique[$phone] = $c;
+                    $unique[$phone]['phone'] = $phone;
+                }
+            }
+
+            jsonResponse(['status' => 'success', 'customers' => array_values($unique)]);
+        } catch (Exception $e) {
+            error_log("Get customers error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Failed to load customers']);
+        }
+    }
+
+    // BULK SEND OFFER SMS (Manager — auth required)
+    if ($action === 'bulk_send_offer_sms' && $method === 'POST') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $data = getJsonInput();
+        $offer_id = intval($data['offer_id'] ?? 0);
+        $phones = $data['phones'] ?? [];
+
+        if ($offer_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid offer ID']);
+        }
+        if (empty($phones) || !is_array($phones)) {
+            jsonResponse(['status' => 'error', 'message' => 'No phone numbers provided']);
+        }
+
+        // Get offer
+        $stmt = $pdo->prepare("SELECT * FROM offers WHERE id = ? AND status = 'active'");
+        $stmt->execute([$offer_id]);
+        $offer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$offer) {
+            jsonResponse(['status' => 'error', 'message' => 'Offer not found or not active']);
+        }
+
+        // Build discount text
+        $discountText = '';
+        if ($offer['discount_type'] === 'percentage') {
+            $discountText = intval($offer['discount_value']) . '% ფასდაკლება';
+        } elseif ($offer['discount_type'] === 'fixed') {
+            $discountText = number_format($offer['discount_value'], 0) . '₾ ფასდაკლება';
+        } else {
+            $discountText = 'უფასო სერვისი';
+        }
+
+        $link = "https://portal.otoexpress.ge/redeem_offer.php?code=" . $offer['code'];
+        $api_key = defined('SMS_API_KEY') ? SMS_API_KEY : "5c88b0316e44d076d4677a4860959ef71ce049ce704b559355568a362f40ade1";
+
+        $sent_count = 0;
+        $failed_count = 0;
+
+        foreach ($phones as $phone) {
+            $phone = preg_replace('/[^0-9]/', '', $phone);
+            if (strlen($phone) < 9) continue;
+
+            // Lookup customer name
+            $nameStmt = $pdo->prepare("SELECT name FROM transfers WHERE phone = ? ORDER BY id DESC LIMIT 1");
+            $nameStmt->execute([$phone]);
+            $customerName = $nameStmt->fetchColumn() ?: 'მომხმარებელო';
+
+            $smsText = "გამარჯობა {$customerName}, OTOMOTORS გთავაზობთ: {$offer['title']}! {$discountText}. დეტალები: {$link}";
+
+            try {
+                $url = "https://api.gosms.ge/api/sendsms?api_key=$api_key&to=$phone&from=OTOMOTORS&text=" . urlencode($smsText);
+                $context = stream_context_create(['http' => ['timeout' => 5, 'user_agent' => 'OTOMOTORS Portal']]);
+                $response = @file_get_contents($url, false, $context);
+
+                if ($response !== false) {
+                    $sent_count++;
+                } else {
+                    $failed_count++;
+                }
+
+                // Small delay to not overwhelm SMS API
+                usleep(100000); // 100ms
+            } catch (Exception $e) {
+                $failed_count++;
+                error_log("Bulk SMS error for $phone: " . $e->getMessage());
+            }
+        }
+
+        // Update offer record
+        if ($sent_count > 0) {
+            $pdo->prepare("UPDATE offers SET sms_sent_at = NOW() WHERE id = ?")->execute([$offer_id]);
+        }
+
+        jsonResponse([
+            'status' => 'success',
+            'message' => "Sent to $sent_count customers" . ($failed_count > 0 ? ", $failed_count failed" : ""),
+            'sent_count' => $sent_count,
+            'failed_count' => $failed_count
+        ]);
+    }
+
     // GET PUBLIC OFFER (No auth — public customer page)
     if ($action === 'get_public_offer' && $method === 'GET') {
         $code = strtoupper(trim($_GET['code'] ?? ''));

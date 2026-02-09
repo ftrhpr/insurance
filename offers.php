@@ -327,6 +327,83 @@ require_once 'language.php';
         </div>
     </div>
 
+    <!-- ======================================= -->
+    <!-- BULK SEND SMS MODAL -->
+    <!-- ======================================= -->
+    <div id="bulk-sms-modal" class="hidden fixed inset-0 bg-black/40 modal-backdrop flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="users" class="w-5 h-5 text-blue-500"></i>
+                    Bulk Send Offer
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">Send this offer to multiple customers at once</p>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                <input type="hidden" id="bulk-offer-id" value="">
+                
+                <!-- Offer Info -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-sm font-semibold text-blue-800" id="bulk-offer-title">Offer Title</p>
+                    <p class="text-xs text-blue-600 mt-1" id="bulk-offer-discount">Discount: —</p>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Filter by Case Status</label>
+                    <select id="bulk-status-filter" onchange="loadCustomersForBulk()" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 focus:border-blue-500 focus:outline-none transition">
+                        <option value="">All customers with phone numbers</option>
+                        <option value="all_active">All active cases (not completed)</option>
+                    </select>
+                </div>
+
+                <!-- Customer Count & Preview -->
+                <div id="bulk-customer-count" class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="users" class="w-5 h-5 text-slate-500"></i>
+                            <span class="font-semibold text-slate-700">Recipients:</span>
+                            <span id="bulk-count" class="text-lg font-bold text-blue-600">0</span>
+                        </div>
+                        <button onclick="toggleCustomerList()" class="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                            <i data-lucide="eye" class="w-4 h-4"></i> Preview
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Customer List Preview (hidden by default) -->
+                <div id="bulk-customer-list" class="hidden bg-white border border-slate-200 rounded-xl max-h-48 overflow-y-auto">
+                    <div class="p-3 text-sm text-slate-500">Loading...</div>
+                </div>
+
+                <!-- Progress Bar (hidden initially) -->
+                <div id="bulk-progress" class="hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-slate-700">Sending...</span>
+                        <span id="bulk-progress-text" class="text-sm text-slate-500">0 / 0</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        <div id="bulk-progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Results (hidden initially) -->
+                <div id="bulk-results" class="hidden bg-green-50 border border-green-200 rounded-xl p-4">
+                    <div class="flex items-center gap-2 text-green-700">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        <span class="font-semibold" id="bulk-results-text">Sent to 0 customers</span>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-slate-200 flex gap-3 justify-end">
+                <button onclick="closeBulkSmsModal()" class="px-5 py-2.5 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition">Close</button>
+                <button onclick="sendBulkSms()" id="bulk-send-btn" class="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition active:scale-95">
+                    <i data-lucide="send" class="w-4 h-4 inline mr-1"></i> Send to All
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2"></div>
 
@@ -465,6 +542,7 @@ require_once 'language.php';
                         <div class="flex items-center justify-end gap-1">
                             ${o.status === 'active' ? `<button onclick="openRedeemModal(${o.id})" class="text-slate-400 hover:text-emerald-600 p-1.5 rounded-lg hover:bg-emerald-50 transition" title="Redeem for Customer"><i data-lucide="check-circle" class="w-4 h-4"></i></button>` : ''}
                             ${o.status === 'active' ? `<button onclick="openSmsModal(${o.id})" class="text-slate-400 hover:text-green-600 p-1.5 rounded-lg hover:bg-green-50 transition" title="Send SMS"><i data-lucide="send" class="w-4 h-4"></i></button>` : ''}
+                            ${o.status === 'active' ? `<button onclick="openBulkSmsModal(${o.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition" title="Bulk Send to Customers"><i data-lucide="users" class="w-4 h-4"></i></button>` : ''}
                             <button onclick="copyOfferLink(${o.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition" title="Copy Link"><i data-lucide="link" class="w-4 h-4"></i></button>
                             <button onclick="editOffer(${o.id})" class="text-slate-400 hover:text-accent-600 p-1.5 rounded-lg hover:bg-accent-50 transition" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
                             ${o.status === 'active' ? `<button onclick="toggleStatus(${o.id}, 'paused')" class="text-slate-400 hover:text-amber-600 p-1.5 rounded-lg hover:bg-amber-50 transition" title="Pause"><i data-lucide="pause" class="w-4 h-4"></i></button>` : ''}
@@ -835,6 +913,154 @@ require_once 'language.php';
                 const d = new Date(dt.replace(' ', 'T'));
                 return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
             } catch { return dt; }
+        }
+
+        // ===========================
+        // BULK SMS FUNCTIONS
+        // ===========================
+        let bulkCustomers = [];
+        let allStatuses = [];
+
+        async function loadStatuses() {
+            if (allStatuses.length > 0) return;
+            try {
+                const data = await fetchAPI('get_statuses&type=case');
+                if (data.status === 'success' && data.data) {
+                    allStatuses = data.data;
+                    const select = document.getElementById('bulk-status-filter');
+                    allStatuses.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.name;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load statuses', e);
+            }
+        }
+
+        async function openBulkSmsModal(id) {
+            const o = allOffers.find(x => x.id == id);
+            if (!o) return;
+
+            document.getElementById('bulk-offer-id').value = o.id;
+            document.getElementById('bulk-offer-title').textContent = o.title;
+            document.getElementById('bulk-offer-discount').textContent = 'Discount: ' + getDiscountDisplay(o);
+            document.getElementById('bulk-status-filter').value = '';
+            document.getElementById('bulk-customer-list').classList.add('hidden');
+            document.getElementById('bulk-progress').classList.add('hidden');
+            document.getElementById('bulk-results').classList.add('hidden');
+            document.getElementById('bulk-send-btn').disabled = false;
+            document.getElementById('bulk-send-btn').innerHTML = '<i data-lucide="send" class="w-4 h-4 inline mr-1"></i> Send to All';
+
+            document.getElementById('bulk-sms-modal').classList.remove('hidden');
+            lucide.createIcons();
+
+            await loadStatuses();
+            await loadCustomersForBulk();
+        }
+
+        function closeBulkSmsModal() {
+            document.getElementById('bulk-sms-modal').classList.add('hidden');
+            bulkCustomers = [];
+        }
+
+        async function loadCustomersForBulk() {
+            const statusFilter = document.getElementById('bulk-status-filter').value;
+            document.getElementById('bulk-count').textContent = '...';
+            document.getElementById('bulk-customer-list').innerHTML = '<div class="p-3 text-sm text-slate-500">Loading...</div>';
+
+            try {
+                const data = await fetchAPI(`get_customers_for_bulk_sms&status_id=${statusFilter}`);
+                if (data.status === 'success') {
+                    bulkCustomers = data.customers || [];
+                    document.getElementById('bulk-count').textContent = bulkCustomers.length;
+
+                    if (bulkCustomers.length === 0) {
+                        document.getElementById('bulk-customer-list').innerHTML = '<div class="p-4 text-sm text-slate-500 text-center">No customers found</div>';
+                    } else {
+                        document.getElementById('bulk-customer-list').innerHTML = `
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 sticky top-0">
+                                    <tr>
+                                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
+                                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Phone</th>
+                                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${bulkCustomers.map(c => `
+                                        <tr class="border-t border-slate-100">
+                                            <td class="px-3 py-2 text-slate-700">${escapeHtml(c.name)}</td>
+                                            <td class="px-3 py-2 text-slate-500">${escapeHtml(c.phone)}</td>
+                                            <td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${escapeHtml(c.status_name || c.status || 'Unknown')}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                    }
+                }
+            } catch (e) {
+                document.getElementById('bulk-count').textContent = '0';
+                document.getElementById('bulk-customer-list').innerHTML = '<div class="p-4 text-sm text-red-500 text-center">Failed to load customers</div>';
+            }
+            lucide.createIcons();
+        }
+
+        function toggleCustomerList() {
+            const list = document.getElementById('bulk-customer-list');
+            list.classList.toggle('hidden');
+        }
+
+        async function sendBulkSms() {
+            if (bulkCustomers.length === 0) {
+                showToast('No customers to send to', 'error');
+                return;
+            }
+
+            const offerId = parseInt(document.getElementById('bulk-offer-id').value);
+            const btn = document.getElementById('bulk-send-btn');
+
+            if (!confirm(`Send this offer to ${bulkCustomers.length} customers?`)) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 inline mr-1 animate-spin"></i> Sending...';
+            lucide.createIcons();
+
+            document.getElementById('bulk-progress').classList.remove('hidden');
+            document.getElementById('bulk-results').classList.add('hidden');
+
+            const phones = bulkCustomers.map(c => c.phone);
+
+            try {
+                const data = await fetchAPI('bulk_send_offer_sms', 'POST', {
+                    offer_id: offerId,
+                    phones: phones
+                });
+
+                document.getElementById('bulk-progress').classList.add('hidden');
+                document.getElementById('bulk-results').classList.remove('hidden');
+
+                if (data.status === 'success') {
+                    document.getElementById('bulk-results-text').textContent = `Successfully sent to ${data.sent_count} customers`;
+                    document.getElementById('bulk-results').className = 'bg-green-50 border border-green-200 rounded-xl p-4';
+                    showToast(`Sent to ${data.sent_count} customers`, 'success');
+                    loadOffers(); // Refresh to update SMS sent indicator
+                } else {
+                    document.getElementById('bulk-results-text').textContent = data.message || 'Failed to send';
+                    document.getElementById('bulk-results').className = 'bg-red-50 border border-red-200 rounded-xl p-4';
+                    showToast(data.message || 'Failed', 'error');
+                }
+            } catch (e) {
+                document.getElementById('bulk-progress').classList.add('hidden');
+                showToast(e.message || 'Connection error', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="send" class="w-4 h-4 inline mr-1"></i> Send to All';
+                lucide.createIcons();
+            }
         }
 
         // ===========================
