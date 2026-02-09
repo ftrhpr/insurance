@@ -3515,6 +3515,67 @@ try {
         jsonResponse(['status' => 'success', 'message' => 'Offer redeemed successfully!']);
     }
 
+    // ADMIN REDEEM OFFER (Manager — auth required, with logging)
+    if ($action === 'admin_redeem_offer' && $method === 'POST') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $data = getJsonInput();
+        $offer_id = intval($data['offer_id'] ?? 0);
+        $customer_name = trim($data['customer_name'] ?? '');
+        $customer_phone = trim($data['customer_phone'] ?? '');
+        $notes = trim($data['notes'] ?? '');
+
+        if ($offer_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid offer ID']);
+        }
+        if (empty($customer_name) || empty($customer_phone)) {
+            jsonResponse(['status' => 'error', 'message' => 'Name and phone number are required']);
+        }
+
+        // Auto-expire old offers
+        $pdo->exec("UPDATE offers SET status = 'expired' WHERE status = 'active' AND valid_until < NOW()");
+
+        $stmt = $pdo->prepare("SELECT * FROM offers WHERE id = ?");
+        $stmt->execute([$offer_id]);
+        $offer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$offer) {
+            jsonResponse(['status' => 'error', 'message' => 'Offer not found']);
+        }
+        if ($offer['status'] !== 'active') {
+            jsonResponse(['status' => 'error', 'message' => 'This offer is not active']);
+        }
+        if ($offer['max_redemptions'] !== null && $offer['times_redeemed'] >= $offer['max_redemptions']) {
+            jsonResponse(['status' => 'error', 'message' => 'This offer has reached max redemptions']);
+        }
+
+        // Check duplicate redemption by phone for this offer
+        $dupStmt = $pdo->prepare("SELECT COUNT(*) FROM offer_redemptions WHERE offer_id = ? AND customer_phone = ?");
+        $dupStmt->execute([$offer_id, $customer_phone]);
+        if ($dupStmt->fetchColumn() > 0) {
+            jsonResponse(['status' => 'error', 'message' => 'This phone number has already redeemed this offer']);
+        }
+
+        // Ensure redeemed_by column exists (migration-safe)
+        try {
+            $pdo->exec("ALTER TABLE offer_redemptions ADD COLUMN redeemed_by INT DEFAULT NULL AFTER notes");
+        } catch (Exception $e) {
+            // Column likely already exists
+        }
+
+        // Record redemption with operator ID
+        $pdo->prepare("INSERT INTO offer_redemptions (offer_id, customer_name, customer_phone, notes, redeemed_by) VALUES (?, ?, ?, ?, ?)")
+            ->execute([$offer_id, $customer_name, $customer_phone, $notes ?: null, $_SESSION['user_id']]);
+
+        // Increment counter
+        $pdo->prepare("UPDATE offers SET times_redeemed = times_redeemed + 1 WHERE id = ?")->execute([$offer_id]);
+
+        jsonResponse(['status' => 'success', 'message' => 'Offer redeemed successfully']);
+    }
+
     // GET OFFER REDEMPTIONS (Manager — auth required)
     if ($action === 'get_offer_redemptions' && $method === 'GET') {
         if (!isset($_SESSION['user_id'])) {
@@ -3527,7 +3588,14 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Invalid offer ID']);
         }
 
-        $stmt = $pdo->prepare("SELECT * FROM offer_redemptions WHERE offer_id = ? ORDER BY redeemed_at DESC");
+        // Join with users table to get operator name
+        $stmt = $pdo->prepare("
+            SELECT r.*, u.full_name as redeemed_by_name 
+            FROM offer_redemptions r 
+            LEFT JOIN users u ON r.redeemed_by = u.id 
+            WHERE r.offer_id = ? 
+            ORDER BY r.redeemed_at DESC
+        ");
         $stmt->execute([$offer_id]);
         $redemptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         jsonResponse(['status' => 'success', 'redemptions' => $redemptions]);

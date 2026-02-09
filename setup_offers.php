@@ -54,12 +54,24 @@ try {
         `customer_phone` VARCHAR(20) DEFAULT NULL,
         `redeemed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         `notes` TEXT DEFAULT NULL,
+        `redeemed_by` INT DEFAULT NULL COMMENT 'Operator user ID, NULL = self-redeemed',
         INDEX `idx_offer_id` (`offer_id`),
+        INDEX `idx_redeemed_by` (`redeemed_by`),
         CONSTRAINT `fk_redemption_offer` FOREIGN KEY (`offer_id`) REFERENCES `offers`(`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
     $pdo->exec($sql2);
     echo "✅ offer_redemptions table created successfully!{$br}";
+
+    // Add redeemed_by column if it doesn't exist (for existing installations)
+    try {
+        $pdo->exec("ALTER TABLE offer_redemptions ADD COLUMN `redeemed_by` INT DEFAULT NULL COMMENT 'Operator user ID' AFTER `notes`");
+        echo "✅ Added redeemed_by column to offer_redemptions{$br}";
+    } catch (PDOException $e) {
+        if (strpos($e->getMessage(), 'Duplicate column') !== false) {
+            echo "ℹ️ redeemed_by column already exists{$br}";
+        }
+    }
 
     echo "{$br}🎉 Offers system setup complete!{$br}";
 

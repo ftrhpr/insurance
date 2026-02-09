@@ -290,6 +290,46 @@ require_once 'language.php';
         </div>
     </div>
 
+    <!-- ======================================= -->
+    <!-- REDEEM OFFER MODAL -->
+    <!-- ======================================= -->
+    <div id="redeem-modal" class="hidden fixed inset-0 bg-black/40 modal-backdrop flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="p-6 border-b border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i>
+                    Redeem Offer
+                </h2>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="redeem-offer-id" value="">
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                    <p class="text-sm font-semibold text-emerald-800" id="redeem-offer-title">Offer Title</p>
+                    <p class="text-xs text-emerald-600 mt-1" id="redeem-offer-discount">Discount: —</p>
+                    <code class="text-xs text-emerald-700 font-bold mt-1 block" id="redeem-offer-code">CODE</code>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Customer Name *</label>
+                    <input type="text" id="redeem-customer-name" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 focus:border-emerald-500 focus:outline-none transition" placeholder="სახელი გვარი">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Customer Phone *</label>
+                    <input type="text" id="redeem-customer-phone" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 focus:border-emerald-500 focus:outline-none transition" placeholder="5XXXXXXXX">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Notes (optional)</label>
+                    <input type="text" id="redeem-notes" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 focus:border-slate-300 focus:outline-none transition" placeholder="Order #, vehicle plate, etc.">
+                </div>
+            </div>
+            <div class="p-6 border-t border-slate-200 flex gap-3 justify-end">
+                <button onclick="closeRedeemModal()" class="px-5 py-2.5 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition">Cancel</button>
+                <button onclick="submitRedemption()" id="redeem-submit-btn" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition active:scale-95">
+                    <i data-lucide="check" class="w-4 h-4 inline mr-1"></i> Confirm Redemption
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2"></div>
 
@@ -426,6 +466,7 @@ require_once 'language.php';
                     <td class="px-5 py-4">${smsBadge}</td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex items-center justify-end gap-1">
+                            ${o.status === 'active' ? `<button onclick="openRedeemModal(${o.id})" class="text-slate-400 hover:text-emerald-600 p-1.5 rounded-lg hover:bg-emerald-50 transition" title="Redeem for Customer"><i data-lucide="check-circle" class="w-4 h-4"></i></button>` : ''}
                             ${o.status === 'active' ? `<button onclick="openSmsModal(${o.id})" class="text-slate-400 hover:text-green-600 p-1.5 rounded-lg hover:bg-green-50 transition" title="Send SMS"><i data-lucide="send" class="w-4 h-4"></i></button>` : ''}
                             <button onclick="copyOfferLink(${o.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition" title="Copy Link"><i data-lucide="link" class="w-4 h-4"></i></button>
                             <button onclick="editOffer(${o.id})" class="text-slate-400 hover:text-accent-600 p-1.5 rounded-lg hover:bg-accent-50 transition" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
@@ -702,12 +743,18 @@ require_once 'language.php';
                     document.getElementById('redemptions-content').innerHTML = `
                         <div class="space-y-2">
                             ${redemptions.map(r => `
-                                <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-                                    <div>
-                                        <div class="font-semibold text-slate-700 text-sm">${escapeHtml(r.customer_name)}</div>
-                                        <div class="text-xs text-slate-400">${escapeHtml(r.customer_phone)}</div>
+                                <div class="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="font-semibold text-slate-700 text-sm">${escapeHtml(r.customer_name || 'Unknown')}</div>
+                                            <div class="text-xs text-slate-400">${escapeHtml(r.customer_phone || '—')}</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-xs text-slate-500">${formatDateTime(r.redeemed_at)}</div>
+                                            ${r.redeemed_by_name ? `<div class="text-[10px] text-blue-500 font-medium">by ${escapeHtml(r.redeemed_by_name)}</div>` : '<div class="text-[10px] text-slate-400">Self-redeemed</div>'}
+                                        </div>
                                     </div>
-                                    <div class="text-xs text-slate-500">${formatDate(r.redeemed_at)}</div>
+                                    ${r.notes ? `<div class="text-xs text-slate-500 mt-2 bg-white rounded-lg px-2 py-1 border border-slate-100"><i data-lucide="file-text" class="w-3 h-3 inline mr-1"></i>${escapeHtml(r.notes)}</div>` : ''}
                                 </div>
                             `).join('')}
                         </div>`;
@@ -720,6 +767,84 @@ require_once 'language.php';
 
         function closeRedemptionsModal() {
             document.getElementById('redemptions-modal').classList.add('hidden');
+        }
+
+        // ===========================
+        // REDEEM MODAL FUNCTIONS
+        // ===========================
+        function openRedeemModal(id) {
+            const o = allOffers.find(x => x.id == id);
+            if (!o) return;
+            
+            document.getElementById('redeem-offer-id').value = o.id;
+            document.getElementById('redeem-offer-title').textContent = o.title;
+            document.getElementById('redeem-offer-code').textContent = o.code;
+            document.getElementById('redeem-offer-discount').textContent = 'Discount: ' + getDiscountDisplay(o);
+            document.getElementById('redeem-customer-name').value = o.target_name || '';
+            document.getElementById('redeem-customer-phone').value = o.target_phone || '';
+            document.getElementById('redeem-notes').value = '';
+            
+            document.getElementById('redeem-modal').classList.remove('hidden');
+            lucide.createIcons();
+            document.getElementById('redeem-customer-name').focus();
+        }
+
+        function closeRedeemModal() {
+            document.getElementById('redeem-modal').classList.add('hidden');
+        }
+
+        async function submitRedemption() {
+            const offer_id = parseInt(document.getElementById('redeem-offer-id').value);
+            const customer_name = document.getElementById('redeem-customer-name').value.trim();
+            const customer_phone = document.getElementById('redeem-customer-phone').value.trim();
+            const notes = document.getElementById('redeem-notes').value.trim();
+
+            if (!customer_name) {
+                showToast('Customer name is required', 'error');
+                document.getElementById('redeem-customer-name').focus();
+                return;
+            }
+            if (!customer_phone) {
+                showToast('Customer phone is required', 'error');
+                document.getElementById('redeem-customer-phone').focus();
+                return;
+            }
+
+            const btn = document.getElementById('redeem-submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 inline mr-1 animate-spin"></i> Processing...';
+            lucide.createIcons();
+
+            try {
+                const data = await fetchAPI('admin_redeem_offer', 'POST', {
+                    offer_id,
+                    customer_name,
+                    customer_phone,
+                    notes
+                });
+
+                if (data.status === 'success') {
+                    showToast('Offer redeemed successfully!', 'success');
+                    closeRedeemModal();
+                    loadOffers();
+                } else {
+                    showToast(data.message || 'Redemption failed', 'error');
+                }
+            } catch (e) {
+                showToast(e.message || 'Connection error', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline mr-1"></i> Confirm Redemption';
+                lucide.createIcons();
+            }
+        }
+
+        function formatDateTime(dt) {
+            if (!dt) return '—';
+            try {
+                const d = new Date(dt.replace(' ', 'T'));
+                return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            } catch { return dt; }
         }
 
         // ===========================

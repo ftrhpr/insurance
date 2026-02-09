@@ -111,37 +111,23 @@
                 </div>
             </div>
 
-            <!-- Redeem Form (active state) -->
+            <!-- Call To Action (active state) -->
             <div id="redeem-form">
-                <div class="space-y-3 mb-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">თქვენი სახელი *</label>
-                        <input type="text" id="customer-name" class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-purple-500 focus:outline-none transition text-sm" placeholder="სახელი და გვარი">
+                <div class="bg-gradient-to-br from-purple-50 to-violet-50 border-2 border-purple-200 rounded-2xl p-5 text-center mb-4">
+                    <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="phone-call" class="w-7 h-7 text-purple-600"></i>
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">ტელეფონის ნომერი *</label>
-                        <input type="tel" id="customer-phone" class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-purple-500 focus:outline-none transition text-sm" placeholder="5XXXXXXXX">
-                    </div>
-                </div>
-                <button onclick="redeemOffer()" id="redeem-btn" class="w-full bg-gradient-to-r from-purple-500 to-violet-600 text-white py-3.5 px-4 rounded-xl font-bold hover:from-purple-600 hover:to-violet-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 active:scale-[0.98]">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i>
-                    <span>გამოყენება</span>
-                </button>
-            </div>
-
-            <!-- Success State -->
-            <div id="success-state" class="hidden text-center py-4">
-                <div class="confetti">
-                    <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-green-50/50">
-                        <i data-lucide="check" class="w-10 h-10 text-green-500"></i>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">შეთავაზების გამოსაყენებლად</h3>
+                    <p class="text-sm text-slate-600 mb-3">დაგვიკავშირდით ან ეწვიეთ ჩვენს სერვისს</p>
+                    <div class="bg-white/80 rounded-xl p-3 border border-purple-100">
+                        <p class="text-xs text-purple-600 font-semibold uppercase tracking-wider mb-1">დაურეკეთ</p>
+                        <a href="tel:+995511144486" class="text-xl font-bold text-purple-700 hover:text-purple-800">+995 511 144 486</a>
                     </div>
                 </div>
-                <h3 class="text-xl font-bold text-slate-800 mb-2">შეთავაზება გამოყენებულია!</h3>
-                <p class="text-slate-500 text-sm mb-4">თქვენი ფასდაკლება აქტივირებულია. გთხოვთ მოგვმართოთ სერვისის დროს.</p>
-                <div class="bg-green-50 border border-green-100 rounded-xl p-4 text-left">
-                    <p class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">შეთავაზების კოდი</p>
-                    <p id="success-code" class="text-lg font-bold text-green-700">—</p>
-                </div>
+                <a href="https://api.whatsapp.com/send?phone=995511144486" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3.5 px-4 rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 active:scale-[0.98]">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                    <span>WhatsApp-ით დაკავშირება</span>
+                </a>
             </div>
 
             <!-- Expired / Inactive State -->
@@ -255,11 +241,6 @@
                 document.getElementById('offer-min-order').textContent = `${parseFloat(data.min_order_amount)}₾`;
             }
 
-            // If offer has target name, pre-fill customer name
-            if (data.target_name) {
-                document.getElementById('customer-name').value = data.target_name;
-            }
-
             // State checks
             if (data.status === 'expired') {
                 document.getElementById('redeem-form').classList.add('hidden');
@@ -277,67 +258,6 @@
                 document.getElementById('exhausted-state').classList.remove('hidden');
                 document.getElementById('header').className = 'bg-gradient-to-br from-slate-400 to-slate-500 text-white px-6 py-10 text-center relative overflow-hidden';
             }
-
-            lucide.createIcons();
-        }
-
-        async function redeemOffer() {
-            const name = document.getElementById('customer-name').value.trim();
-            const phone = document.getElementById('customer-phone').value.trim();
-
-            if (!name) {
-                alert('გთხოვთ შეიყვანოთ სახელი');
-                document.getElementById('customer-name').focus();
-                return;
-            }
-            if (!phone) {
-                alert('გთხოვთ შეიყვანოთ ტელეფონის ნომერი');
-                document.getElementById('customer-phone').focus();
-                return;
-            }
-
-            const btn = document.getElementById('redeem-btn');
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> <span>მიმდინარეობს...</span>';
-            lucide.createIcons();
-
-            try {
-                const res = await fetch(`${API_URL}?action=redeem_offer`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        code: offerCode,
-                        customer_name: name,
-                        customer_phone: phone
-                    })
-                });
-                const data = await res.json();
-
-                if (data.status === 'success') {
-                    showSuccess();
-                } else {
-                    alert(data.message || 'Error occurred');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i> <span>გამოყენება</span>';
-                    lucide.createIcons();
-                }
-            } catch (e) {
-                alert('კავშირის შეცდომა. გთხოვთ სცადოთ ხელახლა.');
-                btn.disabled = false;
-                btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i> <span>გამოყენება</span>';
-                lucide.createIcons();
-            }
-        }
-
-        function showSuccess() {
-            document.getElementById('redeem-form').classList.add('hidden');
-            document.getElementById('success-state').classList.remove('hidden');
-            document.getElementById('success-code').textContent = offerCode;
-
-            // Change header to green
-            document.getElementById('header').className = 'bg-gradient-to-br from-green-500 to-emerald-600 text-white px-6 py-10 text-center relative overflow-hidden';
-            document.getElementById('header-title').textContent = 'გამოყენებულია ✓';
-            document.getElementById('header-icon-container').innerHTML = '<i data-lucide="check-circle" class="w-8 h-8"></i>';
 
             lucide.createIcons();
         }
