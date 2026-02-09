@@ -114,7 +114,7 @@ try {
         password VARCHAR(255) NOT NULL,
         full_name VARCHAR(100) NOT NULL,
         email VARCHAR(100),
-        role ENUM('admin', 'manager', 'viewer', 'technician') DEFAULT 'manager',
+        role ENUM('admin', 'manager', 'viewer', 'technician', 'operator') DEFAULT 'manager',
         status ENUM('active', 'inactive') DEFAULT 'active',
         last_login TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -124,6 +124,14 @@ try {
         INDEX idx_status (status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $pdo->exec($sql);
+    
+    // Ensure role column includes 'operator'
+    try {
+        $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'manager', 'viewer', 'technician', 'operator') DEFAULT 'manager'");
+        echo " - Role column updated to include 'operator'.\n";
+    } catch (Exception $e) {
+        echo " - Role column update skipped (may already have correct values).\n";
+    }
     echo " - Table structure verified.\n";
 
     // Create default admin user if no users exist

@@ -1283,20 +1283,25 @@ try {
             jsonResponse(['status' => 'error', 'message' => 'Invalid role']);
         }
         
-        // Check if username exists
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-        $stmt->execute([$username]);
-        if ($stmt->fetch()) {
-            jsonResponse(['status' => 'error', 'message' => 'Username already exists']);
+        try {
+            // Check if username exists
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+            if ($stmt->fetch()) {
+                jsonResponse(['status' => 'error', 'message' => 'Username already exists']);
+            }
+            
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $created_by = getCurrentUserId();
+            
+            $stmt = $pdo->prepare("INSERT INTO users (username, password, full_name, email, role, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$username, $hashed_password, $full_name, $email, $role, $status, $created_by]);
+            
+            jsonResponse(['status' => 'success', 'user_id' => $pdo->lastInsertId()]);
+        } catch (Exception $e) {
+            error_log("Create user error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
         }
-        
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $created_by = getCurrentUserId();
-        
-        $stmt = $pdo->prepare("INSERT INTO users (username, password, full_name, email, role, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$username, $hashed_password, $full_name, $email, $role, $status, $created_by]);
-        
-        jsonResponse(['status' => 'success', 'user_id' => $pdo->lastInsertId()]);
     }
 
     if ($action === 'update_user' && $method === 'POST') {
