@@ -7,13 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <?php if (file_exists(__DIR__ . '/fonts/include_fonts.php')) include __DIR__ . '/fonts/include_fonts.php'; ?>
     <script>
         tailwind.config = {
             theme: {
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif']
-                },
                 extend: {
+                    fontFamily: { sans: ['BPG Arial Caps', 'BPG Arial', 'Inter', 'sans-serif'] },
                     colors: {
                         primary: '#a855f7',
                         success: '#10b981',
@@ -25,8 +24,7 @@
         }
     </script>
     <style>
-        * { font-family: 'Inter', sans-serif !important; }
-        body { background: linear-gradient(135deg, #faf5ff 0%, #f0e7fe 50%, #ede9fe 100%); min-height: 100vh; text-transform: uppercase; }
+        body { background: linear-gradient(135deg, #faf5ff 0%, #f0e7fe 50%, #ede9fe 100%); min-height: 100vh; }
         .card-enter { animation: cardEnter 0.5s ease forwards; }
         @keyframes cardEnter {
             from { opacity: 0; transform: scale(0.95) translateY(10px); }
