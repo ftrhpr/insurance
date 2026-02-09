@@ -121,7 +121,7 @@
                     <p class="text-sm text-slate-600 mb-3">ეწვიეთ ჩვენს სერვისს</p>
                     <div class="bg-white/80 rounded-xl p-3 border border-purple-100">
                         <p class="text-xs text-purple-600 font-semibold uppercase tracking-wider mb-1">კითხვები გაქვს?</p>
-                        <a href="tel:+995511144486" class="text-xl font-bold text-purple-700 hover:text-purple-800">+995 511 144 486</a>
+                        <a href="tel:+9950322052626" class="text-xl font-bold text-purple-700 hover:text-purple-800">+995 032 2 05 26 26</a>
                     </div>
                 </div>
                 <a href="https://api.whatsapp.com/send?phone=995511144486" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3.5 px-4 rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 active:scale-[0.98]">
