@@ -194,6 +194,13 @@
 
                 currentOffer = data;
                 renderOffer(data);
+
+                // Track view (fire and forget)
+                fetch(`${API_URL}?action=track_offer_view`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ offer_id: data.id })
+                }).catch(() => {});
             } catch (e) {
                 console.error('Fetch error:', e);
                 showError();

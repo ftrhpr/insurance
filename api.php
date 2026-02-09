@@ -106,7 +106,7 @@ function getStageProgression() {
 }
 
 // Check authentication for protected endpoints
-$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond', 'get_public_offer', 'redeem_offer'];
+$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond', 'get_public_offer', 'redeem_offer', 'track_offer_view'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode(['error' => 'Unauthorized']));
@@ -3568,6 +3568,80 @@ try {
             'sent_count' => $sent_count,
             'failed_count' => $failed_count
         ]);
+    }
+
+    // TRACK OFFER VIEW (Public — no auth)
+    if ($action === 'track_offer_view' && $method === 'POST') {
+        $data = getJsonInput();
+        $offer_id = intval($data['offer_id'] ?? 0);
+
+        if ($offer_id <= 0) {
+            jsonResponse(['status' => 'error']);
+        }
+
+        try {
+            // Ensure table exists
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `offer_views` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `offer_id` INT NOT NULL,
+                `viewed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `ip_address` VARCHAR(45) DEFAULT NULL,
+                `user_agent` VARCHAR(500) DEFAULT NULL,
+                INDEX `idx_offer_id` (`offer_id`),
+                INDEX `idx_viewed_at` (`viewed_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+            $ua = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
+
+            $stmt = $pdo->prepare("INSERT INTO offer_views (offer_id, ip_address, user_agent) VALUES (?, ?, ?)");
+            $stmt->execute([$offer_id, $ip, $ua]);
+
+            jsonResponse(['status' => 'success']);
+        } catch (Exception $e) {
+            error_log("Track offer view error: " . $e->getMessage());
+            jsonResponse(['status' => 'error']);
+        }
+    }
+
+    // GET OFFER VIEWS (Manager — auth required)
+    if ($action === 'get_offer_views' && $method === 'GET') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $offer_id = intval($_GET['offer_id'] ?? 0);
+        if ($offer_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid offer ID']);
+        }
+
+        try {
+            // Check if table exists
+            $tableCheck = $pdo->query("SHOW TABLES LIKE 'offer_views'");
+            if ($tableCheck->rowCount() === 0) {
+                jsonResponse(['status' => 'success', 'views' => [], 'total' => 0, 'unique' => 0]);
+            }
+
+            $stmt = $pdo->prepare("SELECT * FROM offer_views WHERE offer_id = ? ORDER BY viewed_at DESC LIMIT 100");
+            $stmt->execute([$offer_id]);
+            $views = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Get counts
+            $countStmt = $pdo->prepare("SELECT COUNT(*) as total, COUNT(DISTINCT ip_address) as unique_views FROM offer_views WHERE offer_id = ?");
+            $countStmt->execute([$offer_id]);
+            $counts = $countStmt->fetch(PDO::FETCH_ASSOC);
+
+            jsonResponse([
+                'status' => 'success',
+                'views' => $views,
+                'total' => intval($counts['total']),
+                'unique' => intval($counts['unique_views'])
+            ]);
+        } catch (Exception $e) {
+            error_log("Get offer views error: " . $e->getMessage());
+            jsonResponse(['status' => 'success', 'views' => [], 'total' => 0, 'unique' => 0]);
+        }
     }
 
     // GET PUBLIC OFFER (No auth — public customer page)

@@ -127,6 +127,7 @@ require_once 'language.php';
                                 <th class="px-5 py-4">Code</th>
                                 <th class="px-5 py-4">Discount</th>
                                 <th class="px-5 py-4">Validity</th>
+                                <th class="px-5 py-4">Views</th>
                                 <th class="px-5 py-4">Redemptions</th>
                                 <th class="px-5 py-4">Status</th>
                                 <th class="px-5 py-4">SMS</th>
@@ -404,6 +405,66 @@ require_once 'language.php';
         </div>
     </div>
 
+    <!-- Views Modal -->
+    <div id="views-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <i data-lucide="eye" class="w-5 h-5 text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg" id="views-modal-title">Offer Views</h3>
+                        <p class="text-sm text-slate-500" id="views-modal-subtitle">Loading...</p>
+                    </div>
+                </div>
+                <button onclick="closeViewsModal()" class="p-2 hover:bg-slate-100 rounded-xl transition">
+                    <i data-lucide="x" class="w-5 h-5 text-slate-400"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <!-- Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-blue-50 rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-blue-600" id="views-total">0</div>
+                        <div class="text-sm text-blue-600/70">Total Views</div>
+                    </div>
+                    <div class="bg-purple-50 rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-purple-600" id="views-unique">0</div>
+                        <div class="text-sm text-purple-600/70">Unique Visitors</div>
+                    </div>
+                </div>
+
+                <!-- Views Table -->
+                <div id="views-loading" class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+                    <p class="mt-2 text-slate-500">Loading views...</p>
+                </div>
+                <div id="views-empty" class="hidden text-center py-8">
+                    <i data-lucide="eye-off" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+                    <p class="text-slate-500">No views yet</p>
+                </div>
+                <div id="views-table-container" class="hidden">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-xs text-slate-500 uppercase">
+                                <th class="pb-3 font-semibold">#</th>
+                                <th class="pb-3 font-semibold">Device</th>
+                                <th class="pb-3 font-semibold">IP Address</th>
+                                <th class="pb-3 font-semibold">Viewed At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="views-table-body" class="divide-y divide-slate-100">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="p-6 border-t border-slate-200 flex justify-end">
+                <button onclick="closeViewsModal()" class="px-5 py-2.5 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2"></div>
 
@@ -480,6 +541,8 @@ require_once 'language.php';
                     allOffers = data.offers || [];
                     renderOffers();
                     updateStats();
+                    // Load view counts for each offer
+                    loadAllViewCounts();
                 } else {
                     showToast(data.message || 'Failed to load offers', 'error');
                 }
@@ -487,6 +550,133 @@ require_once 'language.php';
                 showToast('Connection error', 'error');
             }
             document.getElementById('loading-state').classList.add('hidden');
+        }
+
+        async function loadAllViewCounts() {
+            for (const o of allOffers) {
+                try {
+                    const data = await fetchAPI(`get_offer_views&offer_id=${o.id}`);
+                    const el = document.getElementById(`view-count-${o.id}`);
+                    if (el && data.status === 'success') {
+                        el.textContent = data.unique || 0;
+                    }
+                } catch (e) {
+                    // Ignore
+                }
+            }
+        }
+
+        // ===========================
+        // VIEWS MODAL
+        // ===========================
+        async function viewOfferViews(offerId) {
+            const modal = document.getElementById('views-modal');
+            const loading = document.getElementById('views-loading');
+            const empty = document.getElementById('views-empty');
+            const tableContainer = document.getElementById('views-table-container');
+            const tableBody = document.getElementById('views-table-body');
+            
+            // Find offer title
+            const offer = allOffers.find(o => o.id == offerId);
+            document.getElementById('views-modal-title').textContent = offer ? offer.title : 'Offer Views';
+            document.getElementById('views-modal-subtitle').textContent = 'Loading...';
+            
+            // Reset state
+            loading.classList.remove('hidden');
+            empty.classList.add('hidden');
+            tableContainer.classList.add('hidden');
+            tableBody.innerHTML = '';
+            
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+            
+            try {
+                const data = await fetchAPI(`get_offer_views&offer_id=${offerId}`);
+                loading.classList.add('hidden');
+                
+                if (data.status === 'success') {
+                    document.getElementById('views-total').textContent = data.total || 0;
+                    document.getElementById('views-unique').textContent = data.unique || 0;
+                    document.getElementById('views-modal-subtitle').textContent = `${data.total || 0} total views, ${data.unique || 0} unique`;
+                    
+                    if (!data.views || data.views.length === 0) {
+                        empty.classList.remove('hidden');
+                    } else {
+                        tableContainer.classList.remove('hidden');
+                        tableBody.innerHTML = data.views.map((v, i) => {
+                            const device = parseUserAgent(v.user_agent || '');
+                            const ip = maskIP(v.ip_address || '');
+                            const viewedAt = formatDateTime(v.viewed_at);
+                            return `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 text-slate-400 text-sm">${i + 1}</td>
+                                    <td class="py-3">
+                                        <div class="flex items-center gap-2">
+                                            <i data-lucide="${device.icon}" class="w-4 h-4 text-slate-400"></i>
+                                            <span class="text-sm text-slate-600">${device.name}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 text-sm text-slate-500 font-mono">${ip}</td>
+                                    <td class="py-3 text-sm text-slate-500">${viewedAt}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                        lucide.createIcons();
+                    }
+                } else {
+                    empty.classList.remove('hidden');
+                    document.getElementById('views-modal-subtitle').textContent = 'Could not load views';
+                }
+            } catch (e) {
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+                document.getElementById('views-modal-subtitle').textContent = 'Error loading views';
+            }
+        }
+
+        function closeViewsModal() {
+            document.getElementById('views-modal').classList.add('hidden');
+        }
+
+        function parseUserAgent(ua) {
+            const uaLower = ua.toLowerCase();
+            if (uaLower.includes('iphone') || uaLower.includes('ipad')) {
+                return { icon: 'smartphone', name: 'iOS' };
+            } else if (uaLower.includes('android')) {
+                return { icon: 'smartphone', name: 'Android' };
+            } else if (uaLower.includes('macintosh') || uaLower.includes('mac os')) {
+                return { icon: 'laptop', name: 'Mac' };
+            } else if (uaLower.includes('windows')) {
+                return { icon: 'monitor', name: 'Windows' };
+            } else if (uaLower.includes('linux')) {
+                return { icon: 'monitor', name: 'Linux' };
+            } else {
+                return { icon: 'globe', name: 'Unknown' };
+            }
+        }
+
+        function maskIP(ip) {
+            if (!ip) return '-';
+            const parts = ip.split('.');
+            if (parts.length === 4) {
+                return `${parts[0]}.${parts[1]}.*.*`;
+            }
+            return ip.substring(0, Math.min(8, ip.length)) + '...';
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                const d = new Date(dateStr);
+                return d.toLocaleString('ka-GE', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } catch (e) {
+                return dateStr;
+            }
         }
 
         // ===========================
@@ -532,6 +722,12 @@ require_once 'language.php';
                     <td class="px-5 py-4">
                         <div class="text-xs text-slate-600">${validFrom}</div>
                         <div class="text-xs text-slate-400">→ ${validUntil}</div>
+                    </td>
+                    <td class="px-5 py-4">
+                        <button onclick="viewOfferViews(${o.id})" class="text-sm font-bold text-purple-600 hover:underline cursor-pointer flex items-center gap-1">
+                            <i data-lucide="eye" class="w-3 h-3"></i>
+                            <span id="view-count-${o.id}">...</span>
+                        </button>
                     </td>
                     <td class="px-5 py-4">
                         <button onclick="viewRedemptions(${o.id})" class="text-sm font-bold text-blue-600 hover:underline cursor-pointer">${o.times_redeemed || 0} / ${maxR}</button>
