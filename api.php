@@ -3871,7 +3871,61 @@ try {
         // Increment counter
         $pdo->prepare("UPDATE offers SET times_redeemed = times_redeemed + 1 WHERE id = ?")->execute([$offer_id]);
 
-        jsonResponse(['status' => 'success', 'message' => 'Offer redeemed for ' . $customer_name]);
+        jsonResponse(['status' => 'success', 'message' => 'Offer redeemed for ' . $customer_name, 'customer_name' => $customer_name]);
+    }
+
+    // GET OFFERS FOR PHONE (Manager — lookup unredeemed offers sent to a phone number)
+    if ($action === 'get_offers_for_phone' && $method === 'GET') {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $_GET['phone'] ?? '');
+        if (strlen($phone) < 9) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid phone number']);
+        }
+
+        // Auto-expire old offers
+        $pdo->exec("UPDATE offers SET status = 'expired' WHERE status = 'active' AND valid_until < NOW()");
+
+        try {
+            // Find offers that were sent to this phone via tracking slugs
+            $stmt = $pdo->prepare("
+                SELECT DISTINCT o.*, ots.slug as tracking_slug,
+                    (SELECT COUNT(*) FROM offer_redemptions r WHERE r.offer_id = o.id AND r.customer_phone = ?) as already_redeemed
+                FROM offers o
+                INNER JOIN offer_tracking_slugs ots ON ots.offer_id = o.id AND ots.phone = ?
+                WHERE o.status = 'active'
+                ORDER BY ots.created_at DESC
+            ");
+            $stmt->execute([$phone, $phone]);
+            $offers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Lookup customer name
+            $nameStmt = $pdo->prepare("SELECT name FROM transfers WHERE phone = ? ORDER BY id DESC LIMIT 1");
+            $nameStmt->execute([$phone]);
+            $customerName = $nameStmt->fetchColumn() ?: null;
+
+            // Filter out already redeemed and exhausted
+            $available = [];
+            foreach ($offers as $o) {
+                if ($o['already_redeemed'] > 0) continue;
+                if ($o['max_redemptions'] !== null && $o['times_redeemed'] >= $o['max_redemptions']) continue;
+                $available[] = $o;
+            }
+
+            jsonResponse([
+                'status' => 'success',
+                'offers' => $available,
+                'customer_name' => $customerName,
+                'total_found' => count($offers),
+                'available' => count($available)
+            ]);
+        } catch (Exception $e) {
+            error_log("Get offers for phone error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error']);
+        }
     }
 
     // GET OFFER REDEMPTIONS (Manager — auth required)

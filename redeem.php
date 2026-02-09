@@ -37,6 +37,7 @@ $user_name = $_SESSION['username'] ?? 'User';
             from { opacity: 0; transform: scale(0.95) translateY(10px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
+        .offer-card:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body class="flex items-center justify-center p-4 font-sans">
@@ -52,71 +53,63 @@ $user_name = $_SESSION['username'] ?? 'User';
                 <i data-lucide="ticket-check" class="w-8 h-8 text-white"></i>
             </div>
             <h1 class="text-2xl font-bold text-slate-800">ვაუჩერის გამოყენება</h1>
-            <p class="text-slate-500 text-sm mt-1">შეიყვანეთ კოდი და მომხმარებლის ნომერი</p>
+            <p class="text-slate-500 text-sm mt-1">შეიყვანეთ მომხმარებლის ტელეფონის ნომერი</p>
         </div>
 
-        <!-- Main Card -->
-        <div id="redeem-card" class="bg-white rounded-2xl shadow-xl p-6 card-enter">
-            <!-- Code Input -->
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-slate-700 mb-2">
-                    <i data-lucide="hash" class="w-4 h-4 inline mr-1"></i>
-                    ვაუჩერის კოდი
-                </label>
-                <input type="text" id="offer-code" placeholder="მაგ: ABC123" 
-                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition text-lg font-mono uppercase tracking-wider"
-                    maxlength="12" autocomplete="off">
-            </div>
-
+        <!-- Phone Lookup Card -->
+        <div id="lookup-card" class="bg-white rounded-2xl shadow-xl p-6 card-enter">
             <!-- Phone Input -->
-            <div class="mb-4">
+            <div class="mb-6">
                 <label class="block text-sm font-semibold text-slate-700 mb-2">
                     <i data-lucide="phone" class="w-4 h-4 inline mr-1"></i>
                     მომხმარებლის ტელეფონი
                 </label>
                 <input type="tel" id="customer-phone" placeholder="მაგ: 511123456" 
-                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition text-lg"
+                    class="w-full px-4 py-4 border-2 border-slate-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition text-xl text-center tracking-wider"
                     maxlength="15" autocomplete="off">
             </div>
 
-            <!-- Notes Input -->
-            <div class="mb-6">
-                <label class="block text-sm font-semibold text-slate-700 mb-2">
-                    <i data-lucide="message-square" class="w-4 h-4 inline mr-1"></i>
-                    შენიშვნა (არასავალდებულო)
-                </label>
-                <textarea id="redeem-notes" placeholder="დამატებითი ინფორმაცია..." rows="2"
-                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 outline-none transition resize-none"></textarea>
-            </div>
-
-            <!-- Offer Preview (hidden initially) -->
-            <div id="offer-preview" class="hidden mb-6 bg-purple-50 border-2 border-purple-200 rounded-xl p-4">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <i data-lucide="gift" class="w-5 h-5 text-purple-600"></i>
-                    </div>
-                    <div>
-                        <div id="preview-title" class="font-bold text-slate-800">...</div>
-                        <div id="preview-discount" class="text-sm text-purple-600 font-semibold">...</div>
-                    </div>
-                </div>
-                <div id="preview-customer" class="text-sm text-slate-600 bg-white rounded-lg px-3 py-2 border border-purple-100">
-                    <span class="text-slate-400">მომხმარებელი:</span> <span id="preview-customer-name" class="font-medium">...</span>
-                </div>
-            </div>
-
-            <!-- Submit Button -->
-            <button onclick="redeemOffer()" id="redeem-btn" 
+            <!-- Search Button -->
+            <button onclick="lookupOffers()" id="lookup-btn" 
                 class="w-full bg-gradient-to-r from-purple-500 to-violet-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-purple-600 hover:to-violet-700 transition-all shadow-lg shadow-purple-500/30 active:scale-[0.98] flex items-center justify-center gap-2">
-                <i data-lucide="check-circle" class="w-5 h-5"></i>
-                გამოყენება
+                <i data-lucide="search" class="w-5 h-5"></i>
+                ვაუჩერების ძებნა
             </button>
+        </div>
 
-            <!-- Quick Lookup Button -->
-            <button onclick="lookupOffer()" id="lookup-btn" 
-                class="w-full mt-3 bg-slate-100 text-slate-600 py-3 px-6 rounded-xl font-semibold hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
-                <i data-lucide="search" class="w-4 h-4"></i>
-                კოდის შემოწმება
+        <!-- Offers List Card (hidden initially) -->
+        <div id="offers-card" class="hidden bg-white rounded-2xl shadow-xl p-6 card-enter">
+            <!-- Customer Info -->
+            <div class="bg-slate-50 rounded-xl p-4 mb-4 flex items-center gap-3">
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i data-lucide="user" class="w-6 h-6 text-purple-600"></i>
+                </div>
+                <div>
+                    <div id="customer-name" class="font-bold text-slate-800">მომხმარებელი</div>
+                    <div id="customer-phone-display" class="text-sm text-slate-500">...</div>
+                </div>
+                <button onclick="resetForm()" class="ml-auto p-2 hover:bg-slate-200 rounded-lg transition">
+                    <i data-lucide="x" class="w-5 h-5 text-slate-400"></i>
+                </button>
+            </div>
+
+            <!-- Offers List -->
+            <div id="offers-list" class="space-y-3 mb-4">
+                <!-- Offers will be rendered here -->
+            </div>
+
+            <!-- No Offers State -->
+            <div id="no-offers" class="hidden text-center py-6">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="inbox" class="w-8 h-8 text-slate-400"></i>
+                </div>
+                <p class="text-slate-500">არ მოიძებნა აქტიური ვაუჩერები</p>
+            </div>
+
+            <!-- Back Button -->
+            <button onclick="resetForm()" class="w-full mt-4 bg-slate-100 text-slate-600 py-3 px-6 rounded-xl font-semibold hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                სხვა ნომრის ძებნა
             </button>
         </div>
 
@@ -126,12 +119,12 @@ $user_name = $_SESSION['username'] ?? 'User';
                 <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
             </div>
             <h2 class="text-xl font-bold text-slate-800 mb-2">წარმატებით გამოყენებულია!</h2>
-            <p id="success-message" class="text-slate-500 mb-6">ვაუჩერი გამოყენებულია მომხმარებლისთვის.</p>
+            <p id="success-message" class="text-slate-500 mb-6">ვაუჩერი გამოყენებულია.</p>
             
             <div id="success-details" class="bg-slate-50 rounded-xl p-4 mb-6 text-left">
                 <div class="grid grid-cols-2 gap-2 text-sm">
-                    <div class="text-slate-500">კოდი:</div>
-                    <div id="success-code" class="font-bold text-slate-800">—</div>
+                    <div class="text-slate-500">ვაუჩერი:</div>
+                    <div id="success-title" class="font-bold text-slate-800">—</div>
                     <div class="text-slate-500">მომხმარებელი:</div>
                     <div id="success-customer" class="font-bold text-slate-800">—</div>
                     <div class="text-slate-500">ფასდაკლება:</div>
@@ -142,20 +135,6 @@ $user_name = $_SESSION['username'] ?? 'User';
             <button onclick="resetForm()" class="w-full bg-gradient-to-r from-purple-500 to-violet-600 text-white py-3 px-6 rounded-xl font-bold hover:from-purple-600 hover:to-violet-700 transition-all flex items-center justify-center gap-2">
                 <i data-lucide="plus" class="w-5 h-5"></i>
                 ახალი გამოყენება
-            </button>
-        </div>
-
-        <!-- Error State -->
-        <div id="error-card" class="hidden bg-white rounded-2xl shadow-xl p-6 text-center card-enter">
-            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-red-50">
-                <i data-lucide="x-circle" class="w-10 h-10 text-red-500"></i>
-            </div>
-            <h2 class="text-xl font-bold text-slate-800 mb-2">შეცდომა</h2>
-            <p id="error-message" class="text-slate-500 mb-6">ვერ მოხერხდა ვაუჩერის გამოყენება.</p>
-            
-            <button onclick="resetForm()" class="w-full bg-slate-100 text-slate-600 py-3 px-6 rounded-xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                თავიდან ცდა
             </button>
         </div>
 
@@ -171,15 +150,12 @@ $user_name = $_SESSION['username'] ?? 'User';
     <script>
         const API_URL = 'api.php';
         const csrfToken = '<?php echo $_SESSION['csrf_token'] ?? ''; ?>';
-        let currentOffer = null;
+        let currentPhone = '';
+        let currentCustomerName = '';
+        let availableOffers = [];
 
         // Initialize icons
         lucide.createIcons();
-
-        // Auto-uppercase code input
-        document.getElementById('offer-code').addEventListener('input', function(e) {
-            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        });
 
         // Phone number formatting
         document.getElementById('customer-phone').addEventListener('input', function(e) {
@@ -187,11 +163,8 @@ $user_name = $_SESSION['username'] ?? 'User';
         });
 
         // Enter key handling
-        document.getElementById('offer-code').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') document.getElementById('customer-phone').focus();
-        });
         document.getElementById('customer-phone').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') redeemOffer();
+            if (e.key === 'Enter') lookupOffers();
         });
 
         async function fetchAPI(action, method = 'GET', body = null) {
@@ -216,166 +189,173 @@ $user_name = $_SESSION['username'] ?? 'User';
                 info: 'bg-blue-500'
             };
             const toast = document.createElement('div');
-            toast.className = `${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-slide-in`;
+            toast.className = `${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2`;
             toast.innerHTML = `<span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        async function lookupOffer() {
-            const code = document.getElementById('offer-code').value.trim();
-            if (!code || code.length < 6) {
-                showToast('შეიყვანეთ სწორი კოდი', 'error');
-                return;
+        function formatPhone(phone) {
+            if (!phone) return '';
+            const clean = phone.replace(/\D/g, '');
+            if (clean.length === 9) {
+                return `${clean.slice(0, 3)} ${clean.slice(3, 5)} ${clean.slice(5, 7)} ${clean.slice(7)}`;
             }
-
-            const btn = document.getElementById('lookup-btn');
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> იძებნება...';
-            lucide.createIcons();
-
-            try {
-                const data = await fetchAPI(`get_public_offer&code=${encodeURIComponent(code)}`);
-                
-                if (data.error) {
-                    showToast('ვაუჩერი ვერ მოიძებნა', 'error');
-                    document.getElementById('offer-preview').classList.add('hidden');
-                    currentOffer = null;
-                } else {
-                    currentOffer = data;
-                    
-                    // Show preview
-                    document.getElementById('offer-preview').classList.remove('hidden');
-                    document.getElementById('preview-title').textContent = data.title;
-                    
-                    let discountText = '';
-                    if (data.discount_type === 'percentage') {
-                        discountText = `${parseFloat(data.discount_value)}% ფასდაკლება`;
-                    } else if (data.discount_type === 'fixed') {
-                        discountText = `${parseFloat(data.discount_value)}₾ ფასდაკლება`;
-                    } else {
-                        discountText = 'უფასო სერვისი';
-                    }
-                    document.getElementById('preview-discount').textContent = discountText;
-
-                    // Check status
-                    if (data.status !== 'active') {
-                        showToast('ვაუჩერი არააქტიურია', 'error');
-                    } else if (data.is_exhausted) {
-                        showToast('ვაუჩერი ამოწურულია', 'error');
-                    } else {
-                        showToast('ვაუჩერი ნაპოვნია', 'success');
-                    }
-                }
-            } catch (e) {
-                showToast('კავშირის შეცდომა', 'error');
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="search" class="w-4 h-4"></i> კოდის შემოწმება';
-            lucide.createIcons();
+            return phone;
         }
 
-        async function redeemOffer() {
-            const code = document.getElementById('offer-code').value.trim();
-            const phone = document.getElementById('customer-phone').value.trim();
-            const notes = document.getElementById('redeem-notes').value.trim();
-
-            if (!code || code.length < 6) {
-                showToast('შეიყვანეთ სწორი კოდი', 'error');
-                return;
+        function getDiscountText(offer) {
+            if (offer.discount_type === 'percentage') {
+                return `${parseFloat(offer.discount_value)}% ფასდაკლება`;
+            } else if (offer.discount_type === 'fixed') {
+                return `${parseFloat(offer.discount_value)}₾ ფასდაკლება`;
+            } else {
+                return 'უფასო სერვისი';
             }
+        }
+
+        async function lookupOffers() {
+            const phone = document.getElementById('customer-phone').value.trim();
             if (!phone || phone.length < 9) {
                 showToast('შეიყვანეთ სწორი ტელეფონის ნომერი', 'error');
                 return;
             }
 
-            const btn = document.getElementById('redeem-btn');
+            const btn = document.getElementById('lookup-btn');
             btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> მუშავდება...';
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> იძებნება...';
             lucide.createIcons();
 
             try {
-                // First get offer ID from code
-                const offerData = await fetchAPI(`get_public_offer&code=${encodeURIComponent(code)}`);
+                const data = await fetchAPI(`get_offers_for_phone&phone=${encodeURIComponent(phone)}`);
                 
-                if (offerData.error) {
-                    showError('ვაუჩერი ვერ მოიძებნა');
-                    return;
-                }
+                if (data.status === 'success') {
+                    currentPhone = phone;
+                    currentCustomerName = data.customer_name || 'მომხმარებელი';
+                    availableOffers = data.offers || [];
 
-                // Redeem the offer
-                const result = await fetchAPI('admin_redeem_offer', 'POST', {
-                    offer_id: offerData.id,
-                    phone: phone,
-                    notes: notes
-                });
+                    // Show offers card
+                    document.getElementById('lookup-card').classList.add('hidden');
+                    document.getElementById('offers-card').classList.remove('hidden');
 
-                if (result.status === 'success') {
-                    showSuccess(offerData, phone, result.customer_name || 'მომხმარებელი');
+                    // Update customer info
+                    document.getElementById('customer-name').textContent = currentCustomerName;
+                    document.getElementById('customer-phone-display').textContent = formatPhone(phone);
+
+                    // Render offers
+                    renderOffers();
                 } else {
-                    showError(result.message || 'გამოყენება ვერ მოხერხდა');
+                    showToast(data.message || 'შეცდომა', 'error');
                 }
             } catch (e) {
                 console.error(e);
-                showError('კავშირის შეცდომა');
+                showToast('კავშირის შეცდომა', 'error');
             }
 
             btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i> გამოყენება';
+            btn.innerHTML = '<i data-lucide="search" class="w-5 h-5"></i> ვაუჩერების ძებნა';
             lucide.createIcons();
         }
 
-        function showSuccess(offer, phone, customerName) {
-            document.getElementById('redeem-card').classList.add('hidden');
-            document.getElementById('error-card').classList.add('hidden');
+        function renderOffers() {
+            const container = document.getElementById('offers-list');
+            const noOffers = document.getElementById('no-offers');
+
+            if (availableOffers.length === 0) {
+                container.innerHTML = '';
+                noOffers.classList.remove('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            noOffers.classList.add('hidden');
+            container.innerHTML = availableOffers.map(offer => `
+                <div class="offer-card bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-200 rounded-xl p-4 transition-all cursor-pointer hover:border-purple-400 hover:shadow-md" onclick="redeemOffer(${offer.id})">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="font-bold text-slate-800">${escapeHtml(offer.title)}</div>
+                            <div class="text-sm text-purple-600 font-semibold">${getDiscountText(offer)}</div>
+                            <div class="text-xs text-slate-400 mt-1">კოდი: ${offer.code}</div>
+                        </div>
+                        <button onclick="event.stopPropagation(); redeemOffer(${offer.id})" class="ml-3 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition flex items-center gap-1">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            გამოყენება
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        async function redeemOffer(offerId) {
+            const offer = availableOffers.find(o => o.id == offerId);
+            if (!offer) return;
+
+            // Confirm
+            if (!confirm(`გამოიყენოს "${offer.title}" ვაუჩერი ${currentCustomerName}-სთვის?`)) {
+                return;
+            }
+
+            showToast('მუშავდება...', 'info');
+
+            try {
+                const result = await fetchAPI('admin_redeem_offer', 'POST', {
+                    offer_id: offerId,
+                    customer_phone: currentPhone,
+                    notes: ''
+                });
+
+                if (result.status === 'success') {
+                    showSuccess(offer, result.customer_name || currentCustomerName);
+                } else {
+                    showToast(result.message || 'შეცდომა', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('კავშირის შეცდომა', 'error');
+            }
+        }
+
+        function showSuccess(offer, customerName) {
+            document.getElementById('lookup-card').classList.add('hidden');
+            document.getElementById('offers-card').classList.add('hidden');
             document.getElementById('success-card').classList.remove('hidden');
 
             document.getElementById('success-message').textContent = `ვაუჩერი გამოყენებულია ${customerName}-სთვის`;
-            document.getElementById('success-code').textContent = offer.code;
-            document.getElementById('success-customer').textContent = `${customerName} (${phone})`;
-            
-            let discountText = '';
-            if (offer.discount_type === 'percentage') {
-                discountText = `${parseFloat(offer.discount_value)}%`;
-            } else if (offer.discount_type === 'fixed') {
-                discountText = `${parseFloat(offer.discount_value)}₾`;
-            } else {
-                discountText = 'უფასო სერვისი';
-            }
-            document.getElementById('success-discount').textContent = discountText;
+            document.getElementById('success-title').textContent = offer.title;
+            document.getElementById('success-customer').textContent = `${customerName} (${formatPhone(currentPhone)})`;
+            document.getElementById('success-discount').textContent = getDiscountText(offer);
 
-            lucide.createIcons();
-        }
-
-        function showError(message) {
-            document.getElementById('redeem-card').classList.add('hidden');
-            document.getElementById('success-card').classList.add('hidden');
-            document.getElementById('error-card').classList.remove('hidden');
-            document.getElementById('error-message').textContent = message;
             lucide.createIcons();
         }
 
         function resetForm() {
-            document.getElementById('offer-code').value = '';
             document.getElementById('customer-phone').value = '';
-            document.getElementById('redeem-notes').value = '';
-            document.getElementById('offer-preview').classList.add('hidden');
-            currentOffer = null;
+            currentPhone = '';
+            currentCustomerName = '';
+            availableOffers = [];
 
             document.getElementById('success-card').classList.add('hidden');
-            document.getElementById('error-card').classList.add('hidden');
-            document.getElementById('redeem-card').classList.remove('hidden');
+            document.getElementById('offers-card').classList.add('hidden');
+            document.getElementById('lookup-card').classList.remove('hidden');
 
-            document.getElementById('offer-code').focus();
+            document.getElementById('customer-phone').focus();
             lucide.createIcons();
         }
 
-        // Focus on code input on load
-        document.getElementById('offer-code').focus();
+        // Focus on phone input on load
+        document.getElementById('customer-phone').focus();
     </script>
 </body>
 </html>
