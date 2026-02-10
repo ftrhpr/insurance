@@ -5065,6 +5065,24 @@ try {
                         <h3 class="text-sm font-semibold text-slate-700 mb-2">Services</h3>
                         <div id="qv-labor-list" class="text-xs text-slate-500">No services added</div>
                     </div>
+
+                    <!-- Versions Indicator -->
+                    <div id="qv-versions-indicator" class="mt-4 hidden">
+                        <div class="bg-violet-50 border border-violet-200 rounded-xl p-3 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="layers" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-violet-800"><span id="qv-versions-count">0</span> Invoice Versions</div>
+                                    <div class="text-xs text-violet-600" id="qv-active-version-name">No active version</div>
+                                </div>
+                            </div>
+                            <button onclick="window.location.href='edit_case.php?id=' + window.currentQuickViewId + '#versions'" class="px-3 py-1.5 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700">
+                                Manage
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -5093,6 +5111,9 @@ try {
             
             drawer.classList.remove('hidden');
             requestAnimationFrame(() => content.style.transform = 'translateX(0)');
+            
+            // Reset versions indicator to prevent stale flash
+            document.getElementById('qv-versions-indicator')?.classList.add('hidden');
             
             try {
                 const response = await fetch(`api.php?action=get_transfer&id=${caseId}`);
@@ -5173,7 +5194,7 @@ try {
                         partsTotal += total;
                         const partName = p.name || p.part_name || p.description || 'Unknown Part';
                         return `<div class="flex justify-between py-1 border-b text-slate-700">
-                            <span class="font-medium text-sm">${partName}</span>
+                            <span class="font-medium text-sm">${escapeHtml(partName)}</span>
                             <span class="text-xs text-slate-600">${qty} × ₾${price.toFixed(2)} = <strong class="text-slate-900">₾${total.toFixed(2)}</strong></span>
                         </div>`;
                     }).join('');
@@ -5212,7 +5233,7 @@ try {
                         laborTotal += total;
                         const laborName = l.description || l.name || l.service_name || 'Unknown Service';
                         return `<div class="flex justify-between py-1 border-b text-slate-700">
-                            <span class="font-medium text-sm">${laborName}</span>
+                            <span class="font-medium text-sm">${escapeHtml(laborName)}</span>
                             <span class="text-xs text-slate-600">${qty} × ₾${price.toFixed(2)} = <strong class="text-slate-900">₾${total.toFixed(2)}</strong></span>
                         </div>`;
                     }).join('');
@@ -5223,6 +5244,27 @@ try {
                 } else {
                     console.log('No services to display - empty or invalid');
                     laborListEl.innerHTML = '<div class="text-slate-400 italic text-xs">No services added</div>';
+                }
+
+                // Load versions indicator
+                try {
+                    const vRes = await fetch(`api.php?action=get_case_versions&transfer_id=${caseId}`);
+                    const vData = await vRes.json();
+                    const vIndicator = document.getElementById('qv-versions-indicator');
+                    if (vData.status === 'success' && vData.versions && vData.versions.length > 0) {
+                        vIndicator.classList.remove('hidden');
+                        document.getElementById('qv-versions-count').textContent = vData.versions.length;
+                        const activeV = vData.versions.find(v => v.is_active);
+                        document.getElementById('qv-active-version-name').textContent = activeV
+                            ? `Active: ${activeV.version_name} (₾${activeV.computed_total.toFixed(2)})`
+                            : 'No active version';
+                        lucide.createIcons();
+                    } else {
+                        vIndicator.classList.add('hidden');
+                    }
+                } catch (ve) {
+                    console.log('Versions check skipped:', ve);
+                    document.getElementById('qv-versions-indicator')?.classList.add('hidden');
                 }
             } catch (error) {
                 console.error('Error loading case:', error);

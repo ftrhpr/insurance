@@ -1078,6 +1078,170 @@ try {
                 </div>
                 <?php endif; ?>
 
+                <!-- Collapsible Section: Invoice Versions -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+                    <button @click="toggleSection('versions')" class="w-full flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Invoice Versions</h2>
+                                <p class="text-sm text-slate-600 mt-0.5">Create and manage different pricing options for this case</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span id="versions-count-badge" class="hidden sm:inline-flex items-center gap-1 px-3 py-1 bg-violet-100 rounded-full text-xs font-medium text-violet-700">
+                                <span id="versions-count">0</span> versions
+                            </span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" :class="{'rotate-180': isSectionOpen('versions')}"></i>
+                        </div>
+                    </button>
+
+                    <div x-show="isSectionOpen('versions')" x-cloak x-transition class="border-t border-slate-200">
+                        <div class="p-6">
+                            <!-- Action Bar -->
+                            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                                <p class="text-sm text-slate-600">
+                                    Each version is a separate pricing breakdown (parts + services + discounts). The <strong class="text-violet-700">active</strong> version appears on the public invoice.
+                                </p>
+                                <div class="flex gap-2">
+                                    <button onclick="openCreateVersionModal('current')" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                                        <i data-lucide="copy-plus" class="w-4 h-4"></i>
+                                        Import Current Data
+                                    </button>
+                                    <button onclick="openCreateVersionModal('blank')" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                        Blank Version
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Versions List -->
+                            <div id="versions-list" class="space-y-3">
+                                <div class="text-center py-8 text-slate-400">
+                                    <i data-lucide="layers" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                                    <p class="text-sm">No versions yet. Create one to get started.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create Version Modal -->
+                <div id="create-version-modal" class="hidden fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div class="bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-4 flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-white">New Version</h3>
+                            <button onclick="closeCreateVersionModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Version Name <span class="text-red-500">*</span></label>
+                                <input id="new-version-name" type="text" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none" placeholder="e.g. ორიგინალი ნაწილები, ალტერნატივა...">
+                            </div>
+                            <input type="hidden" id="new-version-copy-from" value="current">
+                            <div id="copy-from-info" class="bg-violet-50 border border-violet-200 rounded-lg p-3 text-sm text-violet-700">
+                                <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+                                Parts, services, and discounts will be copied from the current case data.
+                            </div>
+                        </div>
+                        <div class="px-6 py-4 bg-slate-50 border-t flex justify-end gap-3">
+                            <button onclick="closeCreateVersionModal()" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 text-sm font-medium">Cancel</button>
+                            <button onclick="submitCreateVersion()" class="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-bold shadow-sm">Create Version</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Version Detail Modal (for editing parts/labor) -->
+                <div id="version-detail-modal" class="hidden fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                        <div class="bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-4 flex items-center justify-between shrink-0">
+                            <div>
+                                <h3 class="text-lg font-bold text-white" id="version-detail-title">Edit Version</h3>
+                                <p class="text-sm text-white/70" id="version-detail-subtitle"></p>
+                            </div>
+                            <button onclick="closeVersionDetailModal()" class="text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div class="overflow-y-auto flex-1 p-6">
+                            <!-- Version Name & Notes -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Version Name</label>
+                                    <input id="vd-version-name" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Notes</label>
+                                    <input id="vd-notes" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none" placeholder="Optional notes...">
+                                </div>
+                            </div>
+
+                            <!-- Parts -->
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-slate-800 flex items-center gap-2">
+                                        <i data-lucide="package" class="w-4 h-4 text-blue-600"></i> Parts
+                                    </h4>
+                                    <button onclick="vdAddPart()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg">
+                                        <i data-lucide="plus" class="w-3 h-3"></i> Add Part
+                                    </button>
+                                </div>
+                                <div id="vd-parts-container" class="space-y-2"></div>
+                            </div>
+
+                            <!-- Services -->
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-slate-800 flex items-center gap-2">
+                                        <i data-lucide="wrench" class="w-4 h-4 text-indigo-600"></i> Services
+                                    </h4>
+                                    <button onclick="vdAddLabor()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg">
+                                        <i data-lucide="plus" class="w-3 h-3"></i> Add Service
+                                    </button>
+                                </div>
+                                <div id="vd-labor-container" class="space-y-2"></div>
+                            </div>
+
+                            <!-- Discounts & VAT -->
+                            <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                                <h4 class="font-semibold text-slate-800 mb-3">Discounts & VAT</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Parts Discount %</label>
+                                        <input id="vd-parts-discount" type="number" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" value="0">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Services Discount %</label>
+                                        <input id="vd-services-discount" type="number" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" value="0">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Global Discount %</label>
+                                        <input id="vd-global-discount" type="number" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" value="0">
+                                    </div>
+                                    <div class="flex items-end">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input id="vd-vat-enabled" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500">
+                                            <span class="text-sm font-medium text-slate-700">VAT 18%</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <!-- Live Total Preview -->
+                                <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
+                                    <span class="text-sm font-medium text-slate-600">Computed Total:</span>
+                                    <span id="vd-computed-total" class="text-2xl font-bold text-violet-700">₾0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Footer -->
+                        <div class="px-6 py-4 bg-slate-50 border-t flex items-center justify-between shrink-0">
+                            <button onclick="closeVersionDetailModal()" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 text-sm font-medium">Cancel</button>
+                            <button onclick="saveVersionDetail()" class="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-bold shadow-sm">
+                                <i data-lucide="save" class="w-4 h-4 inline mr-1"></i> Save Version
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Collapsible Section: Communication -->
                  <div class="bg-white rounded-2xl border border-slate-200/80">
                     <button @click="toggleSection('communication')" class="w-full flex items-center justify-between p-5">
@@ -4734,6 +4898,385 @@ try {
         window.removeLabor = function(index) {
             window.caseEditor.removeLabor(index);
         };
+
+        // =====================================================
+        // INVOICE VERSIONS SYSTEM
+        // =====================================================
+        let caseVersions = [];
+        let editingVersionId = null;
+        let vdParts = [];
+        let vdLabor = [];
+        let versionActionInProgress = false;
+
+        async function loadVersions() {
+            try {
+                const res = await fetch(`api.php?action=get_case_versions&transfer_id=${CASE_ID}`, {
+                    headers: { 'X-CSRF-Token': CSRF_TOKEN }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    caseVersions = data.versions || [];
+                    renderVersionsList();
+                }
+            } catch (e) {
+                console.error('Failed to load versions:', e);
+            }
+        }
+
+        function renderVersionsList() {
+            const container = document.getElementById('versions-list');
+            const countEl = document.getElementById('versions-count');
+            const badgeEl = document.getElementById('versions-count-badge');
+            if (countEl) countEl.textContent = caseVersions.length;
+            if (badgeEl) badgeEl.style.display = caseVersions.length > 0 ? '' : 'none';
+
+            if (caseVersions.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i data-lucide="layers" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                        <p class="text-sm">No versions yet. Create one to get started.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = caseVersions.map(v => {
+                const isActive = v.is_active;
+                const borderClass = isActive ? 'border-violet-400 bg-violet-50/50 ring-1 ring-violet-200' : 'border-slate-200 bg-white hover:border-slate-300';
+                const date = new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                return `
+                <div class="rounded-xl border-2 ${borderClass} p-4 transition-all">
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-lg ${isActive ? 'bg-violet-600' : 'bg-slate-200'} flex items-center justify-center shrink-0">
+                                <i data-lucide="${isActive ? 'check-circle' : 'file-text'}" class="w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500'}"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-bold text-slate-800 truncate">${escapeHtml(v.version_name)}</span>
+                                    ${isActive ? '<span class="px-2 py-0.5 bg-violet-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wide">Active</span>' : ''}
+                                </div>
+                                <div class="text-xs text-slate-500 mt-0.5">${v.parts_count} parts · ${v.labor_count} services · ${date}</div>
+                                ${v.notes ? `<div class="text-xs text-slate-500 mt-0.5 italic truncate">${escapeHtml(v.notes)}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-lg font-bold ${isActive ? 'text-violet-700' : 'text-slate-700'}">₾${v.computed_total.toFixed(2)}</span>
+                            <div class="flex gap-1">
+                                <button onclick="openVersionDetail(${v.id})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                ${!isActive ? `
+                                <button onclick="setActiveVersion(${v.id})" class="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors" title="Set as Active">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteVersion(${v.id})" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>` : `
+                                <button onclick="copyPublicVersionLink(${v.id})" class="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Copy Public Link">
+                                    <i data-lucide="link" class="w-4 h-4"></i>
+                                </button>`}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function openCreateVersionModal(copyFrom) {
+            document.getElementById('new-version-name').value = '';
+            document.getElementById('new-version-copy-from').value = copyFrom;
+            const info = document.getElementById('copy-from-info');
+            if (copyFrom === 'current') {
+                info.innerHTML = '<i data-lucide="info" class="w-4 h-4 inline mr-1"></i> Parts, services, and discounts will be copied from the current case data.';
+                info.className = 'bg-violet-50 border border-violet-200 rounded-lg p-3 text-sm text-violet-700';
+            } else {
+                info.innerHTML = '<i data-lucide="info" class="w-4 h-4 inline mr-1"></i> A blank version with no items will be created.';
+                info.className = 'bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-600';
+            }
+            document.getElementById('create-version-modal').classList.remove('hidden');
+            lucide.createIcons();
+            document.getElementById('new-version-name').focus();
+        }
+
+        function closeCreateVersionModal() {
+            document.getElementById('create-version-modal').classList.add('hidden');
+        }
+
+        async function submitCreateVersion() {
+            const name = document.getElementById('new-version-name').value.trim();
+            if (!name) {
+                showToast('Error', 'Please enter a version name', 'error');
+                return;
+            }
+            if (versionActionInProgress) return;
+            versionActionInProgress = true;
+            const copyFrom = document.getElementById('new-version-copy-from').value;
+
+            try {
+                const res = await fetch('api.php?action=create_case_version', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                    body: JSON.stringify({
+                        transfer_id: CASE_ID,
+                        version_name: name,
+                        copy_from: copyFrom === 'blank' ? null : copyFrom
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast('Version Created', `"${name}" has been created.`, 'success');
+                    closeCreateVersionModal();
+                    loadVersions();
+                } else {
+                    showToast('Error', data.message || 'Failed to create version', 'error');
+                }
+            } catch (e) {
+                showToast('Error', 'Network error', 'error');
+            } finally {
+                versionActionInProgress = false;
+            }
+        }
+
+        async function setActiveVersion(versionId) {
+            if (versionActionInProgress) return;
+            if (!confirm('Set this version as the active invoice?')) return;
+            versionActionInProgress = true;
+            try {
+                const res = await fetch('api.php?action=set_active_version', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                    body: JSON.stringify({ id: versionId })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast('Active Version Updated', 'The public invoice now shows this version.', 'success');
+                    loadVersions();
+                } else {
+                    showToast('Error', data.message || 'Failed', 'error');
+                }
+            } catch (e) { showToast('Error', 'Network error', 'error'); }
+            finally { versionActionInProgress = false; }
+        }
+
+        async function deleteVersion(versionId) {
+            if (versionActionInProgress) return;
+            const vObj = caseVersions.find(v => v.id == versionId);
+            const name = vObj ? vObj.version_name : 'this version';
+            if (!confirm(`Delete version "${name}"? This cannot be undone.`)) return;
+            versionActionInProgress = true;
+            try {
+                const res = await fetch('api.php?action=delete_case_version', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                    body: JSON.stringify({ id: versionId })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast('Version Deleted', `"${name}" has been removed.`, 'success');
+                    loadVersions();
+                } else {
+                    showToast('Error', data.message || 'Failed', 'error');
+                }
+            } catch (e) { showToast('Error', 'Network error', 'error'); }
+            finally { versionActionInProgress = false; }
+        }
+
+        function copyPublicVersionLink(versionId) {
+            const slug = '<?php echo htmlspecialchars($case['slug'] ?? ''); ?>';
+            const base = window.location.origin + window.location.pathname.replace('edit_case.php', 'public_invoice.php');
+            const url = slug ? `${base}?slug=${slug}&version=${versionId}` : `${base}?id=${CASE_ID}&version=${versionId}`;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('Link Copied', 'Public invoice link copied to clipboard.', 'success');
+            }).catch(() => {
+                showToast('Copy Failed', url, 'info');
+            });
+        }
+
+        // --- Version Detail Editor ---
+        async function openVersionDetail(versionId) {
+            editingVersionId = versionId;
+            const version = caseVersions.find(v => v.id == versionId);
+            if (!version) return;
+
+            document.getElementById('version-detail-title').textContent = `Edit: ${version.version_name}`;
+            document.getElementById('version-detail-subtitle').textContent = version.is_active ? '★ Active Version' : '';
+            document.getElementById('vd-version-name').value = version.version_name;
+            document.getElementById('vd-notes').value = version.notes || '';
+            document.getElementById('vd-parts-discount').value = version.parts_discount_percent || 0;
+            document.getElementById('vd-services-discount').value = version.services_discount_percent || 0;
+            document.getElementById('vd-global-discount').value = version.global_discount_percent || 0;
+            document.getElementById('vd-vat-enabled').checked = version.vat_enabled;
+
+            vdParts = JSON.parse(JSON.stringify(version.repair_parts || []));
+            vdLabor = JSON.parse(JSON.stringify(version.repair_labor || []));
+
+            renderVdParts();
+            renderVdLabor();
+            vdRecalcTotal();
+
+            document.getElementById('version-detail-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeVersionDetailModal() {
+            document.getElementById('version-detail-modal').classList.add('hidden');
+            editingVersionId = null;
+        }
+
+        function renderVdParts() {
+            const container = document.getElementById('vd-parts-container');
+            if (vdParts.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-400 italic py-3 text-center">No parts added</div>';
+                return;
+            }
+            container.innerHTML = vdParts.map((p, i) => `
+                <div class="flex items-center gap-2 bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                    <input type="text" value="${escapeHtml(p.name || '')}" onchange="vdUpdatePart(${i},'name',this.value)" class="flex-1 min-w-0 px-2 py-1.5 border border-slate-300 rounded text-sm" placeholder="Part name">
+                    <input type="number" value="${p.quantity ?? 1}" onchange="vdUpdatePart(${i},'quantity',this.value)" class="w-16 px-2 py-1.5 border border-slate-300 rounded text-sm text-center" min="0" step="1" title="Qty">
+                    <input type="number" value="${p.unit_price ?? 0}" onchange="vdUpdatePart(${i},'unit_price',this.value)" class="w-24 px-2 py-1.5 border border-slate-300 rounded text-sm text-right" min="0" step="0.01" title="Price">
+                    <input type="number" value="${p.discount_percent ?? 0}" onchange="vdUpdatePart(${i},'discount_percent',this.value)" class="w-16 px-2 py-1.5 border border-slate-300 rounded text-sm text-center" min="0" max="100" step="1" title="Disc %">
+                    <span class="text-xs font-semibold text-slate-700 w-20 text-right shrink-0">₾${vdItemTotal(p.quantity ?? 1, p.unit_price ?? 0, p.discount_percent ?? 0)}</span>
+                    <button onclick="vdRemovePart(${i})" class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>`).join('');
+            lucide.createIcons();
+        }
+
+        function renderVdLabor() {
+            const container = document.getElementById('vd-labor-container');
+            if (vdLabor.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-400 italic py-3 text-center">No services added</div>';
+                return;
+            }
+            container.innerHTML = vdLabor.map((l, i) => `
+                <div class="flex items-center gap-2 bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                    <input type="text" value="${escapeHtml(l.description || l.name || '')}" onchange="vdUpdateLabor(${i},'description',this.value)" class="flex-1 min-w-0 px-2 py-1.5 border border-slate-300 rounded text-sm" placeholder="Service description">
+                    <input type="number" value="${l.quantity ?? l.hours ?? 1}" onchange="vdUpdateLabor(${i},'quantity',this.value)" class="w-16 px-2 py-1.5 border border-slate-300 rounded text-sm text-center" min="0" step="1" title="Qty">
+                    <input type="number" value="${l.unit_rate ?? l.hourly_rate ?? 0}" onchange="vdUpdateLabor(${i},'unit_rate',this.value)" class="w-24 px-2 py-1.5 border border-slate-300 rounded text-sm text-right" min="0" step="0.01" title="Rate">
+                    <input type="number" value="${l.discount_percent ?? 0}" onchange="vdUpdateLabor(${i},'discount_percent',this.value)" class="w-16 px-2 py-1.5 border border-slate-300 rounded text-sm text-center" min="0" max="100" step="1" title="Disc %">
+                    <span class="text-xs font-semibold text-slate-700 w-20 text-right shrink-0">₾${vdItemTotal(l.quantity ?? l.hours ?? 1, l.unit_rate ?? l.hourly_rate ?? 0, l.discount_percent ?? 0)}</span>
+                    <button onclick="vdRemoveLabor(${i})" class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>`).join('');
+            lucide.createIcons();
+        }
+
+        function numVal(v, def) { const n = parseFloat(v); return isNaN(n) ? def : n; }
+
+        function vdItemTotal(qty, price, disc) {
+            return (numVal(qty, 1) * numVal(price, 0) * (1 - numVal(disc, 0)/100)).toFixed(2);
+        }
+
+        function vdAddPart() {
+            vdParts.push({ name: '', quantity: 1, unit_price: 0, discount_percent: 0 });
+            renderVdParts();
+            vdRecalcTotal();
+        }
+        function vdRemovePart(i) {
+            vdParts.splice(i, 1);
+            renderVdParts();
+            vdRecalcTotal();
+        }
+        function vdUpdatePart(i, field, val) {
+            if (['quantity','unit_price','discount_percent'].includes(field)) val = parseFloat(val)||0;
+            vdParts[i][field] = val;
+            renderVdParts();
+            vdRecalcTotal();
+        }
+        function vdAddLabor() {
+            vdLabor.push({ description: '', quantity: 1, unit_rate: 0, discount_percent: 0 });
+            renderVdLabor();
+            vdRecalcTotal();
+        }
+        function vdRemoveLabor(i) {
+            vdLabor.splice(i, 1);
+            renderVdLabor();
+            vdRecalcTotal();
+        }
+        function vdUpdateLabor(i, field, val) {
+            if (['quantity','unit_rate','discount_percent'].includes(field)) val = parseFloat(val)||0;
+            vdLabor[i][field] = val;
+            renderVdLabor();
+            vdRecalcTotal();
+        }
+
+        function vdRecalcTotal() {
+            let partsTotal = 0;
+            vdParts.forEach(p => {
+                partsTotal += numVal(p.quantity, 1) * numVal(p.unit_price, 0) * (1 - numVal(p.discount_percent, 0)/100);
+            });
+            let laborTotal = 0;
+            vdLabor.forEach(l => {
+                laborTotal += numVal(l.quantity ?? l.hours, 1) * numVal(l.unit_rate ?? l.hourly_rate, 0) * (1 - numVal(l.discount_percent, 0)/100);
+            });
+            const pDisc = parseFloat(document.getElementById('vd-parts-discount').value)||0;
+            const sDisc = parseFloat(document.getElementById('vd-services-discount').value)||0;
+            const gDisc = parseFloat(document.getElementById('vd-global-discount').value)||0;
+            const vat = document.getElementById('vd-vat-enabled').checked;
+
+            const afterParts = partsTotal * (1 - pDisc/100);
+            const afterLabor = laborTotal * (1 - sDisc/100);
+            let grand = (afterParts + afterLabor) * (1 - gDisc/100);
+            if (vat) grand *= 1.18;
+
+            document.getElementById('vd-computed-total').textContent = '₾' + grand.toFixed(2);
+        }
+
+        // Live recalc on discount/VAT changes
+        ['vd-parts-discount','vd-services-discount','vd-global-discount'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', vdRecalcTotal);
+        });
+        document.getElementById('vd-vat-enabled')?.addEventListener('change', vdRecalcTotal);
+
+        async function saveVersionDetail() {
+            if (!editingVersionId) return;
+
+            const versionName = document.getElementById('vd-version-name').value.trim();
+            if (!versionName) {
+                showToast('Error', 'Version name is required', 'error');
+                document.getElementById('vd-version-name').focus();
+                return;
+            }
+            if (versionActionInProgress) return;
+            versionActionInProgress = true;
+
+            const payload = {
+                id: editingVersionId,
+                version_name: versionName,
+                notes: document.getElementById('vd-notes').value.trim() || null,
+                repair_parts: vdParts,
+                repair_labor: vdLabor,
+                parts_discount_percent: parseFloat(document.getElementById('vd-parts-discount').value) || 0,
+                services_discount_percent: parseFloat(document.getElementById('vd-services-discount').value) || 0,
+                global_discount_percent: parseFloat(document.getElementById('vd-global-discount').value) || 0,
+                vat_enabled: document.getElementById('vd-vat-enabled').checked
+            };
+
+            try {
+                const res = await fetch('api.php?action=update_case_version', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast('Version Saved', 'All changes saved.', 'success');
+                    closeVersionDetailModal();
+                    loadVersions();
+                } else {
+                    showToast('Error', data.message || 'Save failed', 'error');
+                }
+            } catch (e) {
+                showToast('Error', 'Network error', 'error');
+            } finally {
+                versionActionInProgress = false;
+            }
+        }
+
+        // Load versions on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadVersions();
+        });
     </script>
     
     <!-- Image Lightbox Modal -->

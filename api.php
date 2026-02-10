@@ -3976,6 +3976,304 @@ try {
         jsonResponse(['status' => 'success', 'redemptions' => $redemptions]);
     }
 
+    // =================================================================
+    // CASE VERSIONS API
+    // =================================================================
+
+    // GET all versions for a case
+    if ($action === 'get_case_versions' && $method === 'GET') {
+        $transfer_id = intval($_GET['transfer_id'] ?? 0);
+        if ($transfer_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Invalid transfer ID']);
+        }
+
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM case_versions WHERE transfer_id = ? ORDER BY is_active DESC, created_at DESC");
+            $stmt->execute([$transfer_id]);
+            $versions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Decode JSON fields
+            foreach ($versions as &$v) {
+                $v['repair_parts'] = json_decode($v['repair_parts'] ?? '[]', true) ?: [];
+                $v['repair_labor'] = json_decode($v['repair_labor'] ?? '[]', true) ?: [];
+                $v['parts_discount_percent'] = floatval($v['parts_discount_percent']);
+                $v['services_discount_percent'] = floatval($v['services_discount_percent']);
+                $v['global_discount_percent'] = floatval($v['global_discount_percent']);
+                $v['vat_enabled'] = (bool)$v['vat_enabled'];
+                $v['is_active'] = (bool)$v['is_active'];
+
+                // Compute totals
+                $partsTotal = 0;
+                foreach ($v['repair_parts'] as $p) {
+                    $qty = floatval($p['quantity'] ?? 1);
+                    $price = floatval($p['unit_price'] ?? 0);
+                    $disc = floatval($p['discount_percent'] ?? 0);
+                    $partsTotal += $qty * $price * (1 - $disc / 100);
+                }
+                $laborTotal = 0;
+                foreach ($v['repair_labor'] as $l) {
+                    $qty = floatval($l['quantity'] ?? $l['hours'] ?? 1);
+                    $rate = floatval($l['unit_rate'] ?? $l['hourly_rate'] ?? 0);
+                    $disc = floatval($l['discount_percent'] ?? 0);
+                    $laborTotal += $qty * $rate * (1 - $disc / 100);
+                }
+                $afterParts = $partsTotal * (1 - $v['parts_discount_percent'] / 100);
+                $afterLabor = $laborTotal * (1 - $v['services_discount_percent'] / 100);
+                $afterCategory = $afterParts + $afterLabor;
+                $grandTotal = $afterCategory * (1 - $v['global_discount_percent'] / 100);
+                if ($v['vat_enabled']) $grandTotal *= 1.18;
+                $v['computed_total'] = round($grandTotal, 2);
+                $v['parts_count'] = count($v['repair_parts']);
+                $v['labor_count'] = count($v['repair_labor']);
+            }
+            unset($v);
+
+            jsonResponse(['status' => 'success', 'versions' => $versions]);
+        } catch (Exception $e) {
+            error_log("get_case_versions error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error occurred']);
+        }
+    }
+
+    // CREATE a new version (optionally copying from transfers or another version)
+    if ($action === 'create_case_version' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+
+        $data = getJsonInput();
+        $transfer_id = intval($data['transfer_id'] ?? 0);
+        $version_name = trim($data['version_name'] ?? '');
+        $copy_from = $data['copy_from'] ?? null; // 'current' or version_id
+
+        if ($transfer_id <= 0 || !$version_name) {
+            jsonResponse(['status' => 'error', 'message' => 'transfer_id and version_name are required']);
+        }
+
+        try {
+            $repair_parts = [];
+            $repair_labor = [];
+            $parts_disc = 0;
+            $services_disc = 0;
+            $global_disc = 0;
+            $vat_enabled = 0;
+
+            if ($copy_from === 'current') {
+                // Copy from the transfers row
+                $stmt = $pdo->prepare("SELECT repair_parts, repair_labor, parts_discount_percent, services_discount_percent, global_discount_percent, vat_enabled FROM transfers WHERE id = ?");
+                $stmt->execute([$transfer_id]);
+                $src = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($src) {
+                    $repair_parts = json_decode($src['repair_parts'] ?? '[]', true) ?: [];
+                    $repair_labor = json_decode($src['repair_labor'] ?? '[]', true) ?: [];
+                    $parts_disc = floatval($src['parts_discount_percent'] ?? 0);
+                    $services_disc = floatval($src['services_discount_percent'] ?? 0);
+                    $global_disc = floatval($src['global_discount_percent'] ?? 0);
+                    $vat_enabled = !empty($src['vat_enabled']) ? 1 : 0;
+                }
+            } elseif (is_numeric($copy_from) && intval($copy_from) > 0) {
+                // Copy from another version
+                $stmt = $pdo->prepare("SELECT repair_parts, repair_labor, parts_discount_percent, services_discount_percent, global_discount_percent, vat_enabled FROM case_versions WHERE id = ? AND transfer_id = ?");
+                $stmt->execute([intval($copy_from), $transfer_id]);
+                $src = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($src) {
+                    $repair_parts = json_decode($src['repair_parts'] ?? '[]', true) ?: [];
+                    $repair_labor = json_decode($src['repair_labor'] ?? '[]', true) ?: [];
+                    $parts_disc = floatval($src['parts_discount_percent'] ?? 0);
+                    $services_disc = floatval($src['services_discount_percent'] ?? 0);
+                    $global_disc = floatval($src['global_discount_percent'] ?? 0);
+                    $vat_enabled = !empty($src['vat_enabled']) ? 1 : 0;
+                }
+            }
+            // else: blank version
+
+            // Clamp discount ranges to 0-100
+            $parts_disc = max(0, min(100, floatval($parts_disc)));
+            $services_disc = max(0, min(100, floatval($services_disc)));
+            $global_disc = max(0, min(100, floatval($global_disc)));
+
+            // Check if this is the first version — auto-set as active
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM case_versions WHERE transfer_id = ?");
+            $stmt->execute([$transfer_id]);
+            $existingCount = $stmt->fetchColumn();
+            $is_active = ($existingCount == 0) ? 1 : 0;
+
+            $stmt = $pdo->prepare("INSERT INTO case_versions (transfer_id, version_name, repair_parts, repair_labor, parts_discount_percent, services_discount_percent, global_discount_percent, vat_enabled, is_active, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $transfer_id,
+                $version_name,
+                json_encode($repair_parts),
+                json_encode($repair_labor),
+                $parts_disc,
+                $services_disc,
+                $global_disc,
+                $vat_enabled,
+                $is_active,
+                getCurrentUserId()
+            ]);
+
+            jsonResponse(['status' => 'success', 'version_id' => $pdo->lastInsertId(), 'is_active' => (bool)$is_active]);
+        } catch (Exception $e) {
+            error_log("create_case_version error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error occurred']);
+        }
+    }
+
+    // UPDATE a version's data
+    if ($action === 'update_case_version' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+
+        $data = getJsonInput();
+        $version_id = intval($data['id'] ?? $_GET['id'] ?? 0);
+        if ($version_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Version ID is required']);
+        }
+
+        try {
+            // Server-side validation: version_name must not be empty
+            if (array_key_exists('version_name', $data) && empty(trim($data['version_name'] ?? ''))) {
+                jsonResponse(['status' => 'error', 'message' => 'Version name cannot be empty']);
+            }
+
+            // Clamp discount ranges to 0-100
+            foreach (['parts_discount_percent', 'services_discount_percent', 'global_discount_percent'] as $discField) {
+                if (array_key_exists($discField, $data)) {
+                    $data[$discField] = max(0, min(100, floatval($data[$discField])));
+                }
+            }
+
+            $updates = [];
+            $params = [];
+
+            $allowed = ['version_name', 'repair_parts', 'repair_labor', 'parts_discount_percent', 'services_discount_percent', 'global_discount_percent', 'vat_enabled', 'notes'];
+            foreach ($allowed as $field) {
+                if (array_key_exists($field, $data)) {
+                    $updates[] = "`$field` = ?";
+                    if (is_array($data[$field])) {
+                        $params[] = json_encode($data[$field]);
+                    } elseif ($field === 'vat_enabled') {
+                        $params[] = $data[$field] ? 1 : 0;
+                    } else {
+                        $params[] = $data[$field];
+                    }
+                }
+            }
+
+            if (empty($updates)) {
+                jsonResponse(['status' => 'error', 'message' => 'No fields to update']);
+            }
+
+            $params[] = $version_id;
+            $sql = "UPDATE case_versions SET " . implode(', ', $updates) . " WHERE id = ?";
+            $pdo->prepare($sql)->execute($params);
+
+            jsonResponse(['status' => 'success']);
+        } catch (Exception $e) {
+            error_log("update_case_version error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error occurred']);
+        }
+    }
+
+    // SET a version as active (deactivates all others for that case)
+    if ($action === 'set_active_version' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+
+        $data = getJsonInput();
+        $version_id = intval($data['id'] ?? $_GET['id'] ?? 0);
+        if ($version_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Version ID is required']);
+        }
+
+        try {
+            // Get transfer_id from version
+            $stmt = $pdo->prepare("SELECT transfer_id FROM case_versions WHERE id = ?");
+            $stmt->execute([$version_id]);
+            $transfer_id = $stmt->fetchColumn();
+            if (!$transfer_id) {
+                jsonResponse(['status' => 'error', 'message' => 'Version not found']);
+            }
+
+            // Use transaction to prevent orphaned state if second UPDATE fails
+            $pdo->beginTransaction();
+            $pdo->prepare("UPDATE case_versions SET is_active = 0 WHERE transfer_id = ?")->execute([$transfer_id]);
+            $pdo->prepare("UPDATE case_versions SET is_active = 1 WHERE id = ?")->execute([$version_id]);
+            $pdo->commit();
+
+            jsonResponse(['status' => 'success']);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log("set_active_version error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error occurred']);
+        }
+    }
+
+    // DELETE a version
+    if ($action === 'delete_case_version' && $method === 'POST') {
+        if (!checkPermission('manager')) {
+            http_response_code(403);
+            jsonResponse(['error' => 'Manager access required']);
+        }
+
+        $data = getJsonInput();
+        $version_id = intval($data['id'] ?? $_GET['id'] ?? 0);
+        if ($version_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Version ID is required']);
+        }
+
+        try {
+            // Prevent deleting the active version
+            $stmt = $pdo->prepare("SELECT is_active, transfer_id FROM case_versions WHERE id = ?");
+            $stmt->execute([$version_id]);
+            $version = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$version) {
+                jsonResponse(['status' => 'error', 'message' => 'Version not found']);
+            }
+            if ($version['is_active']) {
+                jsonResponse(['status' => 'error', 'message' => 'Cannot delete the active version. Set another version as active first.']);
+            }
+
+            $pdo->prepare("DELETE FROM case_versions WHERE id = ?")->execute([$version_id]);
+            jsonResponse(['status' => 'success']);
+        } catch (Exception $e) {
+            error_log("delete_case_version error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error occurred']);
+        }
+    }
+
+    // GET a single version by ID (for public invoice)
+    if ($action === 'get_case_version' && $method === 'GET') {
+        $version_id = intval($_GET['id'] ?? 0);
+        if ($version_id <= 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Version ID is required']);
+        }
+
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM case_versions WHERE id = ?");
+            $stmt->execute([$version_id]);
+            $v = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$v) {
+                jsonResponse(['status' => 'error', 'message' => 'Version not found']);
+            }
+
+            $v['repair_parts'] = json_decode($v['repair_parts'] ?? '[]', true) ?: [];
+            $v['repair_labor'] = json_decode($v['repair_labor'] ?? '[]', true) ?: [];
+            $v['vat_enabled'] = (bool)$v['vat_enabled'];
+            $v['is_active'] = (bool)$v['is_active'];
+
+            jsonResponse(['status' => 'success', 'version' => $v]);
+        } catch (Exception $e) {
+            error_log("get_case_version error: " . $e->getMessage());
+            jsonResponse(['status' => 'error', 'message' => 'Database error occurred']);
+        }
+    }
+
     // Default response if no action matched
     jsonResponse(['error' => 'Unknown action: ' . $action]);
 

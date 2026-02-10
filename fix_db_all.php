@@ -333,6 +333,31 @@ try {
 
     echo "---------------------------------\n";
 
+    // ---------------------------------------------------------
+    // TABLE: case_versions (Invoice Versioning System)
+    // ---------------------------------------------------------
+    echo "\nChecking table 'case_versions'...\n";
+    $sql = "CREATE TABLE IF NOT EXISTS case_versions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        transfer_id INT NOT NULL,
+        version_name VARCHAR(100) NOT NULL DEFAULT 'Version 1',
+        repair_parts JSON DEFAULT NULL,
+        repair_labor JSON DEFAULT NULL,
+        parts_discount_percent DECIMAL(5,2) DEFAULT 0,
+        services_discount_percent DECIMAL(5,2) DEFAULT 0,
+        global_discount_percent DECIMAL(5,2) DEFAULT 0,
+        vat_enabled TINYINT(1) DEFAULT 0,
+        notes TEXT DEFAULT NULL,
+        is_active TINYINT(1) DEFAULT 0,
+        created_by INT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_transfer_id (transfer_id),
+        INDEX idx_active (transfer_id, is_active)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    echo " - Table structure verified.\n";
+
     // Fix SMS Templates table
     require_once 'fix_sms_templates.php';
 

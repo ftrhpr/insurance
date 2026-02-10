@@ -63,24 +63,80 @@ try {
     // Set case_id from database if not provided via GET
     $case_id = $case['id'];
     
-    // Decode JSON fields safely
+    // ── Load Case Versions ──
+    $all_versions = [];
+    $active_version = null;
+    $selected_version = null;
+    $version_param = isset($_GET['version']) ? intval($_GET['version']) : 0;
+
+    try {
+        // Check if case_versions table exists
+        $tableCheck = $pdo->query("SHOW TABLES LIKE 'case_versions'");
+        if ($tableCheck->rowCount() > 0) {
+            $vstmt = $pdo->prepare("SELECT * FROM case_versions WHERE transfer_id = ? ORDER BY is_active DESC, created_at DESC");
+            $vstmt->execute([$case_id]);
+            $all_versions = $vstmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Find active version
+            foreach ($all_versions as $v) {
+                if ($v['is_active']) { $active_version = $v; break; }
+            }
+
+            // Determine which version to display
+            if ($version_param > 0) {
+                foreach ($all_versions as $v) {
+                    if ($v['id'] == $version_param) { $selected_version = $v; break; }
+                }
+                // Fall back to active version if the param doesn't match any version
+                if (!$selected_version && $active_version) {
+                    $selected_version = $active_version;
+                }
+            } elseif ($active_version) {
+                $selected_version = $active_version;
+            }
+        }
+    } catch (Exception $e) {
+        // Silently ignore - table may not exist yet
+    }
+
+    // Decode JSON fields - use version data if available, otherwise case data
     $repair_parts = [];
     $repair_labor = [];
-    
-    if (!empty($case['repair_parts'])) {
-        $decoded = json_decode($case['repair_parts'], true);
-        if (is_array($decoded)) $repair_parts = $decoded;
+    $using_version = false;
+    $version_name = '';
+
+    if ($selected_version) {
+        $using_version = true;
+        $version_name = $selected_version['version_name'] ?? '';
+        if (!empty($selected_version['repair_parts'])) {
+            $decoded = json_decode($selected_version['repair_parts'], true);
+            if (is_array($decoded)) $repair_parts = $decoded;
+        }
+        if (!empty($selected_version['repair_labor'])) {
+            $decoded = json_decode($selected_version['repair_labor'], true);
+            if (is_array($decoded)) $repair_labor = $decoded;
+        }
+    } else {
+        if (!empty($case['repair_parts'])) {
+            $decoded = json_decode($case['repair_parts'], true);
+            if (is_array($decoded)) $repair_parts = $decoded;
+        }
+        if (!empty($case['repair_labor'])) {
+            $decoded = json_decode($case['repair_labor'], true);
+            if (is_array($decoded)) $repair_labor = $decoded;
+        }
     }
-    
-    if (!empty($case['repair_labor'])) {
-        $decoded = json_decode($case['repair_labor'], true);
-        if (is_array($decoded)) $repair_labor = $decoded;
+
+    // Get discount percentages - from version or case
+    if ($selected_version) {
+        $parts_discount_pct = floatval($selected_version['parts_discount_percent'] ?? 0);
+        $services_discount_pct = floatval($selected_version['services_discount_percent'] ?? 0);
+        $global_discount_pct = floatval($selected_version['global_discount_percent'] ?? 0);
+    } else {
+        $parts_discount_pct = isset($case['parts_discount_percent']) ? floatval($case['parts_discount_percent']) : 0;
+        $services_discount_pct = isset($case['services_discount_percent']) ? floatval($case['services_discount_percent']) : 0;
+        $global_discount_pct = isset($case['global_discount_percent']) ? floatval($case['global_discount_percent']) : 0;
     }
-    
-    // Get discount percentages - handle missing columns gracefully
-    $parts_discount_pct = isset($case['parts_discount_percent']) ? floatval($case['parts_discount_percent']) : 0;
-    $services_discount_pct = isset($case['services_discount_percent']) ? floatval($case['services_discount_percent']) : 0;
-    $global_discount_pct = isset($case['global_discount_percent']) ? floatval($case['global_discount_percent']) : 0;
     
     // Get case images
     $case_images = [];
@@ -126,7 +182,7 @@ $total_discount = $parts_discount_amount + $services_discount_amount + $global_d
 $grand_total = $after_category_discounts - $global_discount_amount;
 
 // Calculate VAT if enabled (18% of grand total)
-$vat_enabled = isset($case['vat_enabled']) ? (bool)$case['vat_enabled'] : false;
+$vat_enabled = $selected_version ? (bool)($selected_version['vat_enabled'] ?? false) : (isset($case['vat_enabled']) ? (bool)$case['vat_enabled'] : false);
 $vat_amount = $vat_enabled ? $grand_total * 0.18 : 0;
 $final_total = $grand_total + $vat_amount;
 
@@ -182,9 +238,62 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                     <div class="text-right">
                         <div class="text-sm text-blue-100">ინვოისი</div>
                         <div class="text-2xl font-bold">#<?php echo $case_id; ?></div>
+                        <?php if ($using_version): ?>
+                        <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-white/20 rounded-full text-xs text-white/90">
+                            <i data-lucide="layers" class="w-3 h-3"></i>
+                            <?php echo htmlspecialchars($version_name); ?>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
+
+            <?php if (count($all_versions) > 0): ?>
+            <!-- Version Selector Bar -->
+            <div class="px-8 py-4 bg-gradient-to-r from-violet-50 to-purple-50 border-b border-violet-200/60 no-print">
+                <div class="flex items-center gap-2 mb-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-violet-600"></i>
+                    <span class="text-sm font-semibold text-violet-800">ფასის ვარიანტები</span>
+                    <span class="text-xs text-violet-500">(<?php echo count($all_versions); ?>)</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <?php
+                    // Build base URL
+                    $base_params = [];
+                    if (!empty($slug)) $base_params['slug'] = $slug;
+                    else $base_params['id'] = $case_id;
+
+                    foreach ($all_versions as $v):
+                        $v_params = $base_params;
+                        $v_params['version'] = $v['id'];
+                        $v_url = '?' . http_build_query($v_params);
+                        $is_selected = $selected_version && $selected_version['id'] == $v['id'];
+                        $is_active_v = $v['is_active'];
+
+                        // Compute quick total for this version
+                        $v_parts = json_decode($v['repair_parts'] ?? '[]', true) ?: [];
+                        $v_labor = json_decode($v['repair_labor'] ?? '[]', true) ?: [];
+                        $v_pt = 0; foreach ($v_parts as $p) { $v_pt += (floatval($p['quantity']??1)) * (floatval($p['unit_price']??0)) * (1 - (floatval($p['discount_percent']??0))/100); }
+                        $v_lt = 0; foreach ($v_labor as $l) { $v_lt += (floatval($l['quantity']??$l['hours']??1)) * (floatval($l['unit_rate']??$l['hourly_rate']??0)) * (1 - (floatval($l['discount_percent']??0))/100); }
+                        $v_pd = floatval($v['parts_discount_percent']??0); $v_sd = floatval($v['services_discount_percent']??0); $v_gd = floatval($v['global_discount_percent']??0);
+                        $v_after = ($v_pt*(1-$v_pd/100)) + ($v_lt*(1-$v_sd/100));
+                        $v_grand = $v_after * (1-$v_gd/100);
+                        if ($v['vat_enabled']) $v_grand *= 1.18;
+                    ?>
+                    <a href="<?php echo htmlspecialchars($v_url); ?>"
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border-2 <?php echo $is_selected
+                            ? 'bg-violet-600 text-white border-violet-600 shadow-lg shadow-violet-200'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-violet-300 hover:bg-violet-50'; ?>">
+                        <?php if ($is_active_v): ?>
+                        <span class="w-2 h-2 rounded-full <?php echo $is_selected ? 'bg-white' : 'bg-violet-500'; ?> shrink-0"></span>
+                        <?php endif; ?>
+                        <span class="truncate max-w-[120px]"><?php echo htmlspecialchars($v['version_name']); ?></span>
+                        <span class="<?php echo $is_selected ? 'text-violet-200' : 'text-slate-400'; ?> font-bold">₾<?php echo number_format($v_grand, 2); ?></span>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <!-- Customer & Vehicle Info -->
             <div class="px-8 py-6 border-b border-gray-200">
