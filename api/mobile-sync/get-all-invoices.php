@@ -110,16 +110,16 @@ try {
         }
 
         $services = array_map(function($labor) {
-            // CPanel stores service name in 'description' field, app uses 'name'
+            // CPanel stores service name in 'name' or 'description' field
             $laborName = $labor['name'] ?? $labor['description'] ?? 'Unknown Service';
 
-            // Get quantity - CPanel uses 'quantity', app uses 'hours' or 'count'
-            $serviceCount = floatval($labor['quantity'] ?? $labor['hours'] ?? $labor['count'] ?? 1);
+            // Get quantity - stored as 'hours', fallback to 'quantity' or 'count'
+            $serviceCount = floatval($labor['hours'] ?? $labor['quantity'] ?? $labor['count'] ?? 1);
 
-            // Get unit rate - CPanel uses 'unit_rate'
-            $unitRate = floatval($labor['unit_rate'] ?? $labor['rate'] ?? $labor['hourly_rate'] ?? 0);
+            // Get unit rate - stored as 'rate' or 'hourly_rate', fallback to 'unit_rate'
+            $unitRate = floatval($labor['rate'] ?? $labor['hourly_rate'] ?? $labor['unit_rate'] ?? 0);
 
-            // Calculate total price = unit_rate * quantity
+            // Get total price - stored as 'price', calculate if 0
             $servicePrice = floatval($labor['price'] ?? 0);
             if ($servicePrice == 0 && $unitRate > 0) {
                 $servicePrice = $unitRate * $serviceCount;
