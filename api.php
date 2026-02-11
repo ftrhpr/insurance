@@ -3980,6 +3980,69 @@ try {
     // CASE VERSIONS API
     // =================================================================
 
+    /**
+     * Sync active version's parts, labor, discounts, VAT and computed total
+     * back to the transfers row so the case amount always reflects the active invoice.
+     */
+    function syncActiveVersionToTransfer($pdo, $transfer_id) {
+        $stmt = $pdo->prepare("SELECT * FROM case_versions WHERE transfer_id = ? AND is_active = 1 LIMIT 1");
+        $stmt->execute([$transfer_id]);
+        $v = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$v) return; // no active version — nothing to sync
+
+        $repairParts = json_decode($v['repair_parts'] ?? '[]', true) ?: [];
+        $repairLabor = json_decode($v['repair_labor'] ?? '[]', true) ?: [];
+        $partsDisc   = floatval($v['parts_discount_percent'] ?? 0);
+        $servicesDisc = floatval($v['services_discount_percent'] ?? 0);
+        $globalDisc  = floatval($v['global_discount_percent'] ?? 0);
+        $vatEnabled  = !empty($v['vat_enabled']);
+
+        // Compute totals (same formula as get_case_versions)
+        $partsTotal = 0;
+        foreach ($repairParts as $p) {
+            $qty   = floatval($p['quantity'] ?? 1);
+            $price = floatval($p['unit_price'] ?? 0);
+            $disc  = floatval($p['discount_percent'] ?? 0);
+            $partsTotal += $qty * $price * (1 - $disc / 100);
+        }
+        $laborTotal = 0;
+        foreach ($repairLabor as $l) {
+            $qty  = floatval($l['quantity'] ?? $l['hours'] ?? 1);
+            $rate = floatval($l['unit_rate'] ?? $l['hourly_rate'] ?? 0);
+            $disc = floatval($l['discount_percent'] ?? 0);
+            $laborTotal += $qty * $rate * (1 - $disc / 100);
+        }
+
+        $afterParts = $partsTotal * (1 - $partsDisc / 100);
+        $afterLabor = $laborTotal * (1 - $servicesDisc / 100);
+        $grandTotal = ($afterParts + $afterLabor) * (1 - $globalDisc / 100);
+        if ($vatEnabled) $grandTotal *= 1.18;
+        $grandTotal = round($grandTotal, 2);
+
+        // Update the transfers row with active version data
+        $stmt = $pdo->prepare("
+            UPDATE transfers SET
+                amount = ?,
+                repair_parts = ?,
+                repair_labor = ?,
+                parts_discount_percent = ?,
+                services_discount_percent = ?,
+                global_discount_percent = ?,
+                vat_enabled = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([
+            $grandTotal,
+            $v['repair_parts'],
+            $v['repair_labor'],
+            $partsDisc,
+            $servicesDisc,
+            $globalDisc,
+            $vatEnabled ? 1 : 0,
+            $transfer_id
+        ]);
+    }
+
     // GET all versions for a case
     if ($action === 'get_case_versions' && $method === 'GET') {
         $transfer_id = intval($_GET['transfer_id'] ?? 0);
@@ -4113,6 +4176,11 @@ try {
                 getCurrentUserId()
             ]);
 
+            // If this is the first (auto-active) version, sync to transfers
+            if ($is_active) {
+                syncActiveVersionToTransfer($pdo, $transfer_id);
+            }
+
             jsonResponse(['status' => 'success', 'version_id' => $pdo->lastInsertId(), 'is_active' => (bool)$is_active]);
         } catch (Exception $e) {
             error_log("create_case_version error: " . $e->getMessage());
@@ -4171,6 +4239,14 @@ try {
             $sql = "UPDATE case_versions SET " . implode(', ', $updates) . " WHERE id = ?";
             $pdo->prepare($sql)->execute($params);
 
+            // If this version is active, sync updated data to transfers
+            $stmt = $pdo->prepare("SELECT transfer_id, is_active FROM case_versions WHERE id = ?");
+            $stmt->execute([$version_id]);
+            $versionRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($versionRow && $versionRow['is_active']) {
+                syncActiveVersionToTransfer($pdo, $versionRow['transfer_id']);
+            }
+
             jsonResponse(['status' => 'success']);
         } catch (Exception $e) {
             error_log("update_case_version error: " . $e->getMessage());
@@ -4204,6 +4280,8 @@ try {
             $pdo->beginTransaction();
             $pdo->prepare("UPDATE case_versions SET is_active = 0 WHERE transfer_id = ?")->execute([$transfer_id]);
             $pdo->prepare("UPDATE case_versions SET is_active = 1 WHERE id = ?")->execute([$version_id]);
+            // Sync active version data (parts, labor, discounts, total) to transfers row
+            syncActiveVersionToTransfer($pdo, $transfer_id);
             $pdo->commit();
 
             jsonResponse(['status' => 'success']);
