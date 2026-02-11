@@ -47,6 +47,8 @@ try {
         'slug'          => "VARCHAR(32) UNIQUE DEFAULT NULL",
         'vat_enabled'   => "TINYINT(1) DEFAULT 0",
         'vat_amount'    => "DECIMAL(10,2) DEFAULT 0.00",
+        'vat_rate'      => "DECIMAL(5,2) DEFAULT 0.00",
+        'subtotal_before_vat' => "DECIMAL(10,2) DEFAULT 0.00",
         'repair_stage'  => "VARCHAR(50) NULL DEFAULT NULL",
         'repair_assignments' => "JSON NULL DEFAULT NULL",
         'stage_timers'  => "JSON NULL DEFAULT NULL",

@@ -3981,8 +3981,8 @@ try {
     // =================================================================
 
     /**
-     * Sync active version's parts, labor, discounts, VAT and computed total
-     * back to the transfers row so the case amount always reflects the active invoice.
+     * Sync active version's parts, labor, discounts, VAT and computed totals
+     * back to the transfers row so the whole case reflects the active invoice.
      */
     function syncActiveVersionToTransfer($pdo, $transfer_id) {
         $stmt = $pdo->prepare("SELECT * FROM case_versions WHERE transfer_id = ? AND is_active = 1 LIMIT 1");
@@ -3997,7 +3997,7 @@ try {
         $globalDisc  = floatval($v['global_discount_percent'] ?? 0);
         $vatEnabled  = !empty($v['vat_enabled']);
 
-        // Compute totals (same formula as get_case_versions)
+        // Compute item-level totals (same formula as get_case_versions / public_invoice)
         $partsTotal = 0;
         foreach ($repairParts as $p) {
             $qty   = floatval($p['quantity'] ?? 1);
@@ -4013,13 +4013,17 @@ try {
             $laborTotal += $qty * $rate * (1 - $disc / 100);
         }
 
+        // Apply category and global discounts
         $afterParts = $partsTotal * (1 - $partsDisc / 100);
         $afterLabor = $laborTotal * (1 - $servicesDisc / 100);
-        $grandTotal = ($afterParts + $afterLabor) * (1 - $globalDisc / 100);
-        if ($vatEnabled) $grandTotal *= 1.18;
-        $grandTotal = round($grandTotal, 2);
+        $subtotalBeforeVat = round(($afterParts + $afterLabor) * (1 - $globalDisc / 100), 2);
 
-        // Update the transfers row with active version data
+        // Compute VAT
+        $vatRate   = $vatEnabled ? 18 : 0;
+        $vatAmount = $vatEnabled ? round($subtotalBeforeVat * 0.18, 2) : 0;
+        $grandTotal = round($subtotalBeforeVat + $vatAmount, 2);
+
+        // Update the transfers row with all active version data
         $stmt = $pdo->prepare("
             UPDATE transfers SET
                 amount = ?,
@@ -4028,7 +4032,10 @@ try {
                 parts_discount_percent = ?,
                 services_discount_percent = ?,
                 global_discount_percent = ?,
-                vat_enabled = ?
+                vat_enabled = ?,
+                vat_amount = ?,
+                vat_rate = ?,
+                subtotal_before_vat = ?
             WHERE id = ?
         ");
         $stmt->execute([
@@ -4039,6 +4046,9 @@ try {
             $servicesDisc,
             $globalDisc,
             $vatEnabled ? 1 : 0,
+            $vatAmount,
+            $vatRate,
+            $subtotalBeforeVat,
             $transfer_id
         ]);
     }
