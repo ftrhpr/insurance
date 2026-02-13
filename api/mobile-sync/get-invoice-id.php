@@ -77,7 +77,7 @@ try {
     if (!empty($invoice['repair_parts'])) {
         $rawParts = json_decode($invoice['repair_parts'], true) ?? [];
         // Transform parts to app format
-        $parts = array_map(function($part) {
+        $parts = array_map(function($part, $index) {
             $quantity = intval($part['quantity'] ?? 1);
             $unitPrice = floatval($part['unit_price'] ?? $part['unitPrice'] ?? 0);
             $totalPrice = floatval($part['total_price'] ?? $part['totalPrice'] ?? 0);
@@ -94,6 +94,7 @@ try {
             }
 
             return [
+                'id' => $part['id'] ?? ('part-' . $index),
                 'name' => $part['name'] ?? $part['name_en'] ?? 'Unknown Part',
                 'nameKa' => $part['name'] ?? $part['name_en'] ?? 'უცნობი ნაწილი',
                 'partName' => $part['partName'] ?? $part['name'] ?? 'Unknown Part',
@@ -104,7 +105,7 @@ try {
                 'notes' => $part['notes'] ?? '',
                 'damages' => $damages,
             ];
-        }, $rawParts);
+        }, $rawParts, array_keys($rawParts));
     }
     
     // Parse photos from case_images column

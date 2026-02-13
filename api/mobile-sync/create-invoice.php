@@ -126,7 +126,13 @@ try {
             $unitPrice = !empty($part['unitPrice']) ? floatval($part['unitPrice']) : 0;
             $totalPrice = !empty($part['totalPrice']) ? floatval($part['totalPrice']) : ($quantity * $unitPrice);
             
-            return [
+            // Preserve damages (tagged work on photos) if present
+            $damages = [];
+            if (!empty($part['damages']) && is_array($part['damages'])) {
+                $damages = $part['damages'];
+            }
+            
+            $result = [
                 'name' => $partName,
                 'name_en' => !empty($part['name']) ? $part['name'] : $partName,
                 'part_number' => !empty($part['partNumber']) ? $part['partNumber'] : '',
@@ -134,7 +140,15 @@ try {
                 'unit_price' => $unitPrice,
                 'total_price' => $totalPrice,
                 'notes' => !empty($part['notes']) ? $part['notes'] : '',
+                'damages' => $damages,
             ];
+            
+            // Preserve part id for client-side matching
+            if (!empty($part['id'])) {
+                $result['id'] = $part['id'];
+            }
+            
+            return $result;
         }, $parts);
         
         $partsJson = json_encode($transformedParts, JSON_UNESCAPED_UNICODE);
