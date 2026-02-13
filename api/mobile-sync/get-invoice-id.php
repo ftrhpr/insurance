@@ -107,6 +107,58 @@ try {
         }, $rawParts);
     }
     
+    // Parse photos from case_images column
+    $photos = [];
+    if (!empty($invoice['case_images'])) {
+        $rawImages = json_decode($invoice['case_images'], true) ?? [];
+        
+        // Parse systemLogs for enriched photo metadata (tags, labels)
+        $photoMetadata = [];
+        if (!empty($invoice['systemLogs'])) {
+            $systemLogs = json_decode($invoice['systemLogs'], true);
+            if (is_array($systemLogs)) {
+                foreach ($systemLogs as $meta) {
+                    if (isset($meta['url'])) {
+                        $photoMetadata[$meta['url']] = $meta;
+                    }
+                }
+            }
+        }
+        
+        // Transform to app photo format: { url, label, tags, tagCount, uploadedAt }
+        foreach ($rawImages as $index => $img) {
+            $url = is_string($img) ? $img : ($img['url'] ?? $img['downloadURL'] ?? $img['uri'] ?? null);
+            if (!$url) continue;
+            
+            $label = 'Photo ' . ($index + 1);
+            $tags = [];
+            $uploadedAt = null;
+            
+            // Enrich from systemLogs metadata if available
+            if (isset($photoMetadata[$url])) {
+                $meta = $photoMetadata[$url];
+                $label = $meta['label'] ?? $label;
+                $tags = $meta['tags'] ?? [];
+                $uploadedAt = $meta['uploadedAt'] ?? null;
+            }
+            // Or enrich from object properties if image was stored as object
+            if (is_array($img)) {
+                $label = $img['label'] ?? $label;
+                $tags = $img['tags'] ?? $tags;
+                $uploadedAt = $img['uploadedAt'] ?? $uploadedAt;
+            }
+            
+            $photos[] = [
+                'url' => $url,
+                'label' => $label,
+                'tags' => $tags,
+                'tagCount' => count($tags),
+                'uploadedAt' => $uploadedAt ?? date('c'),
+            ];
+        }
+        error_log("get-invoice-id: Parsed " . count($photos) . " photos from case_images");
+    }
+
     // Transform repair_labor back to app format
     // Debug: log raw labor data to understand what CPanel stores
     if (!empty($repairLabor)) {
@@ -167,6 +219,7 @@ try {
         'user_response' => $invoice['user_response'] ?? null,
         'services' => $services,
         'parts' => $parts,
+        'photos' => $photos,
         'services_discount_percent' => floatval($invoice['services_discount_percent'] ?? 0),
         'parts_discount_percent' => floatval($invoice['parts_discount_percent'] ?? 0),
         'global_discount_percent' => floatval($invoice['global_discount_percent'] ?? 0),
@@ -175,8 +228,10 @@ try {
         'vatRate' => floatval($invoice['vat_rate'] ?? 0),
         'subtotalBeforeVAT' => floatval($invoice['subtotal_before_vat'] ?? 0),
         'serviceDate' => $invoice['serviceDate'] ?? $invoice['service_date'] ?? null,
+        'createdAt' => $invoice['created_at'] ?? $invoice['serviceDate'] ?? $invoice['service_date'] ?? null,
         'updatedAt' => $invoice['updatedAt'] ?? $invoice['updated_at'] ?? null,
         'internalNotes' => !empty($invoice['internalNotes']) ? json_decode($invoice['internalNotes'], true) : [],
+        'voiceNotes' => !empty($invoice['voiceNotes']) ? json_decode($invoice['voiceNotes'], true) : [],
         'caseType' => $invoice['case_type'] ?? null,
         'assigned_mechanic' => $invoice['assigned_mechanic'] ?? null,
         'assignedMechanic' => $invoice['assigned_mechanic'] ?? null,
@@ -185,6 +240,8 @@ try {
         'statusId' => isset($invoice['status_id']) ? intval($invoice['status_id']) : null,
         'repair_status_id' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
         'repairStatusId' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
+        'status_changed_at' => $invoice['status_changed_at'] ?? null,
+        'statusChangedAt' => $invoice['status_changed_at'] ?? null,
     ];
     
     error_log("Invoice full data fetched successfully. ID: " . $invoice['id']);
