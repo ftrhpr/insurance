@@ -80,6 +80,8 @@ try {
         'statusId' => 'status_id',
         'repair_status_id' => 'repair_status_id',
         'repairStatusId' => 'repair_status_id',
+        'status_changed_at' => 'status_changed_at',
+        'statusChangedAt' => 'status_changed_at',
     ];
     
     // Debug: Log all received data keys and image fields
@@ -326,6 +328,21 @@ try {
     // If no fields to update, return error
     if (empty($updateFields)) {
         sendResponse(false, null, 'No fields to update', 400);
+    }
+    
+    // Auto-set status_changed_at when status_id changes (and it wasn't explicitly provided)
+    if ((isset($data['status_id']) || isset($data['statusId'])) && !in_array('status_changed_at', $processedDbFields)) {
+        try {
+            $checkCol = $pdo->query("SHOW COLUMNS FROM transfers LIKE 'status_changed_at'");
+            if ($checkCol && $checkCol->rowCount() > 0) {
+                $updateFields[] = "status_changed_at = :auto_status_changed_at";
+                $bindParams[':auto_status_changed_at'] = date('Y-m-d H:i:s');
+                $processedDbFields[] = 'status_changed_at';
+                error_log("Auto-setting status_changed_at for status_id change");
+            }
+        } catch (Exception $scEx) {
+            error_log("Warning: Could not auto-set status_changed_at: " . $scEx->getMessage());
+        }
     }
     
     // Try to update the updated_at timestamp when any field changes

@@ -2,151 +2,108 @@
 
 ## Architecture Overview
 
-This is a **single-page PHP application** for managing automotive insurance service cases at OTOMOTORS. The system uses:
-- **Frontend**: Vanilla JavaScript with Tailwind CSS (no build step, CDN-based)
-- **Backend**: PHP with PDO MySQL
-- **Database**: MySQL with 4 main tables: `transfers`, `vehicles`, `customer_reviews`, `sms_templates`
-- **Push Notifications**: Firebase Cloud Messaging (FCM) v1 API
-- **SMS**: gosms.ge API integration
+Single-page PHP application for automotive insurance case management. No build tools - all files are edited directly.
 
-Key files:
-- `index.php` - Manager dashboard (1700+ lines, all frontend logic inline)
-- `api.php` - Backend API endpoints (REST-like GET/POST actions)
-- `public_view.php` - Customer-facing order status page
-- `config.php` - Database credentials (centralized)
+**Stack**: PHP 7+/PDO MySQL backend, Vanilla JS + Tailwind CSS (CDN) frontend, Firebase FCM for push, gosms.ge for SMS.
 
-## Critical Workflows
+**Key Files**:
+- [index.php](../index.php) - Manager dashboard (~5k lines, inline JS/PHP)
+- [api.php](../api.php) - All REST endpoints (~3k lines)
+- [workflow.php](../workflow.php) - Kanban repair board (admin/manager only)
+- [technician_dashboard.php](../technician_dashboard.php) - Technician work view
+- [api/mobile-sync/](../api/mobile-sync/) - Mobile app sync endpoints
+- [config.php](../config.php) - Centralized DB credentials & API keys
 
-### 8-Stage Service Status Pipeline
-The core business logic revolves around these statuses (in `transfers` table):
-1. **New** → Initial import state (displayed separately)
-2. **Processing** → Triggers welcome SMS
-3. **Called** (Contacted) → Triggers schedule SMS
-4. **Parts Ordered** → Triggers parts ordered SMS
-5. **Parts Arrived** → Triggers confirmation SMS with `{link}` to `public_view.php`
-6. **Scheduled** → Service date set, triggers schedule SMS
-7. **Completed** → Triggers review request SMS (auto-sent on status change)
-8. **Issue** → Exception handling
+## Two-Track Case System
 
-**Status change triggers automated SMS** via `saveEdit()` function (line ~1300 in `index.php`).
+### Case Status Pipeline (Customer Journey)
+Statuses stored in `statuses` table, loaded dynamically. Status changes trigger SMS via `saveEdit()`:
+- New → Processing → Called → Parts Ordered → Parts Arrived → Scheduled → Already in service → Completed
+- "Completed" auto-sends review request SMS
 
-### Georgian Bank Statement Parsing
-The system parses Georgian-language SMS messages using regex patterns in `parseBankText()`:
-```javascript
-/მანქანის ნომერი:\s*([A-Za-z0-9]+)\s*დამზღვევი:\s*([^,]+),\s*([\d\.]+)/i
-```
-Extracts: plate number, customer name, amount, and optional franchise fees.
+### Repair Workflow Stages (Technician Journey)  
+8-stage kanban tracked in `repair_stage` column:
+`backlog` → `disassembly` → `body_work` → `processing_for_painting` → `preparing_for_painting` → `painting` → `assembling` → `done`
 
-### Customer Response Flow
-1. Manager changes status to "Parts Arrived" → SMS sent with unique link
-2. Customer opens `public_view.php?id={transfer_id}`
-3. Customer confirms or requests reschedule (stored in `user_response` column)
-4. Manager receives FCM notification via `sendFCM_V1()` function
+JSON columns track work: `repair_assignments` (tech assignments), `stage_timers` (time tracking), `stage_statuses` (per-stage completion).
 
-## Database Schema
+## User Roles & Access
 
-### `transfers` table (main entity)
-- Core fields: `plate`, `name`, `amount`, `status`, `phone`, `franchise`
-- Customer tracking: `user_response` (Pending/Confirmed/Reschedule Requested), `service_date`
-- Reviews: `review_stars`, `review_comment` (inline storage, not separate table initially)
-- JSON columns: `internalNotes`, `systemLogs` (activity tracking)
+| Role | Access |
+|------|--------|
+| `admin` | Full access: users, translations, workflow, statuses, SMS parsing |
+| `manager` | Dashboard, cases, parts, reviews, templates |
+| `technician` | Technician dashboard only (auto-redirected from index.php) |
+| `viewer` | Read-only dashboard access |
 
-### `customer_reviews` table
-- Separate moderation system with `status` (pending/approved/rejected)
-- References order by `order_id` (VARCHAR, not FK)
+Role-based navigation in [sidebar.php](../sidebar.php). Auth check: `$_SESSION['user_id']`, `$_SESSION['role']`.
 
-### User Management System
-- `users` table with roles: `viewer`, `manager`, `admin`
-- Session-based authentication with role-based permissions
-- Admin-only access to user management via `users.php`
+## API Pattern
 
-### SMS Parsing Templates
-- `sms_parsing_templates` table for configurable parsing patterns
-- Supports multiple insurance companies with custom regex and field mappings
-- Managed via `sms_parsing.php` (admin only)
+All endpoints: `api.php?action={action_name}` with GET/POST methods.
 
-## Development Patterns
-
-### SMS Template System
-All SMS messages use template placeholders:
-- `{name}`, `{plate}`, `{amount}`, `{link}`, `{date}`
-- Stored in `sms_templates` table with slug keys (registered, schedule, parts_arrived, completed, etc.)
-- Function: `getFormattedMessage(type, data)` (line ~980 in `index.php`)
-
-### Translation System
-- Multilanguage support via `language.php` with `__()` function
-- Session-stored language preference (`en`, `ka`, `ru`)
-- Fallback to English defaults
-
-### Offline-First Design
-The app checks `connection-status` div text before API calls:
-```javascript
-if (document.getElementById('connection-status').innerText.includes('Offline')) {
-    // Update local arrays (transfers, vehicles)
-} else {
-    await fetchAPI('endpoint', 'POST', data);
-}
-```
-
-### API Endpoint Pattern
-All endpoints follow: `api.php?action={action_name}`
-- Use `getJsonInput()` for POST body (not `$_POST`)
-- Always return JSON via `jsonResponse()` helper
-- Example: `api.php?action=update_transfer&id=123` (POST)
-
-### Firebase Setup
-- Config in both `index.php` (inline) and `firebase-messaging-sw.js`
-- Uses service worker for background notifications
-- Token registration stored in `manager_tokens` table
-- OAuth 2.0 JWT flow for v1 API access (see `getAccessToken()` in `api.php`)
-
-## Common Tasks
-
-### Adding a New Status
-1. Update status options in `index.php` (lines ~238, ~549)
-2. Add status color mapping in `renderTable()` (~line 1180)
-3. Add SMS trigger logic in `saveEdit()` (~line 1300)
-4. Create/update template in SMS Templates tab
-
-### Adding API Endpoint
 ```php
+// Adding new endpoint in api.php:
 if ($action === 'my_action' && $method === 'POST') {
-    $data = getJsonInput();
-    // Process data
+    if (!checkPermission('manager')) jsonResponse(['error' => 'Forbidden']);
+    $data = getJsonInput();  // Use this, NOT $_POST
+    // ... process
     jsonResponse(['status' => 'success']);
 }
 ```
 
-### Modal Pattern
-All modals use global functions:
-- `window.openEditModal(id)` / `window.closeModal()`
-- Store current editing ID: `window.currentEditingId`
-- Save via `window.saveEdit()` (async)
+Public endpoints (no auth): `login`, `get_order_status`, `submit_review`, `get_public_transfer`, `user_respond`
 
-## Security Notes
+## Frontend Patterns
 
-- **Database credentials hardcoded** in `api.php` and `config.php` (production values present)
-- **SMS API key exposed** in `api.php` line 272
-- No authentication system - manager portal is open access
-- CORS set to `*` (all origins allowed)
+**JavaScript API calls** via `fetchAPI()` in [js/api.js](../js/api.js):
+```javascript
+await fetchAPI('update_transfer', 'POST', { id: 123, status: 'Completed' });
+```
 
-## Testing & Debugging
+**Global modal functions**: `window.openEditModal(id)`, `window.closeModal()`, `window.saveEdit()`
 
-- `test_connection.php` - Verify database connectivity
-- `test_fcm.php` - Test Firebase push notifications
-- `debug_fcm.html` - Frontend FCM testing interface
-- Browser console logs all API calls via `fetchAPI()` function
+**Toast notifications**: `showToast(title, message, 'success'|'error'|'info'|'urgent')`
 
-## File Upload Deployment
-Per `QUICK_START.txt`, deployment uses FTP:
-- Upload `index.php` and `api.php` after changes
-- Run database migrations via `fix_db_all.php`
-- Hard refresh browser cache (Ctrl+Shift+R)
+**Icons**: After injecting HTML, call `lucide.createIcons()` to render Lucide icons.
 
-## Key Conventions
+## Translation System
 
-- **Plate normalization**: Use `normalizePlate()` for comparisons (removes spaces/hyphens)
-- **Date format**: MySQL datetime for `service_date`, converted to HTML5 datetime-local (`YYYY-MM-DDTHH:MM`)
-- **Lucide icons**: Always re-init with `lucide.createIcons()` after dynamic HTML injection
-- **Toast notifications**: `showToast(title, [message], type)` - types: success/error/info/urgent
-- **No build tools**: All changes are direct file edits, no npm/webpack/vite
+Multilanguage via [language.php](../language.php) with `__($key, $default)`:
+```php
+echo __('dashboard.title', 'OTOMOTORS Manager Portal');
+```
+Languages: `en` (default), `ka` (Georgian), `ru` (Russian). Admin manages via `translations.php`.
+
+## SMS Template Placeholders
+
+Templates in `sms_templates` table use: `{name}`, `{plate}`, `{amount}`, `{link}`, `{date}`
+
+SMS parsing for Georgian bank statements uses configurable regex in `sms_parsing_templates` table.
+
+## Database Migrations
+
+Schema changes via SQL files (`add_*.sql`). Run migrations:
+1. Execute SQL in phpMyAdmin, OR
+2. Run `fix_db_all.php` which aggregates common fixes
+
+## Deployment
+
+FTP upload workflow (no CI/CD):
+1. Edit files locally
+2. Upload via FTP (`Ctrl+Shift+P` → "FTP-Simple: Upload")  
+3. Hard refresh browser (`Ctrl+Shift+R`)
+
+## Testing/Debug Files
+
+- `test_connection.php` - DB connectivity
+- `test_fcm.php` - Firebase push
+- `debug_*.php` files - Various debugging helpers
+- Add `?debug=1` to workflow.php for admin error details
+
+## Critical Conventions
+
+- **Plate normalization**: Use `normalizePlate()` before comparisons (strips spaces/hyphens)
+- **JSON columns**: `system_logs`, `repair_assignments`, `stage_timers`, `stage_statuses` - always decode/encode
+- **No FK constraints**: Tables use VARCHAR IDs, not foreign keys
+- **CORS**: Set to `*` (all origins) - security consideration

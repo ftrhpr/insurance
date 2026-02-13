@@ -190,6 +190,8 @@ try {
             'statusId' => isset($invoice['status_id']) ? intval($invoice['status_id']) : null,
             'repair_status_id' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
             'repairStatusId' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
+            'status_changed_at' => $invoice['status_changed_at'] ?? null,
+            'statusChangedAt' => $invoice['status_changed_at'] ?? null,
         ];
     }, $invoices);
 
