@@ -393,15 +393,18 @@ function generateUniqueSlug($pdo, $customerName, $plate) {
     $baseSlug = preg_replace('/-+/', '-', $baseSlug);
     $baseSlug = trim($baseSlug, '-');
     
-    // If base slug is empty, use a random string
+    // If base slug is empty (e.g. Georgian-only names), use plate or random
     if (empty($baseSlug)) {
-        $baseSlug = 'invoice-' . substr(md5(uniqid()), 0, 8);
+        $baseSlug = 'case';
     }
     
-    $slug = $baseSlug;
+    // Always append a unique random suffix to prevent collisions
+    $uniqueSuffix = substr(md5(uniqid(mt_rand(), true)), 0, 6);
+    $slug = $baseSlug . '-' . $uniqueSuffix;
+    
     $counter = 1;
     
-    // Ensure uniqueness
+    // Ensure uniqueness (in the rare case of collision)
     while (true) {
         $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM transfers WHERE slug = :slug");
         $stmt->execute([':slug' => $slug]);
@@ -412,7 +415,7 @@ function generateUniqueSlug($pdo, $customerName, $plate) {
         }
         
         // Append counter and try again
-        $slug = $baseSlug . '-' . $counter;
+        $slug = $baseSlug . '-' . $uniqueSuffix . '-' . $counter;
         $counter++;
         
         // Prevent infinite loop
