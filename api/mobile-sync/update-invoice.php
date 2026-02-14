@@ -333,6 +333,16 @@ try {
                 }
             }
             
+            // Convert ISO 8601 datetime values to MySQL format for TIMESTAMP/DATETIME columns
+            if (in_array($dbField, ['status_changed_at', 'updated_at', 'created_at']) && is_string($value) && !empty($value)) {
+                try {
+                    $dt = new DateTime($value);
+                    $value = $dt->format('Y-m-d H:i:s');
+                } catch (Exception $dtEx) {
+                    error_log("Warning: Could not parse datetime for $dbField: $value");
+                }
+            }
+
             $updateFields[] = "$dbField = :$appField";
             $bindParams[":$appField"] = $value;
             $processedDbFields[] = $dbField; // Track processed DB columns
