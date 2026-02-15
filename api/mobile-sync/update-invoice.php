@@ -143,9 +143,26 @@ try {
             elseif (in_array($dbField, ['status_id', 'repair_status_id'])) {
                 $value = !empty($value) ? intval($value) : null;
             }
-            // Handle due_date as DATE field
+            // Handle due_date as DATETIME field (supports date-only or date+time)
             elseif ($dbField === 'due_date') {
-                $value = !empty($value) ? date('Y-m-d', strtotime($value)) : null;
+                if (!empty($value)) {
+                    $ts = strtotime($value);
+                    if ($ts === false) {
+                        error_log("due_date: strtotime failed for value: " . json_encode($value));
+                        $value = null;
+                    } else {
+                        // If time part is midnight (date-only input), store as date only
+                        if (date('H:i:s', $ts) === '00:00:00') {
+                            $value = date('Y-m-d', $ts);
+                        } else {
+                            $value = date('Y-m-d H:i:s', $ts);
+                        }
+                        error_log("due_date: input=" . json_encode($data[$appField]) . " -> stored=" . $value);
+                    }
+                } else {
+                    $value = null;
+                    error_log("due_date: clearing (set to null)");
+                }
             }
             // Handle boolean VAT enabled field
             elseif ($dbField === 'vat_enabled') {
