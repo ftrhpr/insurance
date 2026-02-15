@@ -82,6 +82,8 @@ try {
         'repairStatusId' => 'repair_status_id',
         'status_changed_at' => 'status_changed_at',
         'statusChangedAt' => 'status_changed_at',
+        'dueDate' => 'due_date',
+        'due_date' => 'due_date',
     ];
     
     // Debug: Log all received data keys and image fields
@@ -111,7 +113,7 @@ try {
         $shouldProcess = false;
         if (in_array($dbField, ['vat_enabled', 'vat_amount', 'vat_rate', 'subtotal_before_vat'])) {
             $shouldProcess = array_key_exists($appField, $data);
-        } elseif (in_array($dbField, ['repair_status', 'user_response', 'status', 'assigned_mechanic', 'status_id', 'repair_status_id'])) {
+        } elseif (in_array($dbField, ['repair_status', 'user_response', 'status', 'assigned_mechanic', 'status_id', 'repair_status_id', 'due_date'])) {
             // These fields should be processed even if they are null (to allow clearing)
             $shouldProcess = array_key_exists($appField, $data);
         } else {
@@ -140,6 +142,10 @@ try {
             // Handle integer fields
             elseif (in_array($dbField, ['status_id', 'repair_status_id'])) {
                 $value = !empty($value) ? intval($value) : null;
+            }
+            // Handle due_date as DATE field
+            elseif ($dbField === 'due_date') {
+                $value = !empty($value) ? date('Y-m-d', strtotime($value)) : null;
             }
             // Handle boolean VAT enabled field
             elseif ($dbField === 'vat_enabled') {

@@ -152,6 +152,8 @@ try {
         'statusId' => isset($invoice['status_id']) ? intval($invoice['status_id']) : null,
         'repair_status_id' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
         'repairStatusId' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
+        'due_date' => $invoice['due_date'] ?? null,
+        'dueDate' => $invoice['due_date'] ?? null,
     ];
     
     error_log("Invoice fetched successfully. ID: " . $invoice['id']);

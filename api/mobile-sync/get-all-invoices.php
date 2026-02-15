@@ -238,6 +238,8 @@ try {
             'repairStatusId' => isset($invoice['repair_status_id']) ? intval($invoice['repair_status_id']) : null,
             'status_changed_at' => $invoice['status_changed_at'] ?? null,
             'statusChangedAt' => $invoice['status_changed_at'] ?? null,
+            'due_date' => $invoice['due_date'] ?? null,
+            'dueDate' => $invoice['due_date'] ?? null,
         ];
     }, $invoices);
 
