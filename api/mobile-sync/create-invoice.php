@@ -343,7 +343,7 @@ try {
         ':status_id' => !empty($data['status_id']) ? intval($data['status_id']) : (!empty($data['statusId']) ? intval($data['statusId']) : null),
         ':repair_status_id' => !empty($data['repair_status_id']) ? intval($data['repair_status_id']) : (!empty($data['repairStatusId']) ? intval($data['repairStatusId']) : null),
         ':slug' => $slug,
-        ':due_date' => !empty($data['dueDate']) ? date('Y-m-d', strtotime($data['dueDate'])) : (!empty($data['due_date']) ? date('Y-m-d', strtotime($data['due_date'])) : null)
+        ':due_date' => !empty($data['dueDate']) ? (date('H:i:s', strtotime($data['dueDate'])) !== '00:00:00' ? date('Y-m-d H:i:s', strtotime($data['dueDate'])) : date('Y-m-d', strtotime($data['dueDate']))) : (!empty($data['due_date']) ? (date('H:i:s', strtotime($data['due_date'])) !== '00:00:00' ? date('Y-m-d H:i:s', strtotime($data['due_date'])) : date('Y-m-d', strtotime($data['due_date']))) : null)
     ]);
     
     $insertId = $pdo->lastInsertId();
