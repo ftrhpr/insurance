@@ -4375,8 +4375,8 @@ try {
             jsonResponse(['error' => 'Invalid request']);
         }
 
-        // Validate slug format if provided
-        if (!empty($slug) && !preg_match('/^[a-f0-9]{32}$/', $slug)) {
+        // Validate slug format if provided (alphanumeric, 8-64 chars)
+        if (!empty($slug) && !preg_match('/^[a-zA-Z0-9]{8,64}$/', $slug)) {
             http_response_code(400);
             jsonResponse(['error' => 'Invalid request']);
         }
