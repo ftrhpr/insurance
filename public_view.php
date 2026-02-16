@@ -229,8 +229,8 @@
         let currentStars = 0;
 
         async function init() {
-            // Validate: need either a valid slug (32 hex chars) or a legacy integer id
-            const hasSlug = /^[a-f0-9]{32}$/.test(slug);
+            // Validate: need either a valid slug or a legacy integer id
+            const hasSlug = slug.length >= 8 && /^[a-zA-Z0-9]+$/.test(slug);
             const hasId = /^\d+$/.test(legacyId);
             
             if (!hasSlug && !hasId) {
