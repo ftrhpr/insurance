@@ -4366,30 +4366,42 @@ try {
     if ($action === 'save_completion_signature' && $method === 'POST') {
         $data = getJsonInput();
         $slug = trim($data['slug'] ?? '');
+        $caseId = intval($data['id'] ?? 0);
         $signature = $data['signature'] ?? '';
 
-        // Validate slug
-        if (empty($slug) || !preg_match('/^[a-f0-9]{32}$/', $slug)) {
+        // Validate: need either slug or case ID
+        if (empty($slug) && $caseId <= 0) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Invalid request']);
+        }
+
+        // Validate slug format if provided
+        if (!empty($slug) && !preg_match('/^[a-f0-9]{32}$/', $slug)) {
             http_response_code(400);
             jsonResponse(['error' => 'Invalid request']);
         }
 
         // Validate signature data (must be a base64 PNG data URL)
-        if (empty($signature) || !preg_match('/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/', $signature)) {
+        if (empty($signature) || strpos($signature, 'data:image/png;base64,') !== 0) {
             http_response_code(400);
             jsonResponse(['error' => 'Invalid signature data']);
         }
 
-        // Limit signature size (max ~500KB base64)
-        if (strlen($signature) > 500000) {
+        // Limit signature size (max ~1MB base64)
+        if (strlen($signature) > 1000000) {
             http_response_code(400);
             jsonResponse(['error' => 'Signature data too large']);
         }
 
         try {
-            // Fetch the case by slug
-            $stmt = $pdo->prepare("SELECT id, status, status_id, completion_signature FROM transfers WHERE slug = ?");
-            $stmt->execute([$slug]);
+            // Fetch the case by slug or ID
+            if (!empty($slug)) {
+                $stmt = $pdo->prepare("SELECT id, status, status_id, completion_signature FROM transfers WHERE slug = ?");
+                $stmt->execute([$slug]);
+            } else {
+                $stmt = $pdo->prepare("SELECT id, status, status_id, completion_signature FROM transfers WHERE id = ?");
+                $stmt->execute([$caseId]);
+            }
             $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$transfer) {
@@ -4410,20 +4422,21 @@ try {
                 jsonResponse(['error' => 'This case has already been signed']);
             }
 
-            // Save signature
-            $stmt = $pdo->prepare("UPDATE transfers SET completion_signature = ?, signature_date = NOW() WHERE slug = ?");
-            $stmt->execute([$signature, $slug]);
+            // Save signature using the resolved transfer ID
+            $transferId = $transfer['id'];
+            $stmt = $pdo->prepare("UPDATE transfers SET completion_signature = ?, signature_date = NOW() WHERE id = ?");
+            $stmt->execute([$signature, $transferId]);
 
             // Log the signature event
-            $logStmt = $pdo->prepare("SELECT systemLogs FROM transfers WHERE slug = ?");
-            $logStmt->execute([$slug]);
+            $logStmt = $pdo->prepare("SELECT systemLogs FROM transfers WHERE id = ?");
+            $logStmt->execute([$transferId]);
             $logRow = $logStmt->fetch(PDO::FETCH_ASSOC);
             $logs = json_decode($logRow['systemLogs'] ?? '[]', true) ?: [];
             $logs[] = [
                 'timestamp' => date('c'),
                 'message' => 'Customer signed completion confirmation digitally'
             ];
-            $pdo->prepare("UPDATE transfers SET systemLogs = ? WHERE slug = ?")->execute([json_encode($logs), $slug]);
+            $pdo->prepare("UPDATE transfers SET systemLogs = ? WHERE id = ?")->execute([json_encode($logs), $transferId]);
 
             jsonResponse(['status' => 'success', 'message' => 'Signature saved successfully']);
         } catch (Exception $e) {

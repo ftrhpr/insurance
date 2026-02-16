@@ -824,7 +824,9 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                 if (!hasDrawn) return;
                 
                 const slug = '<?php echo htmlspecialchars($case['slug'] ?? '', ENT_QUOTES); ?>';
-                if (!slug) {
+                const caseId = <?php echo intval($case_id); ?>;
+                
+                if (!slug && !caseId) {
                     alert('ხელმოწერის შენახვა ვერ ხერხდება. გთხოვთ, სცადოთ მოგვიანებით.');
                     return;
                 }
@@ -838,11 +840,16 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                     saveBtn.innerHTML = '<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> იტვირთება...';
                 }
                 
+                // Build payload - use slug if available, otherwise case ID
+                const payload = { signature: signatureData };
+                if (slug) payload.slug = slug;
+                else payload.id = caseId;
+                
                 try {
                     const response = await fetch('api.php?action=save_completion_signature', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ slug: slug, signature: signatureData })
+                        body: JSON.stringify(payload)
                     });
                     
                     const result = await response.json();
