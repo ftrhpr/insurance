@@ -614,7 +614,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                 </div>
             </div>
 
-            <?php if (strtolower($case['status'] ?? '') === 'completed'): ?>
+            <?php if (strtolower($case['status'] ?? '') === 'completed' || intval($case['status_id'] ?? 0) === 8): ?>
             <!-- Completion Signature Section -->
             <div class="px-8 py-6 border-t border-gray-200" id="signature-section">
                 <?php if (!empty($case['completion_signature'])): ?>
@@ -711,7 +711,7 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
     <script>
         lucide.createIcons();
         
-        <?php if (strtolower($case['status'] ?? '') === 'completed' && empty($case['completion_signature'])): ?>
+        <?php if ((strtolower($case['status'] ?? '') === 'completed' || intval($case['status_id'] ?? 0) === 8) && empty($case['completion_signature'])): ?>
         // ── Signature Pad Logic ──
         (function() {
             const canvas = document.getElementById('signature-canvas');

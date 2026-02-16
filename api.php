@@ -4388,7 +4388,7 @@ try {
 
         try {
             // Fetch the case by slug
-            $stmt = $pdo->prepare("SELECT id, status, completion_signature FROM transfers WHERE slug = ?");
+            $stmt = $pdo->prepare("SELECT id, status, status_id, completion_signature FROM transfers WHERE slug = ?");
             $stmt->execute([$slug]);
             $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -4397,8 +4397,9 @@ try {
                 jsonResponse(['error' => 'Case not found']);
             }
 
-            // Only allow signing for completed cases
-            if (strtolower($transfer['status']) !== 'completed') {
+            // Only allow signing for completed cases (check both status name and status_id=8)
+            $isCompleted = strtolower($transfer['status'] ?? '') === 'completed' || intval($transfer['status_id'] ?? 0) === 8;
+            if (!$isCompleted) {
                 http_response_code(400);
                 jsonResponse(['error' => 'Case must be completed before signing']);
             }
