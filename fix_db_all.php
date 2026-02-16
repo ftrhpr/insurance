@@ -56,7 +56,10 @@ try {
         // Payment tracking
         'amount_paid'   => "DECIMAL(10,2) DEFAULT 0.00",
         'payment_status' => "ENUM('unpaid','partial','paid') DEFAULT 'unpaid'",
-        'last_payment_at' => "DATETIME DEFAULT NULL"
+        'last_payment_at' => "DATETIME DEFAULT NULL",
+        // Completion signature
+        'completion_signature' => "MEDIUMTEXT DEFAULT NULL",
+        'signature_date' => "DATETIME DEFAULT NULL"
     ];
 
     foreach ($columns as $col => $def) {

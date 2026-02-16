@@ -106,7 +106,7 @@ function getStageProgression() {
 }
 
 // Check authentication for protected endpoints
-$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond', 'get_public_offer', 'redeem_offer', 'track_offer_view'];
+$publicEndpoints = ['login', 'get_order_status', 'submit_review', 'get_public_transfer', 'user_respond', 'get_public_offer', 'redeem_offer', 'track_offer_view', 'save_completion_signature'];
 if (!in_array($action, $publicEndpoints) && empty($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode(['error' => 'Unauthorized']));
@@ -4359,6 +4359,76 @@ try {
         } catch (Exception $e) {
             error_log("get_case_version error: " . $e->getMessage());
             jsonResponse(['status' => 'error', 'message' => 'Database error occurred']);
+        }
+    }
+
+    // --- SAVE COMPLETION SIGNATURE (Public) ---
+    if ($action === 'save_completion_signature' && $method === 'POST') {
+        $data = getJsonInput();
+        $slug = trim($data['slug'] ?? '');
+        $signature = $data['signature'] ?? '';
+
+        // Validate slug
+        if (empty($slug) || !preg_match('/^[a-f0-9]{32}$/', $slug)) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Invalid request']);
+        }
+
+        // Validate signature data (must be a base64 PNG data URL)
+        if (empty($signature) || !preg_match('/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/', $signature)) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Invalid signature data']);
+        }
+
+        // Limit signature size (max ~500KB base64)
+        if (strlen($signature) > 500000) {
+            http_response_code(400);
+            jsonResponse(['error' => 'Signature data too large']);
+        }
+
+        try {
+            // Fetch the case by slug
+            $stmt = $pdo->prepare("SELECT id, status, completion_signature FROM transfers WHERE slug = ?");
+            $stmt->execute([$slug]);
+            $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$transfer) {
+                http_response_code(404);
+                jsonResponse(['error' => 'Case not found']);
+            }
+
+            // Only allow signing for completed cases
+            if (strtolower($transfer['status']) !== 'completed') {
+                http_response_code(400);
+                jsonResponse(['error' => 'Case must be completed before signing']);
+            }
+
+            // Prevent overwriting existing signature
+            if (!empty($transfer['completion_signature'])) {
+                http_response_code(400);
+                jsonResponse(['error' => 'This case has already been signed']);
+            }
+
+            // Save signature
+            $stmt = $pdo->prepare("UPDATE transfers SET completion_signature = ?, signature_date = NOW() WHERE slug = ?");
+            $stmt->execute([$signature, $slug]);
+
+            // Log the signature event
+            $logStmt = $pdo->prepare("SELECT systemLogs FROM transfers WHERE slug = ?");
+            $logStmt->execute([$slug]);
+            $logRow = $logStmt->fetch(PDO::FETCH_ASSOC);
+            $logs = json_decode($logRow['systemLogs'] ?? '[]', true) ?: [];
+            $logs[] = [
+                'timestamp' => date('c'),
+                'message' => 'Customer signed completion confirmation digitally'
+            ];
+            $pdo->prepare("UPDATE transfers SET systemLogs = ? WHERE slug = ?")->execute([json_encode($logs), $slug]);
+
+            jsonResponse(['status' => 'success', 'message' => 'Signature saved successfully']);
+        } catch (Exception $e) {
+            error_log('save_completion_signature error: ' . $e->getMessage());
+            http_response_code(500);
+            jsonResponse(['error' => 'Failed to save signature']);
         }
     }
 

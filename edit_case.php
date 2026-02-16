@@ -1333,6 +1333,54 @@ try {
                                 <button id="btn-save-review" @click="editingReview = false" class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm"><?php echo __('case.save_review', 'Save Review'); ?></button>
                             </div>
                         </div>
+                        
+                        <!-- Completion Signature -->
+                        <?php if (!empty($case['completion_signature'])): ?>
+                        <div class="border-t border-slate-200 pt-6 mt-6">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="bg-green-100 p-2 rounded-xl">
+                                    <i data-lucide="pen-tool" class="w-5 h-5 text-green-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800"><?php echo __('case.completion_signature', 'Completion Signature'); ?></h3>
+                                    <p class="text-xs text-slate-500"><?php echo __('case.customer_signed_completion', 'Customer digitally confirmed service completion'); ?></p>
+                                </div>
+                                <div class="ml-auto">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                                        <i data-lucide="check-circle" class="w-3 h-3"></i>
+                                        <?php echo __('case.signed', 'Signed'); ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center">
+                                <img src="<?php echo htmlspecialchars($case['completion_signature']); ?>" alt="Customer Signature" class="max-w-full max-h-[160px] mx-auto">
+                            </div>
+                            <?php if (!empty($case['signature_date'])): ?>
+                            <p class="text-xs text-slate-400 mt-2 text-right">
+                                <i data-lucide="calendar" class="w-3 h-3 inline-block mr-1"></i>
+                                <?php echo __('case.signed_on', 'Signed on'); ?>: <?php echo date('d.m.Y H:i', strtotime($case['signature_date'])); ?>
+                            </p>
+                            <?php endif; ?>
+                        </div>
+                        <?php elseif (strtolower($case['status'] ?? '') === 'completed'): ?>
+                        <div class="border-t border-slate-200 pt-6 mt-6">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-amber-100 p-2 rounded-xl">
+                                    <i data-lucide="pen-tool" class="w-5 h-5 text-amber-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800"><?php echo __('case.completion_signature', 'Completion Signature'); ?></h3>
+                                    <p class="text-xs text-slate-500"><?php echo __('case.awaiting_signature', 'Awaiting customer signature via public invoice link'); ?></p>
+                                </div>
+                                <div class="ml-auto">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
+                                        <i data-lucide="clock" class="w-3 h-3"></i>
+                                        <?php echo __('case.pending', 'Pending'); ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
                  </div>
 

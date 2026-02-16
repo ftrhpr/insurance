@@ -222,6 +222,9 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
             body { background: white !important; }
             .print-break { page-break-after: always; }
         }
+        /* Signature canvas touch handling */
+        #canvas-wrapper { touch-action: none; }
+        #signature-canvas { touch-action: none; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen py-8 px-4 font-sans">
@@ -610,6 +613,74 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
                     </button>
                 </div>
             </div>
+
+            <?php if (strtolower($case['status'] ?? '') === 'completed'): ?>
+            <!-- Completion Signature Section -->
+            <div class="px-8 py-6 border-t border-gray-200" id="signature-section">
+                <?php if (!empty($case['completion_signature'])): ?>
+                <!-- Already Signed - Display saved signature -->
+                <div class="text-center">
+                    <div class="flex items-center justify-center gap-2 mb-4">
+                        <div class="bg-green-100 p-2 rounded-full">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-green-700">სერვისი დადასტურებულია</h3>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-4">მომხმარებელმა ციფრულად დაადასტურა სამუშაოს დასრულება</p>
+                    <div class="bg-gray-50 rounded-xl border-2 border-gray-200 p-4 inline-block">
+                        <img src="<?php echo htmlspecialchars($case['completion_signature']); ?>" alt="Customer Signature" class="max-w-[400px] max-h-[200px] mx-auto">
+                    </div>
+                    <?php if (!empty($case['signature_date'])): ?>
+                    <p class="text-xs text-gray-400 mt-3">
+                        <i data-lucide="calendar" class="w-3 h-3 inline-block mr-1"></i>
+                        ხელმოწერის თარიღი: <?php echo date('d.m.Y H:i', strtotime($case['signature_date'])); ?>
+                    </p>
+                    <?php endif; ?>
+                </div>
+                <?php else: ?>
+                <!-- Signature Pad - Not yet signed -->
+                <div id="signature-pad-container">
+                    <div class="flex items-center justify-center gap-2 mb-4">
+                        <div class="bg-blue-100 p-2 rounded-full">
+                            <i data-lucide="pen-tool" class="w-5 h-5 text-blue-600"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800">სამუშაოს დასრულების დადასტურება</h3>
+                    </div>
+                    <p class="text-sm text-gray-500 text-center mb-4">გთხოვთ, ხელი მოაწეროთ ქვემოთ სერვისის დასრულების დასადასტურებლად</p>
+                    
+                    <div class="relative bg-white rounded-xl border-2 border-dashed border-gray-300 mx-auto max-w-[500px] touch-none" id="canvas-wrapper">
+                        <canvas id="signature-canvas" class="w-full rounded-xl cursor-crosshair" style="height: 200px;"></canvas>
+                        <div id="signature-placeholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-300">
+                            <div class="text-center">
+                                <i data-lucide="pen-tool" class="w-8 h-8 mx-auto mb-2"></i>
+                                <p class="text-sm">ხელი მოაწერეთ აქ</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-center gap-3 mt-4 no-print">
+                        <button onclick="clearSignature()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium rounded-lg transition-colors text-sm">
+                            <i data-lucide="eraser" class="w-4 h-4"></i>
+                            გასუფთავება
+                        </button>
+                        <button onclick="saveSignature()" id="btn-save-signature" class="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors text-sm shadow-lg shadow-green-600/30 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            ხელმოწერის შენახვა
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Success state (shown after saving) -->
+                <div id="signature-success" class="hidden text-center py-6">
+                    <div class="bg-green-100 p-4 rounded-full inline-block mb-4">
+                        <i data-lucide="check-circle" class="w-10 h-10 text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-green-700 mb-2">ხელმოწერა წარმატებით შეინახა!</h3>
+                    <p class="text-sm text-gray-500">მადლობა სერვისის დადასტურებისთვის</p>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
         
         <!-- Powered By -->
@@ -639,6 +710,172 @@ $service_date = !empty($case['service_date']) ? date('d.m.Y H:i', strtotime($cas
     
     <script>
         lucide.createIcons();
+        
+        <?php if (strtolower($case['status'] ?? '') === 'completed' && empty($case['completion_signature'])): ?>
+        // ── Signature Pad Logic ──
+        (function() {
+            const canvas = document.getElementById('signature-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const wrapper = document.getElementById('canvas-wrapper');
+            const placeholder = document.getElementById('signature-placeholder');
+            const saveBtn = document.getElementById('btn-save-signature');
+            let isDrawing = false;
+            let hasDrawn = false;
+            let lastX = 0;
+            let lastY = 0;
+            
+            // Set actual canvas resolution to match display size
+            function resizeCanvas() {
+                const rect = wrapper.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = rect.width * dpr;
+                canvas.height = 200 * dpr;
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = '200px';
+                ctx.scale(dpr, dpr);
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+            }
+            
+            resizeCanvas();
+            window.addEventListener('resize', function() {
+                if (!hasDrawn) resizeCanvas();
+            });
+            
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                if (e.touches && e.touches.length > 0) {
+                    return {
+                        x: e.touches[0].clientX - rect.left,
+                        y: e.touches[0].clientY - rect.top
+                    };
+                }
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+            
+            function startDrawing(e) {
+                e.preventDefault();
+                isDrawing = true;
+                const pos = getPos(e);
+                lastX = pos.x;
+                lastY = pos.y;
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+                lastX = pos.x;
+                lastY = pos.y;
+                
+                if (!hasDrawn) {
+                    hasDrawn = true;
+                    if (placeholder) placeholder.style.display = 'none';
+                    if (saveBtn) saveBtn.disabled = false;
+                    wrapper.classList.remove('border-dashed', 'border-gray-300');
+                    wrapper.classList.add('border-solid', 'border-blue-400');
+                }
+            }
+            
+            function stopDrawing(e) {
+                if (e) e.preventDefault();
+                isDrawing = false;
+                ctx.beginPath();
+            }
+            
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+            
+            // Touch events
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing, { passive: false });
+            canvas.addEventListener('touchcancel', stopDrawing, { passive: false });
+            
+            // Clear function
+            window.clearSignature = function() {
+                const dpr = window.devicePixelRatio || 1;
+                ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+                hasDrawn = false;
+                if (placeholder) placeholder.style.display = 'flex';
+                if (saveBtn) saveBtn.disabled = true;
+                wrapper.classList.add('border-dashed', 'border-gray-300');
+                wrapper.classList.remove('border-solid', 'border-blue-400');
+            };
+            
+            // Save function
+            window.saveSignature = async function() {
+                if (!hasDrawn) return;
+                
+                const slug = '<?php echo htmlspecialchars($case['slug'] ?? '', ENT_QUOTES); ?>';
+                if (!slug) {
+                    alert('ხელმოწერის შენახვა ვერ ხერხდება. გთხოვთ, სცადოთ მოგვიანებით.');
+                    return;
+                }
+                
+                // Get signature as base64 PNG
+                const signatureData = canvas.toDataURL('image/png');
+                
+                // Disable button and show loading
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> იტვირთება...';
+                }
+                
+                try {
+                    const response = await fetch('api.php?action=save_completion_signature', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ slug: slug, signature: signatureData })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        // Show success state
+                        const padContainer = document.getElementById('signature-pad-container');
+                        const successEl = document.getElementById('signature-success');
+                        if (padContainer) padContainer.style.display = 'none';
+                        if (successEl) {
+                            successEl.classList.remove('hidden');
+                            lucide.createIcons();
+                        }
+                    } else {
+                        alert(result.error || 'ხელმოწერის შენახვა ვერ მოხერხდა. გთხოვთ, სცადოთ მოგვიანებით.');
+                        if (saveBtn) {
+                            saveBtn.disabled = false;
+                            saveBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> ხელმოწერის შენახვა';
+                            lucide.createIcons();
+                        }
+                    }
+                } catch (err) {
+                    console.error('Signature save error:', err);
+                    alert('ქსელის შეცდომა. გთხოვთ, სცადოთ მოგვიანებით.');
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> ხელმოწერის შენახვა';
+                        lucide.createIcons();
+                    }
+                }
+            };
+        })();
+        <?php endif; ?>
         
         <?php if (count($case_images) > 0): ?>
         const caseImages = <?php echo json_encode($case_images); ?>;
