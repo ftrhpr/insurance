@@ -1362,7 +1362,7 @@ try {
                             </p>
                             <?php endif; ?>
                         </div>
-                        <?php elseif (strtolower($case['status'] ?? '') === 'completed'): ?>
+                        <?php elseif (strtolower($case['status'] ?? '') === 'completed' || intval($case['status_id'] ?? 0) === 8): ?>
                         <div class="border-t border-slate-200 pt-6 mt-6">
                             <div class="flex items-center gap-3">
                                 <div class="bg-amber-100 p-2 rounded-xl">
