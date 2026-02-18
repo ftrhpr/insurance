@@ -2179,106 +2179,154 @@ try {
             }
 
             // --- MAIN LOGIC ---
-
-            // For multi-page PDFs, parse page by page and combine results
+            
+            // STRATEGY: Parse the FULL combined text instead of page-by-page
+            // This handles cases where items span across page boundaries
+            // and continuation pages don't have section headers
+            
             $allPartItems = [];
             $allLaborItems = [];
             
-            // Get all pages from PDF
+            // Get all pages from PDF for debugging
             $pages = $pdf->getPages();
             $logContent .= "PDF has " . count($pages) . " pages\n\n";
             
-            // Process each page
+            // Log each page content for debugging
             foreach ($pages as $pageNum => $page) {
                 $pageText = $page->getText();
                 $logContent .= "=== PAGE " . ($pageNum + 1) . " ===\n$pageText\n=== END PAGE " . ($pageNum + 1) . " ===\n\n";
+            }
+            
+            // Parse ALL content between parts header and labor header (or end of file) as parts
+            // Parse ALL content between labor header and end marker as labor
+            
+            $partsStart = strpos($text, $partsHeader);
+            $laborStart = strpos($text, $laborHeader);
+            
+            $logContent .= "Parts header position: " . ($partsStart !== false ? $partsStart : "NOT FOUND") . "\n";
+            $logContent .= "Labor header position: " . ($laborStart !== false ? $laborStart : "NOT FOUND") . "\n";
+            
+            // Find all section end markers
+            $allEndMarkers = [];
+            $searchPos = 0;
+            while (($endPos = strpos($text, $sectionEnd, $searchPos)) !== false) {
+                $allEndMarkers[] = $endPos;
+                $searchPos = $endPos + 1;
+            }
+            $logContent .= "Found " . count($allEndMarkers) . " section end markers at positions: " . implode(', ', $allEndMarkers) . "\n\n";
+            
+            // Extract PARTS section: from parts header to the first end marker AFTER labor header starts
+            // OR to the first end marker if no labor section exists
+            if ($partsStart !== false) {
+                $partsContentStart = $partsStart + strlen($partsHeader);
                 
-                // Find ALL parts sections on this page
-                $searchOffset = 0;
-                while (($partsStart = strpos($pageText, $partsHeader, $searchOffset)) !== false) {
-                    $partsStart += strlen($partsHeader);
-                    $partsEnd = strpos($pageText, $sectionEnd, $partsStart);
-                    if ($partsEnd !== false) {
-                        $partsTextBlock = trim(substr($pageText, $partsStart, $partsEnd - $partsStart));
-                        if (!empty($partsTextBlock)) {
-                            $logContent .= "Found parts section on page " . ($pageNum + 1) . "\n";
-                            $pagePartItems = parsePartsSection($partsTextBlock);
-                            $allPartItems = array_merge($allPartItems, $pagePartItems);
+                // Find the appropriate end for parts section
+                $partsEnd = false;
+                if ($laborStart !== false && $laborStart > $partsStart) {
+                    // Parts section ends where labor section starts
+                    $partsEnd = $laborStart;
+                } else {
+                    // Find first end marker after parts start
+                    foreach ($allEndMarkers as $endPos) {
+                        if ($endPos > $partsContentStart) {
+                            $partsEnd = $endPos;
+                            break;
                         }
-                        $searchOffset = $partsEnd + 1;
-                    } else {
-                        // No end marker found, try to get remaining text as parts
-                        $partsTextBlock = trim(substr($pageText, $partsStart));
-                        if (!empty($partsTextBlock)) {
-                            $logContent .= "Found partial parts section on page " . ($pageNum + 1) . " (no end marker)\n";
-                            $pagePartItems = parsePartsSection($partsTextBlock);
-                            $allPartItems = array_merge($allPartItems, $pagePartItems);
-                        }
-                        break;
                     }
                 }
                 
-                // Find ALL labor sections on this page
-                $searchOffset = 0;
-                while (($laborStart = strpos($pageText, $laborHeader, $searchOffset)) !== false) {
-                    $laborStart += strlen($laborHeader);
-                    $laborEnd = strpos($pageText, $sectionEnd, $laborStart);
-                    if ($laborEnd !== false) {
-                        $laborTextBlock = trim(substr($pageText, $laborStart, $laborEnd - $laborStart));
-                        if (!empty($laborTextBlock)) {
-                            $logContent .= "Found labor section on page " . ($pageNum + 1) . "\n";
-                            $pageLaborItems = parseLaborSection($laborTextBlock);
-                            $allLaborItems = array_merge($allLaborItems, $pageLaborItems);
-                        }
-                        $searchOffset = $laborEnd + 1;
-                    } else {
-                        // No end marker found, try to get remaining text as labor
-                        $laborTextBlock = trim(substr($pageText, $laborStart));
-                        if (!empty($laborTextBlock)) {
-                            $logContent .= "Found partial labor section on page " . ($pageNum + 1) . " (no end marker)\n";
-                            $pageLaborItems = parseLaborSection($laborTextBlock);
-                            $allLaborItems = array_merge($allLaborItems, $pageLaborItems);
-                        }
-                        break;
+                if ($partsEnd !== false) {
+                    $partsTextBlock = trim(substr($text, $partsContentStart, $partsEnd - $partsContentStart));
+                    $logContent .= "FULL PARTS TEXT BLOCK (length=" . strlen($partsTextBlock) . "):\n";
+                    $logContent .= $partsTextBlock . "\n--- END PARTS BLOCK ---\n\n";
+                    
+                    if (!empty($partsTextBlock)) {
+                        $allPartItems = parsePartsSection($partsTextBlock);
+                    }
+                } else {
+                    // No end marker found, take everything after parts header
+                    $partsTextBlock = trim(substr($text, $partsContentStart));
+                    $logContent .= "FULL PARTS TEXT BLOCK (no end marker, length=" . strlen($partsTextBlock) . "):\n";
+                    $logContent .= $partsTextBlock . "\n--- END PARTS BLOCK ---\n\n";
+                    
+                    if (!empty($partsTextBlock)) {
+                        $allPartItems = parsePartsSection($partsTextBlock);
                     }
                 }
             }
             
-            // If page-by-page parsing found nothing, fallback to full text parsing
-            if (empty($allPartItems) && empty($allLaborItems)) {
-                $logContent .= "Page-by-page parsing found nothing, trying full text parsing...\n";
+            // Extract LABOR section: from labor header to the LAST end marker
+            if ($laborStart !== false) {
+                $laborContentStart = $laborStart + strlen($laborHeader);
                 
-                // Find ALL parts sections in full text
-                $searchOffset = 0;
-                while (($partsStart = strpos($text, $partsHeader, $searchOffset)) !== false) {
-                    $partsStart += strlen($partsHeader);
-                    $partsEnd = strpos($text, $sectionEnd, $partsStart);
-                    if ($partsEnd !== false) {
-                        $partsTextBlock = trim(substr($text, $partsStart, $partsEnd - $partsStart));
-                        if (!empty($partsTextBlock)) {
-                            $pagePartItems = parsePartsSection($partsTextBlock);
-                            $allPartItems = array_merge($allPartItems, $pagePartItems);
-                        }
-                        $searchOffset = $partsEnd + 1;
-                    } else {
-                        break;
+                // Find the last end marker for labor section (since labor might be at end of document)
+                $laborEnd = false;
+                foreach ($allEndMarkers as $endPos) {
+                    if ($endPos > $laborContentStart) {
+                        $laborEnd = $endPos; // Keep updating to get the last one
                     }
                 }
                 
-                // Find ALL labor sections in full text
-                $searchOffset = 0;
-                while (($laborStart = strpos($text, $laborHeader, $searchOffset)) !== false) {
-                    $laborStart += strlen($laborHeader);
-                    $laborEnd = strpos($text, $sectionEnd, $laborStart);
-                    if ($laborEnd !== false) {
-                        $laborTextBlock = trim(substr($text, $laborStart, $laborEnd - $laborStart));
-                        if (!empty($laborTextBlock)) {
-                            $pageLaborItems = parseLaborSection($laborTextBlock);
-                            $allLaborItems = array_merge($allLaborItems, $pageLaborItems);
+                if ($laborEnd !== false) {
+                    $laborTextBlock = trim(substr($text, $laborContentStart, $laborEnd - $laborContentStart));
+                    $logContent .= "FULL LABOR TEXT BLOCK (length=" . strlen($laborTextBlock) . "):\n";
+                    $logContent .= $laborTextBlock . "\n--- END LABOR BLOCK ---\n\n";
+                    
+                    if (!empty($laborTextBlock)) {
+                        $allLaborItems = parseLaborSection($laborTextBlock);
+                    }
+                } else {
+                    // No end marker, take everything after labor header
+                    $laborTextBlock = trim(substr($text, $laborContentStart));
+                    $logContent .= "FULL LABOR TEXT BLOCK (no end marker, length=" . strlen($laborTextBlock) . "):\n";
+                    $logContent .= $laborTextBlock . "\n--- END LABOR BLOCK ---\n\n";
+                    
+                    if (!empty($laborTextBlock)) {
+                        $allLaborItems = parseLaborSection($laborTextBlock);
+                    }
+                }
+            }
+            
+            // If no headers found at all, try generic line-by-line parsing of entire document
+            if ($partsStart === false && $laborStart === false) {
+                $logContent .= "No section headers found. Attempting generic parsing of entire document...\n";
+                
+                // Try to parse entire text looking for patterns:
+                // Parts: lines with quantity and price pattern
+                // Labor: lines with just price at end
+                $lines = preg_split('/\r?\n/', $text);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line)) continue;
+                    
+                    // Skip obvious non-data lines
+                    if (preg_match('/^(ინვოისი|თარიღი|მომხმარებელი|ავტომობილი|VIN|რეგისტრაცია)/u', $line)) continue;
+                    
+                    // Try parts pattern: name + quantity + status + price
+                    if (preg_match('/^(.+?)\s+(\d+)\s+([^\s]+)\s+([\d,.]+)$/u', $line, $matches)) {
+                        $allPartItems[] = [
+                            'name' => trim($matches[1]),
+                            'quantity' => (int)$matches[2],
+                            'price' => (float)str_replace(',', '', $matches[4]),
+                            'type' => 'part'
+                        ];
+                        $logContent .= "GENERIC: Found part item: " . $matches[1] . "\n";
+                        continue;
+                    }
+                    
+                    // Try labor pattern: name + price (just a number at end)
+                    if (preg_match('/^(.+?)\s+([\d,.]+)$/u', $line, $matches)) {
+                        $name = trim($matches[1]);
+                        // Skip if name looks like a number or header
+                        if (!is_numeric($name) && strlen($name) > 3) {
+                            $allLaborItems[] = [
+                                'name' => $name,
+                                'price' => (float)str_replace(',', '', $matches[2]),
+                                'type' => 'labor',
+                                'quantity' => 1
+                            ];
+                            $logContent .= "GENERIC: Found labor item: " . $name . "\n";
                         }
-                        $searchOffset = $laborEnd + 1;
-                    } else {
-                        break;
                     }
                 }
             }
