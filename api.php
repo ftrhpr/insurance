@@ -2180,43 +2180,111 @@ try {
 
             // --- MAIN LOGIC ---
 
-            // Isolate the text for each section
-            $partsTextBlock = '';
-            $laborTextBlock = '';
-
-            $partsHeaderPos = strpos($text, $partsHeader);
-            $laborHeaderPos = strpos($text, $laborHeader);
+            // For multi-page PDFs, parse page by page and combine results
+            $allPartItems = [];
+            $allLaborItems = [];
             
-            // Find all occurrences of section end marker
-            $endMarkers = [];
-            $offset = 0;
-            while (($pos = strpos($text, $sectionEnd, $offset)) !== false) {
-                $endMarkers[] = $pos;
-                $offset = $pos + 1;
+            // Get all pages from PDF
+            $pages = $pdf->getPages();
+            $logContent .= "PDF has " . count($pages) . " pages\n\n";
+            
+            // Process each page
+            foreach ($pages as $pageNum => $page) {
+                $pageText = $page->getText();
+                $logContent .= "=== PAGE " . ($pageNum + 1) . " ===\n$pageText\n=== END PAGE " . ($pageNum + 1) . " ===\n\n";
+                
+                // Find ALL parts sections on this page
+                $searchOffset = 0;
+                while (($partsStart = strpos($pageText, $partsHeader, $searchOffset)) !== false) {
+                    $partsStart += strlen($partsHeader);
+                    $partsEnd = strpos($pageText, $sectionEnd, $partsStart);
+                    if ($partsEnd !== false) {
+                        $partsTextBlock = trim(substr($pageText, $partsStart, $partsEnd - $partsStart));
+                        if (!empty($partsTextBlock)) {
+                            $logContent .= "Found parts section on page " . ($pageNum + 1) . "\n";
+                            $pagePartItems = parsePartsSection($partsTextBlock);
+                            $allPartItems = array_merge($allPartItems, $pagePartItems);
+                        }
+                        $searchOffset = $partsEnd + 1;
+                    } else {
+                        // No end marker found, try to get remaining text as parts
+                        $partsTextBlock = trim(substr($pageText, $partsStart));
+                        if (!empty($partsTextBlock)) {
+                            $logContent .= "Found partial parts section on page " . ($pageNum + 1) . " (no end marker)\n";
+                            $pagePartItems = parsePartsSection($partsTextBlock);
+                            $allPartItems = array_merge($allPartItems, $pagePartItems);
+                        }
+                        break;
+                    }
+                }
+                
+                // Find ALL labor sections on this page
+                $searchOffset = 0;
+                while (($laborStart = strpos($pageText, $laborHeader, $searchOffset)) !== false) {
+                    $laborStart += strlen($laborHeader);
+                    $laborEnd = strpos($pageText, $sectionEnd, $laborStart);
+                    if ($laborEnd !== false) {
+                        $laborTextBlock = trim(substr($pageText, $laborStart, $laborEnd - $laborStart));
+                        if (!empty($laborTextBlock)) {
+                            $logContent .= "Found labor section on page " . ($pageNum + 1) . "\n";
+                            $pageLaborItems = parseLaborSection($laborTextBlock);
+                            $allLaborItems = array_merge($allLaborItems, $pageLaborItems);
+                        }
+                        $searchOffset = $laborEnd + 1;
+                    } else {
+                        // No end marker found, try to get remaining text as labor
+                        $laborTextBlock = trim(substr($pageText, $laborStart));
+                        if (!empty($laborTextBlock)) {
+                            $logContent .= "Found partial labor section on page " . ($pageNum + 1) . " (no end marker)\n";
+                            $pageLaborItems = parseLaborSection($laborTextBlock);
+                            $allLaborItems = array_merge($allLaborItems, $pageLaborItems);
+                        }
+                        break;
+                    }
+                }
             }
-
-            // Extract parts section: from parts header to first "ჯამი (ლარი)" after it
-            $partsStart = strpos($text, $partsHeader);
-            if ($partsStart !== false) {
-                $partsStart += strlen($partsHeader);
-                $partsEnd = strpos($text, $sectionEnd, $partsStart);
-                if ($partsEnd !== false) {
-                    $partsTextBlock = trim(substr($text, $partsStart, $partsEnd - $partsStart));
+            
+            // If page-by-page parsing found nothing, fallback to full text parsing
+            if (empty($allPartItems) && empty($allLaborItems)) {
+                $logContent .= "Page-by-page parsing found nothing, trying full text parsing...\n";
+                
+                // Find ALL parts sections in full text
+                $searchOffset = 0;
+                while (($partsStart = strpos($text, $partsHeader, $searchOffset)) !== false) {
+                    $partsStart += strlen($partsHeader);
+                    $partsEnd = strpos($text, $sectionEnd, $partsStart);
+                    if ($partsEnd !== false) {
+                        $partsTextBlock = trim(substr($text, $partsStart, $partsEnd - $partsStart));
+                        if (!empty($partsTextBlock)) {
+                            $pagePartItems = parsePartsSection($partsTextBlock);
+                            $allPartItems = array_merge($allPartItems, $pagePartItems);
+                        }
+                        $searchOffset = $partsEnd + 1;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Find ALL labor sections in full text
+                $searchOffset = 0;
+                while (($laborStart = strpos($text, $laborHeader, $searchOffset)) !== false) {
+                    $laborStart += strlen($laborHeader);
+                    $laborEnd = strpos($text, $sectionEnd, $laborStart);
+                    if ($laborEnd !== false) {
+                        $laborTextBlock = trim(substr($text, $laborStart, $laborEnd - $laborStart));
+                        if (!empty($laborTextBlock)) {
+                            $pageLaborItems = parseLaborSection($laborTextBlock);
+                            $allLaborItems = array_merge($allLaborItems, $pageLaborItems);
+                        }
+                        $searchOffset = $laborEnd + 1;
+                    } else {
+                        break;
+                    }
                 }
             }
 
-            // Extract labor section: from labor header to first "ჯამი (ლარი)" after it
-            $laborStart = strpos($text, $laborHeader);
-            if ($laborStart !== false) {
-                $laborStart += strlen($laborHeader);
-                $laborEnd = strpos($text, $sectionEnd, $laborStart);
-                if ($laborEnd !== false) {
-                    $laborTextBlock = trim(substr($text, $laborStart, $laborEnd - $laborStart));
-                }
-            }
-
-            $partItems = $partsTextBlock ? parsePartsSection($partsTextBlock) : [];
-            $laborItems = $laborTextBlock ? parseLaborSection($laborTextBlock) : [];
+            $partItems = $allPartItems;
+            $laborItems = $allLaborItems;
             
             // Debug logging
             $logContent .= "PARSED PART ITEMS: " . count($partItems) . "\n";
