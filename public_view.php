@@ -230,7 +230,8 @@
 
         async function init() {
             // Validate: need either a valid slug or a legacy integer id
-            const hasSlug = slug.length >= 8 && /^[a-zA-Z0-9]+$/.test(slug);
+            // Slugs can be 32-char hex OR human-readable like "customer-plate-abc123"
+            const hasSlug = slug.length >= 6 && /^[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9]$/.test(slug);
             const hasId = /^\d+$/.test(legacyId);
             
             if (!hasSlug && !hasId) {
@@ -244,7 +245,7 @@
                 
                 const data = await res.json();
 
-                if(data.error || (!data.slug && !data.id)) {
+                if(data.error) {
                     return showError();
                 }
 

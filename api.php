@@ -299,7 +299,7 @@ try {
 
     if ($action === 'get_public_transfer' && $method === 'GET') {
         // Support both slug (preferred, secure) and legacy integer ID
-        $slug = trim($_GET['slug'] ?? '');
+        $slug = strtolower(trim($_GET['slug'] ?? ''));
         $id = intval($_GET['id'] ?? 0);
         
         if (empty($slug) && $id <= 0) {
@@ -311,8 +311,8 @@ try {
         
         // Fetch by slug (preferred) or by id (legacy fallback)
         if (!empty($slug)) {
-            // Validate slug format (32-char hex)
-            if (!preg_match('/^[a-f0-9]{32}$/', $slug)) {
+            // Validate slug format: 32-char hex OR human-readable (alphanumeric + hyphens, 6-100 chars)
+            if (!preg_match('/^[a-f0-9]{32}$/', $slug) && !preg_match('/^[a-z0-9][a-z0-9\-]{4,98}[a-z0-9]$/', $slug)) {
                 http_response_code(400);
                 jsonResponse(['error' => 'Invalid request']);
             }
@@ -341,7 +341,7 @@ try {
 
     if ($action === 'user_respond' && $method === 'POST') {
         $data = getJsonInput();
-        $slug = trim($data['slug'] ?? '');
+        $slug = strtolower(trim($data['slug'] ?? ''));
         $id = intval($data['id'] ?? 0);
         $response = $data['response'] ?? 'Confirmed';
         $rescheduleDate = $data['reschedule_date'] ?? null;
@@ -355,7 +355,7 @@ try {
         
         // Resolve transfer by slug (preferred) or id (legacy)
         $transfer = null;
-        if (!empty($slug) && preg_match('/^[a-f0-9]{32}$/', $slug)) {
+        if (!empty($slug) && (preg_match('/^[a-f0-9]{32}$/', $slug) || preg_match('/^[a-z0-9][a-z0-9\-]{4,98}[a-z0-9]$/', $slug))) {
             $stmt = $pdo->prepare("SELECT id, name, plate FROM transfers WHERE slug = ?");
             $stmt->execute([$slug]);
             $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -388,7 +388,7 @@ try {
     // --- NEW: SUBMIT REVIEW ---
     if ($action === 'submit_review' && $method === 'POST') {
         $data = getJsonInput();
-        $slug = trim($data['slug'] ?? '');
+        $slug = strtolower(trim($data['slug'] ?? ''));
         $id = intval($data['id'] ?? 0);
         $stars = intval($data['stars'] ?? 5);
         $comment = trim($data['comment'] ?? '');
@@ -405,7 +405,7 @@ try {
 
         // Resolve transfer by slug (preferred) or id (legacy)
         $transfer = null;
-        if (!empty($slug) && preg_match('/^[a-f0-9]{32}$/', $slug)) {
+        if (!empty($slug) && (preg_match('/^[a-f0-9]{32}$/', $slug) || preg_match('/^[a-z0-9][a-z0-9\-]{4,98}[a-z0-9]$/', $slug))) {
             $stmt = $pdo->prepare("SELECT id, name, plate, review_stars FROM transfers WHERE slug = ?");
             $stmt->execute([$slug]);
             $transfer = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -500,8 +500,26 @@ try {
                 } catch (Exception $e) {}
             }
 
-            $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, amount, franchise, rawText, phone, vehicle_make, vehicle_model, status, status_id, created_at) 
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            // Generate unique slug for public sharing
+            $customerName = trim($data['name'] ?? 'customer');
+            $baseSlug = strtolower(trim($customerName . '-' . $plate));
+            $baseSlug = preg_replace('/[^a-z0-9\-]/', '-', $baseSlug);
+            $baseSlug = preg_replace('/-+/', '-', $baseSlug);
+            $baseSlug = trim($baseSlug, '-');
+            if (empty($baseSlug)) $baseSlug = 'case';
+            $uniqueSuffix = substr(md5(uniqid(mt_rand(), true)), 0, 6);
+            $newSlug = $baseSlug . '-' . $uniqueSuffix;
+            // Ensure uniqueness
+            $slugCheck = $pdo->prepare("SELECT COUNT(*) FROM transfers WHERE slug = ?");
+            $slugCheck->execute([$newSlug]);
+            while ($slugCheck->fetchColumn() > 0) {
+                $uniqueSuffix = substr(md5(uniqid(mt_rand(), true)), 0, 6);
+                $newSlug = $baseSlug . '-' . $uniqueSuffix;
+                $slugCheck->execute([$newSlug]);
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO transfers (plate, name, amount, franchise, rawText, phone, vehicle_make, vehicle_model, status, status_id, slug, created_at) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             
             $stmt->execute([
                 $plate,
@@ -513,12 +531,13 @@ try {
                 isset($data['vehicleMake']) ? trim($data['vehicleMake']) : null,
                 isset($data['vehicleModel']) ? trim($data['vehicleModel']) : null,
                 $status,
-                $status_id
+                $status_id,
+                $newSlug
             ]);
 
             $newId = $pdo->lastInsertId();
             
-            jsonResponse(['status' => 'success', 'id' => $newId, 'message' => 'Transfer added successfully']);
+            jsonResponse(['status' => 'success', 'id' => $newId, 'slug' => $newSlug, 'message' => 'Transfer added successfully']);
         } catch (Exception $e) {
             error_log("Add transfer error: " . $e->getMessage());
             jsonResponse(['status' => 'error', 'message' => 'Failed to add transfer']);
