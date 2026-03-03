@@ -42,6 +42,8 @@ $query = "SELECT
     service_date,
     created_at,
     updated_at,
+    completed_at,
+    COALESCE(completed_at, updated_at) as effective_completed_at,
     assigned_mechanic,
     id
 FROM transfers 
@@ -58,13 +60,13 @@ if ($current_user_role === 'technician') {
     $params[] = $selected_technician;
 }
 
-// Month filter - use updated_at (when status was changed to Completed)
+// Month filter - use completed_at with fallback to updated_at
 if ($selected_month) {
-    $query .= " AND DATE_FORMAT(updated_at, '%Y-%m') = ?";
+    $query .= " AND DATE_FORMAT(COALESCE(completed_at, updated_at), '%Y-%m') = ?";
     $params[] = $selected_month;
 }
 
-$query .= " ORDER BY updated_at DESC";
+$query .= " ORDER BY COALESCE(completed_at, updated_at) DESC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
@@ -74,10 +76,10 @@ $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $total_nachrebi = array_sum(array_column($records, 'nachrebi_qty'));
 $total_amount = $total_nachrebi * 77; // Calculate amount as nachrebi_qty × 77
 
-// Get available months for filter dropdown (based on updated_at - when completed)
-$months_query = "SELECT DISTINCT DATE_FORMAT(updated_at, '%Y-%m') as month 
+// Get available months for filter dropdown (based on completed_at with fallback to updated_at)
+$months_query = "SELECT DISTINCT DATE_FORMAT(COALESCE(completed_at, updated_at), '%Y-%m') as month 
     FROM transfers 
-    WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') AND updated_at IS NOT NULL";
+    WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') AND COALESCE(completed_at, updated_at) IS NOT NULL";
 
 // Filter months by technician if applicable
 if ($current_user_role === 'technician') {
@@ -115,7 +117,7 @@ if ($current_user_role !== 'technician') {
     WHERE nachrebi_qty > 0 AND (status_id = 8 OR status = 'Completed') AND assigned_mechanic IS NOT NULL AND assigned_mechanic != ''";
     
     if ($selected_month) {
-        $summary_query .= " AND DATE_FORMAT(updated_at, '%Y-%m') = ?";
+        $summary_query .= " AND DATE_FORMAT(COALESCE(completed_at, updated_at), '%Y-%m') = ?";
         $summary_stmt = $pdo->prepare($summary_query . " GROUP BY assigned_mechanic ORDER BY total_nachrebi DESC");
         $summary_stmt->execute([$selected_month]);
     } else {
@@ -380,7 +382,7 @@ if ($current_user_role !== 'technician') {
                                     <td class="px-4 py-3 text-sm font-bold text-emerald-600"><?= number_format($record['nachrebi_qty'], 2) ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-900">₾<?= number_format($record['nachrebi_qty'] * 77, 2) ?></td>
                                     <td class="px-4 py-3 text-sm text-slate-600">
-                                        <?= date('d/m/Y', strtotime($record['updated_at'] ?? $record['created_at'])) ?>
+                                        <?= date('d/m/Y', strtotime($record['effective_completed_at'] ?? $record['updated_at'] ?? $record['created_at'])) ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
