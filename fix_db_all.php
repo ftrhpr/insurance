@@ -59,7 +59,9 @@ try {
         'last_payment_at' => "DATETIME DEFAULT NULL",
         // Completion signature
         'completion_signature' => "MEDIUMTEXT DEFAULT NULL",
-        'signature_date' => "DATETIME DEFAULT NULL"
+        'signature_date' => "DATETIME DEFAULT NULL",
+        // Completion date (when case status changed to Completed)
+        'completed_at' => "DATETIME DEFAULT NULL"
     ];
 
     foreach ($columns as $col => $def) {

@@ -314,6 +314,10 @@ try {
                                 <input id="input-due-date" type="datetime-local" value="<?php echo $case['due_date'] ? date('Y-m-d\TH:i', strtotime($case['due_date'])) : ''; ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
                             <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.completed_at', 'Completion Date'); ?></label>
+                                <input id="input-completed-at" type="datetime-local" value="<?php echo !empty($case['completed_at']) ? date('Y-m-d\TH:i', strtotime($case['completed_at'])) : ''; ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none">
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5"><?php echo __('case.amount', 'Amount'); ?> (₾)</label>
                                 <input id="input-amount" type="text" value="<?php echo htmlspecialchars($case['amount']); ?>" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 outline-none">
                             </div>
@@ -3087,6 +3091,15 @@ try {
                         // VAT fields
                         vatEnabled: this.currentCase.vat_enabled ? 1 : 0,
                         vatAmount: parseFloat(this.currentCase.vat_amount || 0),
+                        // Completion date
+                        completedAt: (() => {
+                            let d = document.getElementById('input-completed-at')?.value || '';
+                            if (d) {
+                                d = d.replace('T', ' ');
+                                if (d.split(':').length === 2) d += ':00';
+                            }
+                            return d || null;
+                        })(),
                     };
 
                     const systemLogs = [...(this.currentCase.systemLogs || [])];

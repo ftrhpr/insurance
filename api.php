@@ -596,7 +596,8 @@ try {
                 'global_discount_percent' => 'global_discount_percent',
                 'slug' => 'slug',
                 'vatEnabled' => 'vat_enabled',
-                'vatAmount' => 'vat_amount'
+                'vatAmount' => 'vat_amount',
+                'completedAt' => 'completed_at'
             ];
 
             $update_fields = [];
@@ -612,6 +613,22 @@ try {
                         $data['status'] = $statusName;
                     }
                 } catch (Exception $e) {}
+            }
+
+            // Auto-set completed_at when status changes to Completed (and not explicitly provided)
+            if (!isset($data['completedAt'])) {
+                $resolvedStatus = $data['status'] ?? null;
+                if ($resolvedStatus && strtolower($resolvedStatus) === 'completed') {
+                    // Check if it wasn't already completed (only set if transitioning TO completed)
+                    try {
+                        $prevStmt = $pdo->prepare("SELECT status, completed_at FROM transfers WHERE id = ?");
+                        $prevStmt->execute([$id]);
+                        $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
+                        if ($prev && strtolower($prev['status'] ?? '') !== 'completed' && empty($prev['completed_at'])) {
+                            $data['completedAt'] = date('Y-m-d H:i:s');
+                        }
+                    } catch (Exception $e) {}
+                }
             }
             
             // If repair_status_id is provided, also update the text repair_status for backward compatibility
@@ -2733,7 +2750,7 @@ try {
             $updateValues = [$next_stage, json_encode($assignments), json_encode($timers), json_encode($workTimes)];
             
             if ($next_stage === 'done') {
-                $updateFields .= ", status = ?";
+                $updateFields .= ", status = ?, completed_at = COALESCE(completed_at, NOW())";
                 $updateValues[] = 'Completed';
             }
             

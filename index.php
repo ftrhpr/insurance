@@ -979,8 +979,8 @@ try {
                                             </th>
                                             <th class="px-5 py-4">
                                                 <div class="flex items-center gap-2">
-                                                    <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                    <span><?php echo __('dashboard.service_date', 'Service Date'); ?></span>
+                                                    <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                                                    <span><?php echo __('dashboard.completion_date', 'Completion Date'); ?></span>
                                                 </div>
                                             </th>
                                             <th class="px-5 py-4">
@@ -2822,10 +2822,10 @@ try {
                     </tr>`);
             });
 
-            // Sort completed cases by updated_at date (newest first)
+            // Sort completed cases by completed_at date (newest first), fallback to updated_at/created_at
             completedCases.sort((a, b) => {
-                const dateA = new Date(a.transfer.updated_at || a.transfer.created_at || 0);
-                const dateB = new Date(b.transfer.updated_at || b.transfer.created_at || 0);
+                const dateA = new Date(a.transfer.completed_at || a.transfer.updated_at || a.transfer.created_at || 0);
+                const dateB = new Date(b.transfer.completed_at || b.transfer.updated_at || b.transfer.created_at || 0);
                 return dateB - dateA; // Newest first
             });
 
@@ -2874,17 +2874,20 @@ try {
                             </td>
                             <td class="px-5 py-4">
                                 <div class="text-sm text-slate-700">
-                                    ${t.serviceDate ? (() => {
+                                    ${(() => {
+                                        const raw = t.completed_at || t.serviceDate;
+                                        if (!raw) return '<span class="text-slate-400">—</span>';
                                         try {
-                                            let dateStr = t.serviceDate;
+                                            let dateStr = raw;
                                             if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
                                             if (dateStr.length === 16) dateStr += ':00';
-                                            const svcDate = new Date(dateStr);
-                                            return svcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                            const d = new Date(dateStr);
+                                            const label = t.completed_at ? '' : '<span class=\"text-[10px] text-slate-400\">(svc) </span>';
+                                            return label + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                                         } catch(e) {
                                             return 'Invalid date';
                                         }
-                                    })() : '<span class="text-slate-400">Not scheduled</span>'}
+                                    })()}
                                 </div>
                             </td>
                             <td class="px-5 py-4 text-right" onclick="event.stopPropagation()">
@@ -3505,7 +3508,7 @@ try {
         }
 
         function parseTransferDate(t) {
-            let dateStr = t.serviceDate || t.service_date || t.created_at || t.createdAt || null;
+            let dateStr = t.completed_at || t.serviceDate || t.service_date || t.created_at || t.createdAt || null;
             if (!dateStr) return null;
             if (typeof dateStr === 'string') {
                 if (dateStr.includes(' ')) dateStr = dateStr.replace(' ', 'T');
