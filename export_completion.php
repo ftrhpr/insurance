@@ -71,6 +71,7 @@ if ($statusesExist) {
                t.repair_stage, t.repair_status, t.repair_start_date, t.repair_end_date,
                t.repair_assignments, t.assigned_mechanic,
                t.stage_statuses, t.stage_timers, t.work_times,
+               t.repair_labor,
                t.completed_at, t.completion_signature, t.signature_date,
                t.service_date, t.due_date,
                t.review_stars, t.review_comment,
@@ -87,6 +88,7 @@ if ($statusesExist) {
                t.repair_stage, t.repair_status, t.repair_start_date, t.repair_end_date,
                t.repair_assignments, t.assigned_mechanic,
                t.stage_statuses, t.stage_timers, t.work_times,
+               t.repair_labor,
                t.completed_at, t.completion_signature, t.signature_date,
                t.service_date, t.due_date,
                t.review_stars, t.review_comment,
@@ -96,6 +98,14 @@ if ($statusesExist) {
         ORDER BY t.id ASC
     ";
 }
+
+// ── Active case_versions (prefer version's services) ────────────────────
+$versionsMap = [];
+try {
+    foreach ($pdo->query("SELECT transfer_id, repair_labor FROM case_versions WHERE is_active = 1")->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $versionsMap[(int)$r['transfer_id']] = $r;
+    }
+} catch (Exception $e) {}
 $transfers = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
 // ── 4. Build export ─────────────────────────────────────────────────────
@@ -123,6 +133,23 @@ foreach ($transfers as $t) {
         ];
     }
 
+    // ── Services with quantities ──────────────────────────────────────
+    $ver = $versionsMap[$id] ?? null;
+    $rawLabor = safeJson($ver['repair_labor'] ?? $t['repair_labor'] ?? '[]');
+    $services = [];
+    foreach ($rawLabor as $l) {
+        $name = trim($l['description'] ?? $l['name'] ?? '');
+        if ($name === '') continue;
+        $qty  = max(1, intval($l['quantity'] ?? 1));
+        $rate = round(floatval($l['unit_rate'] ?? $l['price'] ?? 0), 2);
+        $services[] = [
+            'name'      => $name,
+            'quantity'  => $qty,
+            'unitPrice' => $rate,
+            'lineTotal' => round($rate * $qty, 2),
+        ];
+    }
+
     // ── Stage statuses & timers ─────────────────────────────────────
     $stageStatuses = safeJson($t['stage_statuses'] ?? '{}');
     $stageTimers   = safeJson($t['stage_timers'] ?? '{}');
@@ -143,6 +170,9 @@ foreach ($transfers as $t) {
         'customerName'   => trim($t['name'] ?? '') ?: null,
         'status'         => $statusRaw,
         'isCompleted'    => $isCompleted,
+        'completedAt'    => isoTs($t['completed_at'] ?? null),
+
+        'services' => $services,
 
         'dates' => [
             'createdAt'      => isoTs($t['created_at'] ?? null),
