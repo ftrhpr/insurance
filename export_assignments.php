@@ -1,6 +1,12 @@
 <?php
 /**
- * Focused export: plate, status, vehicle make/model, technicians + nachrebi qty per case.
+ * Focused export: plate, status, vehicle make/model, customer info,
+ * case photos, technicians with nachrebi qty, and payment status.
+ *
+ * Rules:
+ *  - repairStage = "done" only for Completed cases; others get actual DB value
+ *  - nachrebi_qty linked to assigned_mechanic (text field), not repair_assignments
+ *  - Only insurance cases may be marked paid; non-insurance keep actual DB values
  *
  * Usage: php export_assignments.php     (writes file to disk)
  *   or   open in browser while logged in (sends JSON download)
@@ -58,12 +64,23 @@ try {
     }
 } catch (Exception $e) {}
 
-// ── 4. Fetch transfers ──────────────────────────────────────────────────
+// ── 4. Payments totals keyed by transfer_id ─────────────────────────────
+$totalPaidMap = [];
+try {
+    foreach ($pdo->query("SELECT transfer_id, SUM(amount) as total FROM payments GROUP BY transfer_id")->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $totalPaidMap[(int)$r['transfer_id']] = round(floatval($r['total']), 2);
+    }
+} catch (Exception $e) {}
+
+// ── 5. Fetch transfers ──────────────────────────────────────────────────
 if ($statusesExist) {
     $sql = "
-        SELECT t.id, t.slug, t.plate, t.status, t.status_id,
+        SELECT t.id, t.slug, t.plate, t.name, t.phone,
+               t.status, t.status_id, t.case_type,
                t.vehicle_make, t.vehicle_model, t.repair_stage,
                t.repair_assignments, t.nachrebi_qty,
+               t.assigned_mechanic, t.case_images,
+               t.amount, t.franchise, t.payment_status, t.amount_paid,
                COALESCE(s.name, t.status) AS resolved_status
         FROM transfers t
         LEFT JOIN statuses s ON t.status_id = s.id
@@ -71,9 +88,12 @@ if ($statusesExist) {
     ";
 } else {
     $sql = "
-        SELECT t.id, t.slug, t.plate, t.status, t.status_id,
+        SELECT t.id, t.slug, t.plate, t.name, t.phone,
+               t.status, t.status_id, t.case_type,
                t.vehicle_make, t.vehicle_model, t.repair_stage,
                t.repair_assignments, t.nachrebi_qty,
+               t.assigned_mechanic, t.case_images,
+               t.amount, t.franchise, t.payment_status, t.amount_paid,
                t.status AS resolved_status
         FROM transfers t
         ORDER BY t.id ASC
@@ -81,7 +101,7 @@ if ($statusesExist) {
 }
 $transfers = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
-// ── 5. Build export ─────────────────────────────────────────────────────
+// ── 6. Build export ─────────────────────────────────────────────────────
 $cases = [];
 
 foreach ($transfers as $t) {
@@ -95,36 +115,118 @@ foreach ($transfers as $t) {
     $make  = trim($t['vehicle_make'] ?? '') ?: ($veh['make'] ?? null);
     $model = trim($t['vehicle_model'] ?? '') ?: ($veh['model'] ?? null);
 
-    $status = $t['resolved_status'] ?? $t['status'] ?? 'New';
+    // ── Status detection ────────────────────────────────────────────
+    $statusRaw   = $t['resolved_status'] ?? $t['status'] ?? 'New';
+    $isCompleted = (stripos($statusRaw, 'complet') !== false || stripos($statusRaw, 'done') !== false || stripos($statusRaw, 'დასრულ') !== false);
+    $isCancelled = (stripos($statusRaw, 'issue') !== false || stripos($statusRaw, 'cancel') !== false);
+
+    // ── Repair stage: only "done" for completed cases ───────────────
+    $repairStage = $t['repair_stage'] ?? null;
+    if ($isCompleted) {
+        $repairStage = 'done';
+    }
+
+    // ── Case type ───────────────────────────────────────────────────
+    $rawType  = trim($t['case_type'] ?? '');
+    $isInsurance = ($rawType === 'დაზღვევა' || stripos($rawType, 'insurance') !== false);
+    $caseType = $isInsurance ? 'insurance' : 'retail';
+
+    // ── Payment: only mark insurance cases as paid ──────────────────
+    $amount    = round(floatval($t['amount'] ?? 0), 2);
+    $franchise = round(floatval($t['franchise'] ?? 0), 2);
+    $dbTotalPaid = $totalPaidMap[$id] ?? floatval($t['amount_paid'] ?? 0);
+
+    if ($isInsurance && $isCompleted) {
+        $paymentStatus = 'paid';
+        $totalPaid     = $amount;
+    } elseif ($isInsurance && !$isCancelled) {
+        $paymentStatus = 'paid';
+        $totalPaid     = round(max(0, $amount - $franchise), 2);
+    } else {
+        // Non-insurance or cancelled → actual DB values
+        $paymentStatus = $t['payment_status'] ?? 'unpaid';
+        $totalPaid     = round($dbTotalPaid, 2);
+    }
+
+    // ── Nachrebi qty ────────────────────────────────────────────────
     $nachrebiQty = ($t['nachrebi_qty'] ?? null) !== null && $t['nachrebi_qty'] !== ''
         ? round(floatval($t['nachrebi_qty']), 2)
         : null;
 
-    // Technician assignments
+    // ── Assigned mechanic (nachrebi is linked to this, not repair_assignments) ─
+    $assignedMechanic = trim($t['assigned_mechanic'] ?? '') ?: null;
+
+    // ── Technician stage assignments (from repair_assignments JSON) ──
     $assignments = safeJson($t['repair_assignments'] ?? '{}');
     $technicians = [];
     foreach ($assignments as $stage => $techId) {
         if (!in_array($stage, $validStages, true)) continue;
         $techId = intval($techId);
         if ($techId <= 0) continue;
+        $techName = $userNames[$techId] ?? ('Technician #' . $techId);
         $technicians[] = [
-            'fullName'    => $userNames[$techId] ?? ('Technician #' . $techId),
-            'userId'      => $techId,
-            'stage'       => $stage,
-            'nachrebiQty' => $nachrebiQty,
+            'fullName' => $techName,
+            'userId'   => $techId,
+            'stage'    => $stage,
+            // Nachrebi belongs to this tech only if they are the assigned_mechanic
+            'nachrebiQty' => ($assignedMechanic !== null && $assignedMechanic === $techName) ? $nachrebiQty : null,
         ];
     }
+
+    // If assigned_mechanic exists but isn't in repair_assignments, still include them
+    if ($assignedMechanic && $nachrebiQty !== null) {
+        $alreadyListed = false;
+        foreach ($technicians as $tech) {
+            if ($tech['fullName'] === $assignedMechanic) {
+                $alreadyListed = true;
+                break;
+            }
+        }
+        if (!$alreadyListed) {
+            $technicians[] = [
+                'fullName'    => $assignedMechanic,
+                'userId'      => null,
+                'stage'       => null,
+                'nachrebiQty' => $nachrebiQty,
+            ];
+        }
+    }
+
+    // ── Phone normalization ─────────────────────────────────────────
+    $phone = trim($t['phone'] ?? '');
+    if ($phone && !str_starts_with($phone, '+')) {
+        if (str_starts_with($phone, '995'))                            $phone = '+' . $phone;
+        elseif (str_starts_with($phone, '5') && strlen($phone) === 9)  $phone = '+995' . $phone;
+        elseif (strlen($phone) >= 6)                                   $phone = '+995' . ltrim($phone, '0');
+    }
+
+    // ── Case images ─────────────────────────────────────────────────
+    $images = safeJson($t['case_images'] ?? '[]');
 
     $cases[] = [
         'slug'         => $slug,
         'caseId'       => $id,
+        'caseType'     => $caseType,
         'plate'        => $plate ?: null,
-        'status'       => $status,
-        'repairStage'  => $t['repair_stage'] ?? null,
+        'status'       => $statusRaw,
+        'repairStage'  => $repairStage,
         'vehicleMake'  => $make ?: null,
         'vehicleModel' => $model ?: null,
+
+        'customer' => [
+            'name'  => trim($t['name'] ?? '') ?: null,
+            'phone' => $phone ?: null,
+        ],
+
+        'amount'        => $amount,
+        'franchise'     => $franchise,
+        'paymentStatus' => $paymentStatus,
+        'totalPaid'     => $totalPaid,
+
         'nachrebiQty'  => $nachrebiQty,
         'technicians'  => $technicians,
+
+        'images' => $images,
     ];
 }
 
