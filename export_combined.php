@@ -1,9 +1,10 @@
 <?php
 /**
- * Export discounts & assigned technicians for all cases.
- * Only includes cases that have at least one discount > 0 or at least one technician assignment.
+ * Combined export: services, parts, discounts & technicians for all cases.
+ * Merges data from both export_services_parts.php and export_discounts_techs.php.
+ * Includes all cases that have at least one service, part, discount, or technician.
  *
- * Usage: php export_discounts_techs.php     (writes file to disk)
+ * Usage: php export_combined.php     (writes file to disk)
  *   or   open in browser while logged in    (sends JSON download)
  */
 
@@ -30,12 +31,35 @@ function safeJson($raw): array {
     return is_array($d) ? $d : [];
 }
 
+function isGeorgian(string $s): bool {
+    return (bool) preg_match('/[\x{10A0}-\x{10FF}]/u', $s);
+}
+
 function toKey(string $name): string {
     $ascii = transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $name);
     if (empty($ascii)) $ascii = $name;
     $ascii = strtolower(trim($ascii));
     $ascii = preg_replace('/[^a-z0-9]+/', '_', $ascii);
     return trim($ascii, '_') ?: 'service';
+}
+
+function guessCategory(string $name): string {
+    $lower = mb_strtolower($name, 'UTF-8');
+
+    if (preg_match('/bumper|fender|dent|body|panel|door|hood|trunk|roof|quarter|sill|კარი|ბამპერი|თუნუქი|კაპოტი|საბარგული|სახურავი/ui', $lower))
+        return 'body_work';
+    if (preg_match('/paint|spray|lacquer|primer|clear\s*coat|color|polish|შეღებვა|ლაქი|პრაიმერი|პოლირება|საღებავი|შეფუთვა/ui', $lower))
+        return 'paint';
+    if (preg_match('/engine|motor|transmission|brake|suspension|wheel|align|oil|filter|belt|clutch|ძრავი|მუხრუჭი|საკიდარი|ფილტრი|ზეთი|ტრანსმისია/ui', $lower))
+        return 'mechanical';
+    if (preg_match('/electr|wiring|sensor|lamp|light|headlight|fuse|battery|ელექტრ|ნათურა|ფარი|სენსორი|აკუმულატორი/ui', $lower))
+        return 'electrical';
+    if (preg_match('/glass|windshield|mirror|მინა|სარკე/ui', $lower))
+        return 'glass';
+    if (preg_match('/disassembl|assembl|დაშლა|აწყობა/ui', $lower))
+        return 'assembly';
+
+    return 'general';
 }
 
 // Valid workflow stages
@@ -52,20 +76,18 @@ try {
     foreach ($rows as $r) {
         $userNames[(int)$r['id']] = trim($r['full_name'] ?: $r['username'] ?: ('User #' . $r['id']));
     }
-} catch (Exception $e) {
-    // users table may not exist
-}
+} catch (Exception $e) {}
 
 // ── 2. Fetch transfers ──────────────────────────────────────────────────
 $transfers = $pdo->query("
-    SELECT id, slug,
+    SELECT id, slug, amount,
            repair_parts, repair_labor, repair_assignments,
            parts_discount_percent, services_discount_percent, global_discount_percent
     FROM transfers
     ORDER BY id ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// ── 3. Fetch active case_versions (for per-item discounts & category discounts) ─
+// ── 3. Fetch active case_versions ───────────────────────────────────────
 $versionsMap = [];
 try {
     $rows = $pdo->query("
@@ -102,12 +124,30 @@ foreach ($transfers as $t) {
     foreach ($rawLabor as $l) {
         $name = trim($l['description'] ?? $l['name'] ?? '');
         if ($name === '') continue;
-        $disc = round(floatval($l['discount_percent'] ?? 0), 2);
+
+        $nameEn = '';
+        $nameKa = '';
+        if (isGeorgian($name)) {
+            $nameKa = $name;
+            $nameEn = $name;
+        } else {
+            $nameEn = $name;
+        }
+
+        $qty       = max(1, intval($l['quantity'] ?? 1));
+        $unitPrice = round(floatval($l['unit_rate'] ?? $l['unit_price'] ?? $l['price'] ?? 0), 2);
+        $price     = round($unitPrice * $qty, 2);
+        $disc      = round(floatval($l['discount_percent'] ?? 0), 2);
         if ($disc > 0) $hasItemDiscount = true;
+
         $services[] = [
             'key'       => toKey($name),
-            'quantity'  => floatval($l['quantity'] ?? 1),
-            'unitPrice' => round(floatval($l['unit_rate'] ?? $l['unit_price'] ?? 0), 2),
+            'nameEn'    => $nameEn,
+            'nameKa'    => $nameKa,
+            'unitPrice' => $unitPrice,
+            'count'     => $qty,
+            'price'     => $price,
+            'category'  => guessCategory($name),
             'discount'  => $disc,
         ];
     }
@@ -117,13 +157,24 @@ foreach ($transfers as $t) {
     foreach ($rawParts as $p) {
         $name = trim($p['name'] ?? '');
         if ($name === '') continue;
-        $disc = round(floatval($p['discount_percent'] ?? 0), 2);
+
+        $nameKa = '';
+        if (isGeorgian($name)) {
+            $nameKa = $name;
+        }
+
+        $qty       = max(1, intval($p['quantity'] ?? 1));
+        $unitPrice = round(floatval($p['unit_price'] ?? $p['price'] ?? 0), 2);
+        $disc      = round(floatval($p['discount_percent'] ?? 0), 2);
         if ($disc > 0) $hasItemDiscount = true;
+
         $parts[] = [
-            'name'      => $name,
-            'quantity'  => floatval($p['quantity'] ?? 1),
-            'unitPrice' => round(floatval($p['unit_price'] ?? 0), 2),
-            'discount'  => $disc,
+            'name'       => $name,
+            'nameKa'     => $nameKa,
+            'partNumber' => trim($p['sku'] ?? $p['partNumber'] ?? $p['oem'] ?? '') ?: null,
+            'quantity'   => $qty,
+            'unitPrice'  => $unitPrice,
+            'discount'   => $disc,
         ];
     }
 
@@ -140,33 +191,41 @@ foreach ($transfers as $t) {
         ];
     }
 
-    // ── Filter: skip if nothing relevant ────────────────────────────
+    // ── Skip truly empty cases ──────────────────────────────────────
     $hasCategoryDiscount = ($partsDiscount > 0 || $servicesDiscount > 0 || $globalDiscount > 0);
-    $hasTechs = !empty($technicians);
+    $hasTechs    = !empty($technicians);
+    $hasServices = !empty($services);
+    $hasParts    = !empty($parts);
 
-    if (!$hasCategoryDiscount && !$hasItemDiscount && !$hasTechs) continue;
+    if (!$hasServices && !$hasParts && !$hasCategoryDiscount && !$hasItemDiscount && !$hasTechs) continue;
 
     // ── Build entry ─────────────────────────────────────────────────
-    $entry = ['slug' => $slug];
-
-    $entry['servicesDiscountPercent'] = $servicesDiscount ?: null;
-    $entry['partsDiscountPercent']    = $partsDiscount    ?: null;
-    $entry['globalDiscountPercent']   = $globalDiscount   ?: null;
-    $entry['services']    = $services;
-    $entry['parts']       = $parts;
-    $entry['technicians'] = $technicians;
-
-    $cases[] = $entry;
+    $cases[] = [
+        'slug'                    => $slug,
+        'amount'                  => round(floatval($t['amount'] ?? 0), 2),
+        'servicesDiscountPercent' => $servicesDiscount ?: null,
+        'partsDiscountPercent'    => $partsDiscount    ?: null,
+        'globalDiscountPercent'   => $globalDiscount   ?: null,
+        'services'                => $services,
+        'parts'                   => $parts,
+        'technicians'             => $technicians,
+    ];
 }
 
 // ── 5. Output ───────────────────────────────────────────────────────────
-$json = json_encode($cases, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-$filename = 'export_discounts_techs_' . date('Y-m-d_His') . '.json';
+$payload = [
+    'exportDate' => gmdate('Y-m-d\TH:i:s\Z'),
+    'totalCases' => count($cases),
+    'cases'      => $cases,
+];
+
+$json     = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+$filename = 'export_combined_' . date('Y-m-d_His') . '.json';
 
 if ($isCli) {
     $path = __DIR__ . '/' . $filename;
     file_put_contents($path, $json);
-    echo "Exported " . count($cases) . " cases to $path (" . round(strlen($json) / 1024, 1) . " KB)\n";
+    echo "Exported {$payload['totalCases']} cases to $path (" . round(strlen($json) / 1024, 1) . " KB)\n";
 } else {
     session_start();
     require_once __DIR__ . '/session_config.php';
